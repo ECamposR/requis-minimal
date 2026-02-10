@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 .env
 requisiciones.db
+test_requisiciones.db
