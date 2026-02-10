@@ -11,6 +11,7 @@ from urllib.parse import quote_plus
 
 from .auth import authenticate_user, get_current_user, login_user, logout_user
 from .crud import (
+    CATALOGO_ITEMS,
     agregar_item_db,
     crear_requisicion_db,
     parse_items_from_form,
@@ -112,7 +113,10 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
 
 @app.get("/crear")
 def crear_form(request: Request, current_user: Usuario = Depends(get_current_user)):
-    return templates.TemplateResponse("crear_requisicion.html", template_context(request, current_user))
+    return templates.TemplateResponse(
+        "crear_requisicion.html",
+        template_context(request, current_user, catalogo_items=CATALOGO_ITEMS),
+    )
 
 
 @app.post("/crear")
@@ -136,6 +140,8 @@ async def crear(
         raise HTTPException(status_code=400, detail="Debe agregar al menos un item")
 
     for item_data in items_data:
+        if item_data["descripcion"] not in CATALOGO_ITEMS:
+            raise HTTPException(status_code=400, detail="Item no permitido en catalogo")
         agregar_item_db(db, req.id, **item_data)
 
     return redirect_with_message("/mis-requisiciones", "Requisicion creada", "success")

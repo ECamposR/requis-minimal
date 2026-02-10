@@ -90,7 +90,6 @@ def test_crear_requisicion(client: TestClient, db_session: Session):
             "justificacion": "Material para mantenimiento correctivo",
             "items[0][descripcion]": "Cable UTP Cat6",
             "items[0][cantidad]": "25",
-            "items[0][unidad]": "m",
         },
         follow_redirects=False,
     )
@@ -100,6 +99,7 @@ def test_crear_requisicion(client: TestClient, db_session: Session):
     assert req is not None
     assert req.estado == "pendiente"
     assert len(req.items) == 1
+    assert req.items[0].descripcion == "Cable UTP Cat6"
 
 
 def test_aprobar_requisicion(client: TestClient, db_session: Session):
@@ -125,6 +125,23 @@ def test_aprobar_requisicion(client: TestClient, db_session: Session):
     assert req.estado == "aprobada"
     assert req.approved_by == aprobador.id
     assert req.approved_at is not None
+
+
+def test_crear_requisicion_rechaza_item_fuera_catalogo(client: TestClient):
+    login(client, "user.ops", "pass123")
+
+    response = client.post(
+        "/crear",
+        data={
+            "departamento": "Operaciones",
+            "justificacion": "Intento con item invalido",
+            "items[0][descripcion]": "ITEM NO VALIDO",
+            "items[0][cantidad]": "1",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Item no permitido en catalogo"
 
 
 def test_entregar_requisicion(client: TestClient, db_session: Session):

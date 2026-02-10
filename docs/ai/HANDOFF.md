@@ -11,24 +11,24 @@
 - Guia LAN/backup agregada (`REQ-013`).
 - Pulido UI minimo agregado (`REQ-014`).
 - Administracion de usuarios por admin agregada (`REQ-015`).
+- Formulario de requisicion migrado a selector de catalogo de items (`REQ-016`).
 
 ## En progreso
-- Validacion de regresion y ajuste fino de UX admin.
+- Smoke test funcional de creacion de requisiciones con selector de items.
 
 ## Proximo paso exacto
-- Ejecutar smoke test del modulo admin:
-  - Login como `admin`
-  - Crear usuario nuevo
-  - Editar rol/departamento
-  - Eliminar usuario
-  - Verificar bloqueos: no auto-eliminacion y no eliminar ultimo admin
+- Ejecutar smoke test de formulario `/crear`:
+  - Abrir formulario y validar que el item sea selector (no texto libre).
+  - Crear requisicion con 1 y con 2 items del catalogo.
+  - Confirmar que rechaza item fuera de catalogo.
+  - Verificar modal de detalle con formato `cantidad - descripcion`.
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.
 - Evitar drift entre especificacion y codigo durante iteraciones rapidas con IA.
 - Pendiente de verificacion real de tests en entorno con dependencias instaladas.
 - Validar end-to-end UI admin en navegador en entorno real.
-- Test `tests/test_admin_users.py` pendiente de ejecucion en venv del proyecto.
+- Mantener sincronizado catalogo (si cambia, actualizar backend + frontend).
 
 ## Como retomar en 5 minutos
 1. Leer `docs/ai/CONTRACT.md`.

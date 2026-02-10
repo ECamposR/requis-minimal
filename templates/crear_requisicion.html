@@ -22,9 +22,13 @@
         <fieldset id="items-container">
             <legend>Items</legend>
             <div class="item-row">
-                <input type="text" name="items[0][descripcion]" placeholder="Descripcion" required>
+                <select name="items[0][descripcion]" required>
+                    <option value="">Seleccionar item...</option>
+                    {% for item in catalogo_items %}
+                    <option value="{{ item }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
                 <input type="number" step="0.01" min="0.01" name="items[0][cantidad]" placeholder="Cantidad" required>
-                <input type="text" name="items[0][unidad]" placeholder="Unidad" required>
             </div>
         </fieldset>
 
@@ -33,5 +37,8 @@
     </form>
 </article>
 
+<script>
+window.CATALOGO_ITEMS = {{ catalogo_items | tojson }};
+</script>
 <script src="/static/app.js"></script>
 {% endblock %}

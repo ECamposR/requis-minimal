@@ -5,6 +5,19 @@ from sqlalchemy.orm import Session
 
 from .models import Item, Requisicion
 
+CATALOGO_ITEMS = [
+    "Cable UTP Cat6",
+    "Conector RJ45",
+    "Patch cord 2m",
+    "Canaleta PVC",
+    "Switch 8 puertos",
+    "Tornillo 1/4",
+    "Guantes de seguridad",
+    "Cinta aislante",
+]
+
+UNIDAD_POR_DEFECTO = "unidad"
+
 
 def generar_folio(db: Session) -> str:
     ultimo = db.query(Requisicion).order_by(Requisicion.id.desc()).first()
@@ -31,7 +44,13 @@ def crear_requisicion_db(
     return req
 
 
-def agregar_item_db(db: Session, requisicion_id: int, descripcion: str, cantidad: float, unidad: str) -> Item:
+def agregar_item_db(
+    db: Session,
+    requisicion_id: int,
+    descripcion: str,
+    cantidad: float,
+    unidad: str = UNIDAD_POR_DEFECTO,
+) -> Item:
     item = Item(
         requisicion_id=requisicion_id,
         descripcion=descripcion,
@@ -58,12 +77,13 @@ def parse_items_from_form(form_data: Any) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
     for idx in sorted(rows.keys(), key=lambda x: int(x)):
         row = rows[idx]
-        if {"descripcion", "cantidad", "unidad"}.issubset(row.keys()):
+        if {"descripcion", "cantidad"}.issubset(row.keys()):
+            unidad = str(row.get("unidad", UNIDAD_POR_DEFECTO)).strip() or UNIDAD_POR_DEFECTO
             items.append(
                 {
                     "descripcion": str(row["descripcion"]).strip(),
                     "cantidad": float(row["cantidad"]),
-                    "unidad": str(row["unidad"]).strip(),
+                    "unidad": unidad,
                 }
             )
     return items

@@ -168,3 +168,19 @@
 - Verificacion:
   - `python -m compileall app tests` OK.
   - `pytest -q tests/test_admin_users.py` no ejecutable en este sandbox por falta de dependencias globales; correr en venv del proyecto.
+
+## 2026-02-10 17:18 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-016` (catalogo de items con selector y sin unidad en UI).
+- Cambios:
+  - `app/crud.py` (catalogo base, unidad por defecto, parse sin campo unidad en formulario)
+  - `app/main.py` (envio de catalogo a template y validacion server-side de item permitido)
+  - `templates/crear_requisicion.html` (selector de item en lugar de texto libre)
+  - `static/app.js` (agregado dinamico de filas con `select` y detalle sin unidad visible)
+  - `tests/test_basic_flow.py` (payload actualizado sin unidad)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `tech_specs_v1.1_mvp_simplificado.md`
+- Resultado:
+  - UX de creacion mas simple y consistente: item elegido desde lista predefinida.
+  - Menor riesgo de typos y duplicados de item.
+  - Compatibilidad mantenida sin migracion de DB (unidad interna por defecto).

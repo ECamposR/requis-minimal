@@ -66,9 +66,9 @@ Documento derivado para implementacion rapida por IA, sin tocar el original.
 ### items
 - `id` PK
 - `requisicion_id` FK requisiciones
-- `descripcion`
+- `descripcion` (seleccionada desde catalogo predefinido, no texto libre)
 - `cantidad > 0`
-- `unidad`
+- `unidad` (interna, no capturada en UI MVP)
 
 ### indices minimos
 - `requisiciones(estado)`
@@ -98,6 +98,7 @@ Documento derivado para implementacion rapida por IA, sin tocar el original.
 - `aprobador` solo opera requisiciones de su departamento.
 - `admin` puede ver y operar todo.
 - Debe existir al menos 1 item al crear requisicion.
+- Los items enviados deben pertenecer al catalogo permitido.
 
 ## 9. Estructura de proyecto
 ```text
