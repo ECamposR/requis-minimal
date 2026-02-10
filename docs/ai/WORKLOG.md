@@ -146,3 +146,25 @@
   - `requirements-dev.txt` (agregado `httpx==0.27.2`)
 - Resultado:
   - Instalacion de entorno consistente para runtime de sesiones y tests con `TestClient`.
+
+## 2026-02-10 16:46 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-015` (CRUD de usuarios para admin).
+- Cambios:
+  - `app/main.py` (rutas admin usuarios: listar, crear, editar, eliminar)
+  - `templates/base.html` (link `Usuarios` para admin)
+  - `templates/admin_usuarios.html`
+  - `templates/admin_usuario_form.html`
+  - `tests/test_admin_users.py`
+  - `tests/conftest.py` (path de proyecto para imports de tests)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Reglas aplicadas:
+  - Solo `admin` puede acceder.
+  - `username` unico.
+  - Password minima de 6 chars al crear.
+  - En edicion, password opcional (si vacia no cambia).
+  - Bloqueo de auto-eliminacion.
+  - Bloqueo de eliminacion del ultimo admin.
+- Verificacion:
+  - `python -m compileall app tests` OK.
+  - `pytest -q tests/test_admin_users.py` no ejecutable en este sandbox por falta de dependencias globales; correr en venv del proyecto.

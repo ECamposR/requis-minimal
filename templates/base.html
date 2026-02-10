@@ -23,6 +23,9 @@
             {% if current_user.rol in ['bodega', 'admin'] %}
             <li><a href="/bodega">Bodega</a></li>
             {% endif %}
+            {% if current_user.rol == 'admin' %}
+            <li><a href="/admin/usuarios">Usuarios</a></li>
+            {% endif %}
             <li>
                 <form method="POST" action="/logout" style="margin:0;">
                     <button type="submit" class="secondary">Salir</button>

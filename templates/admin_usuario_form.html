@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{% if modo == 'crear' %}Nuevo Usuario{% else %}Editar Usuario{% endif %}{% endblock %}
+{% block content %}
+<h2>{% if modo == 'crear' %}Nuevo Usuario{% else %}Editar Usuario{% endif %}</h2>
+
+<form method="POST" action="{% if modo == 'crear' %}/admin/usuarios{% else %}/admin/usuarios/{{ usuario.id }}/editar{% endif %}">
+    <label>
+        Username
+        <input type="text" name="username" required minlength="3" value="{% if usuario %}{{ usuario.username }}{% endif %}">
+    </label>
+
+    <label>
+        Nombre
+        <input type="text" name="nombre" required minlength="3" value="{% if usuario %}{{ usuario.nombre }}{% endif %}">
+    </label>
+
+    <label>
+        Rol
+        <select name="rol" required>
+            {% for r in roles %}
+            <option value="{{ r }}" {% if usuario and usuario.rol == r %}selected{% endif %}>{{ r }}</option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>
+        Departamento
+        <input type="text" name="departamento" required minlength="2" value="{% if usuario %}{{ usuario.departamento }}{% endif %}">
+    </label>
+
+    <label>
+        {% if modo == 'crear' %}Contrasena{% else %}Contrasena (dejar vacio para no cambiar){% endif %}
+        <input
+            type="password"
+            name="password"
+            {% if modo == 'crear' %}required minlength="6"{% endif %}
+            {% if modo == 'editar' %}placeholder="Sin cambio"{% endif %}
+        >
+    </label>
+
+    <button type="submit">{% if modo == 'crear' %}Crear{% else %}Guardar cambios{% endif %}</button>
+    <a href="/admin/usuarios" role="button" class="secondary">Cancelar</a>
+</form>
+{% endblock %}

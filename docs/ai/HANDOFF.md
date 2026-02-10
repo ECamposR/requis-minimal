@@ -10,21 +10,25 @@
 - Tests basicos de flujo agregados (`REQ-012`).
 - Guia LAN/backup agregada (`REQ-013`).
 - Pulido UI minimo agregado (`REQ-014`).
+- Administracion de usuarios por admin agregada (`REQ-015`).
 
 ## En progreso
-- Cierre de validacion final y smoke test manual.
+- Validacion de regresion y ajuste fino de UX admin.
 
 ## Proximo paso exacto
-- Instalar dependencias y ejecutar smoke test completo en entorno local:
-  - `pip install -r requirements.txt -r requirements-dev.txt`
-  - `python init_db.py`
-  - `pytest -q tests/test_basic_flow.py`
-  - `uvicorn app.main:app --reload`
+- Ejecutar smoke test del modulo admin:
+  - Login como `admin`
+  - Crear usuario nuevo
+  - Editar rol/departamento
+  - Eliminar usuario
+  - Verificar bloqueos: no auto-eliminacion y no eliminar ultimo admin
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.
 - Evitar drift entre especificacion y codigo durante iteraciones rapidas con IA.
 - Pendiente de verificacion real de tests en entorno con dependencias instaladas.
+- Validar end-to-end UI admin en navegador en entorno real.
+- Test `tests/test_admin_users.py` pendiente de ejecucion en venv del proyecto.
 
 ## Como retomar en 5 minutos
 1. Leer `docs/ai/CONTRACT.md`.

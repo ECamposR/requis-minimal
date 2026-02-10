@@ -4,3 +4,4 @@ __pycache__/
 .env
 requisiciones.db
 test_requisiciones.db
+test_admin_users.db

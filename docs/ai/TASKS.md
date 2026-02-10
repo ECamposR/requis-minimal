@@ -17,6 +17,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-010` | `done` | Implementar vista bodega y transicion a `entregada`.
 - `REQ-011` | `done` | Implementar endpoint `GET /api/requisiciones/{id}` con control de acceso.
 - `REQ-012` | `done` | Crear tests basicos de flujo feliz (crear, aprobar, entregar).
+- `REQ-015` | `done` | CRUD de usuarios para admin (crear, editar, eliminar) desde web.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

@@ -42,6 +42,11 @@ def redirect_with_message(url: str, message: str, level: str = "success") -> Red
     return RedirectResponse(url=f"{url}{sep}msg={safe_msg}&type={safe_level}", status_code=303)
 
 
+def ensure_admin(current_user: Usuario) -> None:
+    if current_user.rol != "admin":
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -248,6 +253,164 @@ def entregar(
         delivered_to=delivered_to_limpio,
     )
     return redirect_with_message("/bodega", "Requisicion marcada como entregada", "success")
+
+
+@app.get("/admin/usuarios")
+def admin_usuarios(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    ensure_admin(current_user)
+    usuarios = db.query(Usuario).order_by(Usuario.id.asc()).all()
+    return templates.TemplateResponse(
+        "admin_usuarios.html",
+        template_context(request, current_user, usuarios=usuarios),
+    )
+
+
+@app.get("/admin/usuarios/nuevo")
+def admin_usuario_nuevo(request: Request, current_user: Usuario = Depends(get_current_user)):
+    ensure_admin(current_user)
+    return templates.TemplateResponse(
+        "admin_usuario_form.html",
+        template_context(
+            request,
+            current_user,
+            modo="crear",
+            usuario=None,
+            roles=["user", "aprobador", "bodega", "admin"],
+        ),
+    )
+
+
+@app.post("/admin/usuarios")
+def admin_usuario_crear(
+    request: Request,
+    username: str = Form(...),
+    nombre: str = Form(...),
+    rol: str = Form(...),
+    departamento: str = Form(...),
+    password: str = Form(...),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    roles_validos = ["user", "aprobador", "bodega", "admin"]
+    username_limpio = username.strip()
+    nombre_limpio = nombre.strip()
+    depto_limpio = departamento.strip()
+
+    if rol not in roles_validos:
+        raise HTTPException(status_code=400, detail="Rol invalido")
+    if len(username_limpio) < 3 or len(nombre_limpio) < 3 or len(depto_limpio) < 2:
+        raise HTTPException(status_code=400, detail="Datos incompletos o invalidos")
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="La contrasena debe tener al menos 6 caracteres")
+
+    existe = db.query(Usuario).filter(Usuario.username == username_limpio).first()
+    if existe:
+        return redirect_with_message("/admin/usuarios", "Username ya existe", "error")
+
+    from .auth import hash_password
+
+    nuevo = Usuario(
+        username=username_limpio,
+        nombre=nombre_limpio,
+        rol=rol,
+        departamento=depto_limpio,
+        password=hash_password(password),
+    )
+    db.add(nuevo)
+    db.commit()
+    return redirect_with_message("/admin/usuarios", "Usuario creado", "success")
+
+
+@app.get("/admin/usuarios/{user_id}/editar")
+def admin_usuario_editar_form(
+    user_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    usuario = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return templates.TemplateResponse(
+        "admin_usuario_form.html",
+        template_context(
+            request,
+            current_user,
+            modo="editar",
+            usuario=usuario,
+            roles=["user", "aprobador", "bodega", "admin"],
+        ),
+    )
+
+
+@app.post("/admin/usuarios/{user_id}/editar")
+def admin_usuario_editar(
+    user_id: int,
+    username: str = Form(...),
+    nombre: str = Form(...),
+    rol: str = Form(...),
+    departamento: str = Form(...),
+    password: str = Form(""),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    usuario = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    roles_validos = ["user", "aprobador", "bodega", "admin"]
+    username_limpio = username.strip()
+    nombre_limpio = nombre.strip()
+    depto_limpio = departamento.strip()
+    if rol not in roles_validos:
+        raise HTTPException(status_code=400, detail="Rol invalido")
+    if len(username_limpio) < 3 or len(nombre_limpio) < 3 or len(depto_limpio) < 2:
+        raise HTTPException(status_code=400, detail="Datos incompletos o invalidos")
+
+    duplicado = db.query(Usuario).filter(Usuario.username == username_limpio, Usuario.id != user_id).first()
+    if duplicado:
+        return redirect_with_message("/admin/usuarios", "Username ya existe", "error")
+
+    usuario.username = username_limpio
+    usuario.nombre = nombre_limpio
+    usuario.rol = rol
+    usuario.departamento = depto_limpio
+
+    if password.strip():
+        if len(password.strip()) < 6:
+            raise HTTPException(status_code=400, detail="La contrasena debe tener al menos 6 caracteres")
+        from .auth import hash_password
+
+        usuario.password = hash_password(password.strip())
+
+    db.commit()
+    return redirect_with_message("/admin/usuarios", "Usuario actualizado", "success")
+
+
+@app.post("/admin/usuarios/{user_id}/eliminar")
+def admin_usuario_eliminar(
+    user_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    usuario = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if usuario.id == current_user.id:
+        return redirect_with_message("/admin/usuarios", "No puedes eliminar tu propio usuario", "error")
+
+    if usuario.rol == "admin":
+        total_admins = db.query(Usuario).filter(Usuario.rol == "admin").count()
+        if total_admins <= 1:
+            return redirect_with_message("/admin/usuarios", "No puedes eliminar el ultimo admin", "error")
+
+    db.delete(usuario)
+    db.commit()
+    return redirect_with_message("/admin/usuarios", "Usuario eliminado", "warning")
 
 
 @app.get("/api/requisiciones/{req_id}")
