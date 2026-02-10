@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Requisiciones{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<nav class="container">
+    <ul>
+        <li><strong>Sistema Requisiciones</strong></li>
+    </ul>
+    <ul>
+        {% if current_user %}
+            <li><a href="/">Inicio</a></li>
+            <li><a href="/crear">Nueva Requisicion</a></li>
+            <li><a href="/mis-requisiciones">Mis Requisiciones</a></li>
+            {% if current_user.rol in ['aprobador', 'admin'] %}
+            <li><a href="/aprobar">Aprobar</a></li>
+            {% endif %}
+            {% if current_user.rol in ['bodega', 'admin'] %}
+            <li><a href="/bodega">Bodega</a></li>
+            {% endif %}
+            <li>
+                <form method="POST" action="/logout" style="margin:0;">
+                    <button type="submit" class="secondary">Salir</button>
+                </form>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+<main class="container">
+    {% set msg = request.query_params.get('msg') %}
+    {% if msg %}
+        {% set msg_type = request.query_params.get('type', 'success') %}
+        <div class="alert alert-{{ msg_type }}">{{ msg }}</div>
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+</body>
+</html>

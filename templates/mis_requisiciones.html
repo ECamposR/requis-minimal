@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Mis Requisiciones{% endblock %}
+{% block content %}
+<h2>Mis Requisiciones</h2>
+
+{% if requisiciones %}
+<table>
+    <thead>
+    <tr>
+        <th>Folio</th>
+        <th>Departamento</th>
+        <th>Estado</th>
+        <th>Fecha</th>
+        <th>Accion</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for req in requisiciones %}
+    <tr>
+        <td>{{ req.folio }}</td>
+        <td>{{ req.departamento }}</td>
+        <td>
+            {% if req.estado == 'pendiente' %}
+                <span class="badge badge-warning">Pendiente</span>
+            {% elif req.estado == 'aprobada' %}
+                <span class="badge badge-success">Aprobada</span>
+            {% elif req.estado == 'rechazada' %}
+                <span class="badge badge-error">Rechazada</span>
+            {% elif req.estado == 'entregada' %}
+                <span class="badge badge-info">Entregada</span>
+            {% else %}
+                <span class="badge">{{ req.estado }}</span>
+            {% endif %}
+        </td>
+        <td>{{ req.created_at }}</td>
+        <td><button onclick="verDetalle({{ req.id }})">Ver</button></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No tienes requisiciones aun.</p>
+{% endif %}
+
+<dialog id="modal-detalle">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" onclick="cerrarModal()"></button>
+            <h3>Detalle</h3>
+        </header>
+        <div id="modal-content"></div>
+    </article>
+</dialog>
+
+<script src="/static/app.js"></script>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Aprobar{% endblock %}
+{% block content %}
+<h2>Aprobar Requisiciones</h2>
+{% if pendientes %}
+<table>
+    <thead>
+    <tr>
+        <th>Folio</th>
+        <th>Departamento</th>
+        <th>Justificacion</th>
+        <th>Fecha</th>
+        <th>Acciones</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for req in pendientes %}
+    <tr>
+        <td>{{ req.folio }}</td>
+        <td>{{ req.departamento }}</td>
+        <td>{{ req.justificacion }}</td>
+        <td>{{ req.created_at }}</td>
+        <td>
+            <form method="POST" action="/aprobar/{{ req.id }}" style="display:inline-block;">
+                <button type="submit">Aprobar</button>
+            </form>
+            <form method="POST" action="/rechazar/{{ req.id }}" style="display:inline-block;">
+                <input type="text" name="razon" required minlength="3" placeholder="Razon rechazo">
+                <button type="submit" class="secondary">Rechazar</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No hay requisiciones pendientes de aprobacion.</p>
+{% endif %}
+{% endblock %}

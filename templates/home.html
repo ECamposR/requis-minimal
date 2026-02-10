@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Inicio{% endblock %}
+{% block content %}
+<h2>Inicio</h2>
+<p>Mis requisiciones: <strong>{{ mis_requisiciones }}</strong></p>
+{% if current_user.rol in ['aprobador', 'admin'] %}
+<p>Pendientes por aprobar: <strong>{{ pendientes_aprobar }}</strong></p>
+{% endif %}
+{% if current_user.rol in ['bodega', 'admin'] %}
+<p>Pendientes por entregar (bodega): <strong>{{ pendientes_bodega }}</strong></p>
+{% endif %}
+{% endblock %}

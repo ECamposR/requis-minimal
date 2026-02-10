@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Bodega{% endblock %}
+{% block content %}
+<h2>Bodega</h2>
+{% if aprobadas %}
+<table>
+    <thead>
+    <tr>
+        <th>Folio</th>
+        <th>Departamento</th>
+        <th>Justificacion</th>
+        <th>Aprobada en</th>
+        <th>Entrega</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for req in aprobadas %}
+    <tr>
+        <td>{{ req.folio }}</td>
+        <td>{{ req.departamento }}</td>
+        <td>{{ req.justificacion }}</td>
+        <td>{{ req.approved_at }}</td>
+        <td>
+            <form method="POST" action="/entregar/{{ req.id }}">
+                <input type="text" name="delivered_to" required minlength="3" placeholder="Recibe">
+                <button type="submit">Marcar entregada</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No hay requisiciones aprobadas pendientes de entrega.</p>
+{% endif %}
+{% endblock %}

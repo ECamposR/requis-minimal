@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Nueva Requisicion{% endblock %}
+{% block content %}
+<article>
+    <h2>Nueva Requisicion</h2>
+    <form method="POST" action="/crear">
+        <label>
+            Departamento
+            <select name="departamento" required>
+                <option value="">Seleccionar...</option>
+                <option value="Ventas">Ventas</option>
+                <option value="Operaciones">Operaciones</option>
+                <option value="Mantenimiento">Mantenimiento</option>
+                <option value="TI">TI</option>
+            </select>
+        </label>
+        <label>
+            Justificacion
+            <textarea name="justificacion" rows="4" required></textarea>
+        </label>
+
+        <fieldset id="items-container">
+            <legend>Items</legend>
+            <div class="item-row">
+                <input type="text" name="items[0][descripcion]" placeholder="Descripcion" required>
+                <input type="number" step="0.01" min="0.01" name="items[0][cantidad]" placeholder="Cantidad" required>
+                <input type="text" name="items[0][unidad]" placeholder="Unidad" required>
+            </div>
+        </fieldset>
+
+        <button type="button" onclick="agregarItem()">+ Agregar item</button>
+        <button type="submit">Crear y enviar</button>
+    </form>
+</article>
+
+<script src="/static/app.js"></script>
+{% endblock %}
