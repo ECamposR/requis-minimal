@@ -12,23 +12,25 @@
 - Pulido UI minimo agregado (`REQ-014`).
 - Administracion de usuarios por admin agregada (`REQ-015`).
 - Formulario de requisicion migrado a selector de catalogo de items (`REQ-016`).
+- Catalogo de items migrado a entidad administrable por admin (`REQ-017`).
 
 ## En progreso
-- Smoke test funcional de creacion de requisiciones con selector de items.
+- Smoke test funcional del nuevo modulo admin de catalogo.
 
 ## Proximo paso exacto
-- Ejecutar smoke test de formulario `/crear`:
-  - Abrir formulario y validar que el item sea selector (no texto libre).
-  - Crear requisicion con 1 y con 2 items del catalogo.
-  - Confirmar que rechaza item fuera de catalogo.
-  - Verificar modal de detalle con formato `cantidad - descripcion`.
+- Ejecutar smoke test integral de catalogo:
+  - Login como `admin` y entrar a `/admin/catalogo-items`.
+  - Crear item nuevo y verificar que aparece en `/crear`.
+  - Editar item y validar cambio en selector.
+  - Desactivar item y validar que desaparece del selector.
+  - Eliminar item y validar que ya no existe en listado.
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.
 - Evitar drift entre especificacion y codigo durante iteraciones rapidas con IA.
 - Pendiente de verificacion real de tests en entorno con dependencias instaladas.
 - Validar end-to-end UI admin en navegador en entorno real.
-- Mantener sincronizado catalogo (si cambia, actualizar backend + frontend).
+- Verificar que no existan requisiciones abiertas con items eliminados del catalogo (aceptable en MVP).
 
 ## Como retomar en 5 minutos
 1. Leer `docs/ai/CONTRACT.md`.

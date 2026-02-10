@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.auth import hash_password
 from app.database import get_db
 from app.main import app
-from app.models import Base, Requisicion, Usuario
+from app.models import Base, CatalogoItem, Requisicion, Usuario
 
 TEST_DB_URL = "sqlite:///./test_requisiciones.db"
 
@@ -45,6 +45,12 @@ def db_session():
                     rol="bodega",
                     departamento="Bodega",
                 ),
+            ]
+        )
+        seed_db.add_all(
+            [
+                CatalogoItem(nombre="Cable UTP Cat6", activo=True),
+                CatalogoItem(nombre="Conector RJ45", activo=True),
             ]
         )
         seed_db.commit()

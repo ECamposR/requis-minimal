@@ -1,4 +1,4 @@
-from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -73,3 +73,11 @@ class Item(Base):
     requisicion: Mapped["Requisicion"] = relationship("Requisicion", back_populates="items")
 
     __table_args__ = (CheckConstraint("cantidad > 0", name="ck_items_cantidad_positive"),)
+
+
+class CatalogoItem(Base):
+    __tablename__ = "catalogo_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    nombre: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

@@ -19,6 +19,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-012` | `done` | Crear tests basicos de flujo feliz (crear, aprobar, entregar).
 - `REQ-015` | `done` | CRUD de usuarios para admin (crear, editar, eliminar) desde web.
 - `REQ-016` | `done` | Cambiar captura de items a catalogo predefinido + selector (sin unidad en UI).
+- `REQ-017` | `done` | Migrar catalogo de items de fijo en codigo a administrable por admin en DB.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

@@ -11,7 +11,6 @@ from urllib.parse import quote_plus
 
 from .auth import authenticate_user, get_current_user, login_user, logout_user
 from .crud import (
-    CATALOGO_ITEMS,
     agregar_item_db,
     crear_requisicion_db,
     parse_items_from_form,
@@ -20,7 +19,7 @@ from .crud import (
     transicionar_requisicion,
 )
 from .database import get_db
-from .models import Requisicion, Usuario
+from .models import CatalogoItem, Requisicion, Usuario
 
 load_dotenv()
 
@@ -112,10 +111,16 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
 
 
 @app.get("/crear")
-def crear_form(request: Request, current_user: Usuario = Depends(get_current_user)):
+def crear_form(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    catalogo_items = (
+        db.query(CatalogoItem)
+        .filter(CatalogoItem.activo.is_(True))
+        .order_by(CatalogoItem.nombre.asc())
+        .all()
+    )
     return templates.TemplateResponse(
         "crear_requisicion.html",
-        template_context(request, current_user, catalogo_items=CATALOGO_ITEMS),
+        template_context(request, current_user, catalogo_items=[i.nombre for i in catalogo_items]),
     )
 
 
@@ -139,8 +144,15 @@ async def crear(
     if not items_data:
         raise HTTPException(status_code=400, detail="Debe agregar al menos un item")
 
+    catalogo_habilitado = {
+        row.nombre
+        for row in db.query(CatalogoItem.nombre).filter(CatalogoItem.activo.is_(True)).all()
+    }
+    if not catalogo_habilitado:
+        raise HTTPException(status_code=400, detail="No hay items activos en catalogo")
+
     for item_data in items_data:
-        if item_data["descripcion"] not in CATALOGO_ITEMS:
+        if item_data["descripcion"] not in catalogo_habilitado:
             raise HTTPException(status_code=400, detail="Item no permitido en catalogo")
         agregar_item_db(db, req.id, **item_data)
 
@@ -417,6 +429,114 @@ def admin_usuario_eliminar(
     db.delete(usuario)
     db.commit()
     return redirect_with_message("/admin/usuarios", "Usuario eliminado", "warning")
+
+
+@app.get("/admin/catalogo-items")
+def admin_catalogo_items(
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    items = db.query(CatalogoItem).order_by(CatalogoItem.nombre.asc()).all()
+    return templates.TemplateResponse(
+        "admin_catalogo_items.html",
+        template_context(request, current_user, items=items),
+    )
+
+
+@app.get("/admin/catalogo-items/nuevo")
+def admin_catalogo_item_nuevo(request: Request, current_user: Usuario = Depends(get_current_user)):
+    ensure_admin(current_user)
+    return templates.TemplateResponse(
+        "admin_catalogo_item_form.html",
+        template_context(request, current_user, modo="crear", item=None),
+    )
+
+
+@app.post("/admin/catalogo-items")
+def admin_catalogo_item_crear(
+    nombre: str = Form(...),
+    activo: str = Form("on"),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    nombre_limpio = nombre.strip()
+    if len(nombre_limpio) < 2:
+        raise HTTPException(status_code=400, detail="Nombre de item invalido")
+
+    existe = db.query(CatalogoItem).filter(CatalogoItem.nombre == nombre_limpio).first()
+    if existe:
+        return redirect_with_message("/admin/catalogo-items", "El item ya existe", "error")
+
+    nuevo = CatalogoItem(nombre=nombre_limpio, activo=(activo == "on"))
+    db.add(nuevo)
+    db.commit()
+    return redirect_with_message("/admin/catalogo-items", "Item creado", "success")
+
+
+@app.get("/admin/catalogo-items/{item_id}/editar")
+def admin_catalogo_item_editar_form(
+    item_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    item = db.query(CatalogoItem).filter(CatalogoItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item no encontrado")
+    return templates.TemplateResponse(
+        "admin_catalogo_item_form.html",
+        template_context(request, current_user, modo="editar", item=item),
+    )
+
+
+@app.post("/admin/catalogo-items/{item_id}/editar")
+def admin_catalogo_item_editar(
+    item_id: int,
+    nombre: str = Form(...),
+    activo: str | None = Form(None),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    item = db.query(CatalogoItem).filter(CatalogoItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item no encontrado")
+
+    nombre_limpio = nombre.strip()
+    if len(nombre_limpio) < 2:
+        raise HTTPException(status_code=400, detail="Nombre de item invalido")
+
+    duplicado = (
+        db.query(CatalogoItem)
+        .filter(CatalogoItem.nombre == nombre_limpio, CatalogoItem.id != item_id)
+        .first()
+    )
+    if duplicado:
+        return redirect_with_message("/admin/catalogo-items", "El item ya existe", "error")
+
+    item.nombre = nombre_limpio
+    item.activo = activo == "on"
+    db.commit()
+    return redirect_with_message("/admin/catalogo-items", "Item actualizado", "success")
+
+
+@app.post("/admin/catalogo-items/{item_id}/eliminar")
+def admin_catalogo_item_eliminar(
+    item_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    item = db.query(CatalogoItem).filter(CatalogoItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item no encontrado")
+    db.delete(item)
+    db.commit()
+    return redirect_with_message("/admin/catalogo-items", "Item eliminado", "warning")
 
 
 @app.get("/api/requisiciones/{req_id}")

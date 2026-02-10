@@ -7,7 +7,7 @@ from app.database import get_db
 from app.main import app
 from app.models import Base, CatalogoItem, Usuario
 
-TEST_DB_URL = "sqlite:///./test_admin_users.db"
+TEST_DB_URL = "sqlite:///./test_admin_catalog_items.db"
 
 
 def _login(client: TestClient, username: str, password: str) -> None:
@@ -42,9 +42,9 @@ def _build_client():
                     rol="user",
                     departamento="Operaciones",
                 ),
+                CatalogoItem(nombre="Cable UTP Cat6", activo=True),
             ]
         )
-        seed_db.add(CatalogoItem(nombre="Cable UTP Cat6", activo=True))
         seed_db.commit()
 
     db = TestingSessionLocal()
@@ -60,50 +60,38 @@ def _build_client():
     return client, db, engine
 
 
-def test_admin_user_crud_flow():
+def test_admin_catalog_item_crud_flow():
     client, db, engine = _build_client()
     try:
         _login(client, "admin", "admin123")
 
         create_resp = client.post(
-            "/admin/usuarios",
-            data={
-                "username": "nuevo.user",
-                "nombre": "Nuevo Usuario",
-                "rol": "aprobador",
-                "departamento": "Operaciones",
-                "password": "nuevo123",
-            },
+            "/admin/catalogo-items",
+            data={"nombre": "Canaleta PVC", "activo": "on"},
             follow_redirects=False,
         )
         assert create_resp.status_code == 303
 
-        nuevo = db.query(Usuario).filter(Usuario.username == "nuevo.user").first()
-        assert nuevo is not None
-        assert nuevo.rol == "aprobador"
+        item = db.query(CatalogoItem).filter(CatalogoItem.nombre == "Canaleta PVC").first()
+        assert item is not None
+        assert item.activo is True
 
         edit_resp = client.post(
-            f"/admin/usuarios/{nuevo.id}/editar",
-            data={
-                "username": "nuevo.user",
-                "nombre": "Nuevo Editado",
-                "rol": "bodega",
-                "departamento": "Bodega",
-                "password": "",
-            },
+            f"/admin/catalogo-items/{item.id}/editar",
+            data={"nombre": "Canaleta PVC 20x12"},
             follow_redirects=False,
         )
         assert edit_resp.status_code == 303
-        db.refresh(nuevo)
-        assert nuevo.nombre == "Nuevo Editado"
-        assert nuevo.rol == "bodega"
+        db.refresh(item)
+        assert item.nombre == "Canaleta PVC 20x12"
+        assert item.activo is False
 
         delete_resp = client.post(
-            f"/admin/usuarios/{nuevo.id}/eliminar",
+            f"/admin/catalogo-items/{item.id}/eliminar",
             follow_redirects=False,
         )
         assert delete_resp.status_code == 303
-        assert db.query(Usuario).filter(Usuario.id == nuevo.id).first() is None
+        assert db.query(CatalogoItem).filter(CatalogoItem.id == item.id).first() is None
     finally:
         client.close()
         db.close()
@@ -111,11 +99,11 @@ def test_admin_user_crud_flow():
         app.dependency_overrides.clear()
 
 
-def test_non_admin_cannot_access_user_admin_routes():
+def test_non_admin_cannot_access_catalog_admin_routes():
     client, db, engine = _build_client()
     try:
         _login(client, "user.ops", "pass123")
-        response = client.get("/admin/usuarios")
+        response = client.get("/admin/catalogo-items")
         assert response.status_code == 403
     finally:
         client.close()

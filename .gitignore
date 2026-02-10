@@ -5,3 +5,4 @@ __pycache__/
 requisiciones.db
 test_requisiciones.db
 test_admin_users.db
+test_admin_catalog_items.db

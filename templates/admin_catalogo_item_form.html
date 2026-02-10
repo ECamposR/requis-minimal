@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{% if modo == 'crear' %}Nuevo Item{% else %}Editar Item{% endif %}{% endblock %}
+{% block content %}
+<h2>{% if modo == 'crear' %}Nuevo Item{% else %}Editar Item{% endif %}</h2>
+
+<form method="POST" action="{% if modo == 'crear' %}/admin/catalogo-items{% else %}/admin/catalogo-items/{{ item.id }}/editar{% endif %}">
+    <label>
+        Nombre
+        <input type="text" name="nombre" required minlength="2" value="{% if item %}{{ item.nombre }}{% endif %}">
+    </label>
+
+    <label>
+        <input type="checkbox" name="activo" {% if not item or item.activo %}checked{% endif %}>
+        Activo
+    </label>
+
+    <button type="submit">{% if modo == 'crear' %}Crear{% else %}Guardar cambios{% endif %}</button>
+    <a href="/admin/catalogo-items" role="button" class="secondary">Cancelar</a>
+</form>
+{% endblock %}

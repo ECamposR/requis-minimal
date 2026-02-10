@@ -5,17 +5,6 @@ from sqlalchemy.orm import Session
 
 from .models import Item, Requisicion
 
-CATALOGO_ITEMS = [
-    "Cable UTP Cat6",
-    "Conector RJ45",
-    "Patch cord 2m",
-    "Canaleta PVC",
-    "Switch 8 puertos",
-    "Tornillo 1/4",
-    "Guantes de seguridad",
-    "Cinta aislante",
-]
-
 UNIDAD_POR_DEFECTO = "unidad"
 
 

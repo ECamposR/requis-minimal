@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Catalogo de Items{% endblock %}
+{% block content %}
+<h2>Catalogo de Items</h2>
+<p><a href="/admin/catalogo-items/nuevo" role="button">Nuevo item</a></p>
+
+{% if items %}
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Activo</th>
+        <th>Acciones</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for item in items %}
+    <tr>
+        <td>{{ item.id }}</td>
+        <td>{{ item.nombre }}</td>
+        <td>{% if item.activo %}Si{% else %}No{% endif %}</td>
+        <td>
+            <a href="/admin/catalogo-items/{{ item.id }}/editar">Editar</a>
+            <form method="POST" action="/admin/catalogo-items/{{ item.id }}/eliminar" style="display:inline-block; margin-left:0.5rem;">
+                <button type="submit" class="secondary">Eliminar</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No hay items en el catalogo.</p>
+{% endif %}
+{% endblock %}

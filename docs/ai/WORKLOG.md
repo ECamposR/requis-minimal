@@ -184,3 +184,23 @@
   - UX de creacion mas simple y consistente: item elegido desde lista predefinida.
   - Menor riesgo de typos y duplicados de item.
   - Compatibilidad mantenida sin migracion de DB (unidad interna por defecto).
+
+## 2026-02-10 17:46 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-017` (catalogo administrable por admin en DB).
+- Cambios:
+  - `app/models.py` (nuevo modelo `CatalogoItem`)
+  - `app/main.py` (lectura de catalogo desde DB, validacion server-side y CRUD admin de catalogo)
+  - `init_db.py` (seed idempotente de usuarios y catalogo)
+  - `templates/base.html` (menu admin a catalogo)
+  - `templates/admin_catalogo_items.html`
+  - `templates/admin_catalogo_item_form.html`
+  - `tests/test_basic_flow.py` (seed de catalogo en fixture)
+  - `tests/test_admin_users.py` (seed de catalogo en fixture)
+  - `tests/test_admin_catalog_items.py` (pruebas CRUD y permisos)
+  - `.gitignore`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Se elimina dependencia de catalogo fijo en codigo.
+  - El administrador puede crear/editar/desactivar/eliminar items desde la web.
+  - `/crear` ahora depende del catalogo activo de DB.

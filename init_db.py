@@ -2,18 +2,13 @@ from sqlalchemy.orm import Session
 
 from app.auth import hash_password
 from app.database import Base, engine
-from app.models import Usuario
+from app.models import CatalogoItem, Usuario
 
 Base.metadata.create_all(bind=engine)
 
 
 def seed_users() -> None:
     with Session(engine) as db:
-        existing = db.query(Usuario).count()
-        if existing > 0:
-            print("Base de datos ya inicializada, no se insertan usuarios de ejemplo.")
-            return
-
         users = [
             Usuario(
                 username="admin",
@@ -44,9 +39,38 @@ def seed_users() -> None:
                 departamento="Bodega",
             ),
         ]
-        db.add_all(users)
+        nuevos_usuarios = 0
+        for user in users:
+            existe = db.query(Usuario).filter(Usuario.username == user.username).first()
+            if existe:
+                continue
+            db.add(user)
+            nuevos_usuarios += 1
+
+        catalogo_base = [
+            "Cable UTP Cat6",
+            "Conector RJ45",
+            "Patch cord 2m",
+            "Canaleta PVC",
+            "Switch 8 puertos",
+            "Tornillo 1/4",
+            "Guantes de seguridad",
+            "Cinta aislante",
+        ]
+        nuevos_items = 0
+        for nombre in catalogo_base:
+            existe = db.query(CatalogoItem).filter(CatalogoItem.nombre == nombre).first()
+            if existe:
+                continue
+            db.add(CatalogoItem(nombre=nombre, activo=True))
+            nuevos_items += 1
+
         db.commit()
-        print("Base de datos inicializada con usuarios de prueba.")
+        print(
+            f"Base de datos inicializada/actualizada. "
+            f"Usuarios nuevos: {nuevos_usuarios}. "
+            f"Items de catalogo nuevos: {nuevos_items}."
+        )
 
 
 if __name__ == "__main__":
