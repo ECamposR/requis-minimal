@@ -7,7 +7,9 @@
     <thead>
     <tr>
         <th>Folio</th>
+        <th>Solicitante</th>
         <th>Departamento</th>
+        <th>Aprobado por</th>
         <th>Justificacion</th>
         <th>Aprobada en</th>
         <th>Entrega</th>
@@ -17,7 +19,9 @@
     {% for req in aprobadas %}
     <tr>
         <td>{{ req.folio }}</td>
+        <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
         <td>{{ req.departamento }}</td>
+        <td>{{ req.aprobador.nombre if req.aprobador else '-' }}</td>
         <td>{{ req.justificacion }}</td>
         <td>{{ req.approved_at }}</td>
         <td>

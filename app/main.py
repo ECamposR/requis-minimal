@@ -18,7 +18,7 @@ from .crud import (
     puede_entregar,
     transicionar_requisicion,
 )
-from .database import get_db
+from .database import get_db, run_migrations
 from .models import CatalogoItem, Requisicion, Usuario
 
 load_dotenv()
@@ -29,6 +29,11 @@ app = FastAPI(title=os.getenv("APP_NAME", "Sistema de Requisiciones MVP"))
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+
+@app.on_event("startup")
+def startup_migrations() -> None:
+    run_migrations()
 
 
 def template_context(request: Request, current_user: Usuario | None = None, **kwargs: object) -> dict[str, object]:
@@ -179,14 +184,21 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
     if current_user.rol not in ["aprobador", "admin"]:
         raise HTTPException(status_code=403, detail="No autorizado")
 
-    query = db.query(Requisicion).filter(Requisicion.estado == "pendiente")
-    if current_user.rol == "aprobador":
-        query = query.filter(Requisicion.departamento == current_user.departamento)
-
-    pendientes = query.order_by(Requisicion.created_at.asc()).all()
+    requisiciones = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.rechazador),
+            joinedload(Requisicion.entregador),
+        )
+        .filter(Requisicion.estado.in_(["pendiente", "aprobada", "rechazada", "entregada"]))
+        .order_by(Requisicion.created_at.desc())
+        .all()
+    )
     return templates.TemplateResponse(
         "aprobar.html",
-        template_context(request, current_user, pendientes=pendientes),
+        template_context(request, current_user, requisiciones=requisiciones),
     )
 
 
@@ -236,6 +248,10 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
 
     aprobadas = (
         db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.aprobador),
+        )
         .filter(Requisicion.estado == "aprobada")
         .order_by(Requisicion.approved_at.asc(), Requisicion.created_at.asc())
         .all()
@@ -543,7 +559,13 @@ def admin_catalogo_item_eliminar(
 def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     req = (
         db.query(Requisicion)
-        .options(joinedload(Requisicion.items))
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.rechazador),
+            joinedload(Requisicion.entregador),
+        )
         .filter(Requisicion.id == req_id)
         .first()
     )
@@ -562,10 +584,14 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
     return {
         "id": req.id,
         "folio": req.folio,
+        "solicitante": req.solicitante.nombre if req.solicitante else None,
         "departamento": req.departamento,
         "estado": req.estado,
         "justificacion": req.justificacion,
         "created_at": req.created_at,
+        "approved_by": req.aprobador.nombre if req.aprobador else None,
+        "rejected_by": req.rechazador.nombre if req.rechazador else None,
+        "delivered_by": req.entregador.nombre if req.entregador else None,
         "delivered_to": req.delivered_to,
         "rejection_reason": req.rejection_reason,
         "items": [

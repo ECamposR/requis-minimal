@@ -1,10 +1,11 @@
 from sqlalchemy.orm import Session
 
 from app.auth import hash_password
-from app.database import Base, engine
+from app.database import Base, engine, run_migrations
 from app.models import CatalogoItem, Usuario
 
 Base.metadata.create_all(bind=engine)
+run_migrations()
 
 
 def seed_users() -> None:

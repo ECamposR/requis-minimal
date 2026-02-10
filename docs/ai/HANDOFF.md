@@ -13,17 +13,24 @@
 - Administracion de usuarios por admin agregada (`REQ-015`).
 - Formulario de requisicion migrado a selector de catalogo de items (`REQ-016`).
 - Catalogo de items migrado a entidad administrable por admin (`REQ-017`).
+- Vista de aprobacion con historial completo para admin/aprobador (`REQ-018`).
+- Trazabilidad de aprobacion/rechazo visible y persistida (`REQ-019`).
+- Trazabilidad de entrega por bodega visible en historial y API (`REQ-020`).
+- Vista de bodega con trazabilidad de solicitante y aprobador (`REQ-021`).
 
 ## En progreso
-- Smoke test funcional del nuevo modulo admin de catalogo.
+- Smoke test funcional de trazabilidad completa incluyendo vista bodega.
 
 ## Proximo paso exacto
-- Ejecutar smoke test integral de catalogo:
-  - Login como `admin` y entrar a `/admin/catalogo-items`.
-  - Crear item nuevo y verificar que aparece en `/crear`.
-  - Editar item y validar cambio en selector.
-  - Desactivar item y validar que desaparece del selector.
-  - Eliminar item y validar que ya no existe en listado.
+- Ejecutar smoke test de aprobacion/historial:
+  - Login como `aprobador` y abrir `/aprobar`.
+  - Verificar visualizacion de requisiciones en estados `pendiente`, `aprobada` y `rechazada`, incluyendo solicitante.
+  - Verificar columna "Gestionado por" para aprobadas/rechazadas/entregadas.
+  - Confirmar que solo puede gestionar pendientes de su departamento.
+  - Login como `admin` y confirmar que puede gestionar cualquier pendiente.
+  - Rechazar una requisicion y confirmar persistencia de actor en historial.
+  - Entregar una requisicion desde bodega y confirmar actor `delivered_by` en historial y modal detalle.
+  - En `/bodega`, verificar columnas `Solicitante` y `Aprobado por`.
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.
@@ -31,6 +38,7 @@
 - Pendiente de verificacion real de tests en entorno con dependencias instaladas.
 - Validar end-to-end UI admin en navegador en entorno real.
 - Verificar que no existan requisiciones abiertas con items eliminados del catalogo (aceptable en MVP).
+- Confirmar migracion de DB existente: columnas `rejected_by` y `rejected_at`.
 
 ## Como retomar en 5 minutos
 1. Leer `docs/ai/CONTRACT.md`.

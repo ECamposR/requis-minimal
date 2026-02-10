@@ -106,6 +106,8 @@ def transicionar_requisicion(
         requisicion.approved_by = actor_id
     elif nuevo_estado == "rechazada":
         requisicion.estado = "rechazada"
+        requisicion.rejected_at = datetime.now()
+        requisicion.rejected_by = actor_id
         requisicion.rejection_reason = rejection_reason
     elif nuevo_estado == "entregada":
         requisicion.estado = "entregada"

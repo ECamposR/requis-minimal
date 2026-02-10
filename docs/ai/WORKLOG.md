@@ -204,3 +204,54 @@
   - Se elimina dependencia de catalogo fijo en codigo.
   - El administrador puede crear/editar/desactivar/eliminar items desde la web.
   - `/crear` ahora depende del catalogo activo de DB.
+
+## 2026-02-10 18:05 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-018` (historial completo en `/aprobar` para admin/aprobador).
+- Cambios:
+  - `app/main.py` (consulta de `pendiente|aprobada|rechazada` en vista `/aprobar`)
+  - `templates/aprobar.html` (columna estado + acciones condicionadas por permiso/estado)
+  - `tests/test_basic_flow.py` (nuevo test de visualizacion de historial completo)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Admin y aprobador ya visualizan historial completo de aprobacion.
+  - Las acciones de aprobar/rechazar siguen restringidas por reglas existentes.
+
+## 2026-02-10 18:22 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-019` (trazabilidad completa en historial de aprobacion).
+- Cambios:
+  - `app/models.py` (nuevos campos `rejected_by`, `rejected_at` y relaciones de usuario actor)
+  - `app/crud.py` (rechazo ahora registra actor y fecha)
+  - `app/database.py` (migracion SQLite automatica de columnas faltantes)
+  - `app/main.py` (startup migration + carga de relaciones para historial/API)
+  - `templates/aprobar.html` (columnas `Solicitante` y `Gestionado por`)
+  - `init_db.py` (ejecuta migracion al inicializar)
+  - `tests/test_basic_flow.py` (test de rechazo con actor y test de historial con nombres)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Historial de aprobacion ahora es trazable por persona que solicita y persona que gestiona.
+  - La informacion de rechazo ya no se pierde: queda actor + timestamp persistidos.
+
+## 2026-02-10 18:34 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-020` (trazabilidad de entrega por bodega).
+- Cambios:
+  - `app/models.py` (relacion `entregador` via `delivered_by`)
+  - `app/main.py` (historial `/aprobar` incluye `entregada` + actor de entrega; API expone `delivered_by`)
+  - `templates/aprobar.html` (columna `Gestionado por` contempla estado `entregada`)
+  - `static/app.js` (modal muestra solicitante y actores: aprobado/rechazado/entregado)
+  - `tests/test_basic_flow.py` (historial cubre estado `entregada` y actor de bodega)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Trazabilidad unificada para todo el ciclo: quien solicito, aprobo/rechazo y entrego.
+
+## 2026-02-10 18:42 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-021` (trazabilidad en vista de bodega).
+- Cambios:
+  - `app/main.py` (carga de relaciones `solicitante` y `aprobador` en `/bodega`)
+  - `templates/bodega.html` (columnas `Solicitante` y `Aprobado por`)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Operacion de bodega ahora ve contexto completo de origen y aprobacion antes de entregar.

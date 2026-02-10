@@ -133,6 +133,36 @@ def test_aprobar_requisicion(client: TestClient, db_session: Session):
     assert req.approved_at is not None
 
 
+def test_rechazar_requisicion_guarda_actor(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req = Requisicion(
+        folio="REQ-0009",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="Requisicion para prueba de rechazo",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "aprob.ops", "pass123")
+    response = client.post(
+        f"/rechazar/{req.id}",
+        data={"razon": "Sin presupuesto"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "rechazada"
+    assert req.rejected_by == aprobador.id
+    assert req.rejected_at is not None
+    assert req.rejection_reason == "Sin presupuesto"
+
+
 def test_crear_requisicion_rechaza_item_fuera_catalogo(client: TestClient):
     login(client, "user.ops", "pass123")
 
@@ -181,3 +211,67 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
     assert req.delivered_by == bodega.id
     assert req.delivered_to == "Juan Perez"
     assert req.delivered_at is not None
+
+
+def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req_pendiente = Requisicion(
+        folio="REQ-0101",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="Pendiente ops",
+    )
+    req_aprobada = Requisicion(
+        folio="REQ-0102",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="Aprobada ops",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+    )
+    req_rechazada = Requisicion(
+        folio="REQ-0103",
+        solicitante_id=user.id,
+        departamento="Ventas",
+        estado="rechazada",
+        justificacion="Rechazada ventas",
+        rejected_by=aprobador.id,
+        rejected_at=datetime.now(),
+        rejection_reason="No procede",
+    )
+    req_entregada = Requisicion(
+        folio="REQ-0104",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="entregada",
+        justificacion="Entregada ops",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivered_to="Usuario Ops",
+    )
+    db_session.add_all([req_pendiente, req_aprobada, req_rechazada, req_entregada])
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/aprobar")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-0101" in html
+    assert "REQ-0102" in html
+    assert "REQ-0103" in html
+    assert "REQ-0104" in html
+    assert "pendiente" in html
+    assert "aprobada" in html
+    assert "rechazada" in html
+    assert "entregada" in html
+    assert "Usuario Ops" in html
+    assert "Aprobador Ops" in html
+    assert "Bodega Uno" in html

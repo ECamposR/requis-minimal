@@ -58,6 +58,8 @@ Documento derivado para implementacion rapida por IA, sin tocar el original.
 - `created_at`
 - `approved_at`
 - `approved_by` FK usuarios
+- `rejected_at`
+- `rejected_by` FK usuarios
 - `delivered_at`
 - `delivered_by` FK usuarios
 - `delivered_to` (nombre de quien recibe)

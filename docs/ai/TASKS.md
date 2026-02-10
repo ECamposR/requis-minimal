@@ -20,6 +20,10 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-015` | `done` | CRUD de usuarios para admin (crear, editar, eliminar) desde web.
 - `REQ-016` | `done` | Cambiar captura de items a catalogo predefinido + selector (sin unidad en UI).
 - `REQ-017` | `done` | Migrar catalogo de items de fijo en codigo a administrable por admin en DB.
+- `REQ-018` | `done` | Permitir a admin/aprobador ver historial completo en `/aprobar` (pendiente/aprobada/rechazada).
+- `REQ-019` | `done` | Trazabilidad en aprobacion: mostrar solicitante y actor (aprobador/rechazador) + persistir `rejected_by/rejected_at`.
+- `REQ-020` | `done` | Trazabilidad de bodega: mostrar actor de entrega (`delivered_by`) en historial y detalle.
+- `REQ-021` | `done` | En vista bodega mostrar quien solicito y quien aprobo cada requisicion.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

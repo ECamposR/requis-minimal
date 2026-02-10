@@ -36,7 +36,12 @@ function verDetalle(id) {
 
             content.innerHTML = `
                 <p><strong>Folio:</strong> ${data.folio}</p>
+                <p><strong>Solicitante:</strong> ${data.solicitante || "-"}</p>
                 <p><strong>Justificacion:</strong> ${data.justificacion}</p>
+                <p><strong>Aprobado por:</strong> ${data.approved_by || "-"}</p>
+                <p><strong>Rechazado por:</strong> ${data.rejected_by || "-"}</p>
+                <p><strong>Entregado por:</strong> ${data.delivered_by || "-"}</p>
+                <p><strong>Recibio:</strong> ${data.delivered_to || "-"}</p>
                 <ul>${(data.items || []).map((i) => `<li>${i.cantidad} - ${i.descripcion}</li>`).join("")}</ul>
             `;
             modal.showModal();

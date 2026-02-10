@@ -19,6 +19,18 @@ class Usuario(Base):
         back_populates="solicitante",
         foreign_keys="Requisicion.solicitante_id",
     )
+    aprobaciones_realizadas: Mapped[list["Requisicion"]] = relationship(
+        "Requisicion",
+        foreign_keys="Requisicion.approved_by",
+    )
+    rechazos_realizados: Mapped[list["Requisicion"]] = relationship(
+        "Requisicion",
+        foreign_keys="Requisicion.rejected_by",
+    )
+    entregas_realizadas: Mapped[list["Requisicion"]] = relationship(
+        "Requisicion",
+        foreign_keys="Requisicion.delivered_by",
+    )
 
 
 class Requisicion(Base):
@@ -37,6 +49,8 @@ class Requisicion(Base):
     delivered_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     delivered_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     delivered_to: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    rejected_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
+    rejected_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     solicitante: Mapped["Usuario"] = relationship(
@@ -44,6 +58,9 @@ class Requisicion(Base):
         back_populates="requisiciones",
         foreign_keys=[solicitante_id],
     )
+    aprobador: Mapped["Usuario | None"] = relationship("Usuario", foreign_keys=[approved_by])
+    rechazador: Mapped["Usuario | None"] = relationship("Usuario", foreign_keys=[rejected_by])
+    entregador: Mapped["Usuario | None"] = relationship("Usuario", foreign_keys=[delivered_by])
     items: Mapped[list["Item"]] = relationship(
         "Item",
         back_populates="requisicion",
