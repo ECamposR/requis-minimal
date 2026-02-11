@@ -22,9 +22,12 @@
 - Vista bodega con historial de entregadas (`REQ-024`).
 - Boton `Ver` en historiales de aprobar y bodega (`REQ-025`).
 - Comentarios de proceso en aprobar/rechazar/entregar (`REQ-026`).
+- UI compacta para tablas/acciones y flujo de bodega con resultado de entrega (`REQ-027`).
+- Entrega parcial en 2 pasos con edicion de cantidades por item (`REQ-028`).
 
 ## En progreso
-- Smoke test funcional de comentarios operativos.
+- Smoke test funcional de `REQ-027` en navegador y tests.
+- Smoke test funcional de `REQ-028` en navegador y tests.
 
 ## Proximo paso exacto
 - Ejecutar smoke test de aprobacion/historial:
@@ -41,7 +44,10 @@
   - Reactivar usuario y validar que recupera acceso.
   - En `/bodega`, verificar seccion "Historial de entregadas" con actor de entrega.
   - Verificar en `/aprobar` y `/bodega` que el boton `Ver` abre detalle con items.
-  - Verificar en `/aprobar` y `/bodega` que comentarios se guardan y se ven en modal detalle.
+- Verificar en `/aprobar` y `/bodega` que comentarios se guardan y se ven en modal detalle.
+- Verificar en `/bodega` registro de resultado: `completa`, `parcial` y `no_entregada`.
+- Verificar que `parcial` y `no_entregada` exigen comentario y que `no_entregada` permite dejar vacio "Recibe".
+- Verificar que al elegir `parcial` redirige a `/entregar/{id}/parcial`, permite editar cantidades entregadas por item y guarda `cantidad_entregada`.
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.

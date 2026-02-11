@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.auth import hash_password
 from app.database import get_db
 from app.main import app
-from app.models import Base, CatalogoItem, Requisicion, Usuario
+from app.models import Base, CatalogoItem, Item, Requisicion, Usuario
 
 TEST_DB_URL = "sqlite:///./test_requisiciones.db"
 
@@ -207,7 +207,11 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
     login(client, "bodega.1", "pass123")
     response = client.post(
         f"/entregar/{req.id}",
-        data={"delivered_to": "Juan Perez", "comentario": "Entregado completo y verificado"},
+        data={
+            "resultado": "completa",
+            "delivered_to": "Juan Perez",
+            "comentario": "Entregado completo y verificado",
+        },
         follow_redirects=False,
     )
 
@@ -215,6 +219,7 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
     db_session.refresh(req)
     assert req.estado == "entregada"
     assert req.delivered_by == bodega.id
+    assert req.delivery_result == "completa"
     assert req.delivered_to == "Juan Perez"
     assert req.delivered_at is not None
     assert req.delivery_comment == "Entregado completo y verificado"
@@ -222,11 +227,110 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
     vista_bodega = client.get("/bodega")
     assert vista_bodega.status_code == 200
     html = vista_bodega.text
-    assert "Historial de entregadas" in html
+    assert "Historial de bodega" in html
     assert "REQ-0001" in html
     assert "Bodega Uno" in html
     assert "modal-detalle" in html
     assert "Ver" in html
+
+
+def test_bodega_puede_marcar_entrega_parcial(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req = Requisicion(
+        folio="REQ-0011",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="Entrega parcial por faltante",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+    db_session.add(
+        Item(
+            requisicion_id=req.id,
+            descripcion="Cable UTP Cat6",
+            cantidad=1.0,
+            unidad="unidad",
+        )
+    )
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "bodega.1", "pass123")
+    response_inicio = client.post(
+        f"/entregar/{req.id}",
+        data={"resultado": "parcial"},
+        follow_redirects=False,
+    )
+    assert response_inicio.status_code == 303
+    assert response_inicio.headers["location"] == f"/entregar/{req.id}/parcial"
+
+    form_parcial = client.get(f"/entregar/{req.id}/parcial")
+    assert form_parcial.status_code == 200
+    assert "Entrega Parcial" in form_parcial.text
+
+    item = req.items[0]
+    response = client.post(
+        f"/entregar/{req.id}/parcial",
+        data={
+            f"entregado_{item.id}": "0.5",
+            "delivered_to": "Juan Perez",
+            "comentario": "Falto 1 item por quiebre de stock",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+    assert req.delivered_by == bodega.id
+    assert req.delivery_result == "parcial"
+    assert req.delivery_comment == "Falto 1 item por quiebre de stock"
+    assert req.items[0].cantidad_entregada == 0.5
+
+
+def test_bodega_puede_marcar_no_entregada(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req = Requisicion(
+        folio="REQ-0012",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="Sin inventario",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "bodega.1", "pass123")
+    response = client.post(
+        f"/entregar/{req.id}",
+        data={
+            "resultado": "no_entregada",
+            "delivered_to": "",
+            "comentario": "No hay stock ni sustituto",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+    assert req.delivered_by == bodega.id
+    assert req.delivery_result == "no_entregada"
+    assert req.delivered_to is None
+    assert req.delivery_comment == "No hay stock ni sustituto"
 
 
 def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_session: Session):

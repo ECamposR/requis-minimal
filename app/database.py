@@ -50,5 +50,14 @@ def run_migrations() -> None:
             conn.execute(text("ALTER TABLE requisiciones ADD COLUMN approval_comment TEXT"))
         if "rejection_comment" not in columns:
             conn.execute(text("ALTER TABLE requisiciones ADD COLUMN rejection_comment TEXT"))
+        if "delivery_result" not in columns:
+            conn.execute(text("ALTER TABLE requisiciones ADD COLUMN delivery_result VARCHAR(20)"))
         if "delivery_comment" not in columns:
             conn.execute(text("ALTER TABLE requisiciones ADD COLUMN delivery_comment TEXT"))
+
+        item_columns = {
+            row[1]
+            for row in conn.execute(text("PRAGMA table_info(items)")).fetchall()
+        }
+        if "cantidad_entregada" not in item_columns:
+            conn.execute(text("ALTER TABLE items ADD COLUMN cantidad_entregada FLOAT"))

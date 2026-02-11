@@ -101,6 +101,7 @@ def transicionar_requisicion(
     rejection_reason: str | None = None,
     rejection_comment: str | None = None,
     delivered_to: str | None = None,
+    delivery_result: str | None = None,
     delivery_comment: str | None = None,
 ) -> Requisicion:
     if nuevo_estado == "aprobada":
@@ -119,6 +120,7 @@ def transicionar_requisicion(
         requisicion.delivered_at = datetime.now()
         requisicion.delivered_by = actor_id
         requisicion.delivered_to = delivered_to
+        requisicion.delivery_result = delivery_result or "completa"
         requisicion.delivery_comment = delivery_comment
     else:
         raise ValueError("Estado no soportado")

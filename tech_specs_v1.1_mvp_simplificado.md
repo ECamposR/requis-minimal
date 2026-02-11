@@ -9,6 +9,7 @@ Documento derivado para implementacion rapida por IA, sin tocar el original.
 
 ## 2. Alcance MVP (cerrado)
 - Flujo unico: `pendiente -> aprobada|rechazada -> entregada`.
+  - En `entregada`, bodega registra resultado: `completa|parcial|no_entregada`.
 - Sin borradores.
 - Sin edicion luego de enviar.
 - Sin notificaciones automaticas.
@@ -55,6 +56,7 @@ Documento derivado para implementacion rapida por IA, sin tocar el original.
 - `solicitante_id` FK usuarios
 - `departamento`
 - `estado` (`pendiente|aprobada|rechazada|entregada`)
+- `delivery_result` (`completa|parcial|no_entregada|null`)
 - `justificacion`
 - `created_at`
 - `approved_at`
@@ -74,6 +76,7 @@ Documento derivado para implementacion rapida por IA, sin tocar el original.
 - `requisicion_id` FK requisiciones
 - `descripcion` (seleccionada desde catalogo activo administrado por `admin`)
 - `cantidad > 0`
+- `cantidad_entregada` (`null|>=0`, usado para trazabilidad de salida de bodega)
 - `unidad` (interna, no capturada en UI MVP)
 
 ### catalogo_items
@@ -98,6 +101,8 @@ Documento derivado para implementacion rapida por IA, sin tocar el original.
 - `POST /rechazar/{id}`
 - `GET /bodega`
 - `POST /entregar/{id}`
+- `GET /entregar/{id}/parcial`
+- `POST /entregar/{id}/parcial`
 
 ### JSON
 - `GET /api/requisiciones/{id}` detalle para modales
@@ -106,6 +111,8 @@ Documento derivado para implementacion rapida por IA, sin tocar el original.
 ## 8. Reglas de negocio clave
 - Solo se puede aprobar/rechazar si estado actual es `pendiente`.
 - Solo se puede entregar si estado actual es `aprobada`.
+- Para `parcial` y `no_entregada`, comentario de bodega obligatorio.
+- Para `parcial`, bodega debe confirmar cantidades realmente entregadas por item.
 - `aprobador` solo opera requisiciones de su departamento.
 - `admin` puede ver y operar todo.
 - Debe existir al menos 1 item al crear requisicion.

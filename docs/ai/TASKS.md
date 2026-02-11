@@ -29,6 +29,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-024` | `done` | Vista bodega con historial de requisiciones entregadas (ya no desaparecen tras procesar).
 - `REQ-025` | `done` | Boton `Ver` (detalle con items) habilitado en historiales de aprobar y bodega.
 - `REQ-026` | `done` | Comentarios de proceso en aprobar/rechazar/entregar para trazabilidad operativa.
+- `REQ-027` | `done` | Compactar UI de tablas/formularios y ampliar entrega de bodega con resultado (`completa`, `parcial`, `no_entregada`).
+- `REQ-028` | `done` | Flujo de entrega parcial en 2 pasos: redirigir a edicion de cantidades entregadas por item y cerrar con trazabilidad.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

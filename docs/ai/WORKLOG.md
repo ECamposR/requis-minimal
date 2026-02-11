@@ -320,3 +320,63 @@
   - `docs/ai/HANDOFF.md`
 - Resultado:
   - Proceso queda mejor documentado por cada actor sin romper flujo actual.
+
+## 2026-02-11 16:05 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-027` (UI compacta + resultados de entrega en bodega).
+- Cambios:
+  - `static/style.css` (compactacion de tablas, inputs, botones y formularios inline)
+  - `app/models.py` (nuevo campo `delivery_result` en `Requisicion`)
+  - `app/database.py` (migracion incremental para `delivery_result`)
+  - `app/crud.py` (persistencia de `delivery_result` en transicion a entrega)
+  - `app/main.py` (validacion y guardado de `resultado` en `/entregar/{id}`)
+  - `templates/bodega.html` (selector de resultado y columna de resultado en historial)
+  - `templates/aprobar.html` (formularios compactos)
+  - `static/app.js` (detalle muestra `Resultado entrega`)
+  - `tests/test_basic_flow.py` (cobertura para entrega completa/parcial/no_entregada)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Bodega ahora registra si la entrega fue completa, parcial o no entregada.
+  - Cuando el resultado es parcial o no entregada, el comentario es obligatorio para trazabilidad.
+  - La UI en tablas operativas queda mas compacta para soportar campos/acciones adicionales.
+
+## 2026-02-11 16:26 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-028` (entrega parcial editable por item para trazabilidad real).
+- Cambios:
+  - `app/models.py` (campo `Item.cantidad_entregada`)
+  - `app/database.py` (migracion incremental de `cantidad_entregada` en `items`)
+  - `app/main.py` (flujo de bodega: parcial en 2 pasos, rutas `/entregar/{id}/parcial` GET+POST)
+  - `templates/bodega.html` (aviso de redireccion para parcial)
+  - `templates/bodega_entrega_parcial.html` (pantalla de edicion de cantidades)
+  - `static/app.js` (detalle muestra solicitado vs entregado)
+  - `tests/test_basic_flow.py` (test de flujo parcial en 2 pasos y persistencia de cantidades)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Bodega ya puede registrar entrega parcial con cantidades reales por item.
+  - La requisicion se marca `entregada` solo al confirmar esa edicion parcial.
+  - Se mantiene trazabilidad de resultado, actor, receptor, comentario y cantidades efectivamente entregadas.
+
+## 2026-02-11 16:41 UTC-6 | tool: Codex CLI
+- Objetivo: Compactacion UI mas agresiva en vistas operativas (aprobacion y bodega).
+- Cambios:
+  - `static/style.css` (override de variables Pico para modo denso, tabla compacta, truncado, acciones colapsables)
+  - `templates/aprobar.html` (acciones en `details/summary`, columnas compactas)
+  - `templates/bodega.html` (procesamiento en `details/summary`, columnas compactas)
+- Resultado:
+  - Menor uso horizontal por fila y mayor legibilidad en pantallas medianas.
+  - Formulario de acciones solo se expande cuando se necesita, reduciendo aspecto apiñado.
+
+## 2026-02-11 16:49 UTC-6 | tool: Codex CLI
+- Objetivo: Iterar densidad UI a nivel intermedio (menos agresiva que version compacta extrema).
+- Cambios:
+  - `static/style.css` (tipografia, espaciados y altura de controles en punto medio).
+- Resultado:
+  - Se conserva ganancia de espacio respecto al estado original, pero con mejor legibilidad y menos compresion visual.
+
+## 2026-02-11 16:55 UTC-6 | tool: Codex CLI
+- Objetivo: Probar incremento de escala visual +10% sobre el ajuste intermedio.
+- Cambios:
+  - `static/style.css` (aumento de `--pico-font-size`, tamaño de tablas y controles).
+- Resultado:
+  - Interfaz más grande sin perder el layout compacto en acciones/tablas.

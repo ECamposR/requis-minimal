@@ -3,18 +3,18 @@
 {% block content %}
 <h2>Aprobar Requisiciones</h2>
 {% if requisiciones %}
-<table>
+<table class="table-compact">
     <thead>
     <tr>
-        <th>Folio</th>
-        <th>Estado</th>
+        <th class="col-folio">Folio</th>
+        <th class="col-estado">Estado</th>
         <th>Solicitante</th>
         <th>Departamento</th>
         <th>Justificacion</th>
-        <th>Fecha</th>
+        <th class="col-fecha">Fecha</th>
         <th>Gestionado por</th>
-        <th>Detalle</th>
-        <th>Acciones</th>
+        <th class="col-detalle">Detalle</th>
+        <th class="col-acciones">Acciones</th>
     </tr>
     </thead>
     <tbody>
@@ -24,7 +24,7 @@
         <td><span class="badge badge-{{ req.estado }}">{{ req.estado }}</span></td>
         <td>{{ req.solicitante.nombre }}</td>
         <td>{{ req.departamento }}</td>
-        <td>{{ req.justificacion }}</td>
+        <td class="truncate" title="{{ req.justificacion }}">{{ req.justificacion }}</td>
         <td>{{ req.created_at }}</td>
         <td>
             {% if req.estado == 'aprobada' and req.aprobador %}
@@ -40,19 +40,22 @@
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td>
             {% if req.estado == 'pendiente' and (current_user.rol == 'admin' or req.departamento == current_user.departamento) %}
-            <form method="POST" action="/aprobar/{{ req.id }}" style="display:inline-block;">
-                <input type="text" name="comentario" placeholder="Comentario (opcional)">
-                <button type="submit">Aprobar</button>
-            </form>
-            <form method="POST" action="/rechazar/{{ req.id }}" style="display:inline-block;">
-                <input type="text" name="razon" required minlength="3" placeholder="Razon rechazo">
-                <input type="text" name="comentario" placeholder="Comentario (opcional)">
-                <button type="submit" class="secondary">Rechazar</button>
-            </form>
+            <details class="accion-toggle">
+                <summary>Gestionar</summary>
+                <form method="POST" action="/aprobar/{{ req.id }}" class="compact-form">
+                    <input type="text" name="comentario" placeholder="Comentario (opcional)">
+                    <button type="submit">Aprobar</button>
+                </form>
+                <form method="POST" action="/rechazar/{{ req.id }}" class="compact-form">
+                    <input type="text" name="razon" required minlength="3" placeholder="Razon rechazo">
+                    <input type="text" name="comentario" placeholder="Comentario (opcional)">
+                    <button type="submit" class="secondary">Rechazar</button>
+                </form>
+            </details>
             {% elif req.estado == 'pendiente' %}
-            <small>Sin permiso para gestionar</small>
+            <small class="accion-text">Sin permiso para gestionar</small>
             {% else %}
-            <small>Sin acciones</small>
+            <small class="accion-text">Sin acciones</small>
             {% endif %}
         </td>
     </tr>

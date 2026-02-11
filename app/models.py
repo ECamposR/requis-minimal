@@ -54,6 +54,7 @@ class Requisicion(Base):
     delivered_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     delivered_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     delivered_to: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    delivery_result: Mapped[str | None] = mapped_column(String(20), nullable=True)
     delivery_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     rejected_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     rejected_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
@@ -104,6 +105,7 @@ class Item(Base):
     )
     descripcion: Mapped[str] = mapped_column(Text, nullable=False)
     cantidad: Mapped[float] = mapped_column(Float, nullable=False)
+    cantidad_entregada: Mapped[float | None] = mapped_column(Float, nullable=True)
     unidad: Mapped[str] = mapped_column(String(40), nullable=False)
 
     requisicion: Mapped["Requisicion"] = relationship("Requisicion", back_populates="items")

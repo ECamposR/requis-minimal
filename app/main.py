@@ -299,7 +299,8 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
 @app.post("/entregar/{req_id}")
 def entregar(
     req_id: int,
-    delivered_to: str = Form(...),
+    delivered_to: str = Form(""),
+    resultado: str = Form("completa"),
     comentario: str = Form(""),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -310,9 +311,122 @@ def entregar(
     if not puede_entregar(req, current_user.rol):
         raise HTTPException(status_code=403, detail="No autorizado")
 
+    resultados_validos = {"completa", "parcial", "no_entregada"}
+    if resultado not in resultados_validos:
+        raise HTTPException(status_code=400, detail="Resultado de entrega invalido")
+
+    if resultado == "parcial":
+        return RedirectResponse(url=f"/entregar/{req_id}/parcial", status_code=303)
+
     delivered_to_limpio = delivered_to.strip()
+    comentario_limpio = comentario.strip()
+    if resultado in {"completa", "parcial"} and len(delivered_to_limpio) < 3:
+        raise HTTPException(status_code=400, detail="El nombre de quien recibe debe tener al menos 3 caracteres")
+    if resultado in {"parcial", "no_entregada"} and len(comentario_limpio) < 5:
+        raise HTTPException(
+            status_code=400,
+            detail="Para entrega parcial o no entregada, agrega comentario (minimo 5 caracteres)",
+        )
+
+    transicionar_requisicion(
+        db,
+        req,
+        nuevo_estado="entregada",
+        actor_id=current_user.id,
+        delivered_to=delivered_to_limpio or None,
+        delivery_result=resultado,
+        delivery_comment=comentario_limpio or None,
+    )
+    if resultado == "completa":
+        for item in req.items:
+            item.cantidad_entregada = item.cantidad
+        db.commit()
+    if resultado == "no_entregada":
+        for item in req.items:
+            item.cantidad_entregada = 0
+        db.commit()
+    mensajes = {
+        "completa": ("Requisicion marcada como entrega completa", "success"),
+        "parcial": ("Requisicion marcada como entrega parcial", "warning"),
+        "no_entregada": ("Requisicion registrada como no entregada", "warning"),
+    }
+    msg, tipo = mensajes[resultado]
+    return redirect_with_message("/bodega", msg, tipo)
+
+
+@app.get("/entregar/{req_id}/parcial")
+def entrega_parcial_form(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.items), joinedload(Requisicion.solicitante), joinedload(Requisicion.aprobador))
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if not puede_entregar(req, current_user.rol):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    return templates.TemplateResponse(
+        "bodega_entrega_parcial.html",
+        template_context(request, current_user, req=req),
+    )
+
+
+@app.post("/entregar/{req_id}/parcial")
+async def entrega_parcial_guardar(
+    req_id: int,
+    request: Request,
+    delivered_to: str = Form(...),
+    comentario: str = Form(...),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.items))
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if not puede_entregar(req, current_user.rol):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    delivered_to_limpio = delivered_to.strip()
+    comentario_limpio = comentario.strip()
     if len(delivered_to_limpio) < 3:
         raise HTTPException(status_code=400, detail="El nombre de quien recibe debe tener al menos 3 caracteres")
+    if len(comentario_limpio) < 5:
+        raise HTTPException(status_code=400, detail="Comentario minimo de 5 caracteres para entrega parcial")
+
+    form_data = await request.form()
+    total_entregado = 0.0
+    parcial_detectada = False
+    for item in req.items:
+        raw = str(form_data.get(f"entregado_{item.id}", "0")).strip() or "0"
+        try:
+            entregado = float(raw)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Cantidad entregada invalida") from exc
+        if entregado < 0:
+            raise HTTPException(status_code=400, detail="Cantidad entregada no puede ser negativa")
+        if entregado > item.cantidad:
+            raise HTTPException(status_code=400, detail="Cantidad entregada no puede exceder la solicitada")
+        item.cantidad_entregada = entregado
+        total_entregado += entregado
+        if entregado < item.cantidad:
+            parcial_detectada = True
+
+    if total_entregado <= 0:
+        raise HTTPException(status_code=400, detail="Debe entregar al menos una cantidad para marcar parcial")
+    if not parcial_detectada:
+        raise HTTPException(status_code=400, detail="Si entregaste todo, usa resultado completa")
 
     transicionar_requisicion(
         db,
@@ -320,9 +434,10 @@ def entregar(
         nuevo_estado="entregada",
         actor_id=current_user.id,
         delivered_to=delivered_to_limpio,
-        delivery_comment=comentario.strip() or None,
+        delivery_result="parcial",
+        delivery_comment=comentario_limpio,
     )
-    return redirect_with_message("/bodega", "Requisicion marcada como entregada", "success")
+    return redirect_with_message("/bodega", "Requisicion marcada como entrega parcial", "warning")
 
 
 @app.get("/admin/usuarios")
@@ -695,10 +810,16 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "rejection_comment": req.rejection_comment,
         "delivered_by": req.entregador.nombre if req.entregador else None,
         "delivered_to": req.delivered_to,
+        "delivery_result": req.delivery_result,
         "delivery_comment": req.delivery_comment,
         "rejection_reason": req.rejection_reason,
         "items": [
-            {"descripcion": item.descripcion, "cantidad": item.cantidad, "unidad": item.unidad}
+            {
+                "descripcion": item.descripcion,
+                "cantidad": item.cantidad,
+                "cantidad_entregada": item.cantidad_entregada,
+                "unidad": item.unidad,
+            }
             for item in req.items
         ],
     }

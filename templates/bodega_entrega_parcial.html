@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Entrega Parcial{% endblock %}
+{% block content %}
+<h2>Entrega Parcial</h2>
+<p><strong>Folio:</strong> {{ req.folio }}</p>
+<p><strong>Solicitante:</strong> {{ req.solicitante.nombre if req.solicitante else '-' }}</p>
+<p><strong>Aprobado por:</strong> {{ req.aprobador.nombre if req.aprobador else '-' }}</p>
+<p><strong>Justificacion:</strong> {{ req.justificacion }}</p>
+
+<form method="POST" action="/entregar/{{ req.id }}/parcial">
+    <table>
+        <thead>
+        <tr>
+            <th>Item</th>
+            <th>Solicitado</th>
+            <th>Entregado</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in req.items %}
+        <tr>
+            <td>{{ item.descripcion }}</td>
+            <td>{{ item.cantidad }}</td>
+            <td>
+                <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="{{ item.cantidad }}"
+                    name="entregado_{{ item.id }}"
+                    value="{{ item.cantidad_entregada if item.cantidad_entregada is not none else 0 }}"
+                    required
+                >
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <label>
+        Recibe
+        <input type="text" name="delivered_to" minlength="3" required>
+    </label>
+    <label>
+        Comentario de entrega parcial
+        <input type="text" name="comentario" minlength="5" required placeholder="Ej: faltante por quiebre de stock">
+    </label>
+    <button type="submit">Confirmar entrega parcial</button>
+    <a href="/bodega" role="button" class="secondary">Cancelar</a>
+</form>
+{% endblock %}

@@ -44,9 +44,10 @@ function verDetalle(id) {
                 <p><strong>Razon rechazo:</strong> ${data.rejection_reason || "-"}</p>
                 <p><strong>Comentario rechazo:</strong> ${data.rejection_comment || "-"}</p>
                 <p><strong>Entregado por:</strong> ${data.delivered_by || "-"}</p>
+                <p><strong>Resultado entrega:</strong> ${data.delivery_result || "-"}</p>
                 <p><strong>Recibio:</strong> ${data.delivered_to || "-"}</p>
                 <p><strong>Comentario entrega:</strong> ${data.delivery_comment || "-"}</p>
-                <ul>${(data.items || []).map((i) => `<li>${i.cantidad} - ${i.descripcion}</li>`).join("")}</ul>
+                <ul>${(data.items || []).map((i) => `<li>${i.descripcion}: solicitado ${i.cantidad} / entregado ${i.cantidad_entregada ?? "-"}</li>`).join("")}</ul>
             `;
             modal.showModal();
         });

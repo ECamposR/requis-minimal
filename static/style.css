@@ -1,8 +1,114 @@
+:root {
+    --pico-font-size: 103%;
+    --pico-spacing: 0.85rem;
+    --pico-form-element-spacing-vertical: 0.46rem;
+    --pico-form-element-spacing-horizontal: 0.62rem;
+    --pico-nav-element-spacing-vertical: 0.42rem;
+}
+
 .item-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto;
+    grid-template-columns: 2fr 1fr auto;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
+}
+
+main.container {
+    max-width: 1600px;
+}
+
+table {
+    font-size: 0.97rem;
+}
+
+table th,
+table td {
+    padding: 0.42rem 0.52rem;
+    vertical-align: top;
+}
+
+input,
+select,
+textarea,
+button {
+    font-size: 0.95rem;
+}
+
+button,
+[role="button"] {
+    padding: 0.32rem 0.56rem;
+    min-height: auto;
+}
+
+.compact-form {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.compact-form input,
+.compact-form select {
+    margin: 0;
+    min-width: 7.1rem;
+    max-width: 10.2rem;
+    height: 1.95rem;
+}
+
+.compact-form button {
+    margin: 0;
+    height: 1.95rem;
+}
+
+.table-compact {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.table-compact .col-folio {
+    width: 6.5rem;
+}
+
+.table-compact .col-estado {
+    width: 6.5rem;
+}
+
+.table-compact .col-fecha {
+    width: 9.5rem;
+}
+
+.table-compact .col-detalle {
+    width: 4.5rem;
+}
+
+.table-compact .col-acciones {
+    width: 15.8rem;
+}
+
+.truncate {
+    max-width: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.accion-toggle summary {
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.accion-toggle[open] {
+    min-width: 14rem;
+}
+
+.accion-toggle .compact-form {
+    margin-top: 0.3rem;
+}
+
+.accion-text {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
 }
 
 .alert {
@@ -57,4 +163,9 @@
 .badge-info {
     background: #d8eef9;
     color: #18516d;
+}
+
+.badge-muted {
+    background: #eceff3;
+    color: #425466;
 }
