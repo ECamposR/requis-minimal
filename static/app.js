@@ -1,5 +1,20 @@
 let itemCount = 1;
 
+function escapeHtml(text) {
+    const value = String(text ?? "");
+    return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function fmtQty(value) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
+    return Number(value).toLocaleString("es-ES", { maximumFractionDigits: 2 });
+}
+
 function renderItemOptions() {
     const catalogo = window.CATALOGO_ITEMS || [];
     const options = ['<option value="">Seleccionar item...</option>'];
@@ -33,6 +48,16 @@ function verDetalle(id) {
             const content = document.getElementById("modal-content");
             const modal = document.getElementById("modal-detalle");
             if (!content || !modal) return;
+            const items = Array.isArray(data.items) ? data.items : [];
+            const showDelivered = items.some((i) => i.cantidad_entregada !== null && i.cantidad_entregada !== undefined);
+            const rows = items.map((i) => `
+                <tr>
+                    <td>${escapeHtml(i.descripcion || "-")}</td>
+                    <td class="qty-col">${fmtQty(i.cantidad)}</td>
+                    ${showDelivered ? `<td class="qty-col">${fmtQty(i.cantidad_entregada)}</td>` : ""}
+                </tr>
+            `).join("");
+            const emptyColspan = showDelivered ? 3 : 2;
 
             content.innerHTML = `
                 <p><strong>Folio:</strong> ${data.folio}</p>
@@ -47,7 +72,21 @@ function verDetalle(id) {
                 <p><strong>Resultado entrega:</strong> ${data.delivery_result || "-"}</p>
                 <p><strong>Recibio:</strong> ${data.delivered_to || "-"}</p>
                 <p><strong>Comentario entrega:</strong> ${data.delivery_comment || "-"}</p>
-                <ul>${(data.items || []).map((i) => `<li>${i.descripcion}: solicitado ${i.cantidad} / entregado ${i.cantidad_entregada ?? "-"}</li>`).join("")}</ul>
+                <h4>Items</h4>
+                <div class="detalle-items-wrap">
+                    <table class="detalle-items-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th class="qty-col">Cant. solicitada</th>
+                                ${showDelivered ? '<th class="qty-col">Cant. despachada</th>' : ""}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows || `<tr><td colspan="${emptyColspan}">Sin items</td></tr>`}
+                        </tbody>
+                    </table>
+                </div>
             `;
             modal.showModal();
         });

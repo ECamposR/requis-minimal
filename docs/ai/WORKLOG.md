@@ -380,3 +380,11 @@
   - `static/style.css` (aumento de `--pico-font-size`, tamaño de tablas y controles).
 - Resultado:
   - Interfaz más grande sin perder el layout compacto en acciones/tablas.
+
+## 2026-02-11 17:06 UTC-6 | tool: Codex CLI
+- Objetivo: Mejorar visualizacion de detalle de requisicion en modal.
+- Cambios:
+  - `static/app.js` (items renderizados en tabla: item, cantidad solicitada y cantidad despachada cuando aplica).
+  - `static/style.css` (estilos de tabla de detalle, alineacion numerica y wrapper con scroll).
+- Resultado:
+  - Mayor legibilidad y trazabilidad de cantidades en el detalle, especialmente para entregas parciales.

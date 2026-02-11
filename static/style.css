@@ -169,3 +169,26 @@ button,
     background: #eceff3;
     color: #425466;
 }
+
+.detalle-items-wrap {
+    overflow-x: auto;
+}
+
+.detalle-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.45rem;
+    font-size: 0.9rem;
+}
+
+.detalle-items-table th,
+.detalle-items-table td {
+    padding: 0.42rem 0.5rem;
+    border-bottom: 1px solid #d8dee7;
+}
+
+.detalle-items-table .qty-col {
+    text-align: right;
+    white-space: nowrap;
+    width: 9.5rem;
+}
