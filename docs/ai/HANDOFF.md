@@ -51,12 +51,13 @@
 - Modal de detalle de requisicion actualizado a layout visual tipo panel (items primero, informacion general + estado + comentarios) (`REQ-053`).
 - Modal de detalle ampliado en ancho y proporciones internas para mejorar lectura en desktop (`REQ-054`).
 - Modal detalle refinado a estilo plano de referencia (sin tarjetas por campo, estructura limpia y mas aire) (`REQ-055`).
+- Modal detalle alineado visualmente con captura de referencia: labels coloreados con iconos, cantidades centradas, chip de resultado entrega, cero despachado en rojo (`REQ-056`).
 - Tag de corte funcional publicado: `v1.3.0-base-estable` (commit `18c21f7`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).
 - Tag operativo publicado: `v1.2.0-ui-base` (punto de retorno para UI base aprobada).
 
 ## En progreso
-- Smoke test funcional final post-merge/tag sobre `main`.
+- Ninguna tarea activa.
 
 ## Proximo paso exacto
 - Ejecutar smoke test de aprobacion/historial:

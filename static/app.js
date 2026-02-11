@@ -132,70 +132,122 @@ function verDetalle(id) {
             if (!content || !modal) return;
             const headerTitle = modal.querySelector("header h3");
             if (headerTitle) {
-                headerTitle.textContent = `Detalle de Requisicion: ${data.folio || "-"}`;
+                headerTitle.textContent = `Detalle de Requisici\u00f3n: ${data.folio || "-"}`;
             }
+
             const items = Array.isArray(data.items) ? data.items : [];
-            const showDelivered = items.some((i) => i.cantidad_entregada !== null && i.cantidad_entregada !== undefined);
-            const rows = items.map((i) => `
-                <tr>
+            const showDelivered = items.some(
+                (i) => i.cantidad_entregada !== null && i.cantidad_entregada !== undefined
+            );
+            const itemRows = items
+                .map((i) => {
+                    const qe = i.cantidad_entregada;
+                    const hasQe = qe !== null && qe !== undefined;
+                    const isZero = hasQe && Number(qe) === 0;
+                    const despCls = isZero
+                        ? "qty-col qty-despachada qty-zero"
+                        : "qty-col qty-despachada";
+                    return `<tr>
                     <td>${escapeHtml(i.descripcion || "-")}</td>
                     <td class="qty-col qty-solicitada">${fmtQty(i.cantidad)}</td>
-                    ${showDelivered ? `<td class="qty-col qty-despachada">${fmtQty(i.cantidad_entregada)}</td>` : ""}
-                </tr>
-            `).join("");
-            const emptyColspan = showDelivered ? 3 : 2;
+                    ${showDelivered ? `<td class="${despCls}">${fmtQty(qe)}</td>` : ""}
+                </tr>`;
+                })
+                .join("");
+
+            const resultVal = data.delivery_result || "-";
+            const chipCls =
+                { completa: "resultado-completa", parcial: "resultado-parcial", no_entregada: "resultado-no-entregada" }[
+                    data.delivery_result
+                ] || "";
+            const resultHtml = data.delivery_result
+                ? `<span class="resultado-chip ${chipCls}">${escapeHtml(resultVal)}</span>`
+                : `<span class="flujo-value">${escapeHtml(resultVal)}</span>`;
 
             content.innerHTML = `
                 <section class="detalle-items-section">
-                    <h4>Items Solicitados</h4>
+                    <h4><span class="icon-items">\u2299</span> Items Solicitados</h4>
                     <div class="detalle-items-wrap">
                         <table class="detalle-items-table">
-                            <thead>
-                                <tr>
-                                    <th>Item / Producto</th>
-                                    <th class="qty-col">Cant. Solicitada</th>
-                                    ${showDelivered ? '<th class="qty-col">Cant. Despachada</th>' : ""}
-                                </tr>
-                            </thead>
+                            <thead><tr>
+                                <th>Item / Producto</th>
+                                <th class="qty-col">Cant. Solicitada</th>
+                                ${showDelivered ? '<th class="qty-col">Cant. Despachada</th>' : ""}
+                            </tr></thead>
                             <tbody>
-                                ${rows || `<tr><td colspan="${emptyColspan}">Sin items</td></tr>`}
+                                ${itemRows || '<tr><td colspan="3">Sin items</td></tr>'}
                             </tbody>
                         </table>
                     </div>
                 </section>
                 <section class="detalle-content-grid">
                     <section class="detalle-block detalle-main">
-                        <h4>Informacion General</h4>
+                        <h4>Informaci\u00f3n General</h4>
                         <div class="detalle-meta-grid">
-                            <div class="meta-line"><span>Solicitante</span><strong>${escapeHtml(data.solicitante || "-")}</strong></div>
-                            <div class="meta-line"><span>Cod. cliente</span><strong>${escapeHtml(data.cliente_codigo || "-")}</strong></div>
-                            <div class="meta-line"><span>Cliente</span><strong>${escapeHtml(data.cliente_nombre || "-")}</strong></div>
-                            <div class="meta-line"><span>Ruta principal</span><strong>${escapeHtml(data.cliente_ruta_principal || "-")}</strong></div>
+                            <div class="meta-line">
+                                <span class="meta-label label-orange">\u25ce SOLICITANTE</span>
+                                <strong>${escapeHtml(data.solicitante || "-")}</strong>
+                            </div>
+                            <div class="meta-line">
+                                <span class="meta-label label-green">\u25c9 COD. CLIENTE</span>
+                                <strong>${escapeHtml(data.cliente_codigo || "-")}</strong>
+                            </div>
+                            <div class="meta-line">
+                                <span class="meta-label label-blue">\u25ce CLIENTE</span>
+                                <strong>${escapeHtml(data.cliente_nombre || "-")}</strong>
+                            </div>
+                            <div class="meta-line">
+                                <span class="meta-label label-blue">\u25c9 RUTA PRINCIPAL</span>
+                                <strong>${escapeHtml(data.cliente_ruta_principal || "-")}</strong>
+                            </div>
                         </div>
                         <div class="detalle-justificacion">
-                            <span>Justificacion</span>
+                            <span class="meta-label label-orange">\u270e JUSTIFICACI\u00d3N</span>
                             <p>${escapeHtml(data.justificacion || "-")}</p>
                         </div>
                     </section>
                     <aside class="detalle-side">
                         <section class="detalle-block">
                             <h4>Estado del Flujo</h4>
-                            <dl class="detalle-list">
-                                <div><dt>Aprobado por</dt><dd>${escapeHtml(data.approved_by || "-")}</dd></div>
-                                <div><dt>Rechazado por</dt><dd>${escapeHtml(data.rejected_by || "-")}</dd></div>
-                                <div><dt>Entregado por</dt><dd>${escapeHtml(data.delivered_by || "-")}</dd></div>
-                                <div><dt>Recibio</dt><dd>${escapeHtml(data.delivered_to || "-")}</dd></div>
-                                <div><dt>Resultado entrega</dt><dd>${escapeHtml(data.delivery_result || "-")}</dd></div>
-                            </dl>
+                            <div class="flujo-list">
+                                <div class="flujo-item flujo-item-card">
+                                    <span class="meta-label label-orange">\u25ce APROBADO POR</span>
+                                    <div class="flujo-value">${escapeHtml(data.approved_by || "-")}</div>
+                                </div>
+                                <div class="flujo-item">
+                                    <span class="meta-label">RESULTADO ENTREGA</span>
+                                    ${resultHtml}
+                                </div>
+                                <div class="flujo-item">
+                                    <span class="meta-label label-orange">\u25c9 ENTREGADO POR</span>
+                                    <div class="flujo-value">${escapeHtml(data.delivered_by || "-")}</div>
+                                </div>
+                                <div class="flujo-item">
+                                    <span class="meta-label label-orange">\u25c9 RECIBIÓ</span>
+                                    <div class="flujo-value">${escapeHtml(data.delivered_to || "-")}</div>
+                                </div>
+                            </div>
                         </section>
                         <section class="detalle-block">
                             <h4>Comentarios</h4>
-                            <dl class="detalle-list detalle-list-comments">
-                                <div><dt>Aprobacion</dt><dd>${escapeHtml(data.approval_comment || "-")}</dd></div>
-                                <div><dt>Razon rechazo</dt><dd>${escapeHtml(data.rejection_reason || "-")}</dd></div>
-                                <div><dt>Comentario rechazo</dt><dd>${escapeHtml(data.rejection_comment || "-")}</dd></div>
-                                <div><dt>Entrega</dt><dd>${escapeHtml(data.delivery_comment || "-")}</dd></div>
-                            </dl>
+                            <div class="comentarios-list">
+                                <div class="comentario-item">
+                                    <span class="meta-label label-muted">APROBACI\u00d3N</span>
+                                    <p>${escapeHtml(data.approval_comment || "-")}</p>
+                                </div>
+                                <div class="comentario-item">
+                                    <span class="meta-label label-muted">RAZ\u00d3N RECHAZO</span>
+                                    <p>${escapeHtml(data.rejection_reason || "-")}</p>
+                                </div>
+                                <div class="comentario-item">
+                                    <span class="meta-label label-muted">COMENTARIO RECHAZO</span>
+                                    <p>${escapeHtml(data.rejection_comment || "-")}</p>
+                                </div>
+                                <div class="comentario-item">
+                                    <span class="meta-label label-muted">ENTREGA</span>
+                                    <p>${escapeHtml(data.delivery_comment || "-")}</p>
+                                </div>
+                            </div>
                         </section>
                     </aside>
                 </section>

@@ -784,7 +784,7 @@ table td {
 }
 
 .detalle-items-table .qty-col {
-    text-align: right;
+    text-align: center;
     white-space: nowrap;
     width: 9.5rem;
     font-weight: 650;
@@ -836,6 +836,119 @@ table td {
 
 .detalle-list-comments dd {
     font-size: 0.88rem;
+}
+
+.meta-label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #219bff;
+    margin-bottom: 0.24rem;
+}
+
+.meta-label.label-orange {
+    color: #ff9f43;
+}
+
+.meta-label.label-green {
+    color: #4ecb8d;
+}
+
+.meta-label.label-blue {
+    color: #219bff;
+}
+
+.meta-label.label-red {
+    color: #ff6b6b;
+}
+
+.meta-label.label-muted {
+    color: #91a7c8;
+}
+
+.icon-items {
+    color: #219bff;
+    margin-right: 0.3rem;
+}
+
+.detalle-items-table .qty-zero {
+    color: #ff6b6b;
+}
+
+.flujo-list {
+    margin-top: 0.5rem;
+}
+
+.flujo-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #2b3f61;
+}
+
+.flujo-item:last-child {
+    border-bottom: 0;
+}
+
+.flujo-item-card {
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.45rem;
+    background: rgba(10, 21, 39, 0.76);
+    border: 1px solid #2b3f61;
+    margin-bottom: 0.35rem;
+}
+
+.flujo-item-card:last-child {
+    margin-bottom: 0;
+}
+
+.flujo-value {
+    font-size: 0.94rem;
+    color: #dce9ff;
+    margin-top: 0.15rem;
+}
+
+.resultado-chip {
+    display: inline-block;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-top: 0.2rem;
+}
+
+.resultado-completa {
+    background: rgba(28, 118, 74, 0.35);
+    color: #9debc0;
+}
+
+.resultado-parcial {
+    background: rgba(147, 112, 35, 0.35);
+    color: #ffdc96;
+}
+
+.resultado-no-entregada {
+    background: rgba(130, 45, 57, 0.35);
+    color: #ffb8c2;
+}
+
+.comentarios-list {
+    margin-top: 0.5rem;
+}
+
+.comentario-item {
+    padding: 0.45rem 0;
+    border-bottom: 1px solid #2b3f61;
+}
+
+.comentario-item:last-child {
+    border-bottom: 0;
+}
+
+.comentario-item p {
+    margin: 0.2rem 0 0;
+    font-size: 0.88rem;
+    color: #d6e7ff;
+    line-height: 1.45;
 }
 
 @media (max-width: 1080px) {

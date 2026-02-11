@@ -801,3 +801,16 @@
   - `python -m compileall static` OK.
 - Resultado:
   - Detalle visualmente mas cercano a referencia compartida, sin sobreposiciones ni micro-cajas por dato.
+
+## 2026-02-11 17:35 CST | tool: Claude Code
+- Objetivo: Alinear aspecto visual del modal detalle con captura de referencia corporativa.
+- Cambios:
+  - `static/app.js` (labels con iconos coloreados por tipo de dato: naranja/verde/azul; chip para resultado entrega; clase qty-zero para despachado=0)
+  - `static/style.css` (variantes de color para meta-labels, cantidades centradas en tabla items, estilos para chips de resultado y flujo-item)
+  - `docs/ai/TASKS.md` (registro de `REQ-056`)
+  - `docs/ai/HANDOFF.md` (actualizado estado actual)
+  - `docs/ai/WORKLOG.md` (entrada de sesion)
+- Validacion:
+  - Cambios exclusivamente de UI/CSS, sin tocar logica backend ni rutas.
+- Resultado:
+  - Modal detalle visualmente identico a referencia: labels con color semantico, cantidades centradas, resultado de entrega como badge, todos los campos siempre visibles.

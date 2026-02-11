@@ -58,6 +58,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-053` | `done` | Redisenar modal de detalle de requisicion para layout tipo panel (items arriba + info/estado/comentarios en dos columnas).
 - `REQ-054` | `done` | Ampliar ancho del modal detalle y paneles internos para evitar contenido apinado.
 - `REQ-055` | `done` | Ajustar modal detalle a layout plano de referencia (sin tarjetas internas por campo, mas ancho util).
+- `REQ-056` | `done` | Alinear aspecto visual del modal detalle con captura de referencia (labels coloreados, cantidades centradas, chip de resultado).
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.
