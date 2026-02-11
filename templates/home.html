@@ -16,12 +16,12 @@
         <strong>{{ mis_pendientes }}</strong>
     </article>
     <article class="metric-card metric-apr">
-        <span>Mis aprobadas</span>
-        <strong>{{ mis_aprobadas }}</strong>
+        <span>Aprobadas historicas</span>
+        <strong>{{ aprobadas_panel }}</strong>
     </article>
     <article class="metric-card metric-rej">
-        <span>Mis rechazadas</span>
-        <strong>{{ mis_rechazadas }}</strong>
+        <span>Rechazadas</span>
+        <strong>{{ rechazadas_panel }}</strong>
     </article>
     <article class="metric-card metric-ent">
         <span>Mis entregadas</span>
@@ -39,5 +39,46 @@
         <strong>{{ pendientes_bodega }}</strong>
     </article>
     {% endif %}
+</section>
+
+<section class="chart-card">
+    <h3>Indicadores rapidos</h3>
+    <div class="mini-chart">
+        <div class="mini-chart-row">
+            <span class="label">Creadas este mes</span>
+            <div class="bar-wrap">
+                <span class="bar bar-month" style="width: {{ (mis_creadas_mes * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
+            </div>
+            <strong class="value">{{ mis_creadas_mes }}</strong>
+        </div>
+        <div class="mini-chart-row">
+            <span class="label">Pendientes de aprobar</span>
+            <div class="bar-wrap">
+                <span class="bar bar-pending" style="width: {{ (mis_pendientes * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
+            </div>
+            <strong class="value">{{ mis_pendientes }}</strong>
+        </div>
+        <div class="mini-chart-row">
+            <span class="label">Pendientes de entregar</span>
+            <div class="bar-wrap">
+                <span class="bar bar-delivery" style="width: {{ (pendientes_entregar_panel * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
+            </div>
+            <strong class="value">{{ pendientes_entregar_panel }}</strong>
+        </div>
+        <div class="mini-chart-row">
+            <span class="label">Rechazadas</span>
+            <div class="bar-wrap">
+                <span class="bar bar-rejected" style="width: {{ (rechazadas_panel * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
+            </div>
+            <strong class="value">{{ rechazadas_panel }}</strong>
+        </div>
+        <div class="mini-chart-row">
+            <span class="label">Entregadas (30 dias)</span>
+            <div class="bar-wrap">
+                <span class="bar bar-30d" style="width: {{ (mis_entregadas_30d * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
+            </div>
+            <strong class="value">{{ mis_entregadas_30d }}</strong>
+        </div>
+    </div>
 </section>
 {% endblock %}

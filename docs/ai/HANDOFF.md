@@ -35,6 +35,7 @@
 - CSS consolidado para V2 dark, eliminando reglas duplicadas/conflictivas (`REQ-037`).
 - Dashboard de inicio extendido con metricas por estado para todos los usuarios (`REQ-038`).
 - Flujo de gestion en `Aprobar` y `Bodega` movido a vistas dedicadas por requisicion (`REQ-039`).
+- Home extendido con metricas operativas simples adicionales por usuario (`REQ-040`).
 
 ## En progreso
 - Smoke test funcional de `REQ-039` en navegador y tests.

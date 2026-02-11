@@ -142,9 +142,14 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
     html = response.text
     assert "Mis requisiciones" in html
     assert "Mis pendientes" in html
-    assert "Mis aprobadas" in html
-    assert "Mis rechazadas" in html
+    assert "Aprobadas historicas" in html
+    assert "Rechazadas" in html
     assert "Mis entregadas" in html
+    assert "Creadas este mes" in html
+    assert "Pendientes de aprobar" in html
+    assert "Pendientes de entregar" in html
+    assert "Rechazadas" in html
+    assert "Entregadas (30 dias)" in html
     assert "Pendientes por aprobar" not in html
     assert "Pendientes por entregar" not in html
 

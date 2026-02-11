@@ -42,6 +42,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-037` | `done` | Consolidar `style.css` (eliminar duplicidad/capas conflictivas) manteniendo look dark corporativo.
 - `REQ-038` | `done` | Dashboard de inicio con metricas por estado para todos los roles + colores diferenciados por tarjeta.
 - `REQ-039` | `done` | Reemplazar acciones compactas de `Aprobar` y `Bodega` por vistas dedicadas de gestion por requisicion.
+- `REQ-040` | `done` | Agregar metricas simples en inicio (`creadas este mes`, `pendientes +48h`, `entregadas 30 dias`) manteniendo enfoque MVP.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

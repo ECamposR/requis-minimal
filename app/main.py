@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
@@ -94,20 +95,48 @@ def logout(request: Request):
 @app.get("/")
 def home(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     mis_requisiciones_query = db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id)
+    ahora = datetime.now()
+    inicio_mes = datetime(ahora.year, ahora.month, 1)
+    hace_30_dias = ahora - timedelta(days=30)
+
     mis_requisiciones = mis_requisiciones_query.count()
     mis_pendientes = mis_requisiciones_query.filter(Requisicion.estado == "pendiente").count()
     mis_aprobadas = mis_requisiciones_query.filter(Requisicion.estado == "aprobada").count()
     mis_rechazadas = mis_requisiciones_query.filter(Requisicion.estado == "rechazada").count()
     mis_entregadas = mis_requisiciones_query.filter(Requisicion.estado == "entregada").count()
+    mis_creadas_mes = mis_requisiciones_query.filter(Requisicion.created_at >= inicio_mes).count()
+    mis_entregadas_30d = mis_requisiciones_query.filter(
+        Requisicion.estado == "entregada", Requisicion.delivered_at >= hace_30_dias
+    ).count()
     pendientes_aprobar = 0
     if current_user.rol in ["aprobador", "admin"]:
         filtros = [Requisicion.estado == "pendiente"]
         if current_user.rol == "aprobador":
             filtros.append(Requisicion.departamento == current_user.departamento)
         pendientes_aprobar = db.query(Requisicion).filter(*filtros).count()
+    mis_aprobadas_historicas = mis_requisiciones_query.filter(Requisicion.approved_by.isnot(None)).count()
+    aprobadas_panel = (
+        db.query(Requisicion).filter(Requisicion.approved_by.isnot(None)).count()
+        if current_user.rol in ["admin", "aprobador", "bodega"]
+        else mis_aprobadas_historicas
+    )
     pendientes_bodega = 0
     if current_user.rol in ["bodega", "admin"]:
         pendientes_bodega = db.query(Requisicion).filter(Requisicion.estado == "aprobada").count()
+    pendientes_entregar_panel = pendientes_bodega if current_user.rol in ["bodega", "admin"] else aprobadas_panel
+    rechazadas_panel = (
+        db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
+        if current_user.rol in ["admin", "aprobador", "bodega"]
+        else mis_rechazadas
+    )
+    escala_metricas_home = max(
+        1,
+        mis_creadas_mes,
+        mis_pendientes,
+        pendientes_entregar_panel,
+        rechazadas_panel,
+        mis_entregadas_30d,
+    )
 
     return templates.TemplateResponse(
         "home.html",
@@ -117,8 +146,14 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
             mis_requisiciones=mis_requisiciones,
             mis_pendientes=mis_pendientes,
             mis_aprobadas=mis_aprobadas,
+            aprobadas_panel=aprobadas_panel,
             mis_rechazadas=mis_rechazadas,
             mis_entregadas=mis_entregadas,
+            mis_creadas_mes=mis_creadas_mes,
+            mis_entregadas_30d=mis_entregadas_30d,
+            pendientes_entregar_panel=pendientes_entregar_panel,
+            rechazadas_panel=rechazadas_panel,
+            escala_metricas_home=escala_metricas_home,
             pendientes_aprobar=pendientes_aprobar,
             pendientes_bodega=pendientes_bodega,
         ),

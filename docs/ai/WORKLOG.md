@@ -553,3 +553,44 @@
 - Resultado:
   - Flujo operativo mas claro y legible, sin menu colapsado ni campos cortados.
   - Queda pendiente confirmar ejecucion de tests en entorno local: en este sandbox `pytest` quedo colgado sin salida y finalizo por timeout.
+
+## 2026-02-11 20:36 UTC-6 | tool: Codex CLI
+- Objetivo: Agregar metricas simples en inicio sin aumentar complejidad del MVP.
+- Cambios:
+  - `app/main.py` (calculo de `mis_creadas_mes`, `mis_pendientes_antiguas`, `mis_entregadas_30d`)
+  - `templates/home.html` (3 tarjetas nuevas de metricas)
+  - `static/style.css` (variantes visuales `metric-month`, `metric-aging`, `metric-30d`)
+  - `tests/test_basic_flow.py` (asserts de labels nuevas en home)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Inicio mas informativo con calculos ligeros y sin introducir complejidad tecnica adicional.
+
+## 2026-02-11 20:44 UTC-6 | tool: Codex CLI
+- Objetivo: Ajustar indicadores del inicio para mayor claridad operativa.
+- Cambios:
+  - `app/main.py` (reemplazo de pendiente +48h por pendientes generales y nueva metrica de pendientes de entregar)
+  - `templates/home.html` (grafico con filas: pendientes, pendientes de entregar y rechazadas)
+  - `static/style.css` (nuevas barras `bar-pending`, `bar-delivery`, `bar-rejected`)
+  - `tests/test_basic_flow.py` (asserts de labels actualizados)
+- Resultado:
+  - Indicadores mas intuitivos para operacion diaria sin aumentar complejidad tecnica.
+
+## 2026-02-11 20:52 UTC-6 | tool: Codex CLI
+- Objetivo: Corregir conteo de rechazadas en dashboard para roles operativos.
+- Cambios:
+  - `app/main.py` (nuevo `rechazadas_panel`: global para admin/aprobador/bodega, propio para user)
+  - `templates/home.html` (tarjeta y grafico usan `rechazadas_panel`; etiqueta de tarjeta ajustada a `Rechazadas`)
+  - `tests/test_basic_flow.py` (assert de label actualizado)
+- Resultado:
+  - Las rechazadas ya se reflejan correctamente en tarjeta y grafico segun el alcance del rol.
+
+## 2026-02-11 20:58 UTC-6 | tool: Codex CLI
+- Objetivo: Corregir conteo de aprobadas en dashboard para roles operativos.
+- Cambios:
+  - `app/main.py` (nuevo `aprobadas_panel`: global para admin/aprobador/bodega, propio para user)
+  - `app/main.py` (`pendientes_entregar_panel` ahora usa `aprobadas_panel` fuera de bodega/admin)
+  - `templates/home.html` (tarjeta usa `Aprobadas` + `aprobadas_panel`)
+  - `tests/test_basic_flow.py` (assert de label actualizado)
+- Resultado:
+  - Conteo de aprobadas consistente con el alcance de rol, igual que rechazadas.

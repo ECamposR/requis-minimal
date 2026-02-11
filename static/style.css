@@ -250,6 +250,78 @@ main.container {
     color: #ade2ff;
 }
 
+.chart-card {
+    margin-top: 0.8rem;
+    border: 1px solid var(--dark-border);
+    border-radius: 0.75rem;
+    background: linear-gradient(180deg, rgba(17, 30, 52, 0.95) 0%, rgba(12, 23, 41, 0.95) 100%);
+    padding: 0.85rem 0.95rem;
+}
+
+.chart-card h3 {
+    margin: 0 0 0.55rem 0;
+    font-size: 1rem;
+    color: #9fd3ff;
+}
+
+.mini-chart {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.mini-chart-row {
+    display: grid;
+    grid-template-columns: 12.2rem 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.mini-chart-row .label {
+    font-size: 0.83rem;
+    color: #b6cae6;
+}
+
+.bar-wrap {
+    height: 0.72rem;
+    border-radius: 999px;
+    background: rgba(67, 94, 133, 0.35);
+    border: 1px solid rgba(94, 127, 173, 0.35);
+    overflow: hidden;
+}
+
+.bar {
+    display: block;
+    height: 100%;
+    min-width: 0;
+}
+
+.bar-month {
+    background: linear-gradient(90deg, #6f9fe8 0%, #4a78bf 100%);
+}
+
+.bar-pending {
+    background: linear-gradient(90deg, #dcab68 0%, #ae7d3c 100%);
+}
+
+.bar-delivery {
+    background: linear-gradient(90deg, #74b5ff 0%, #3f7dc7 100%);
+}
+
+.bar-rejected {
+    background: linear-gradient(90deg, #d57c8c 0%, #a54a5d 100%);
+}
+
+.bar-30d {
+    background: linear-gradient(90deg, #63c7c9 0%, #2e9c9e 100%);
+}
+
+.mini-chart-row .value {
+    font-size: 0.9rem;
+    color: #d5e8ff;
+    min-width: 1.6rem;
+    text-align: right;
+}
+
 .login-shell {
     min-height: 64vh;
     display: grid;
@@ -616,6 +688,15 @@ table td {
 }
 
 @media (max-width: 1024px) {
+    .mini-chart-row {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+    }
+
+    .mini-chart-row .value {
+        text-align: left;
+    }
+
     .gestion-layout {
         grid-template-columns: 1fr;
     }
