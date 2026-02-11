@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+{% if request.url.path != '/login' %}
 <header class="app-header">
     <nav class="container main-nav">
         <a href="/" class="brand">
@@ -40,6 +41,7 @@
         {% endif %}
     </nav>
 </header>
+{% endif %}
 
 <main class="container app-shell">
     {% set msg = request.query_params.get('msg') %}

@@ -594,3 +594,11 @@
   - `tests/test_basic_flow.py` (assert de label actualizado)
 - Resultado:
   - Conteo de aprobadas consistente con el alcance de rol, igual que rechazadas.
+
+## 2026-02-11 21:09 UTC-6 | tool: Codex CLI
+- Objetivo: Redisenar pantalla de login segun referencia visual corporativa, sin opciones extras.
+- Cambios:
+  - `templates/login.html` (estructura nueva con logo centrado, copy, formulario limpio y footer de sistema)
+  - `static/style.css` (estilos dedicados para card/login-form/footer en dark theme)
+- Resultado:
+  - Login mas cercano a la referencia entregada, sin recuperar clave ni recordar sesion.
