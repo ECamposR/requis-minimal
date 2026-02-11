@@ -478,6 +478,37 @@ button:hover {
     height: 1.95rem;
 }
 
+.filters-bar {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto auto;
+    gap: 0.45rem;
+    margin-bottom: 0.75rem;
+    align-items: center;
+}
+
+.filters-bar input,
+.filters-bar select {
+    margin: 0;
+    min-height: 2.2rem;
+    height: 2.2rem;
+    line-height: 1.2;
+    font-size: 0.9rem;
+    padding-top: 0.34rem;
+    padding-bottom: 0.34rem;
+}
+
+.filters-bar select {
+    padding-right: 1.7rem;
+}
+
+.filters-bar [role="button"] {
+    min-height: 2.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+}
+
 .gestion-layout {
     display: grid;
     grid-template-columns: 1.1fr 1fr;
@@ -755,6 +786,10 @@ table td {
 }
 
 @media (max-width: 1024px) {
+    .filters-bar {
+        grid-template-columns: 1fr 1fr;
+    }
+
     .mini-chart-row {
         grid-template-columns: 1fr;
         gap: 0.25rem;

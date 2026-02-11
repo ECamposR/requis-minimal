@@ -248,7 +248,12 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
     if current_user.rol not in ["aprobador", "admin"]:
         raise HTTPException(status_code=403, detail="No autorizado")
 
-    requisiciones = (
+    q = request.query_params.get("q", "").strip()
+    estado = request.query_params.get("estado", "todos").strip().lower()
+    departamento = request.query_params.get("departamento", "todos").strip()
+
+    estados_validos = {"pendiente", "aprobada", "rechazada", "entregada"}
+    query = (
         db.query(Requisicion)
         .options(
             joinedload(Requisicion.solicitante),
@@ -257,12 +262,41 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
             joinedload(Requisicion.entregador),
         )
         .filter(Requisicion.estado.in_(["pendiente", "aprobada", "rechazada", "entregada"]))
-        .order_by(Requisicion.created_at.desc())
-        .all()
     )
+    if estado in estados_validos:
+        query = query.filter(Requisicion.estado == estado)
+    if departamento and departamento != "todos":
+        query = query.filter(Requisicion.departamento == departamento)
+    if q:
+        patron = f"%{q}%"
+        query = query.filter(
+            or_(
+                Requisicion.folio.ilike(patron),
+                Requisicion.departamento.ilike(patron),
+                Requisicion.justificacion.ilike(patron),
+                Requisicion.cliente_codigo.ilike(patron),
+                Requisicion.cliente_nombre.ilike(patron),
+                Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
+            )
+        )
+
+    requisiciones = query.order_by(Requisicion.created_at.desc()).all()
+    departamentos = [
+        row[0]
+        for row in db.query(Requisicion.departamento).distinct().order_by(Requisicion.departamento.asc()).all()
+        if row[0]
+    ]
     return templates.TemplateResponse(
         "aprobar.html",
-        template_context(request, current_user, requisiciones=requisiciones),
+        template_context(
+            request,
+            current_user,
+            requisiciones=requisiciones,
+            filtro_q=q,
+            filtro_estado=estado,
+            filtro_departamento=departamento,
+            departamentos=departamentos,
+        ),
     )
 
 
@@ -352,16 +386,32 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
     if current_user.rol not in ["bodega", "admin"]:
         raise HTTPException(status_code=403, detail="No autorizado")
 
-    pendientes_entrega = (
+    q = request.query_params.get("q", "").strip()
+    vista = request.query_params.get("vista", "todos").strip().lower()
+    resultado = request.query_params.get("resultado", "todos").strip().lower()
+
+    pendientes_query = (
         db.query(Requisicion)
         .options(
             joinedload(Requisicion.solicitante),
             joinedload(Requisicion.aprobador),
         )
         .filter(Requisicion.estado == "aprobada")
-        .order_by(Requisicion.approved_at.asc(), Requisicion.created_at.asc())
-        .all()
     )
+    if q:
+        patron = f"%{q}%"
+        pendientes_query = pendientes_query.filter(
+            or_(
+                Requisicion.folio.ilike(patron),
+                Requisicion.departamento.ilike(patron),
+                Requisicion.justificacion.ilike(patron),
+                Requisicion.cliente_codigo.ilike(patron),
+                Requisicion.cliente_nombre.ilike(patron),
+                Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
+            )
+        )
+
+    pendientes_entrega = pendientes_query.order_by(Requisicion.approved_at.asc(), Requisicion.created_at.asc()).all()
 
     historial_query = (
         db.query(Requisicion)
@@ -374,6 +424,21 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
     )
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(Requisicion.delivered_by == current_user.id)
+    if resultado in {"completa", "parcial", "no_entregada"}:
+        historial_query = historial_query.filter(Requisicion.delivery_result == resultado)
+    if q:
+        patron = f"%{q}%"
+        historial_query = historial_query.filter(
+            or_(
+                Requisicion.folio.ilike(patron),
+                Requisicion.departamento.ilike(patron),
+                Requisicion.justificacion.ilike(patron),
+                Requisicion.cliente_codigo.ilike(patron),
+                Requisicion.cliente_nombre.ilike(patron),
+                Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
+                Requisicion.delivered_to.ilike(patron),
+            )
+        )
 
     historial_entregadas = historial_query.order_by(Requisicion.delivered_at.desc()).all()
 
@@ -384,6 +449,9 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             current_user,
             pendientes_entrega=pendientes_entrega,
             historial_entregadas=historial_entregadas,
+            filtro_q=q,
+            filtro_vista=vista,
+            filtro_resultado=resultado,
         ),
     )
 

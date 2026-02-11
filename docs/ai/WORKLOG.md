@@ -639,3 +639,16 @@
   - `docs/ai/HANDOFF.md`
 - Resultado:
   - Solo usuarios `user` quedan restringidos a ver/operar lo propio; aprobadores tienen alcance global.
+
+## 2026-02-11 22:02 UTC-6 | tool: Codex CLI
+- Objetivo: Agregar capacidad de busqueda y filtros en vistas de alto volumen (`/aprobar`, `/bodega`).
+- Cambios:
+  - `app/main.py` (`/aprobar`: filtros `q`, `estado`, `departamento`; `/bodega`: filtros `q`, `vista`, `resultado`)
+  - `templates/aprobar.html` (barra de filtros + limpiar)
+  - `templates/bodega.html` (barra de filtros + secciones condicionales por vista)
+  - `static/style.css` (estilos `filters-bar` responsive)
+  - `tests/test_basic_flow.py` (tests de filtrado en aprobar y bodega)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Busqueda/filtro simple y suficiente para crecimiento de historial sin introducir complejidad extra.

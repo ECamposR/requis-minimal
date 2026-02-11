@@ -660,3 +660,75 @@ def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_sessi
     assert "Bodega Uno" in html
     assert "modal-detalle" in html
     assert "Ver" in html
+
+
+def test_aprobar_permita_filtrar_por_estado(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req_pendiente = Requisicion(
+        folio="REQ-0201",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="Filtro estado pendiente",
+    )
+    req_rechazada = Requisicion(
+        folio="REQ-0202",
+        solicitante_id=user.id,
+        departamento="Ventas",
+        estado="rechazada",
+        justificacion="Filtro estado rechazada",
+        rejected_by=aprobador.id,
+        rejected_at=datetime.now(),
+        rejection_reason="No aplica",
+    )
+    db_session.add_all([req_pendiente, req_rechazada])
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/aprobar?estado=rechazada")
+    assert response.status_code == 200
+    assert "REQ-0202" in response.text
+    assert "REQ-0201" not in response.text
+
+
+def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req_completa = Requisicion(
+        folio="REQ-0301",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="entregada",
+        justificacion="Historial completa",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivery_result="completa",
+        delivered_to="Juan Perez",
+    )
+    req_no_entregada = Requisicion(
+        folio="REQ-0302",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="entregada",
+        justificacion="Historial no entregada",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivery_result="no_entregada",
+        delivery_comment="Sin stock",
+    )
+    db_session.add_all([req_completa, req_no_entregada])
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega?vista=historial&resultado=no_entregada")
+    assert response.status_code == 200
+    assert "REQ-0302" in response.text
+    assert "REQ-0301" not in response.text

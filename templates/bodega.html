@@ -3,6 +3,26 @@
 {% block content %}
 <h2>Bodega</h2>
 <p class="page-subtitle">Procesa entregas y consulta trazabilidad de despacho por requisicion.</p>
+<form method="GET" class="filters-bar">
+    <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por folio, cliente, solicitante...">
+    <select name="vista">
+        <option value="todos" {% if filtro_vista == 'todos' %}selected{% endif %}>Pendientes + Historial</option>
+        <option value="pendientes" {% if filtro_vista == 'pendientes' %}selected{% endif %}>Solo pendientes</option>
+        <option value="historial" {% if filtro_vista == 'historial' %}selected{% endif %}>Solo historial</option>
+    </select>
+    <select name="resultado">
+        <option value="todos" {% if filtro_resultado == 'todos' %}selected{% endif %}>Todos los resultados</option>
+        <option value="completa" {% if filtro_resultado == 'completa' %}selected{% endif %}>Completas</option>
+        <option value="parcial" {% if filtro_resultado == 'parcial' %}selected{% endif %}>Parciales</option>
+        <option value="no_entregada" {% if filtro_resultado == 'no_entregada' %}selected{% endif %}>No entregadas</option>
+    </select>
+    <button type="submit">Buscar</button>
+    <a href="/bodega" role="button" class="secondary">Limpiar</a>
+</form>
+{% if filtro_resultado != 'todos' and filtro_vista != 'pendientes' %}
+<p class="page-subtitle">Filtro aplicado en historial por resultado de entrega.</p>
+{% endif %}
+{% if filtro_vista != 'historial' %}
 <h3>Pendientes por entregar</h3>
 {% if pendientes_entrega %}
 <table class="table-compact">
@@ -38,7 +58,9 @@
 {% else %}
 <p>No hay requisiciones aprobadas pendientes de entrega.</p>
 {% endif %}
+{% endif %}
 
+{% if filtro_vista != 'pendientes' %}
 <h3>Historial de bodega</h3>
 {% if historial_entregadas %}
 <table class="table-compact">
@@ -81,6 +103,7 @@
 </table>
 {% else %}
 <p>No hay movimientos registrados en historial.</p>
+{% endif %}
 {% endif %}
 
 <dialog id="modal-detalle">
