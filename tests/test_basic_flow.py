@@ -651,8 +651,8 @@ def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_sessi
     assert "REQ-0102" in html
     assert "REQ-0103" in html
     assert "REQ-0104" in html
-    assert "pendiente" in html
-    assert "aprobada" in html
+    assert "pendiente de aprobar" in html
+    assert "pendiente de entregar" in html
     assert "rechazada" in html
     assert "entregada" in html
     assert "Usuario Ops" in html

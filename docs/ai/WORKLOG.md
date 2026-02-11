@@ -652,3 +652,15 @@
   - `docs/ai/HANDOFF.md`
 - Resultado:
   - Busqueda/filtro simple y suficiente para crecimiento de historial sin introducir complejidad extra.
+
+## 2026-02-11 22:16 UTC-6 | tool: Codex CLI
+- Objetivo: Diferenciar los dos pendientes operativos en la UI de estados/filtros.
+- Cambios:
+  - `app/main.py` (`/aprobar` soporta alias de filtro: `pendiente_aprobar` -> `pendiente`, `pendiente_entregar` -> `aprobada`)
+  - `templates/aprobar.html` (filtro con ambos pendientes y badges con etiquetas operativas)
+  - `templates/mis_requisiciones.html` (etiquetas de estado alineadas: pendiente aprobar/pendiente entregar)
+  - `tests/test_basic_flow.py` (asserts de etiquetas actualizados)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - El usuario puede distinguir y filtrar claramente entre pendiente de aprobacion y pendiente de entrega, sin migrar estados de DB.

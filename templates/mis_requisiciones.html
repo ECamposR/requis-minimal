@@ -22,13 +22,13 @@
         <td>{{ req.departamento }}</td>
         <td>
             {% if req.estado == 'pendiente' %}
-                <span class="badge badge-warning">Pendiente</span>
+                <span class="badge badge-warning">Pendiente de aprobar</span>
             {% elif req.estado == 'aprobada' %}
-                <span class="badge badge-success">Aprobada</span>
+                <span class="badge badge-info">Pendiente de entregar</span>
             {% elif req.estado == 'rechazada' %}
                 <span class="badge badge-error">Rechazada</span>
             {% elif req.estado == 'entregada' %}
-                <span class="badge badge-info">Entregada</span>
+                <span class="badge badge-success">Entregada</span>
             {% else %}
                 <span class="badge">{{ req.estado }}</span>
             {% endif %}

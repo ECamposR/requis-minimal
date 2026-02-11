@@ -252,6 +252,11 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
     estado = request.query_params.get("estado", "todos").strip().lower()
     departamento = request.query_params.get("departamento", "todos").strip()
 
+    alias_estado = {
+        "pendiente_aprobar": "pendiente",
+        "pendiente_entregar": "aprobada",
+    }
+    estado_real = alias_estado.get(estado, estado)
     estados_validos = {"pendiente", "aprobada", "rechazada", "entregada"}
     query = (
         db.query(Requisicion)
@@ -263,8 +268,8 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
         )
         .filter(Requisicion.estado.in_(["pendiente", "aprobada", "rechazada", "entregada"]))
     )
-    if estado in estados_validos:
-        query = query.filter(Requisicion.estado == estado)
+    if estado_real in estados_validos:
+        query = query.filter(Requisicion.estado == estado_real)
     if departamento and departamento != "todos":
         query = query.filter(Requisicion.departamento == departamento)
     if q:

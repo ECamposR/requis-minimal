@@ -46,6 +46,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-041` | `done` | Agregar campo obligatorio `Ruta Principal del Cliente` con formato `AA00` en creacion de requisicion.
 - `REQ-042` | `done` | Permitir que aprobadores vean/aprueben todas las requisiciones sin restriccion por departamento.
 - `REQ-043` | `done` | Agregar busqueda/filtros en `Aprobar` y `Bodega` para escalar consultas de requisiciones.
+- `REQ-044` | `done` | Separar estados operativos en UI/filtros: `Pendiente de aprobar` y `Pendiente de entregar`.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.
