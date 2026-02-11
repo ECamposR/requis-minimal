@@ -331,7 +331,7 @@ def entregar(
 
     resultados_validos = {"completa", "parcial", "no_entregada"}
     if resultado not in resultados_validos:
-        raise HTTPException(status_code=400, detail="Resultado de entrega invalido")
+        return redirect_with_message("/bodega", "Resultado de entrega invalido", "error")
 
     if resultado == "parcial":
         return RedirectResponse(url=f"/entregar/{req_id}/parcial", status_code=303)
@@ -339,11 +339,16 @@ def entregar(
     delivered_to_limpio = delivered_to.strip()
     comentario_limpio = comentario.strip()
     if resultado in {"completa", "parcial"} and len(delivered_to_limpio) < 3:
-        raise HTTPException(status_code=400, detail="El nombre de quien recibe debe tener al menos 3 caracteres")
+        return redirect_with_message(
+            "/bodega",
+            "Debes indicar quien recibe (minimo 3 caracteres)",
+            "error",
+        )
     if resultado in {"parcial", "no_entregada"} and len(comentario_limpio) < 5:
-        raise HTTPException(
-            status_code=400,
-            detail="Para entrega parcial o no entregada, agrega comentario (minimo 5 caracteres)",
+        return redirect_with_message(
+            "/bodega",
+            "Para entrega parcial o no entregada, agrega comentario (minimo 5 caracteres)",
+            "error",
         )
 
     transicionar_requisicion(

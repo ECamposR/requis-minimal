@@ -398,6 +398,38 @@ def test_bodega_puede_marcar_no_entregada(client: TestClient, db_session: Sessio
     assert req.delivery_comment == "No hay stock ni sustituto"
 
 
+def test_bodega_entrega_completa_requiere_recibe(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req = Requisicion(
+        folio="REQ-0013",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="Validacion de quien recibe",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "bodega.1", "pass123")
+    response = client.post(
+        f"/entregar/{req.id}",
+        data={"resultado": "completa", "delivered_to": "", "comentario": ""},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert "/bodega?msg=Debes+indicar+quien+recibe+%28minimo+3+caracteres%29&type=error" in response.headers[
+        "location"
+    ]
+    db_session.refresh(req)
+    assert req.estado == "aprobada"
+
+
 def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

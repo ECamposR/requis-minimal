@@ -463,3 +463,11 @@
   - `static/style.css` (selectores especificos `#modal-detalle`, contraste alto y soporte dark via `data-theme` + `prefers-color-scheme`).
 - Resultado:
   - Las casillas del modal ya no quedan blancas y el texto gana legibilidad.
+
+## 2026-02-11 18:31 UTC-6 | tool: Codex CLI
+- Objetivo: Corregir UX de validacion en entrega de bodega para evitar JSON 400 en formulario web.
+- Cambios:
+  - `app/main.py` (`/entregar/{id}` devuelve redirect con mensaje de error en validaciones de formulario)
+  - `tests/test_basic_flow.py` (nuevo test para caso "quien recibe" obligatorio en entrega completa)
+- Resultado:
+  - En UI, el usuario vuelve a `/bodega` con mensaje claro en lugar de `Bad Request` JSON.
