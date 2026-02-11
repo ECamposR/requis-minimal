@@ -3,19 +3,22 @@
 {% block content %}
 <article>
     <h2>Nueva Requisicion</h2>
+    <p class="page-subtitle">Registra la solicitud para cliente y agrega los items requeridos.</p>
     <form method="POST" action="/crear">
-        <label>
-            Departamento
-            <input type="text" value="{{ current_user.departamento }}" readonly>
-        </label>
-        <label>
-            Codigo cliente
-            <input type="text" name="cliente_codigo" required minlength="2" placeholder="Ej: C-1023">
-        </label>
-        <label>
-            Nombre cliente
-            <input type="text" name="cliente_nombre" required minlength="3" placeholder="Nombre cliente">
-        </label>
+        <div class="form-grid-3">
+            <label>
+                Departamento
+                <input type="text" value="{{ current_user.departamento }}" readonly>
+            </label>
+            <label>
+                Codigo cliente
+                <input type="text" name="cliente_codigo" required minlength="2" placeholder="Ej: C-1023">
+            </label>
+            <label>
+                Nombre cliente
+                <input type="text" name="cliente_nombre" required minlength="3" placeholder="Nombre cliente">
+            </label>
+        </div>
         <label>
             Justificacion
             <textarea name="justificacion" rows="4" required></textarea>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,18 +27,18 @@
         </a>
         {% if current_user %}
         <ul class="menu-links">
-            <li><a href="/">Inicio</a></li>
-            <li><a href="/crear">Nueva Requisicion</a></li>
-            <li><a href="/mis-requisiciones">Mis Requisiciones</a></li>
+            <li><a href="/" class="{% if request.url.path == '/' %}is-active{% endif %}">Inicio</a></li>
+            <li><a href="/crear" class="{% if request.url.path.startswith('/crear') %}is-active{% endif %}">Nueva Requisicion</a></li>
+            <li><a href="/mis-requisiciones" class="{% if request.url.path.startswith('/mis-requisiciones') %}is-active{% endif %}">Mis Requisiciones</a></li>
             {% if current_user.rol in ['aprobador', 'admin'] %}
-            <li><a href="/aprobar">Aprobar</a></li>
+            <li><a href="/aprobar" class="{% if request.url.path.startswith('/aprobar') %}is-active{% endif %}">Aprobar</a></li>
             {% endif %}
             {% if current_user.rol in ['bodega', 'admin'] %}
-            <li><a href="/bodega">Bodega</a></li>
+            <li><a href="/bodega" class="{% if request.url.path.startswith('/bodega') or request.url.path.startswith('/entregar') %}is-active{% endif %}">Bodega</a></li>
             {% endif %}
             {% if current_user.rol == 'admin' %}
-            <li><a href="/admin/usuarios">Usuarios</a></li>
-            <li><a href="/admin/catalogo-items">Catalogo</a></li>
+            <li><a href="/admin/usuarios" class="{% if request.url.path.startswith('/admin/usuarios') %}is-active{% endif %}">Usuarios</a></li>
+            <li><a href="/admin/catalogo-items" class="{% if request.url.path.startswith('/admin/catalogo-items') %}is-active{% endif %}">Catalogo</a></li>
             {% endif %}
         </ul>
         <form method="POST" action="/logout" class="logout-form">

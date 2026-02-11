@@ -480,3 +480,37 @@
 - Resultado:
   - La app ahora adopta una identidad visual consistente con el sitio de referencia.
   - Mejor jerarquia visual y usabilidad en anchos medios/bajos.
+
+## 2026-02-11 19:05 UTC-6 | tool: Codex CLI
+- Objetivo: Entregar primera iteracion de UI dark theme inspirada en marca corporativa.
+- Cambios:
+  - `templates/base.html` (activar `data-theme=dark`)
+  - `static/style.css` (overrides dark para header/nav/superficies/formularios/tablas/modales y legibilidad de logo)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - La app adopta un look dark corporativo con acentos azules y mejor uso visual para iterar detalles finos en siguientes pasos.
+
+## 2026-02-11 19:18 UTC-6 | tool: Codex CLI
+- Objetivo: Continuar iteracion de UI dark con mayor jerarquia y usabilidad.
+- Cambios:
+  - `templates/home.html` (hero operativo + tarjetas metricas)
+  - `templates/login.html` (login shell centrado + card mas clara)
+  - `templates/crear_requisicion.html` (grilla de campos de contexto en 3 columnas)
+  - `templates/mis_requisiciones.html` (tabla compacta unificada)
+  - `static/style.css` (estilos de page hero, metric cards, login shell y refinamientos de menu/tablas)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Interfaz dark mas consistente con mejor distribucion visual y menor sensacion de bloque plano.
+
+## 2026-02-11 19:31 UTC-6 | tool: Codex CLI
+- Objetivo: Continuar pulido de V2 dark en pantallas operativas.
+- Cambios:
+  - `templates/base.html` (estado activo en links del menu segun ruta)
+  - `templates/aprobar.html` y `templates/bodega.html` (subtitulos operativos)
+  - `static/style.css` (overrides finales para nav activo, columnas/table density y acciones)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Mejor orientacion de navegacion y legibilidad de tablas en aprobacion/bodega sin perder compactacion.

@@ -1,21 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Login{% endblock %}
 {% block content %}
-<article>
-    <h2>Ingresar</h2>
-    {% if error %}
-    <p style="color:#b91c1c;">{{ error }}</p>
-    {% endif %}
-    <form method="POST" action="/login">
-        <label>
-            Usuario
-            <input type="text" name="username" required>
-        </label>
-        <label>
-            Contrasena
-            <input type="password" name="password" required>
-        </label>
-        <button type="submit">Entrar</button>
-    </form>
-</article>
+<section class="login-shell">
+    <article class="login-card">
+        <h2>Ingresar</h2>
+        <p>Usa tus credenciales corporativas para acceder al sistema.</p>
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        <form method="POST" action="/login">
+            <label>
+                Usuario
+                <input type="text" name="username" required>
+            </label>
+            <label>
+                Contrasena
+                <input type="password" name="password" required>
+            </label>
+            <button type="submit">Entrar</button>
+        </form>
+    </article>
+</section>
 {% endblock %}

@@ -36,6 +36,9 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-031` | `done` | En nueva requisicion, departamento autocompletado desde usuario autenticado (sin edicion manual).
 - `REQ-032` | `done` | En creacion de requisicion, exigir `codigo cliente` y `nombre cliente` obligatorios.
 - `REQ-033` | `done` | Iniciar V2 visual corporativa (header/nav/paleta/tipografia) alineada a referencias de marca.
+- `REQ-034` | `done` | Primera iteracion dark theme corporativa (nav/superficies/tablas/modales) manteniendo identidad ProHygiene.
+- `REQ-035` | `done` | Segunda iteracion dark: home con metricas, login mejorado y formularios/tablas con mayor jerarquia visual.
+- `REQ-036` | `done` | Tercera iteracion dark: estado activo en nav + pulido de legibilidad en tablas operativas y acciones.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

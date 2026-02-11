@@ -29,6 +29,9 @@
 - Departamento en alta de requisicion fijado por sesion del usuario (`REQ-031`).
 - Requisicion ahora exige datos de cliente (`codigo` + `nombre`) en alta (`REQ-032`).
 - V2 visual iniciada con identidad corporativa (header/nav/paleta/tipografia) (`REQ-033`).
+- Primera iteracion dark theme corporativa aplicada sobre base V2 (`REQ-034`).
+- Segunda iteracion dark aplicada (home/login/forms/tables con mayor jerarquia visual) (`REQ-035`).
+- Tercera iteracion dark aplicada (nav activo + tablas/acciones operativas refinadas) (`REQ-036`).
 
 ## En progreso
 - Smoke test funcional de `REQ-027` en navegador y tests.
@@ -58,6 +61,9 @@
 - Verificar en `/crear` que el departamento se muestra solo lectura y backend usa siempre `current_user.departamento` (aunque se envie otro valor en el form).
 - Verificar en `/crear` que no permite enviar requisicion sin `codigo cliente` y `nombre cliente`, y que ambos se reflejan en detalle de requisicion.
 - Revisar consistencia visual de todas las vistas restantes sobre la nueva base corporativa y ajustar componentes puntuales (tablas/formularios/modales) si hace falta.
+- Iterar contraste fino y micro-espaciados del dark theme con feedback visual de usuario (esta iteracion es base).
+- Ajustar siguientes detalles de V2 dark segun feedback visual: ritmo tipografico del menu y densidad de tablas largas.
+- Revisar si se desea consolidar `style.css` (hay capas de reglas historicas + overrides de iteracion).
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.
