@@ -247,7 +247,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
     if current_user.rol not in ["bodega", "admin"]:
         raise HTTPException(status_code=403, detail="No autorizado")
 
-    aprobadas = (
+    pendientes_entrega = (
         db.query(Requisicion)
         .options(
             joinedload(Requisicion.solicitante),
@@ -257,9 +257,29 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         .order_by(Requisicion.approved_at.asc(), Requisicion.created_at.asc())
         .all()
     )
+
+    historial_query = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.entregador),
+        )
+        .filter(Requisicion.estado == "entregada")
+    )
+    if current_user.rol == "bodega":
+        historial_query = historial_query.filter(Requisicion.delivered_by == current_user.id)
+
+    historial_entregadas = historial_query.order_by(Requisicion.delivered_at.desc()).all()
+
     return templates.TemplateResponse(
         "bodega.html",
-        template_context(request, current_user, aprobadas=aprobadas),
+        template_context(
+            request,
+            current_user,
+            pendientes_entrega=pendientes_entrega,
+            historial_entregadas=historial_entregadas,
+        ),
     )
 
 

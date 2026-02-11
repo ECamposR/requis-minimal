@@ -2,7 +2,8 @@
 {% block title %}Bodega{% endblock %}
 {% block content %}
 <h2>Bodega</h2>
-{% if aprobadas %}
+<h3>Pendientes por entregar</h3>
+{% if pendientes_entrega %}
 <table>
     <thead>
     <tr>
@@ -12,11 +13,12 @@
         <th>Aprobado por</th>
         <th>Justificacion</th>
         <th>Aprobada en</th>
+        <th>Detalle</th>
         <th>Entrega</th>
     </tr>
     </thead>
     <tbody>
-    {% for req in aprobadas %}
+    {% for req in pendientes_entrega %}
     <tr>
         <td>{{ req.folio }}</td>
         <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
@@ -24,6 +26,7 @@
         <td>{{ req.aprobador.nombre if req.aprobador else '-' }}</td>
         <td>{{ req.justificacion }}</td>
         <td>{{ req.approved_at }}</td>
+        <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td>
             <form method="POST" action="/entregar/{{ req.id }}">
                 <input type="text" name="delivered_to" required minlength="3" placeholder="Recibe">
@@ -37,4 +40,50 @@
 {% else %}
 <p>No hay requisiciones aprobadas pendientes de entrega.</p>
 {% endif %}
+
+<h3>Historial de entregadas</h3>
+{% if historial_entregadas %}
+<table>
+    <thead>
+    <tr>
+        <th>Folio</th>
+        <th>Solicitante</th>
+        <th>Departamento</th>
+        <th>Aprobado por</th>
+        <th>Entregado por</th>
+        <th>Recibio</th>
+        <th>Entregada en</th>
+        <th>Detalle</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for req in historial_entregadas %}
+    <tr>
+        <td>{{ req.folio }}</td>
+        <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
+        <td>{{ req.departamento }}</td>
+        <td>{{ req.aprobador.nombre if req.aprobador else '-' }}</td>
+        <td>{{ req.entregador.nombre if req.entregador else '-' }}</td>
+        <td>{{ req.delivered_to or '-' }}</td>
+        <td>{{ req.delivered_at }}</td>
+        <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No hay requisiciones entregadas en historial.</p>
+{% endif %}
+
+<dialog id="modal-detalle">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" onclick="cerrarModal()"></button>
+            <h3>Detalle</h3>
+        </header>
+        <div id="modal-content"></div>
+    </article>
+</dialog>
+
+<script src="/static/app.js"></script>
 {% endblock %}

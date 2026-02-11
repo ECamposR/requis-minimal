@@ -13,6 +13,7 @@
         <th>Justificacion</th>
         <th>Fecha</th>
         <th>Gestionado por</th>
+        <th>Detalle</th>
         <th>Acciones</th>
     </tr>
     </thead>
@@ -36,6 +37,7 @@
                 -
             {% endif %}
         </td>
+        <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td>
             {% if req.estado == 'pendiente' and (current_user.rol == 'admin' or req.departamento == current_user.departamento) %}
             <form method="POST" action="/aprobar/{{ req.id }}" style="display:inline-block;">
@@ -58,4 +60,16 @@
 {% else %}
 <p>No hay requisiciones en historial de aprobacion.</p>
 {% endif %}
+
+<dialog id="modal-detalle">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" onclick="cerrarModal()"></button>
+            <h3>Detalle</h3>
+        </header>
+        <div id="modal-content"></div>
+    </article>
+</dialog>
+
+<script src="/static/app.js"></script>
 {% endblock %}

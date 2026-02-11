@@ -212,6 +212,15 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
     assert req.delivered_to == "Juan Perez"
     assert req.delivered_at is not None
 
+    vista_bodega = client.get("/bodega")
+    assert vista_bodega.status_code == 200
+    html = vista_bodega.text
+    assert "Historial de entregadas" in html
+    assert "REQ-0001" in html
+    assert "Bodega Uno" in html
+    assert "modal-detalle" in html
+    assert "Ver" in html
+
 
 def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
@@ -275,3 +284,5 @@ def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_sessi
     assert "Usuario Ops" in html
     assert "Aprobador Ops" in html
     assert "Bodega Uno" in html
+    assert "modal-detalle" in html
+    assert "Ver" in html

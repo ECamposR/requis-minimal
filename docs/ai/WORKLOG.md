@@ -282,3 +282,25 @@
 - Resultado:
   - Usuarios fuera de la empresa pueden quedar inactivos sin perder historial.
   - Operacion diaria puede enfocarse en usuarios activos sin romper trazabilidad.
+
+## 2026-02-10 19:36 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-024` (historial visible en vista de bodega).
+- Cambios:
+  - `app/main.py` (separa `pendientes_entrega` e `historial_entregadas`; para bodega filtra historial por `delivered_by`)
+  - `templates/bodega.html` (dos bloques: pendientes y historial entregado)
+  - `tests/test_basic_flow.py` (verifica que al entregar ya aparece en historial de bodega)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Bodega mantiene trazabilidad operativa sin que las requisiciones entregadas desaparezcan de su vista.
+
+## 2026-02-10 19:48 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-025` (detalle de items en historiales aprobar/bodega).
+- Cambios:
+  - `templates/aprobar.html` (agrega columna detalle, boton `Ver`, modal y carga de `app.js`)
+  - `templates/bodega.html` (agrega boton `Ver` en pendientes e historial, modal y `app.js`)
+  - `tests/test_basic_flow.py` (verifica presencia de boton `Ver` y modal en ambas vistas)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - El detalle de requisicion (incluyendo items) ya es accesible desde historiales operativos.

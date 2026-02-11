@@ -19,9 +19,11 @@
 - Vista de bodega con trazabilidad de solicitante y aprobador (`REQ-021`).
 - Eliminacion de usuarios con historial protegida y mapeos ORM ajustados (`REQ-022`).
 - Baja logica de usuarios con estado activo/inactivo (`REQ-023`).
+- Vista bodega con historial de entregadas (`REQ-024`).
+- Boton `Ver` en historiales de aprobar y bodega (`REQ-025`).
 
 ## En progreso
-- Smoke test funcional de ciclo desactivar/reactivar usuario.
+- Smoke test funcional de detalle modal en historiales.
 
 ## Proximo paso exacto
 - Ejecutar smoke test de aprobacion/historial:
@@ -36,6 +38,8 @@
   - Intentar eliminar usuario con requisiciones asociadas y verificar mensaje controlado (sin 500).
   - Desactivar usuario y validar que no puede iniciar sesion.
   - Reactivar usuario y validar que recupera acceso.
+  - En `/bodega`, verificar seccion "Historial de entregadas" con actor de entrega.
+  - Verificar en `/aprobar` y `/bodega` que el boton `Ver` abre detalle con items.
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.
