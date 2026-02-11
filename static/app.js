@@ -142,6 +142,21 @@ function verDetalle(id) {
             const emptyColspan = showDelivered ? 3 : 2;
 
             content.innerHTML = `
+                <h4>Items</h4>
+                <div class="detalle-items-wrap">
+                    <table class="detalle-items-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th class="qty-col">Cant. solicitada</th>
+                                ${showDelivered ? '<th class="qty-col">Cant. despachada</th>' : ""}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows || `<tr><td colspan="${emptyColspan}">Sin items</td></tr>`}
+                        </tbody>
+                    </table>
+                </div>
                 <section class="detalle-grid">
                     <div class="kv"><span>Folio</span><strong>${escapeHtml(data.folio || "-")}</strong></div>
                     <div class="kv"><span>Solicitante</span><strong>${escapeHtml(data.solicitante || "-")}</strong></div>
@@ -161,21 +176,6 @@ function verDetalle(id) {
                     <div class="note"><span>Comentario rechazo</span><p>${escapeHtml(data.rejection_comment || "-")}</p></div>
                     <div class="note"><span>Comentario entrega</span><p>${escapeHtml(data.delivery_comment || "-")}</p></div>
                 </section>
-                <h4>Items</h4>
-                <div class="detalle-items-wrap">
-                    <table class="detalle-items-table">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th class="qty-col">Cant. solicitada</th>
-                                ${showDelivered ? '<th class="qty-col">Cant. despachada</th>' : ""}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rows || `<tr><td colspan="${emptyColspan}">Sin items</td></tr>`}
-                        </tbody>
-                    </table>
-                </div>
             `;
             modal.showModal();
         });
