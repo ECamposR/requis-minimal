@@ -602,3 +602,13 @@
   - `static/style.css` (estilos dedicados para card/login-form/footer en dark theme)
 - Resultado:
   - Login mas cercano a la referencia entregada, sin recuperar clave ni recordar sesion.
+
+## 2026-02-11 21:18 UTC-6 | tool: Codex CLI
+- Objetivo: Registrar hito de integracion Git/GitHub para continuidad multi-IA.
+- Git/GitHub:
+  - Commit en rama feature: `5864cc6` (`feat: finalize login page and hide global header on login`)
+  - Merge a principal: `feat/ui-v2-prohygiene` -> `main` (merge commit `0817f61`)
+  - Push remoto: `origin/main` actualizado a `0817f61`
+  - Tag anotado publicado: `v1.2.0-ui-base`
+- Resultado:
+  - UI base aprobada queda congelada y referenciable por cualquier IA/operador sin ambiguedad.

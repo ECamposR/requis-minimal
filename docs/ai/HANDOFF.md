@@ -36,9 +36,11 @@
 - Dashboard de inicio extendido con metricas por estado para todos los usuarios (`REQ-038`).
 - Flujo de gestion en `Aprobar` y `Bodega` movido a vistas dedicadas por requisicion (`REQ-039`).
 - Home extendido con metricas operativas simples adicionales por usuario (`REQ-040`).
+- Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).
+- Tag operativo publicado: `v1.2.0-ui-base` (punto de retorno para UI base aprobada).
 
 ## En progreso
-- Smoke test funcional de `REQ-039` en navegador y tests.
+- Smoke test funcional final post-merge/tag sobre `main`.
 
 ## Proximo paso exacto
 - Ejecutar smoke test de aprobacion/historial:
@@ -83,3 +85,4 @@
 2. Revisar ultimas entradas de `docs/ai/WORKLOG.md`.
 3. Tomar una tarea `todo` de mayor prioridad en `docs/ai/TASKS.md`.
 4. Levantar app con DB limpia (`python init_db.py` + `uvicorn app.main:app --reload`) y continuar.
+5. Si se requiere rollback UI, usar `git checkout v1.2.0-ui-base`.
