@@ -255,3 +255,30 @@
   - `docs/ai/HANDOFF.md`
 - Resultado:
   - Operacion de bodega ahora ve contexto completo de origen y aprobacion antes de entregar.
+
+## 2026-02-10 19:05 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-022` (fix de eliminacion de usuarios con historial + warnings ORM).
+- Cambios:
+  - `app/models.py` (relaciones `back_populates` entre `Usuario` y `Requisicion` para aprobacion/rechazo/entrega)
+  - `app/main.py` (bloqueo de eliminacion si el usuario participa en historial de requisiciones)
+  - `tests/test_admin_users.py` (nuevo test para impedir eliminacion de usuario con historial)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Se elimina el `500` por `NOT NULL constraint failed` al borrar usuarios con historial.
+  - Se corrige configuracion ORM para evitar warnings por relaciones en conflicto.
+
+## 2026-02-10 19:22 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-023` (baja logica de usuarios).
+- Cambios:
+  - `app/models.py` (campo `usuarios.activo`)
+  - `app/database.py` (migracion SQLite agrega columna `activo` con default activo)
+  - `app/auth.py` (login y sesion solo para usuarios activos)
+  - `app/main.py` (filtros admin por estado + endpoints desactivar/reactivar)
+  - `templates/admin_usuarios.html` (estado y acciones desactivar/reactivar)
+  - `tests/test_admin_users.py` (tests de desactivar/reactivar y login bloqueado para inactivos)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Usuarios fuera de la empresa pueden quedar inactivos sin perder historial.
+  - Operacion diaria puede enfocarse en usuarios activos sin romper trazabilidad.

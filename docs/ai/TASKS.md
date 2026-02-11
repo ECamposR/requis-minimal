@@ -24,6 +24,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-019` | `done` | Trazabilidad en aprobacion: mostrar solicitante y actor (aprobador/rechazador) + persistir `rejected_by/rejected_at`.
 - `REQ-020` | `done` | Trazabilidad de bodega: mostrar actor de entrega (`delivered_by`) en historial y detalle.
 - `REQ-021` | `done` | En vista bodega mostrar quien solicito y quien aprobo cada requisicion.
+- `REQ-022` | `done` | Corregir eliminacion de usuarios con historial (evitar 500) y limpiar warnings ORM de relaciones.
+- `REQ-023` | `done` | Implementar baja logica de usuarios (`activo`) con desactivar/reactivar y bloqueo de login para inactivos.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

@@ -31,6 +31,13 @@ def run_migrations() -> None:
         return
 
     with engine.begin() as conn:
+        user_columns = {
+            row[1]
+            for row in conn.execute(text("PRAGMA table_info(usuarios)")).fetchall()
+        }
+        if "activo" not in user_columns:
+            conn.execute(text("ALTER TABLE usuarios ADD COLUMN activo BOOLEAN NOT NULL DEFAULT 1"))
+
         columns = {
             row[1]
             for row in conn.execute(text("PRAGMA table_info(requisiciones)")).fetchall()

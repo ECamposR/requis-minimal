@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 from starlette.middleware.sessions import SessionMiddleware
 from urllib.parse import quote_plus
@@ -292,10 +293,16 @@ def entregar(
 @app.get("/admin/usuarios")
 def admin_usuarios(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     ensure_admin(current_user)
-    usuarios = db.query(Usuario).order_by(Usuario.id.asc()).all()
+    estado = request.query_params.get("estado", "activos")
+    query = db.query(Usuario)
+    if estado == "activos":
+        query = query.filter(Usuario.activo.is_(True))
+    elif estado == "inactivos":
+        query = query.filter(Usuario.activo.is_(False))
+    usuarios = query.order_by(Usuario.activo.desc(), Usuario.id.asc()).all()
     return templates.TemplateResponse(
         "admin_usuarios.html",
-        template_context(request, current_user, usuarios=usuarios),
+        template_context(request, current_user, usuarios=usuarios, estado=estado),
     )
 
 
@@ -349,6 +356,7 @@ def admin_usuario_crear(
         nombre=nombre_limpio,
         rol=rol,
         departamento=depto_limpio,
+        activo=True,
         password=hash_password(password),
     )
     db.add(nuevo)
@@ -442,9 +450,66 @@ def admin_usuario_eliminar(
         if total_admins <= 1:
             return redirect_with_message("/admin/usuarios", "No puedes eliminar el ultimo admin", "error")
 
+    referencias = (
+        db.query(Requisicion.id)
+        .filter(
+            or_(
+                Requisicion.solicitante_id == usuario.id,
+                Requisicion.approved_by == usuario.id,
+                Requisicion.rejected_by == usuario.id,
+                Requisicion.delivered_by == usuario.id,
+            )
+        )
+        .first()
+    )
+    if referencias:
+        return redirect_with_message(
+            "/admin/usuarios",
+            "No puedes eliminar un usuario con historial en requisiciones",
+            "error",
+        )
+
     db.delete(usuario)
     db.commit()
     return redirect_with_message("/admin/usuarios", "Usuario eliminado", "warning")
+
+
+@app.post("/admin/usuarios/{user_id}/desactivar")
+def admin_usuario_desactivar(
+    user_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    usuario = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if usuario.id == current_user.id:
+        return redirect_with_message("/admin/usuarios", "No puedes desactivar tu propio usuario", "error")
+    if not usuario.activo:
+        return redirect_with_message("/admin/usuarios", "Usuario ya inactivo", "warning")
+
+    usuario.activo = False
+    db.commit()
+    return redirect_with_message("/admin/usuarios", "Usuario desactivado", "warning")
+
+
+@app.post("/admin/usuarios/{user_id}/reactivar")
+def admin_usuario_reactivar(
+    user_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    usuario = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if usuario.activo:
+        return redirect_with_message("/admin/usuarios", "Usuario ya activo", "warning")
+
+    usuario.activo = True
+    db.commit()
+    return redirect_with_message("/admin/usuarios", "Usuario reactivado", "success")
 
 
 @app.get("/admin/catalogo-items")

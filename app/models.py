@@ -13,6 +13,7 @@ class Usuario(Base):
     nombre: Mapped[str] = mapped_column(String(120), nullable=False)
     rol: Mapped[str] = mapped_column(String(20), nullable=False)
     departamento: Mapped[str] = mapped_column(String(80), nullable=False)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     requisiciones: Mapped[list["Requisicion"]] = relationship(
         "Requisicion",
@@ -22,14 +23,17 @@ class Usuario(Base):
     aprobaciones_realizadas: Mapped[list["Requisicion"]] = relationship(
         "Requisicion",
         foreign_keys="Requisicion.approved_by",
+        back_populates="aprobador",
     )
     rechazos_realizados: Mapped[list["Requisicion"]] = relationship(
         "Requisicion",
         foreign_keys="Requisicion.rejected_by",
+        back_populates="rechazador",
     )
     entregas_realizadas: Mapped[list["Requisicion"]] = relationship(
         "Requisicion",
         foreign_keys="Requisicion.delivered_by",
+        back_populates="entregador",
     )
 
 
@@ -58,9 +62,21 @@ class Requisicion(Base):
         back_populates="requisiciones",
         foreign_keys=[solicitante_id],
     )
-    aprobador: Mapped["Usuario | None"] = relationship("Usuario", foreign_keys=[approved_by])
-    rechazador: Mapped["Usuario | None"] = relationship("Usuario", foreign_keys=[rejected_by])
-    entregador: Mapped["Usuario | None"] = relationship("Usuario", foreign_keys=[delivered_by])
+    aprobador: Mapped["Usuario | None"] = relationship(
+        "Usuario",
+        foreign_keys=[approved_by],
+        back_populates="aprobaciones_realizadas",
+    )
+    rechazador: Mapped["Usuario | None"] = relationship(
+        "Usuario",
+        foreign_keys=[rejected_by],
+        back_populates="rechazos_realizados",
+    )
+    entregador: Mapped["Usuario | None"] = relationship(
+        "Usuario",
+        foreign_keys=[delivered_by],
+        back_populates="entregas_realizadas",
+    )
     items: Mapped[list["Item"]] = relationship(
         "Item",
         back_populates="requisicion",

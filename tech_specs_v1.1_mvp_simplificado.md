@@ -47,6 +47,7 @@ Documento derivado para implementacion rapida por IA, sin tocar el original.
 - `nombre`
 - `rol` (`user|aprobador|bodega|admin`)
 - `departamento`
+- `activo` (bool, default true)
 
 ### requisiciones
 - `id` PK

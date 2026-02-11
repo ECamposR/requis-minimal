@@ -17,9 +17,11 @@
 - Trazabilidad de aprobacion/rechazo visible y persistida (`REQ-019`).
 - Trazabilidad de entrega por bodega visible en historial y API (`REQ-020`).
 - Vista de bodega con trazabilidad de solicitante y aprobador (`REQ-021`).
+- Eliminacion de usuarios con historial protegida y mapeos ORM ajustados (`REQ-022`).
+- Baja logica de usuarios con estado activo/inactivo (`REQ-023`).
 
 ## En progreso
-- Smoke test funcional de trazabilidad completa incluyendo vista bodega.
+- Smoke test funcional de ciclo desactivar/reactivar usuario.
 
 ## Proximo paso exacto
 - Ejecutar smoke test de aprobacion/historial:
@@ -31,6 +33,9 @@
   - Rechazar una requisicion y confirmar persistencia de actor en historial.
   - Entregar una requisicion desde bodega y confirmar actor `delivered_by` en historial y modal detalle.
   - En `/bodega`, verificar columnas `Solicitante` y `Aprobado por`.
+  - Intentar eliminar usuario con requisiciones asociadas y verificar mensaje controlado (sin 500).
+  - Desactivar usuario y validar que no puede iniciar sesion.
+  - Reactivar usuario y validar que recupera acceso.
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -5,7 +7,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.auth import hash_password
 from app.database import get_db
 from app.main import app
-from app.models import Base, CatalogoItem, Usuario
+from app.models import Base, CatalogoItem, Requisicion, Usuario
 
 TEST_DB_URL = "sqlite:///./test_admin_users.db"
 
@@ -117,6 +119,89 @@ def test_non_admin_cannot_access_user_admin_routes():
         _login(client, "user.ops", "pass123")
         response = client.get("/admin/usuarios")
         assert response.status_code == 403
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()
+
+
+def test_admin_no_puede_eliminar_usuario_con_historial():
+    client, db, engine = _build_client()
+    try:
+        _login(client, "admin", "admin123")
+
+        admin = db.query(Usuario).filter(Usuario.username == "admin").first()
+        user_ops = db.query(Usuario).filter(Usuario.username == "user.ops").first()
+
+        req = Requisicion(
+            folio="REQ-9999",
+            solicitante_id=user_ops.id,
+            departamento="Operaciones",
+            estado="aprobada",
+            justificacion="Historial de prueba",
+            approved_by=admin.id,
+            approved_at=datetime.now(),
+        )
+        db.add(req)
+        db.commit()
+
+        delete_resp = client.post(
+            f"/admin/usuarios/{user_ops.id}/eliminar",
+            follow_redirects=False,
+        )
+        assert delete_resp.status_code == 303
+
+        sigue = db.query(Usuario).filter(Usuario.id == user_ops.id).first()
+        assert sigue is not None
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()
+
+
+def test_admin_puede_desactivar_y_reactivar_usuario():
+    client, db, engine = _build_client()
+    try:
+        _login(client, "admin", "admin123")
+        user_ops = db.query(Usuario).filter(Usuario.username == "user.ops").first()
+
+        desactivar = client.post(
+            f"/admin/usuarios/{user_ops.id}/desactivar",
+            follow_redirects=False,
+        )
+        assert desactivar.status_code == 303
+        db.refresh(user_ops)
+        assert user_ops.activo is False
+
+        reactivar = client.post(
+            f"/admin/usuarios/{user_ops.id}/reactivar",
+            follow_redirects=False,
+        )
+        assert reactivar.status_code == 303
+        db.refresh(user_ops)
+        assert user_ops.activo is True
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()
+
+
+def test_usuario_inactivo_no_puede_login():
+    client, db, engine = _build_client()
+    try:
+        user_ops = db.query(Usuario).filter(Usuario.username == "user.ops").first()
+        user_ops.activo = False
+        db.commit()
+
+        response = client.post(
+            "/login",
+            data={"username": "user.ops", "password": "pass123"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 401
     finally:
         client.close()
         db.close()

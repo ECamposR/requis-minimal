@@ -15,7 +15,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def authenticate_user(db: Session, username: str, password: str) -> Usuario | None:
-    user = db.query(Usuario).filter(Usuario.username == username).first()
+    user = db.query(Usuario).filter(Usuario.username == username, Usuario.activo.is_(True)).first()
     if not user:
         return None
     return user if verify_password(password, user.password) else None
@@ -35,6 +35,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> Usuario
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No autenticado")
 
     user = db.query(Usuario).filter(Usuario.id == user_id).first()
-    if not user:
+    if not user or not user.activo:
+        request.session.clear()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sesión inválida")
     return user

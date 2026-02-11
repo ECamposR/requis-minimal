@@ -3,6 +3,11 @@
 {% block content %}
 <h2>Administracion de Usuarios</h2>
 <p><a href="/admin/usuarios/nuevo" role="button">Nuevo usuario</a></p>
+<p>
+    <a href="/admin/usuarios?estado=activos" role="button" class="{% if estado != 'activos' %}secondary{% endif %}">Activos</a>
+    <a href="/admin/usuarios?estado=inactivos" role="button" class="{% if estado != 'inactivos' %}secondary{% endif %}">Inactivos</a>
+    <a href="/admin/usuarios?estado=todos" role="button" class="{% if estado != 'todos' %}secondary{% endif %}">Todos</a>
+</p>
 
 {% if usuarios %}
 <table>
@@ -13,6 +18,7 @@
         <th>Nombre</th>
         <th>Rol</th>
         <th>Departamento</th>
+        <th>Estado</th>
         <th>Acciones</th>
     </tr>
     </thead>
@@ -24,8 +30,18 @@
         <td>{{ usuario.nombre }}</td>
         <td>{{ usuario.rol }}</td>
         <td>{{ usuario.departamento }}</td>
+        <td>{% if usuario.activo %}Activo{% else %}Inactivo{% endif %}</td>
         <td>
             <a href="/admin/usuarios/{{ usuario.id }}/editar">Editar</a>
+            {% if usuario.activo %}
+            <form method="POST" action="/admin/usuarios/{{ usuario.id }}/desactivar" style="display:inline-block; margin-left:0.5rem;">
+                <button type="submit" class="secondary">Desactivar</button>
+            </form>
+            {% else %}
+            <form method="POST" action="/admin/usuarios/{{ usuario.id }}/reactivar" style="display:inline-block; margin-left:0.5rem;">
+                <button type="submit">Reactivar</button>
+            </form>
+            {% endif %}
             <form method="POST" action="/admin/usuarios/{{ usuario.id }}/eliminar" style="display:inline-block; margin-left:0.5rem;">
                 <button type="submit" class="secondary">Eliminar</button>
             </form>
