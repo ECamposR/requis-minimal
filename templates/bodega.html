@@ -30,6 +30,7 @@
         <td>
             <form method="POST" action="/entregar/{{ req.id }}">
                 <input type="text" name="delivered_to" required minlength="3" placeholder="Recibe">
+                <input type="text" name="comentario" placeholder="Comentario (opcional)">
                 <button type="submit">Marcar entregada</button>
             </form>
         </td>

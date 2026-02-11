@@ -28,6 +28,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-023` | `done` | Implementar baja logica de usuarios (`activo`) con desactivar/reactivar y bloqueo de login para inactivos.
 - `REQ-024` | `done` | Vista bodega con historial de requisiciones entregadas (ya no desaparecen tras procesar).
 - `REQ-025` | `done` | Boton `Ver` (detalle con items) habilitado en historiales de aprobar y bodega.
+- `REQ-026` | `done` | Comentarios de proceso en aprobar/rechazar/entregar para trazabilidad operativa.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

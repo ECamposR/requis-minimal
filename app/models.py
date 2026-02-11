@@ -50,12 +50,15 @@ class Requisicion(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
     approved_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     approved_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    approval_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     delivered_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     delivered_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     delivered_to: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    delivery_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     rejected_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     rejected_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rejection_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     solicitante: Mapped["Usuario"] = relationship(
         "Usuario",

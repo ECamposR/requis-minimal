@@ -59,11 +59,14 @@ Documento derivado para implementacion rapida por IA, sin tocar el original.
 - `created_at`
 - `approved_at`
 - `approved_by` FK usuarios
+- `approval_comment`
 - `rejected_at`
 - `rejected_by` FK usuarios
+- `rejection_comment`
 - `delivered_at`
 - `delivered_by` FK usuarios
 - `delivered_to` (nombre de quien recibe)
+- `delivery_comment`
 - `rejection_reason`
 
 ### items

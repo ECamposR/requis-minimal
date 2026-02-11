@@ -204,14 +204,25 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
 
 
 @app.post("/aprobar/{req_id}")
-def aprobar(req_id: int, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+def aprobar(
+    req_id: int,
+    comentario: str = Form(""),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     req = db.query(Requisicion).filter(Requisicion.id == req_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="Requisicion no encontrada")
     if not puede_aprobar(req, current_user.rol, current_user.departamento):
         raise HTTPException(status_code=403, detail="No autorizado")
 
-    transicionar_requisicion(db, req, nuevo_estado="aprobada", actor_id=current_user.id)
+    transicionar_requisicion(
+        db,
+        req,
+        nuevo_estado="aprobada",
+        actor_id=current_user.id,
+        approval_comment=comentario.strip() or None,
+    )
     return redirect_with_message("/aprobar", "Requisicion aprobada", "success")
 
 
@@ -219,6 +230,7 @@ def aprobar(req_id: int, current_user: Usuario = Depends(get_current_user), db: 
 def rechazar(
     req_id: int,
     razon: str = Form(...),
+    comentario: str = Form(""),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -238,6 +250,7 @@ def rechazar(
         nuevo_estado="rechazada",
         actor_id=current_user.id,
         rejection_reason=razon_limpia,
+        rejection_comment=comentario.strip() or None,
     )
     return redirect_with_message("/aprobar", "Requisicion rechazada", "warning")
 
@@ -287,6 +300,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
 def entregar(
     req_id: int,
     delivered_to: str = Form(...),
+    comentario: str = Form(""),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -306,6 +320,7 @@ def entregar(
         nuevo_estado="entregada",
         actor_id=current_user.id,
         delivered_to=delivered_to_limpio,
+        delivery_comment=comentario.strip() or None,
     )
     return redirect_with_message("/bodega", "Requisicion marcada como entregada", "success")
 
@@ -675,9 +690,12 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "justificacion": req.justificacion,
         "created_at": req.created_at,
         "approved_by": req.aprobador.nombre if req.aprobador else None,
+        "approval_comment": req.approval_comment,
         "rejected_by": req.rechazador.nombre if req.rechazador else None,
+        "rejection_comment": req.rejection_comment,
         "delivered_by": req.entregador.nombre if req.entregador else None,
         "delivered_to": req.delivered_to,
+        "delivery_comment": req.delivery_comment,
         "rejection_reason": req.rejection_reason,
         "items": [
             {"descripcion": item.descripcion, "cantidad": item.cantidad, "unidad": item.unidad}

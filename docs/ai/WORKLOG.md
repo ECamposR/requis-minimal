@@ -304,3 +304,19 @@
   - `docs/ai/HANDOFF.md`
 - Resultado:
   - El detalle de requisicion (incluyendo items) ya es accesible desde historiales operativos.
+
+## 2026-02-10 20:04 UTC-6 | tool: Codex CLI
+- Objetivo: Implementar `REQ-026` (comentarios operativos en aprobacion/rechazo/entrega).
+- Cambios:
+  - `app/models.py` (campos `approval_comment`, `rejection_comment`, `delivery_comment`)
+  - `app/database.py` (migracion SQLite incremental para nuevas columnas)
+  - `app/crud.py` (transicion de estado persiste comentarios por etapa)
+  - `app/main.py` (rutas `/aprobar`, `/rechazar`, `/entregar` reciben comentario; API expone comentarios)
+  - `templates/aprobar.html` (inputs de comentario en aprobar/rechazar)
+  - `templates/bodega.html` (input de comentario en entrega)
+  - `static/app.js` (modal muestra comentarios de aprobacion/rechazo/entrega)
+  - `tests/test_basic_flow.py` (assert de persistencia de comentarios)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Proceso queda mejor documentado por cada actor sin romper flujo actual.

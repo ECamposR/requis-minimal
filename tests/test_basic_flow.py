@@ -124,13 +124,18 @@ def test_aprobar_requisicion(client: TestClient, db_session: Session):
     db_session.refresh(req)
 
     login(client, "aprob.ops", "pass123")
-    response = client.post(f"/aprobar/{req.id}", follow_redirects=False)
+    response = client.post(
+        f"/aprobar/{req.id}",
+        data={"comentario": "Aprobado para continuidad operativa"},
+        follow_redirects=False,
+    )
 
     assert response.status_code == 303
     db_session.refresh(req)
     assert req.estado == "aprobada"
     assert req.approved_by == aprobador.id
     assert req.approved_at is not None
+    assert req.approval_comment == "Aprobado para continuidad operativa"
 
 
 def test_rechazar_requisicion_guarda_actor(client: TestClient, db_session: Session):
@@ -151,7 +156,7 @@ def test_rechazar_requisicion_guarda_actor(client: TestClient, db_session: Sessi
     login(client, "aprob.ops", "pass123")
     response = client.post(
         f"/rechazar/{req.id}",
-        data={"razon": "Sin presupuesto"},
+        data={"razon": "Sin presupuesto", "comentario": "Revisar en proximo ciclo"},
         follow_redirects=False,
     )
 
@@ -161,6 +166,7 @@ def test_rechazar_requisicion_guarda_actor(client: TestClient, db_session: Sessi
     assert req.rejected_by == aprobador.id
     assert req.rejected_at is not None
     assert req.rejection_reason == "Sin presupuesto"
+    assert req.rejection_comment == "Revisar en proximo ciclo"
 
 
 def test_crear_requisicion_rechaza_item_fuera_catalogo(client: TestClient):
@@ -201,7 +207,7 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
     login(client, "bodega.1", "pass123")
     response = client.post(
         f"/entregar/{req.id}",
-        data={"delivered_to": "Juan Perez"},
+        data={"delivered_to": "Juan Perez", "comentario": "Entregado completo y verificado"},
         follow_redirects=False,
     )
 
@@ -211,6 +217,7 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
     assert req.delivered_by == bodega.id
     assert req.delivered_to == "Juan Perez"
     assert req.delivered_at is not None
+    assert req.delivery_comment == "Entregado completo y verificado"
 
     vista_bodega = client.get("/bodega")
     assert vista_bodega.status_code == 200

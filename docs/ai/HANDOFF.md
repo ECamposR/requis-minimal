@@ -21,9 +21,10 @@
 - Baja logica de usuarios con estado activo/inactivo (`REQ-023`).
 - Vista bodega con historial de entregadas (`REQ-024`).
 - Boton `Ver` en historiales de aprobar y bodega (`REQ-025`).
+- Comentarios de proceso en aprobar/rechazar/entregar (`REQ-026`).
 
 ## En progreso
-- Smoke test funcional de detalle modal en historiales.
+- Smoke test funcional de comentarios operativos.
 
 ## Proximo paso exacto
 - Ejecutar smoke test de aprobacion/historial:
@@ -40,6 +41,7 @@
   - Reactivar usuario y validar que recupera acceso.
   - En `/bodega`, verificar seccion "Historial de entregadas" con actor de entrega.
   - Verificar en `/aprobar` y `/bodega` que el boton `Ver` abre detalle con items.
+  - Verificar en `/aprobar` y `/bodega` que comentarios se guardan y se ven en modal detalle.
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.
