@@ -41,6 +41,10 @@
 - `Aprobar` y `Bodega` ahora incluyen busqueda y filtros operativos (estado/departamento/vista/resultado) (`REQ-043`).
 - UI/filtros distinguen `Pendiente de aprobar` (interno `pendiente`) y `Pendiente de entregar` (interno `aprobada`) (`REQ-044`).
 - Startup/migraciones SQLite ya soportan DB limpia sin error de tablas inexistentes (`REQ-045`).
+- UI de creacion no permite agregar mas filas de items si la fila previa esta incompleta (`REQ-046`).
+- Backend valida filas de items incompletas/invalidas con errores claros para evitar falsos rechazos de catalogo (`REQ-047`).
+- Usuarios pueden eliminar requisiciones propias exclusivamente en estado `pendiente de aprobar` (`REQ-048`).
+- Corregido error intermitente `Item no permitido en catalogo` por items con caracteres especiales en filas dinamicas y por diferencias de formato (`REQ-049`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).
 - Tag operativo publicado: `v1.2.0-ui-base` (punto de retorno para UI base aprobada).
 
@@ -67,6 +71,7 @@
 - Verificar que `parcial` y `no_entregada` exigen comentario y que `no_entregada` permite dejar vacio "Recibe".
 - Verificar que al elegir `parcial` redirige a `/entregar/{id}/parcial`, permite editar cantidades entregadas por item y guarda `cantidad_entregada`.
 - Verificar en `/crear` que un item ya seleccionado queda bloqueado en las demas filas y que backend rechaza duplicados si se fuerza request manual.
+- Verificar en `/crear` que items con caracteres especiales (ej. `Mopa 12"`) se guardan correctamente tambien en filas agregadas dinamicamente.
 - Verificar en `/admin/usuarios` que `Departamento` se selecciona desde lista fija y backend rechaza valores fuera de catalogo.
 - Verificar en `/crear` que el departamento se muestra solo lectura y backend usa siempre `current_user.departamento` (aunque se envie otro valor en el form).
 - Verificar en `/crear` que no permite enviar requisicion sin `codigo cliente` y `nombre cliente`, y que ambos se reflejan en detalle de requisicion.

@@ -12,7 +12,7 @@
         <th>Departamento</th>
         <th class="col-estado">Estado</th>
         <th class="col-fecha">Fecha</th>
-        <th class="col-detalle">Accion</th>
+        <th class="col-acciones">Acciones</th>
     </tr>
     </thead>
     <tbody>
@@ -34,7 +34,14 @@
             {% endif %}
         </td>
         <td>{{ req.created_at }}</td>
-        <td><button onclick="verDetalle({{ req.id }})">Ver</button></td>
+        <td>
+            <button type="button" onclick="verDetalle({{ req.id }})">Ver</button>
+            {% if req.estado == 'pendiente' %}
+            <form method="POST" action="/mis-requisiciones/{{ req.id }}/eliminar" style="display:inline-block; margin-left:0.35rem;">
+                <button type="submit" class="secondary">Eliminar</button>
+            </form>
+            {% endif %}
+        </td>
     </tr>
     {% endfor %}
     </tbody>

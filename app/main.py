@@ -41,6 +41,10 @@ def startup_migrations() -> None:
     run_migrations()
 
 
+def normalize_catalog_name(value: str) -> str:
+    return " ".join(value.split()).strip().casefold()
+
+
 def template_context(request: Request, current_user: Usuario | None = None, **kwargs: object) -> dict[str, object]:
     return {"request": request, "current_user": current_user, **kwargs}
 
@@ -203,10 +207,13 @@ async def crear(
     )
 
     form_data = await request.form()
-    items_data = parse_items_from_form(form_data)
+    try:
+        items_data = parse_items_from_form(form_data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     if not items_data:
         raise HTTPException(status_code=400, detail="Debe agregar al menos un item")
-    descripciones = [item["descripcion"] for item in items_data]
+    descripciones = [normalize_catalog_name(item["descripcion"]) for item in items_data]
     if len(set(descripciones)) != len(descripciones):
         raise HTTPException(
             status_code=400,
@@ -214,15 +221,17 @@ async def crear(
         )
 
     catalogo_habilitado = {
-        row.nombre
+        normalize_catalog_name(row.nombre): row.nombre
         for row in db.query(CatalogoItem.nombre).filter(CatalogoItem.activo.is_(True)).all()
     }
     if not catalogo_habilitado:
         raise HTTPException(status_code=400, detail="No hay items activos en catalogo")
 
     for item_data in items_data:
-        if item_data["descripcion"] not in catalogo_habilitado:
+        descripcion_normalizada = normalize_catalog_name(item_data["descripcion"])
+        if descripcion_normalizada not in catalogo_habilitado:
             raise HTTPException(status_code=400, detail="Item no permitido en catalogo")
+        item_data["descripcion"] = catalogo_habilitado[descripcion_normalizada]
         agregar_item_db(db, req.id, **item_data)
 
     return redirect_with_message("/mis-requisiciones", "Requisicion creada", "success")
@@ -241,6 +250,31 @@ def mis_requisiciones(
     return templates.TemplateResponse(
         "mis_requisiciones.html", template_context(request, current_user, requisiciones=requisiciones)
     )
+
+
+@app.post("/mis-requisiciones/{req_id}/eliminar")
+def eliminar_mi_requisicion(
+    req_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    req = (
+        db.query(Requisicion)
+        .filter(Requisicion.id == req_id, Requisicion.solicitante_id == current_user.id)
+        .first()
+    )
+    if not req:
+        return redirect_with_message("/mis-requisiciones", "Requisicion no encontrada", "error")
+    if req.estado != "pendiente":
+        return redirect_with_message(
+            "/mis-requisiciones",
+            "Solo puedes eliminar requisiciones en pendiente de aprobar",
+            "error",
+        )
+
+    db.delete(req)
+    db.commit()
+    return redirect_with_message("/mis-requisiciones", "Requisicion eliminada", "warning")
 
 
 @app.get("/aprobar")

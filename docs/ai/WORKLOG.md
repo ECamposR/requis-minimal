@@ -673,3 +673,42 @@
   - `docs/ai/HANDOFF.md`
 - Resultado:
   - Uvicorn puede iniciar correctamente tras borrar `requisiciones.db`; migraciones incrementales ya no fallan en bases nuevas.
+
+## 2026-02-11 22:46 UTC-6 | tool: Codex CLI
+- Objetivo: Endurecer flujo de alta de items en creacion de requisicion (UI + backend).
+- Cambios:
+  - `static/app.js` (bloqueo de `+ Agregar item` si la fila previa no tiene item/cantidad valida)
+  - `app/crud.py` (`parse_items_from_form` ahora ignora filas vacias completas y rechaza filas parciales o cantidades invalidas)
+  - `app/main.py` (captura `ValueError` del parser y devuelve `400` con mensaje explicito)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Se evita crear filas encadenadas incompletas y desaparece el falso positivo `Item no permitido en catalogo` cuando el problema real es fila invalida.
+
+## 2026-02-11 23:02 UTC-6 | tool: Codex CLI
+- Objetivo: Permitir eliminacion de requisiciones propias solo antes de aprobacion.
+- Cambios:
+  - `app/main.py` (nueva ruta `POST /mis-requisiciones/{id}/eliminar` con validacion de propiedad + estado `pendiente`)
+  - `templates/mis_requisiciones.html` (boton `Eliminar` visible solo cuando estado es pendiente)
+  - `tests/test_basic_flow.py` (3 tests: elimina propia pendiente, bloquea no-pendiente, bloquea requisicion ajena)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Se mantiene trazabilidad historica en estados ya gestionados y se habilita correccion temprana para requisiciones pendientes.
+
+## 2026-02-11 23:24 UTC-6 | tool: Codex CLI
+- Objetivo: Corregir error intermitente al crear requisiciones: `Item no permitido en catalogo`.
+- Causa identificada:
+  - En filas de items agregadas por JS, las opciones se construian sin escape HTML; items con comillas (ej. `Mopa 12"`) rompian el `value`.
+  - La validacion backend comparaba nombres exactos sin normalizar, sensible a espacios/mayusculas.
+- Cambios:
+  - `static/app.js` (`renderItemOptions` ahora escapa `value` y texto con `escapeHtml`)
+  - `app/main.py` (normalizacion de nombre de item en backend con `normalize_catalog_name`; validacion/duplicados por clave normalizada y persistencia del nombre canonico del catalogo)
+  - `tests/test_basic_flow.py` (nuevo caso de normalizacion de item con mayusculas/espacios)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Validacion:
+  - `python -m compileall app static templates tests` OK.
+  - Nota: ejecucion de `pytest` con `TestClient` puede quedar bloqueada si hay instancia activa de `uvicorn --reload` usando la misma SQLite durante startup/migraciones.
+- Resultado:
+  - Creacion de requisiciones robusta para items con caracteres especiales y variaciones de formato de entrada.

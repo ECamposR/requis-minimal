@@ -355,6 +355,28 @@ def test_crear_requisicion_rechaza_items_duplicados(client: TestClient):
     assert response.json()["detail"] == "No se permiten items duplicados en una misma requisicion"
 
 
+def test_crear_requisicion_normaliza_item_con_espacios_y_mayusculas(client: TestClient, db_session: Session):
+    login(client, "user.ops", "pass123")
+
+    response = client.post(
+        "/crear",
+        data={
+            "cliente_codigo": "C-4002",
+            "cliente_nombre": "Cliente Cinco",
+            "cliente_ruta_principal": "RA02",
+            "justificacion": "Normalizacion de item",
+            "items[0][descripcion]": "  cable   utp   CAT6  ",
+            "items[0][cantidad]": "1",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    req = db_session.query(Requisicion).filter(Requisicion.cliente_codigo == "C-4002").first()
+    assert req is not None
+    assert req.items[0].descripcion == "Cable UTP Cat6"
+
+
 def test_crear_requisicion_requiere_datos_cliente(client: TestClient):
     login(client, "user.ops", "pass123")
 
@@ -391,6 +413,63 @@ def test_crear_requisicion_requiere_formato_ruta_principal(client: TestClient):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Ruta principal invalida (formato: AA00)"
+
+
+def test_usuario_puede_eliminar_su_requisicion_pendiente(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    req = Requisicion(
+        folio="REQ-0501",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="Eliminar pendiente propia",
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "user.ops", "pass123")
+    response = client.post(f"/mis-requisiciones/{req.id}/eliminar", follow_redirects=False)
+    assert response.status_code == 303
+    assert db_session.query(Requisicion).filter(Requisicion.id == req.id).first() is None
+
+
+def test_usuario_no_puede_eliminar_su_requisicion_no_pendiente(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    req = Requisicion(
+        folio="REQ-0502",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="No debe eliminarse si ya aprobada",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "user.ops", "pass123")
+    response = client.post(f"/mis-requisiciones/{req.id}/eliminar", follow_redirects=False)
+    assert response.status_code == 303
+    assert db_session.query(Requisicion).filter(Requisicion.id == req.id).first() is not None
+
+
+def test_usuario_no_puede_eliminar_requisicion_ajena(client: TestClient, db_session: Session):
+    otro = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    req = Requisicion(
+        folio="REQ-0503",
+        solicitante_id=otro.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="No debe eliminarse por otro usuario",
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "user.ops", "pass123")
+    response = client.post(f"/mis-requisiciones/{req.id}/eliminar", follow_redirects=False)
+    assert response.status_code == 303
+    assert db_session.query(Requisicion).filter(Requisicion.id == req.id).first() is not None
 
 
 def test_entregar_requisicion(client: TestClient, db_session: Session):

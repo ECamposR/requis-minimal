@@ -72,15 +72,30 @@ def parse_items_from_form(form_data: Any) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
     for idx in sorted(rows.keys(), key=lambda x: int(x)):
         row = rows[idx]
-        if {"descripcion", "cantidad"}.issubset(row.keys()):
-            unidad = str(row.get("unidad", UNIDAD_POR_DEFECTO)).strip() or UNIDAD_POR_DEFECTO
-            items.append(
-                {
-                    "descripcion": str(row["descripcion"]).strip(),
-                    "cantidad": float(row["cantidad"]),
-                    "unidad": unidad,
-                }
-            )
+        descripcion = str(row.get("descripcion", "")).strip()
+        cantidad_raw = str(row.get("cantidad", "")).strip()
+
+        # Ignore fully empty rows, but fail on partial rows to avoid ambiguous saves.
+        if not descripcion and not cantidad_raw:
+            continue
+        if not descripcion or not cantidad_raw:
+            raise ValueError("Cada item debe tener descripcion y cantidad")
+
+        try:
+            cantidad = float(cantidad_raw)
+        except ValueError as exc:
+            raise ValueError("Cantidad de item invalida") from exc
+        if cantidad <= 0:
+            raise ValueError("Cantidad de item debe ser mayor que cero")
+
+        unidad = str(row.get("unidad", UNIDAD_POR_DEFECTO)).strip() or UNIDAD_POR_DEFECTO
+        items.append(
+            {
+                "descripcion": descripcion,
+                "cantidad": cantidad,
+                "unidad": unidad,
+            }
+        )
     return items
 
 

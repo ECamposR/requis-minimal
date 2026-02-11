@@ -48,6 +48,10 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-043` | `done` | Agregar busqueda/filtros en `Aprobar` y `Bodega` para escalar consultas de requisiciones.
 - `REQ-044` | `done` | Separar estados operativos en UI/filtros: `Pendiente de aprobar` y `Pendiente de entregar`.
 - `REQ-045` | `done` | Robustecer `run_migrations()` para que arranque en DB limpia sin error `no such table`.
+- `REQ-046` | `done` | Evitar agregar nueva fila de item si la fila anterior no tiene item/cantidad valida.
+- `REQ-047` | `done` | Endurecer parseo backend de items para evitar falsos `Item no permitido en catalogo`.
+- `REQ-048` | `done` | Permitir eliminar requisiciones propias solo si estan en `pendiente de aprobar`.
+- `REQ-049` | `done` | Corregir validacion intermitente de catalogo al crear requisicion (escape de opciones JS + normalizacion backend de nombre de item).
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

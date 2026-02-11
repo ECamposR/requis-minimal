@@ -19,7 +19,8 @@ function renderItemOptions() {
     const catalogo = window.CATALOGO_ITEMS || [];
     const options = ['<option value="">Seleccionar item...</option>'];
     for (const item of catalogo) {
-        options.push(`<option value="${item}">${item}</option>`);
+        const safeItem = escapeHtml(item);
+        options.push(`<option value="${safeItem}">${safeItem}</option>`);
     }
     return options.join("");
 }
@@ -28,6 +29,25 @@ function getCurrentSelectedValues() {
     return Array.from(document.querySelectorAll("#items-container select[name*='[descripcion]']"))
         .map((s) => s.value)
         .filter((v) => v);
+}
+
+function handleItemSelectChange(select) {
+    const selectedValue = select.value;
+    if (!selectedValue) {
+        syncItemSelectors();
+        return;
+    }
+
+    const duplicate = Array.from(document.querySelectorAll("#items-container select[name*='[descripcion]']"))
+        .some((other) => other !== select && other.value === selectedValue);
+
+    if (duplicate) {
+        select.value = "";
+        select.setCustomValidity("Este item ya fue agregado en otra fila.");
+        select.reportValidity();
+        select.setCustomValidity("");
+    }
+    syncItemSelectors();
 }
 
 function syncItemSelectors() {
@@ -48,9 +68,34 @@ function eliminarItem(button) {
     syncItemSelectors();
 }
 
+function canAddItemRow(container) {
+    const rows = Array.from(container.querySelectorAll(".item-row"));
+    if (rows.length === 0) return true;
+
+    const lastRow = rows[rows.length - 1];
+    const select = lastRow.querySelector("select[name*='[descripcion]']");
+    const qtyInput = lastRow.querySelector("input[name*='[cantidad]']");
+
+    if (select && !select.value) {
+        select.reportValidity();
+        return false;
+    }
+    if (qtyInput) {
+        const qty = Number(qtyInput.value);
+        const qtyValida = qtyInput.value !== "" && !Number.isNaN(qty) && qty > 0;
+        if (!qtyValida) {
+            qtyInput.reportValidity();
+            qtyInput.focus();
+            return false;
+        }
+    }
+    return true;
+}
+
 function agregarItem() {
     const container = document.getElementById("items-container");
     if (!container) return;
+    if (!canAddItemRow(container)) return;
 
     const div = document.createElement("div");
     div.className = "item-row";
@@ -64,7 +109,7 @@ function agregarItem() {
     container.appendChild(div);
     const select = div.querySelector("select");
     if (select) {
-        select.addEventListener("change", syncItemSelectors);
+        select.addEventListener("change", () => handleItemSelectChange(select));
     }
     itemCount++;
     syncItemSelectors();
@@ -73,7 +118,7 @@ function agregarItem() {
 document.addEventListener("DOMContentLoaded", () => {
     const selects = document.querySelectorAll("#items-container select[name*='[descripcion]']");
     for (const select of selects) {
-        select.addEventListener("change", syncItemSelectors);
+        select.addEventListener("change", () => handleItemSelectChange(select));
     }
     syncItemSelectors();
 });
