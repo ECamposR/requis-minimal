@@ -149,6 +149,12 @@ async def crear(
     items_data = parse_items_from_form(form_data)
     if not items_data:
         raise HTTPException(status_code=400, detail="Debe agregar al menos un item")
+    descripciones = [item["descripcion"] for item in items_data]
+    if len(set(descripciones)) != len(descripciones):
+        raise HTTPException(
+            status_code=400,
+            detail="No se permiten items duplicados en una misma requisicion",
+        )
 
     catalogo_habilitado = {
         row.nombre

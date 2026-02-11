@@ -186,6 +186,25 @@ def test_crear_requisicion_rechaza_item_fuera_catalogo(client: TestClient):
     assert response.json()["detail"] == "Item no permitido en catalogo"
 
 
+def test_crear_requisicion_rechaza_items_duplicados(client: TestClient):
+    login(client, "user.ops", "pass123")
+
+    response = client.post(
+        "/crear",
+        data={
+            "departamento": "Operaciones",
+            "justificacion": "Intento con item duplicado",
+            "items[0][descripcion]": "Cable UTP Cat6",
+            "items[0][cantidad]": "1",
+            "items[1][descripcion]": "Cable UTP Cat6",
+            "items[1][cantidad]": "2",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "No se permiten items duplicados en una misma requisicion"
+
+
 def test_entregar_requisicion(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

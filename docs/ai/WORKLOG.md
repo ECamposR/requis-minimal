@@ -388,3 +388,15 @@
   - `static/style.css` (estilos de tabla de detalle, alineacion numerica y wrapper con scroll).
 - Resultado:
   - Mayor legibilidad y trazabilidad de cantidades en el detalle, especialmente para entregas parciales.
+
+## 2026-02-11 17:15 UTC-6 | tool: Codex CLI
+- Objetivo: Evitar duplicado de item en una misma requisicion.
+- Cambios:
+  - `static/app.js` (bloqueo de opciones repetidas entre filas y re-sincronizacion al eliminar fila)
+  - `app/main.py` (validacion backend de duplicados antes de persistir)
+  - `tests/test_basic_flow.py` (nuevo test de rechazo de items duplicados)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - El usuario no puede seleccionar dos veces el mismo item en UI.
+  - Si se manipula el request, backend bloquea la requisicion con error 400.

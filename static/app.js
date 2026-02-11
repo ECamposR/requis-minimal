@@ -24,6 +24,30 @@ function renderItemOptions() {
     return options.join("");
 }
 
+function getCurrentSelectedValues() {
+    return Array.from(document.querySelectorAll("#items-container select[name*='[descripcion]']"))
+        .map((s) => s.value)
+        .filter((v) => v);
+}
+
+function syncItemSelectors() {
+    const selects = Array.from(document.querySelectorAll("#items-container select[name*='[descripcion]']"));
+    const selected = getCurrentSelectedValues();
+    for (const select of selects) {
+        const ownValue = select.value;
+        for (const option of select.options) {
+            if (!option.value) continue;
+            option.disabled = option.value !== ownValue && selected.includes(option.value);
+        }
+    }
+}
+
+function eliminarItem(button) {
+    const row = button.closest(".item-row");
+    if (row) row.remove();
+    syncItemSelectors();
+}
+
 function agregarItem() {
     const container = document.getElementById("items-container");
     if (!container) return;
@@ -35,11 +59,24 @@ function agregarItem() {
             ${renderItemOptions()}
         </select>
         <input type="number" name="items[${itemCount}][cantidad]" placeholder="Cantidad" step="0.01" min="0.01" required>
-        <button type="button" onclick="this.parentElement.remove()">X</button>
+        <button type="button" onclick="eliminarItem(this)">X</button>
     `;
     container.appendChild(div);
+    const select = div.querySelector("select");
+    if (select) {
+        select.addEventListener("change", syncItemSelectors);
+    }
     itemCount++;
+    syncItemSelectors();
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    const selects = document.querySelectorAll("#items-container select[name*='[descripcion]']");
+    for (const select of selects) {
+        select.addEventListener("change", syncItemSelectors);
+    }
+    syncItemSelectors();
+});
 
 function verDetalle(id) {
     fetch(`/api/requisiciones/${id}`)
