@@ -228,6 +228,35 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
     )
 
 
+@app.get("/aprobar/{req_id}/gestionar")
+def aprobar_gestionar(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.rol not in ["aprobador", "admin"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.solicitante), joinedload(Requisicion.items))
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if req.estado != "pendiente":
+        return redirect_with_message("/aprobar", "Solo puedes gestionar requisiciones pendientes", "warning")
+    if not puede_aprobar(req, current_user.rol, current_user.departamento):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    return templates.TemplateResponse(
+        "aprobar_gestionar.html",
+        template_context(request, current_user, req=req),
+    )
+
+
 @app.post("/aprobar/{req_id}")
 def aprobar(
     req_id: int,
@@ -318,6 +347,35 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             pendientes_entrega=pendientes_entrega,
             historial_entregadas=historial_entregadas,
         ),
+    )
+
+
+@app.get("/bodega/{req_id}/gestionar")
+def bodega_gestionar(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.rol not in ["bodega", "admin"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.solicitante), joinedload(Requisicion.aprobador), joinedload(Requisicion.items))
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if req.estado != "aprobada":
+        return redirect_with_message("/bodega", "Solo puedes gestionar requisiciones aprobadas", "warning")
+    if not puede_entregar(req, current_user.rol):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    return templates.TemplateResponse(
+        "bodega_gestionar.html",
+        template_context(request, current_user, req=req),
     )
 
 

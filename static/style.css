@@ -339,6 +339,39 @@ button:hover {
     height: 1.95rem;
 }
 
+.gestion-layout {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 0.9rem;
+    align-items: start;
+}
+
+.gestion-card {
+    border: 1px solid var(--dark-border);
+    border-radius: 0.85rem;
+    background: linear-gradient(180deg, rgba(18, 31, 55, 0.95) 0%, rgba(13, 23, 42, 0.95) 100%);
+    padding: 0.9rem;
+}
+
+.gestion-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.gestion-form {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.gestion-form label {
+    margin-bottom: 0;
+}
+
+.gestion-actions {
+    margin-top: 0.7rem;
+    margin-bottom: 0;
+}
+
 table {
     font-size: 0.93rem;
     border-radius: 0.6rem;
@@ -583,6 +616,10 @@ table td {
 }
 
 @media (max-width: 1024px) {
+    .gestion-layout {
+        grid-template-columns: 1fr;
+    }
+
     .detalle-grid {
         grid-template-columns: repeat(2, minmax(170px, 1fr));
     }

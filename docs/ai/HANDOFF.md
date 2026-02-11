@@ -34,10 +34,10 @@
 - Tercera iteracion dark aplicada (nav activo + tablas/acciones operativas refinadas) (`REQ-036`).
 - CSS consolidado para V2 dark, eliminando reglas duplicadas/conflictivas (`REQ-037`).
 - Dashboard de inicio extendido con metricas por estado para todos los usuarios (`REQ-038`).
+- Flujo de gestion en `Aprobar` y `Bodega` movido a vistas dedicadas por requisicion (`REQ-039`).
 
 ## En progreso
-- Smoke test funcional de `REQ-027` en navegador y tests.
-- Smoke test funcional de `REQ-028` en navegador y tests.
+- Smoke test funcional de `REQ-039` en navegador y tests.
 
 ## Proximo paso exacto
 - Ejecutar smoke test de aprobacion/historial:
@@ -67,6 +67,7 @@
 - Ajustar siguientes detalles de V2 dark segun feedback visual: ritmo tipografico del menu y densidad de tablas largas.
 - Desde `REQ-037`, tomar `static/style.css` como base limpia para siguientes iteraciones visuales.
 - Validar con feedback visual si el contraste de tarjetas metricas necesita un ajuste adicional (actualmente diferenciadas por color de estado).
+- Validar UX final de pantallas `GET /aprobar/{id}/gestionar` y `GET /bodega/{id}/gestionar` (copy, espaciado y ayudas contextuales).
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.

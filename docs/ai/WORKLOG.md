@@ -538,3 +538,18 @@
 - Resultado:
   - Dashboard inicial mas informativo y consistente entre roles.
   - El usuario agente ya ve sus requisiciones separadas por estado, no solo el total.
+
+## 2026-02-11 20:22 UTC-6 | tool: Codex CLI
+- Objetivo: Reemplazar paneles compactos de accion en `Aprobar` y `Bodega` por vistas dedicadas de gestion.
+- Cambios:
+  - `app/main.py` (nuevas rutas `GET /aprobar/{id}/gestionar` y `GET /bodega/{id}/gestionar` con validaciones de rol/estado)
+  - `templates/aprobar.html` y `templates/bodega.html` (accion cambia a enlace `Gestionar`)
+  - `templates/aprobar_gestionar.html` (pantalla completa para aprobar/rechazar)
+  - `templates/bodega_gestionar.html` (pantalla completa para registrar entrega)
+  - `static/style.css` (nuevos estilos `gestion-*` para layout y formularios)
+  - `tests/test_basic_flow.py` (tests para acceso a nuevas vistas de gestion)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Flujo operativo mas claro y legible, sin menu colapsado ni campos cortados.
+  - Queda pendiente confirmar ejecucion de tests en entorno local: en este sandbox `pytest` quedo colgado sin salida y finalizo por timeout.

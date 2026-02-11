@@ -227,6 +227,26 @@ def test_aprobar_requisicion(client: TestClient, db_session: Session):
     assert req.approval_comment == "Aprobado para continuidad operativa"
 
 
+def test_aprobador_puede_abrir_vista_gestion_aprobacion(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    req = Requisicion(
+        folio="REQ-0201",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="Vista dedicada de aprobacion",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get(f"/aprobar/{req.id}/gestionar")
+    assert response.status_code == 200
+    assert "Gestionar Aprobacion" in response.text
+    assert req.folio in response.text
+
+
 def test_rechazar_requisicion_guarda_actor(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
@@ -421,6 +441,30 @@ def test_bodega_puede_marcar_entrega_parcial(client: TestClient, db_session: Ses
     assert req.delivery_result == "parcial"
     assert req.delivery_comment == "Falto 1 item por quiebre de stock"
     assert req.items[0].cantidad_entregada == 0.5
+
+
+def test_bodega_puede_abrir_vista_gestion_entrega(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req = Requisicion(
+        folio="REQ-0202",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="Vista dedicada de bodega",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "bodega.1", "pass123")
+    response = client.get(f"/bodega/{req.id}/gestionar")
+    assert response.status_code == 200
+    assert "Gestionar Entrega" in response.text
+    assert req.folio in response.text
 
 
 def test_bodega_puede_marcar_no_entregada(client: TestClient, db_session: Session):

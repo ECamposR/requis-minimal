@@ -29,20 +29,7 @@
         <td>{{ req.approved_at }}</td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td>
-            <details class="accion-toggle">
-                <summary>Procesar</summary>
-                <form method="POST" action="/entregar/{{ req.id }}" class="compact-form">
-                    <select name="resultado" aria-label="Resultado entrega">
-                        <option value="completa">Completa</option>
-                        <option value="parcial">Parcial</option>
-                        <option value="no_entregada">No entregada</option>
-                    </select>
-                    <input type="text" name="delivered_to" minlength="3" placeholder="Recibe (si aplica)">
-                    <input type="text" name="comentario" placeholder="Comentario">
-                    <button type="submit">Registrar</button>
-                </form>
-                <small class="accion-text">Si eliges parcial, abrira edicion de cantidades por item.</small>
-            </details>
+            <a href="/bodega/{{ req.id }}/gestionar" role="button" class="secondary">Gestionar</a>
         </td>
     </tr>
     {% endfor %}
