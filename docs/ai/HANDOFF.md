@@ -27,6 +27,7 @@
 - Bloqueo de items duplicados por requisicion en formulario y backend (`REQ-029`).
 - Departamento de usuarios administrado por lista cerrada en alta/edicion (`REQ-030`).
 - Departamento en alta de requisicion fijado por sesion del usuario (`REQ-031`).
+- Requisicion ahora exige datos de cliente (`codigo` + `nombre`) en alta (`REQ-032`).
 
 ## En progreso
 - Smoke test funcional de `REQ-027` en navegador y tests.
@@ -54,6 +55,7 @@
 - Verificar en `/crear` que un item ya seleccionado queda bloqueado en las demas filas y que backend rechaza duplicados si se fuerza request manual.
 - Verificar en `/admin/usuarios` que `Departamento` se selecciona desde lista fija y backend rechaza valores fuera de catalogo.
 - Verificar en `/crear` que el departamento se muestra solo lectura y backend usa siempre `current_user.departamento` (aunque se envie otro valor en el form).
+- Verificar en `/crear` que no permite enviar requisicion sin `codigo cliente` y `nombre cliente`, y que ambos se reflejan en detalle de requisicion.
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.

@@ -99,6 +99,8 @@ function verDetalle(id) {
             content.innerHTML = `
                 <p><strong>Folio:</strong> ${data.folio}</p>
                 <p><strong>Solicitante:</strong> ${data.solicitante || "-"}</p>
+                <p><strong>Codigo cliente:</strong> ${data.cliente_codigo || "-"}</p>
+                <p><strong>Nombre cliente:</strong> ${data.cliente_nombre || "-"}</p>
                 <p><strong>Justificacion:</strong> ${data.justificacion}</p>
                 <p><strong>Aprobado por:</strong> ${data.approved_by || "-"}</p>
                 <p><strong>Comentario aprobacion:</strong> ${data.approval_comment || "-"}</p>

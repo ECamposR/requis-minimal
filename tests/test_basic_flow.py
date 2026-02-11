@@ -92,6 +92,8 @@ def test_crear_requisicion(client: TestClient, db_session: Session):
     response = client.post(
         "/crear",
         data={
+            "cliente_codigo": "C-1001",
+            "cliente_nombre": "Cliente Uno",
             "justificacion": "Material para mantenimiento correctivo",
             "items[0][descripcion]": "Cable UTP Cat6",
             "items[0][cantidad]": "25",
@@ -104,6 +106,8 @@ def test_crear_requisicion(client: TestClient, db_session: Session):
     assert req is not None
     assert req.estado == "pendiente"
     assert req.departamento == "Operaciones"
+    assert req.cliente_codigo == "C-1001"
+    assert req.cliente_nombre == "Cliente Uno"
     assert len(req.items) == 1
     assert req.items[0].descripcion == "Cable UTP Cat6"
 
@@ -115,6 +119,8 @@ def test_crear_requisicion_ignora_departamento_enviado(client: TestClient, db_se
         "/crear",
         data={
             "departamento": "Ventas",
+            "cliente_codigo": "C-2001",
+            "cliente_nombre": "Cliente Dos",
             "justificacion": "Prueba de spoof de departamento",
             "items[0][descripcion]": "Conector RJ45",
             "items[0][cantidad]": "2",
@@ -195,6 +201,8 @@ def test_crear_requisicion_rechaza_item_fuera_catalogo(client: TestClient):
     response = client.post(
         "/crear",
         data={
+            "cliente_codigo": "C-3001",
+            "cliente_nombre": "Cliente Tres",
             "justificacion": "Intento con item invalido",
             "items[0][descripcion]": "ITEM NO VALIDO",
             "items[0][cantidad]": "1",
@@ -211,6 +219,8 @@ def test_crear_requisicion_rechaza_items_duplicados(client: TestClient):
     response = client.post(
         "/crear",
         data={
+            "cliente_codigo": "C-4001",
+            "cliente_nombre": "Cliente Cuatro",
             "justificacion": "Intento con item duplicado",
             "items[0][descripcion]": "Cable UTP Cat6",
             "items[0][cantidad]": "1",
@@ -221,6 +231,24 @@ def test_crear_requisicion_rechaza_items_duplicados(client: TestClient):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "No se permiten items duplicados en una misma requisicion"
+
+
+def test_crear_requisicion_requiere_datos_cliente(client: TestClient):
+    login(client, "user.ops", "pass123")
+
+    response = client.post(
+        "/crear",
+        data={
+            "cliente_codigo": "",
+            "cliente_nombre": "",
+            "justificacion": "Sin datos cliente",
+            "items[0][descripcion]": "Cable UTP Cat6",
+            "items[0][cantidad]": "1",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Codigo de cliente invalido"
 
 
 def test_entregar_requisicion(client: TestClient, db_session: Session):

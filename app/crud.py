@@ -18,12 +18,16 @@ def crear_requisicion_db(
     db: Session,
     solicitante_id: int,
     departamento: str,
+    cliente_codigo: str,
+    cliente_nombre: str,
     justificacion: str,
 ) -> Requisicion:
     req = Requisicion(
         folio=generar_folio(db),
         solicitante_id=solicitante_id,
         departamento=departamento,
+        cliente_codigo=cliente_codigo,
+        cliente_nombre=cliente_nombre,
         estado="pendiente",
         justificacion=justificacion,
     )

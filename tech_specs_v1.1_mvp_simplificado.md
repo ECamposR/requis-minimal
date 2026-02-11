@@ -55,6 +55,8 @@ Documento derivado para implementacion rapida por IA, sin tocar el original.
 - `folio` unico (`REQ-0001`, `REQ-0002`, ...)
 - `solicitante_id` FK usuarios
 - `departamento`
+- `cliente_codigo` (obligatorio en alta)
+- `cliente_nombre` (obligatorio en alta)
 - `estado` (`pendiente|aprobada|rechazada|entregada`)
 - `delivery_result` (`completa|parcial|no_entregada|null`)
 - `justificacion`

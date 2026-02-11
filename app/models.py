@@ -44,6 +44,8 @@ class Requisicion(Base):
     folio: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     solicitante_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=False)
     departamento: Mapped[str] = mapped_column(String(80), nullable=False)
+    cliente_codigo: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    cliente_nombre: Mapped[str | None] = mapped_column(String(160), nullable=True)
     estado: Mapped[str] = mapped_column(String(20), default="pendiente", nullable=False)
     justificacion: Mapped[str] = mapped_column(Text, nullable=False)
 

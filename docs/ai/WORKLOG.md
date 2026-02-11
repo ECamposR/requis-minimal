@@ -424,3 +424,19 @@
 - Resultado:
   - El usuario no puede alterar el departamento al crear requisicion.
   - Se evita spoofing por formulario del cliente.
+
+## 2026-02-11 17:52 UTC-6 | tool: Codex CLI
+- Objetivo: Exigir datos de cliente al crear requisicion.
+- Cambios:
+  - `app/models.py` (campos `cliente_codigo`, `cliente_nombre` en `Requisicion`)
+  - `app/database.py` (migracion incremental para nuevos campos)
+  - `app/crud.py` (`crear_requisicion_db` recibe y persiste datos de cliente)
+  - `app/main.py` (`/crear` valida y requiere codigo/nombre cliente; detalle API los expone)
+  - `templates/crear_requisicion.html` (campos obligatorios en formulario)
+  - `static/app.js` (modal detalle muestra datos de cliente)
+  - `tests/test_basic_flow.py` (payloads actualizados + test de validacion)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Toda nueva requisicion queda asociada a codigo y nombre de cliente.
+  - Se mantiene trazabilidad de cliente en el detalle operativo.

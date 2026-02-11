@@ -135,14 +135,25 @@ def crear_form(request: Request, current_user: Usuario = Depends(get_current_use
 @app.post("/crear")
 async def crear(
     request: Request,
+    cliente_codigo: str = Form(...),
+    cliente_nombre: str = Form(...),
     justificacion: str = Form(...),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    cliente_codigo_limpio = cliente_codigo.strip()
+    cliente_nombre_limpio = cliente_nombre.strip()
+    if len(cliente_codigo_limpio) < 2:
+        raise HTTPException(status_code=400, detail="Codigo de cliente invalido")
+    if len(cliente_nombre_limpio) < 3:
+        raise HTTPException(status_code=400, detail="Nombre de cliente invalido")
+
     req = crear_requisicion_db(
         db=db,
         solicitante_id=current_user.id,
         departamento=current_user.departamento,
+        cliente_codigo=cliente_codigo_limpio,
+        cliente_nombre=cliente_nombre_limpio,
         justificacion=justificacion,
     )
 
@@ -814,6 +825,8 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "folio": req.folio,
         "solicitante": req.solicitante.nombre if req.solicitante else None,
         "departamento": req.departamento,
+        "cliente_codigo": req.cliente_codigo,
+        "cliente_nombre": req.cliente_nombre,
         "estado": req.estado,
         "justificacion": req.justificacion,
         "created_at": req.created_at,
