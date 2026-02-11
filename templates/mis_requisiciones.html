@@ -2,16 +2,17 @@
 {% block title %}Mis Requisiciones{% endblock %}
 {% block content %}
 <h2>Mis Requisiciones</h2>
+<p class="page-subtitle">Historial de solicitudes creadas por tu usuario.</p>
 
 {% if requisiciones %}
-<table>
+<table class="table-compact">
     <thead>
     <tr>
-        <th>Folio</th>
+        <th class="col-folio">Folio</th>
         <th>Departamento</th>
-        <th>Estado</th>
-        <th>Fecha</th>
-        <th>Accion</th>
+        <th class="col-estado">Estado</th>
+        <th class="col-fecha">Fecha</th>
+        <th class="col-detalle">Accion</th>
     </tr>
     </thead>
     <tbody>

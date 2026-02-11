@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Gestionar Aprobacion{% endblock %}
+{% block content %}
+<h2>Gestionar Aprobacion</h2>
+
+<section class="page-hero">
+    <h3>{{ req.folio }}</h3>
+    <p>
+        Solicitante: {{ req.solicitante.nombre if req.solicitante else '-' }} |
+        Departamento: {{ req.departamento }} |
+        Estado: {{ req.estado }}
+    </p>
+    <p>Justificacion: {{ req.justificacion }}</p>
+</section>
+
+<section class="gestion-layout">
+    <article class="gestion-card">
+        <h3>Items solicitados</h3>
+        <table class="table-compact">
+            <thead>
+            <tr>
+                <th>Item</th>
+                <th class="col-estado">Cantidad</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in req.items %}
+            <tr>
+                <td>{{ item.descripcion }}</td>
+                <td>{{ item.cantidad }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </article>
+
+    <article class="gestion-card">
+        <h3>Aprobar requisicion</h3>
+        <form method="POST" action="/aprobar/{{ req.id }}" class="gestion-form">
+            <label>
+                Comentario de aprobacion (opcional)
+                <input type="text" name="comentario" placeholder="Ej: prioridad alta por cliente">
+            </label>
+            <button type="submit">Aprobar requisicion</button>
+        </form>
+
+        <hr>
+
+        <h3>Rechazar requisicion</h3>
+        <form method="POST" action="/rechazar/{{ req.id }}" class="gestion-form">
+            <label>
+                Razon del rechazo
+                <input type="text" name="razon" required minlength="3" placeholder="Motivo principal">
+            </label>
+            <label>
+                Comentario adicional (opcional)
+                <input type="text" name="comentario" placeholder="Detalle para trazabilidad">
+            </label>
+            <button type="submit" class="secondary">Rechazar requisicion</button>
+        </form>
+
+        <p class="gestion-actions">
+            <a href="/aprobar" role="button" class="secondary outline">Volver a aprobar</a>
+        </p>
+    </article>
+</section>
+{% endblock %}

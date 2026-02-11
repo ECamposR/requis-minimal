@@ -471,3 +471,134 @@
   - `tests/test_basic_flow.py` (nuevo test para caso "quien recibe" obligatorio en entrega completa)
 - Resultado:
   - En UI, el usuario vuelve a `/bodega` con mensaje claro en lugar de `Bad Request` JSON.
+
+## 2026-02-11 18:47 UTC-6 | tool: Codex CLI
+- Objetivo: Iniciar V2 visual alineada a referencia corporativa ProHygiene.
+- Cambios:
+  - `templates/base.html` (header en dos franjas, marca estilo corporativo, menu horizontal y shell principal)
+  - `static/style.css` (paleta azul corporativa, tipografia Montserrat, tarjetas/tablas y ajustes responsive)
+- Resultado:
+  - La app ahora adopta una identidad visual consistente con el sitio de referencia.
+  - Mejor jerarquia visual y usabilidad en anchos medios/bajos.
+
+## 2026-02-11 19:05 UTC-6 | tool: Codex CLI
+- Objetivo: Entregar primera iteracion de UI dark theme inspirada en marca corporativa.
+- Cambios:
+  - `templates/base.html` (activar `data-theme=dark`)
+  - `static/style.css` (overrides dark para header/nav/superficies/formularios/tablas/modales y legibilidad de logo)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - La app adopta un look dark corporativo con acentos azules y mejor uso visual para iterar detalles finos en siguientes pasos.
+
+## 2026-02-11 19:18 UTC-6 | tool: Codex CLI
+- Objetivo: Continuar iteracion de UI dark con mayor jerarquia y usabilidad.
+- Cambios:
+  - `templates/home.html` (hero operativo + tarjetas metricas)
+  - `templates/login.html` (login shell centrado + card mas clara)
+  - `templates/crear_requisicion.html` (grilla de campos de contexto en 3 columnas)
+  - `templates/mis_requisiciones.html` (tabla compacta unificada)
+  - `static/style.css` (estilos de page hero, metric cards, login shell y refinamientos de menu/tablas)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Interfaz dark mas consistente con mejor distribucion visual y menor sensacion de bloque plano.
+
+## 2026-02-11 19:31 UTC-6 | tool: Codex CLI
+- Objetivo: Continuar pulido de V2 dark en pantallas operativas.
+- Cambios:
+  - `templates/base.html` (estado activo en links del menu segun ruta)
+  - `templates/aprobar.html` y `templates/bodega.html` (subtitulos operativos)
+  - `static/style.css` (overrides finales para nav activo, columnas/table density y acciones)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Mejor orientacion de navegacion y legibilidad de tablas en aprobacion/bodega sin perder compactacion.
+
+## 2026-02-11 19:48 UTC-6 | tool: Codex CLI
+- Objetivo: Ejecutar la iteracion propuesta de limpieza tecnica de UI.
+- Cambios:
+  - `static/style.css` reescrito y consolidado (se removieron capas duplicadas y bloques conflictivos)
+  - Se mantuvo la estetica dark corporativa con nav activo, tablas operativas, modal y responsive.
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Hoja de estilos mas mantenible y predecible para iteraciones visuales siguientes.
+  - Se corrigio deriva de cascada que estaba introduciendo resultados inconsistentes.
+
+## 2026-02-11 20:04 UTC-6 | tool: Codex CLI
+- Objetivo: Mejorar visibilidad del panel de inicio y extender informacion para roles no admin.
+- Cambios:
+  - `app/main.py` (conteos de requisiciones propias por estado: pendiente/aprobada/rechazada/entregada)
+  - `templates/home.html` (nuevas tarjetas por estado para todos los roles)
+  - `static/style.css` (colores diferenciados por tarjeta dentro de la paleta dark actual)
+  - `tests/test_basic_flow.py` (test de metricas por estado para usuario rol `user`)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Dashboard inicial mas informativo y consistente entre roles.
+  - El usuario agente ya ve sus requisiciones separadas por estado, no solo el total.
+
+## 2026-02-11 20:22 UTC-6 | tool: Codex CLI
+- Objetivo: Reemplazar paneles compactos de accion en `Aprobar` y `Bodega` por vistas dedicadas de gestion.
+- Cambios:
+  - `app/main.py` (nuevas rutas `GET /aprobar/{id}/gestionar` y `GET /bodega/{id}/gestionar` con validaciones de rol/estado)
+  - `templates/aprobar.html` y `templates/bodega.html` (accion cambia a enlace `Gestionar`)
+  - `templates/aprobar_gestionar.html` (pantalla completa para aprobar/rechazar)
+  - `templates/bodega_gestionar.html` (pantalla completa para registrar entrega)
+  - `static/style.css` (nuevos estilos `gestion-*` para layout y formularios)
+  - `tests/test_basic_flow.py` (tests para acceso a nuevas vistas de gestion)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Flujo operativo mas claro y legible, sin menu colapsado ni campos cortados.
+  - Queda pendiente confirmar ejecucion de tests en entorno local: en este sandbox `pytest` quedo colgado sin salida y finalizo por timeout.
+
+## 2026-02-11 20:36 UTC-6 | tool: Codex CLI
+- Objetivo: Agregar metricas simples en inicio sin aumentar complejidad del MVP.
+- Cambios:
+  - `app/main.py` (calculo de `mis_creadas_mes`, `mis_pendientes_antiguas`, `mis_entregadas_30d`)
+  - `templates/home.html` (3 tarjetas nuevas de metricas)
+  - `static/style.css` (variantes visuales `metric-month`, `metric-aging`, `metric-30d`)
+  - `tests/test_basic_flow.py` (asserts de labels nuevas en home)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Inicio mas informativo con calculos ligeros y sin introducir complejidad tecnica adicional.
+
+## 2026-02-11 20:44 UTC-6 | tool: Codex CLI
+- Objetivo: Ajustar indicadores del inicio para mayor claridad operativa.
+- Cambios:
+  - `app/main.py` (reemplazo de pendiente +48h por pendientes generales y nueva metrica de pendientes de entregar)
+  - `templates/home.html` (grafico con filas: pendientes, pendientes de entregar y rechazadas)
+  - `static/style.css` (nuevas barras `bar-pending`, `bar-delivery`, `bar-rejected`)
+  - `tests/test_basic_flow.py` (asserts de labels actualizados)
+- Resultado:
+  - Indicadores mas intuitivos para operacion diaria sin aumentar complejidad tecnica.
+
+## 2026-02-11 20:52 UTC-6 | tool: Codex CLI
+- Objetivo: Corregir conteo de rechazadas en dashboard para roles operativos.
+- Cambios:
+  - `app/main.py` (nuevo `rechazadas_panel`: global para admin/aprobador/bodega, propio para user)
+  - `templates/home.html` (tarjeta y grafico usan `rechazadas_panel`; etiqueta de tarjeta ajustada a `Rechazadas`)
+  - `tests/test_basic_flow.py` (assert de label actualizado)
+- Resultado:
+  - Las rechazadas ya se reflejan correctamente en tarjeta y grafico segun el alcance del rol.
+
+## 2026-02-11 20:58 UTC-6 | tool: Codex CLI
+- Objetivo: Corregir conteo de aprobadas en dashboard para roles operativos.
+- Cambios:
+  - `app/main.py` (nuevo `aprobadas_panel`: global para admin/aprobador/bodega, propio para user)
+  - `app/main.py` (`pendientes_entregar_panel` ahora usa `aprobadas_panel` fuera de bodega/admin)
+  - `templates/home.html` (tarjeta usa `Aprobadas` + `aprobadas_panel`)
+  - `tests/test_basic_flow.py` (assert de label actualizado)
+- Resultado:
+  - Conteo de aprobadas consistente con el alcance de rol, igual que rechazadas.
+
+## 2026-02-11 21:09 UTC-6 | tool: Codex CLI
+- Objetivo: Redisenar pantalla de login segun referencia visual corporativa, sin opciones extras.
+- Cambios:
+  - `templates/login.html` (estructura nueva con logo centrado, copy, formulario limpio y footer de sistema)
+  - `static/style.css` (estilos dedicados para card/login-form/footer en dark theme)
+- Resultado:
+  - Login mas cercano a la referencia entregada, sin recuperar clave ni recordar sesion.

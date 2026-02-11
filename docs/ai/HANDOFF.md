@@ -28,10 +28,17 @@
 - Departamento de usuarios administrado por lista cerrada en alta/edicion (`REQ-030`).
 - Departamento en alta de requisicion fijado por sesion del usuario (`REQ-031`).
 - Requisicion ahora exige datos de cliente (`codigo` + `nombre`) en alta (`REQ-032`).
+- V2 visual iniciada con identidad corporativa (header/nav/paleta/tipografia) (`REQ-033`).
+- Primera iteracion dark theme corporativa aplicada sobre base V2 (`REQ-034`).
+- Segunda iteracion dark aplicada (home/login/forms/tables con mayor jerarquia visual) (`REQ-035`).
+- Tercera iteracion dark aplicada (nav activo + tablas/acciones operativas refinadas) (`REQ-036`).
+- CSS consolidado para V2 dark, eliminando reglas duplicadas/conflictivas (`REQ-037`).
+- Dashboard de inicio extendido con metricas por estado para todos los usuarios (`REQ-038`).
+- Flujo de gestion en `Aprobar` y `Bodega` movido a vistas dedicadas por requisicion (`REQ-039`).
+- Home extendido con metricas operativas simples adicionales por usuario (`REQ-040`).
 
 ## En progreso
-- Smoke test funcional de `REQ-027` en navegador y tests.
-- Smoke test funcional de `REQ-028` en navegador y tests.
+- Smoke test funcional de `REQ-039` en navegador y tests.
 
 ## Proximo paso exacto
 - Ejecutar smoke test de aprobacion/historial:
@@ -56,6 +63,12 @@
 - Verificar en `/admin/usuarios` que `Departamento` se selecciona desde lista fija y backend rechaza valores fuera de catalogo.
 - Verificar en `/crear` que el departamento se muestra solo lectura y backend usa siempre `current_user.departamento` (aunque se envie otro valor en el form).
 - Verificar en `/crear` que no permite enviar requisicion sin `codigo cliente` y `nombre cliente`, y que ambos se reflejan en detalle de requisicion.
+- Revisar consistencia visual de todas las vistas restantes sobre la nueva base corporativa y ajustar componentes puntuales (tablas/formularios/modales) si hace falta.
+- Iterar contraste fino y micro-espaciados del dark theme con feedback visual de usuario (esta iteracion es base).
+- Ajustar siguientes detalles de V2 dark segun feedback visual: ritmo tipografico del menu y densidad de tablas largas.
+- Desde `REQ-037`, tomar `static/style.css` como base limpia para siguientes iteraciones visuales.
+- Validar con feedback visual si el contraste de tarjetas metricas necesita un ajuste adicional (actualmente diferenciadas por color de estado).
+- Validar UX final de pantallas `GET /aprobar/{id}/gestionar` y `GET /bodega/{id}/gestionar` (copy, espaciado y ayudas contextuales).
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.

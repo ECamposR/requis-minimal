@@ -1,12 +1,84 @@
 {% extends "base.html" %}
 {% block title %}Inicio{% endblock %}
 {% block content %}
-<h2>Inicio</h2>
-<p>Mis requisiciones: <strong>{{ mis_requisiciones }}</strong></p>
-{% if current_user.rol in ['aprobador', 'admin'] %}
-<p>Pendientes por aprobar: <strong>{{ pendientes_aprobar }}</strong></p>
-{% endif %}
-{% if current_user.rol in ['bodega', 'admin'] %}
-<p>Pendientes por entregar (bodega): <strong>{{ pendientes_bodega }}</strong></p>
-{% endif %}
+<section class="page-hero">
+    <h2>Panel de Requisiciones</h2>
+    <p>Controla solicitudes, aprobaciones y entregas desde una sola vista operativa.</p>
+</section>
+
+<section class="metrics-grid">
+    <article class="metric-card metric-total">
+        <span>Mis requisiciones</span>
+        <strong>{{ mis_requisiciones }}</strong>
+    </article>
+    <article class="metric-card metric-pend">
+        <span>Mis pendientes</span>
+        <strong>{{ mis_pendientes }}</strong>
+    </article>
+    <article class="metric-card metric-apr">
+        <span>Aprobadas historicas</span>
+        <strong>{{ aprobadas_panel }}</strong>
+    </article>
+    <article class="metric-card metric-rej">
+        <span>Rechazadas</span>
+        <strong>{{ rechazadas_panel }}</strong>
+    </article>
+    <article class="metric-card metric-ent">
+        <span>Mis entregadas</span>
+        <strong>{{ mis_entregadas }}</strong>
+    </article>
+    {% if current_user.rol in ['aprobador', 'admin'] %}
+    <article class="metric-card metric-apr-queue">
+        <span>Pendientes por aprobar</span>
+        <strong>{{ pendientes_aprobar }}</strong>
+    </article>
+    {% endif %}
+    {% if current_user.rol in ['bodega', 'admin'] %}
+    <article class="metric-card metric-wh-queue">
+        <span>Pendientes por entregar</span>
+        <strong>{{ pendientes_bodega }}</strong>
+    </article>
+    {% endif %}
+</section>
+
+<section class="chart-card">
+    <h3>Indicadores rapidos</h3>
+    <div class="mini-chart">
+        <div class="mini-chart-row">
+            <span class="label">Creadas este mes</span>
+            <div class="bar-wrap">
+                <span class="bar bar-month" style="width: {{ (mis_creadas_mes * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
+            </div>
+            <strong class="value">{{ mis_creadas_mes }}</strong>
+        </div>
+        <div class="mini-chart-row">
+            <span class="label">Pendientes de aprobar</span>
+            <div class="bar-wrap">
+                <span class="bar bar-pending" style="width: {{ (mis_pendientes * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
+            </div>
+            <strong class="value">{{ mis_pendientes }}</strong>
+        </div>
+        <div class="mini-chart-row">
+            <span class="label">Pendientes de entregar</span>
+            <div class="bar-wrap">
+                <span class="bar bar-delivery" style="width: {{ (pendientes_entregar_panel * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
+            </div>
+            <strong class="value">{{ pendientes_entregar_panel }}</strong>
+        </div>
+        <div class="mini-chart-row">
+            <span class="label">Rechazadas</span>
+            <div class="bar-wrap">
+                <span class="bar bar-rejected" style="width: {{ (rechazadas_panel * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
+            </div>
+            <strong class="value">{{ rechazadas_panel }}</strong>
+        </div>
+        <div class="mini-chart-row">
+            <span class="label">Entregadas (30 dias)</span>
+            <div class="bar-wrap">
+                <span class="bar bar-30d" style="width: {{ (mis_entregadas_30d * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
+            </div>
+            <strong class="value">{{ mis_entregadas_30d }}</strong>
+        </div>
+    </div>
+</section>
 {% endblock %}

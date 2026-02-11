@@ -1,21 +1,28 @@
 {% extends "base.html" %}
 {% block title %}Login{% endblock %}
 {% block content %}
-<article>
-    <h2>Ingresar</h2>
-    {% if error %}
-    <p style="color:#b91c1c;">{{ error }}</p>
-    {% endif %}
-    <form method="POST" action="/login">
-        <label>
-            Usuario
-            <input type="text" name="username" required>
-        </label>
-        <label>
-            Contrasena
-            <input type="password" name="password" required>
-        </label>
-        <button type="submit">Entrar</button>
-    </form>
-</article>
+<section class="login-shell">
+    <article class="login-card">
+        <div class="login-brand-wrap">
+            <img src="/static/branding/logo-prohygiene-es.png" alt="ProHygiene" class="login-brand-logo">
+        </div>
+        <h2>Bienvenido</h2>
+        <p>Inicia sesion para gestionar requisiciones</p>
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        <form method="POST" action="/login" class="login-form">
+            <label>
+                Usuario corporativo
+                <input type="text" name="username" required placeholder="ej. jperez">
+            </label>
+            <label>
+                Contrasena
+                <input type="password" name="password" required placeholder="••••••••">
+            </label>
+            <button type="submit">Ingresar al Sistema</button>
+        </form>
+        <footer class="login-footer">Sistema Interno v2.5.0 • Solo personal autorizado</footer>
+    </article>
+</section>
 {% endblock %}

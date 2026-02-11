@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
@@ -93,18 +94,49 @@ def logout(request: Request):
 
 @app.get("/")
 def home(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
-    mis_requisiciones = (
-        db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id).count()
-    )
+    mis_requisiciones_query = db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id)
+    ahora = datetime.now()
+    inicio_mes = datetime(ahora.year, ahora.month, 1)
+    hace_30_dias = ahora - timedelta(days=30)
+
+    mis_requisiciones = mis_requisiciones_query.count()
+    mis_pendientes = mis_requisiciones_query.filter(Requisicion.estado == "pendiente").count()
+    mis_aprobadas = mis_requisiciones_query.filter(Requisicion.estado == "aprobada").count()
+    mis_rechazadas = mis_requisiciones_query.filter(Requisicion.estado == "rechazada").count()
+    mis_entregadas = mis_requisiciones_query.filter(Requisicion.estado == "entregada").count()
+    mis_creadas_mes = mis_requisiciones_query.filter(Requisicion.created_at >= inicio_mes).count()
+    mis_entregadas_30d = mis_requisiciones_query.filter(
+        Requisicion.estado == "entregada", Requisicion.delivered_at >= hace_30_dias
+    ).count()
     pendientes_aprobar = 0
     if current_user.rol in ["aprobador", "admin"]:
         filtros = [Requisicion.estado == "pendiente"]
         if current_user.rol == "aprobador":
             filtros.append(Requisicion.departamento == current_user.departamento)
         pendientes_aprobar = db.query(Requisicion).filter(*filtros).count()
+    mis_aprobadas_historicas = mis_requisiciones_query.filter(Requisicion.approved_by.isnot(None)).count()
+    aprobadas_panel = (
+        db.query(Requisicion).filter(Requisicion.approved_by.isnot(None)).count()
+        if current_user.rol in ["admin", "aprobador", "bodega"]
+        else mis_aprobadas_historicas
+    )
     pendientes_bodega = 0
     if current_user.rol in ["bodega", "admin"]:
         pendientes_bodega = db.query(Requisicion).filter(Requisicion.estado == "aprobada").count()
+    pendientes_entregar_panel = pendientes_bodega if current_user.rol in ["bodega", "admin"] else aprobadas_panel
+    rechazadas_panel = (
+        db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
+        if current_user.rol in ["admin", "aprobador", "bodega"]
+        else mis_rechazadas
+    )
+    escala_metricas_home = max(
+        1,
+        mis_creadas_mes,
+        mis_pendientes,
+        pendientes_entregar_panel,
+        rechazadas_panel,
+        mis_entregadas_30d,
+    )
 
     return templates.TemplateResponse(
         "home.html",
@@ -112,6 +144,16 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
             request,
             current_user,
             mis_requisiciones=mis_requisiciones,
+            mis_pendientes=mis_pendientes,
+            mis_aprobadas=mis_aprobadas,
+            aprobadas_panel=aprobadas_panel,
+            mis_rechazadas=mis_rechazadas,
+            mis_entregadas=mis_entregadas,
+            mis_creadas_mes=mis_creadas_mes,
+            mis_entregadas_30d=mis_entregadas_30d,
+            pendientes_entregar_panel=pendientes_entregar_panel,
+            rechazadas_panel=rechazadas_panel,
+            escala_metricas_home=escala_metricas_home,
             pendientes_aprobar=pendientes_aprobar,
             pendientes_bodega=pendientes_bodega,
         ),
@@ -221,6 +263,35 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
     )
 
 
+@app.get("/aprobar/{req_id}/gestionar")
+def aprobar_gestionar(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.rol not in ["aprobador", "admin"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.solicitante), joinedload(Requisicion.items))
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if req.estado != "pendiente":
+        return redirect_with_message("/aprobar", "Solo puedes gestionar requisiciones pendientes", "warning")
+    if not puede_aprobar(req, current_user.rol, current_user.departamento):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    return templates.TemplateResponse(
+        "aprobar_gestionar.html",
+        template_context(request, current_user, req=req),
+    )
+
+
 @app.post("/aprobar/{req_id}")
 def aprobar(
     req_id: int,
@@ -311,6 +382,35 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             pendientes_entrega=pendientes_entrega,
             historial_entregadas=historial_entregadas,
         ),
+    )
+
+
+@app.get("/bodega/{req_id}/gestionar")
+def bodega_gestionar(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.rol not in ["bodega", "admin"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.solicitante), joinedload(Requisicion.aprobador), joinedload(Requisicion.items))
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if req.estado != "aprobada":
+        return redirect_with_message("/bodega", "Solo puedes gestionar requisiciones aprobadas", "warning")
+    if not puede_entregar(req, current_user.rol):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    return templates.TemplateResponse(
+        "bodega_gestionar.html",
+        template_context(request, current_user, req=req),
     )
 
 

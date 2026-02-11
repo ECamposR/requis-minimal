@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Gestionar Entrega{% endblock %}
+{% block content %}
+<h2>Gestionar Entrega</h2>
+
+<section class="page-hero">
+    <h3>{{ req.folio }}</h3>
+    <p>
+        Solicitante: {{ req.solicitante.nombre if req.solicitante else '-' }} |
+        Departamento: {{ req.departamento }} |
+        Aprobado por: {{ req.aprobador.nombre if req.aprobador else '-' }}
+    </p>
+    <p>Justificacion: {{ req.justificacion }}</p>
+</section>
+
+<section class="gestion-layout">
+    <article class="gestion-card">
+        <h3>Items aprobados para entrega</h3>
+        <table class="table-compact">
+            <thead>
+            <tr>
+                <th>Item</th>
+                <th class="col-estado">Cantidad solicitada</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in req.items %}
+            <tr>
+                <td>{{ item.descripcion }}</td>
+                <td>{{ item.cantidad }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </article>
+
+    <article class="gestion-card">
+        <h3>Registrar resultado de entrega</h3>
+        <form method="POST" action="/entregar/{{ req.id }}" class="gestion-form">
+            <label>
+                Resultado
+                <select name="resultado" aria-label="Resultado entrega">
+                    <option value="completa">Completa</option>
+                    <option value="parcial">Parcial</option>
+                    <option value="no_entregada">No entregada</option>
+                </select>
+            </label>
+            <label>
+                Recibe (requerido en completa/parcial)
+                <input type="text" name="delivered_to" minlength="3" placeholder="Nombre de quien recibe">
+            </label>
+            <label>
+                Comentario
+                <input type="text" name="comentario" placeholder="Ej: faltante por inventario">
+            </label>
+            <button type="submit">Guardar resultado</button>
+        </form>
+        <p class="page-subtitle">Si seleccionas parcial, se abrira la pantalla para ajustar cantidades entregadas por item.</p>
+        <p class="gestion-actions">
+            <a href="/bodega" role="button" class="secondary outline">Volver a bodega</a>
+        </p>
+    </article>
+</section>
+{% endblock %}

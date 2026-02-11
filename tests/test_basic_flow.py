@@ -86,6 +86,74 @@ def login(client: TestClient, username: str, password: str) -> None:
     assert response.status_code == 303
 
 
+def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-2001",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente usuario",
+            ),
+            Requisicion(
+                folio="REQ-2002",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Aprobada usuario",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-2003",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="rechazada",
+                justificacion="Rechazada usuario",
+                rejected_by=aprobador.id,
+                rejected_at=datetime.now(),
+                rejection_reason="No procede",
+            ),
+            Requisicion(
+                folio="REQ-2004",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entregada usuario",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+                delivered_to="Usuario Ops",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "user.ops", "pass123")
+    response = client.get("/")
+    assert response.status_code == 200
+
+    html = response.text
+    assert "Mis requisiciones" in html
+    assert "Mis pendientes" in html
+    assert "Aprobadas historicas" in html
+    assert "Rechazadas" in html
+    assert "Mis entregadas" in html
+    assert "Creadas este mes" in html
+    assert "Pendientes de aprobar" in html
+    assert "Pendientes de entregar" in html
+    assert "Rechazadas" in html
+    assert "Entregadas (30 dias)" in html
+    assert "Pendientes por aprobar" not in html
+    assert "Pendientes por entregar" not in html
+
+
 def test_crear_requisicion(client: TestClient, db_session: Session):
     login(client, "user.ops", "pass123")
 
@@ -162,6 +230,26 @@ def test_aprobar_requisicion(client: TestClient, db_session: Session):
     assert req.approved_by == aprobador.id
     assert req.approved_at is not None
     assert req.approval_comment == "Aprobado para continuidad operativa"
+
+
+def test_aprobador_puede_abrir_vista_gestion_aprobacion(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    req = Requisicion(
+        folio="REQ-0201",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="Vista dedicada de aprobacion",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get(f"/aprobar/{req.id}/gestionar")
+    assert response.status_code == 200
+    assert "Gestionar Aprobacion" in response.text
+    assert req.folio in response.text
 
 
 def test_rechazar_requisicion_guarda_actor(client: TestClient, db_session: Session):
@@ -358,6 +446,30 @@ def test_bodega_puede_marcar_entrega_parcial(client: TestClient, db_session: Ses
     assert req.delivery_result == "parcial"
     assert req.delivery_comment == "Falto 1 item por quiebre de stock"
     assert req.items[0].cantidad_entregada == 0.5
+
+
+def test_bodega_puede_abrir_vista_gestion_entrega(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req = Requisicion(
+        folio="REQ-0202",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="Vista dedicada de bodega",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "bodega.1", "pass123")
+    response = client.get(f"/bodega/{req.id}/gestionar")
+    assert response.status_code == 200
+    assert "Gestionar Entrega" in response.text
+    assert req.folio in response.text
 
 
 def test_bodega_puede_marcar_no_entregada(client: TestClient, db_session: Session):

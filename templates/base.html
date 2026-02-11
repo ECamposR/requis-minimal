@@ -1,42 +1,49 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Requisiciones{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<nav class="container">
-    <ul>
-        <li><strong>Sistema Requisiciones</strong></li>
-    </ul>
-    <ul>
+{% if request.url.path != '/login' %}
+<header class="app-header">
+    <nav class="container main-nav">
+        <a href="/" class="brand">
+            <img src="/static/branding/logo-prohygiene-es.png" alt="ProHygiene" class="brand-logo">
+            <small>Sistema de requisiciones</small>
+        </a>
         {% if current_user %}
-            <li><a href="/">Inicio</a></li>
-            <li><a href="/crear">Nueva Requisicion</a></li>
-            <li><a href="/mis-requisiciones">Mis Requisiciones</a></li>
+        <ul class="menu-links">
+            <li><a href="/" class="{% if request.url.path == '/' %}is-active{% endif %}">Inicio</a></li>
+            <li><a href="/crear" class="{% if request.url.path.startswith('/crear') %}is-active{% endif %}">Nueva Requisicion</a></li>
+            <li><a href="/mis-requisiciones" class="{% if request.url.path.startswith('/mis-requisiciones') %}is-active{% endif %}">Mis Requisiciones</a></li>
             {% if current_user.rol in ['aprobador', 'admin'] %}
-            <li><a href="/aprobar">Aprobar</a></li>
+            <li><a href="/aprobar" class="{% if request.url.path.startswith('/aprobar') %}is-active{% endif %}">Aprobar</a></li>
             {% endif %}
             {% if current_user.rol in ['bodega', 'admin'] %}
-            <li><a href="/bodega">Bodega</a></li>
+            <li><a href="/bodega" class="{% if request.url.path.startswith('/bodega') or request.url.path.startswith('/entregar') %}is-active{% endif %}">Bodega</a></li>
             {% endif %}
             {% if current_user.rol == 'admin' %}
-            <li><a href="/admin/usuarios">Usuarios</a></li>
-            <li><a href="/admin/catalogo-items">Catalogo</a></li>
+            <li><a href="/admin/usuarios" class="{% if request.url.path.startswith('/admin/usuarios') %}is-active{% endif %}">Usuarios</a></li>
+            <li><a href="/admin/catalogo-items" class="{% if request.url.path.startswith('/admin/catalogo-items') %}is-active{% endif %}">Catalogo</a></li>
             {% endif %}
-            <li>
-                <form method="POST" action="/logout" style="margin:0;">
-                    <button type="submit" class="secondary">Salir</button>
-                </form>
-            </li>
+        </ul>
+        <form method="POST" action="/logout" class="logout-form">
+            <span class="logout-user">{{ current_user.nombre }} | {{ current_user.rol }} | {{ current_user.departamento }}</span>
+            <button type="submit" class="secondary">Salir</button>
+        </form>
         {% endif %}
-    </ul>
-</nav>
+    </nav>
+</header>
+{% endif %}
 
-<main class="container">
+<main class="container app-shell">
     {% set msg = request.query_params.get('msg') %}
     {% if msg %}
         {% set msg_type = request.query_params.get('type', 'success') %}

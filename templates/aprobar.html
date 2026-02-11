@@ -2,6 +2,7 @@
 {% block title %}Aprobar{% endblock %}
 {% block content %}
 <h2>Aprobar Requisiciones</h2>
+<p class="page-subtitle">Gestiona solicitudes pendientes y consulta el historial completo de decisiones.</p>
 {% if requisiciones %}
 <table class="table-compact">
     <thead>
@@ -40,18 +41,7 @@
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td>
             {% if req.estado == 'pendiente' and (current_user.rol == 'admin' or req.departamento == current_user.departamento) %}
-            <details class="accion-toggle">
-                <summary>Gestionar</summary>
-                <form method="POST" action="/aprobar/{{ req.id }}" class="compact-form">
-                    <input type="text" name="comentario" placeholder="Comentario (opcional)">
-                    <button type="submit">Aprobar</button>
-                </form>
-                <form method="POST" action="/rechazar/{{ req.id }}" class="compact-form">
-                    <input type="text" name="razon" required minlength="3" placeholder="Razon rechazo">
-                    <input type="text" name="comentario" placeholder="Comentario (opcional)">
-                    <button type="submit" class="secondary">Rechazar</button>
-                </form>
-            </details>
+            <a href="/aprobar/{{ req.id }}/gestionar" role="button" class="secondary">Gestionar</a>
             {% elif req.estado == 'pendiente' %}
             <small class="accion-text">Sin permiso para gestionar</small>
             {% else %}
