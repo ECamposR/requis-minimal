@@ -755,3 +755,14 @@
   - `pytest` de `tests/test_admin_catalog_items.py` en este entorno no devolvio salida dentro de timeout; probable conflicto por SQLite concurrente.
 - Resultado:
   - Se puede cargar catalogo desde CSV o XLSX de forma simple y controlada desde UI de admin.
+
+## 2026-02-11 16:07 CST | tool: Codex CLI
+- Objetivo: Congelar baseline funcional previo a iniciar reporteria.
+- Git/GitHub:
+  - Tag anotado creado: `v1.3.0-base-estable`
+  - Commit referenciado: `18c21f7`
+  - Push de tag a remoto completado: `origin/v1.3.0-base-estable`
+- Cambios:
+  - `docs/ai/HANDOFF.md` (registro del nuevo tag de corte)
+- Resultado:
+  - Punto de retorno claro y estable para comenzar siguiente fase (reporteria minima).

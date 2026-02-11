@@ -48,6 +48,7 @@
 - Corregida inconsistencia en dashboard: `Pendientes de aprobar` ahora usa misma fuente en tarjeta y grafico para aprobador/admin (`REQ-050`).
 - Vistas de gestion (`/aprobar/{id}/gestionar` y `/bodega/{id}/gestionar`) ahora muestran codigo/nombre/ruta de cliente y ocultan departamento (`REQ-051`).
 - Admin puede importar catalogo masivo desde archivo `CSV` o `XLSX` en `/admin/catalogo-items` (`REQ-052`).
+- Tag de corte funcional publicado: `v1.3.0-base-estable` (commit `18c21f7`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).
 - Tag operativo publicado: `v1.2.0-ui-base` (punto de retorno para UI base aprobada).
 
