@@ -92,7 +92,6 @@ def test_crear_requisicion(client: TestClient, db_session: Session):
     response = client.post(
         "/crear",
         data={
-            "departamento": "Operaciones",
             "justificacion": "Material para mantenimiento correctivo",
             "items[0][descripcion]": "Cable UTP Cat6",
             "items[0][cantidad]": "25",
@@ -104,8 +103,29 @@ def test_crear_requisicion(client: TestClient, db_session: Session):
     req = db_session.query(Requisicion).filter(Requisicion.folio == "REQ-0001").first()
     assert req is not None
     assert req.estado == "pendiente"
+    assert req.departamento == "Operaciones"
     assert len(req.items) == 1
     assert req.items[0].descripcion == "Cable UTP Cat6"
+
+
+def test_crear_requisicion_ignora_departamento_enviado(client: TestClient, db_session: Session):
+    login(client, "user.ops", "pass123")
+
+    response = client.post(
+        "/crear",
+        data={
+            "departamento": "Ventas",
+            "justificacion": "Prueba de spoof de departamento",
+            "items[0][descripcion]": "Conector RJ45",
+            "items[0][cantidad]": "2",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    req = db_session.query(Requisicion).order_by(Requisicion.id.desc()).first()
+    assert req is not None
+    assert req.departamento == "Operaciones"
 
 
 def test_aprobar_requisicion(client: TestClient, db_session: Session):
@@ -175,7 +195,6 @@ def test_crear_requisicion_rechaza_item_fuera_catalogo(client: TestClient):
     response = client.post(
         "/crear",
         data={
-            "departamento": "Operaciones",
             "justificacion": "Intento con item invalido",
             "items[0][descripcion]": "ITEM NO VALIDO",
             "items[0][cantidad]": "1",
@@ -192,7 +211,6 @@ def test_crear_requisicion_rechaza_items_duplicados(client: TestClient):
     response = client.post(
         "/crear",
         data={
-            "departamento": "Operaciones",
             "justificacion": "Intento con item duplicado",
             "items[0][descripcion]": "Cable UTP Cat6",
             "items[0][cantidad]": "1",

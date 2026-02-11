@@ -6,13 +6,7 @@
     <form method="POST" action="/crear">
         <label>
             Departamento
-            <select name="departamento" required>
-                <option value="">Seleccionar...</option>
-                <option value="Ventas">Ventas</option>
-                <option value="Operaciones">Operaciones</option>
-                <option value="Mantenimiento">Mantenimiento</option>
-                <option value="TI">TI</option>
-            </select>
+            <input type="text" value="{{ current_user.departamento }}" readonly>
         </label>
         <label>
             Justificacion

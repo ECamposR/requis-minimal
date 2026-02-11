@@ -135,7 +135,6 @@ def crear_form(request: Request, current_user: Usuario = Depends(get_current_use
 @app.post("/crear")
 async def crear(
     request: Request,
-    departamento: str = Form(...),
     justificacion: str = Form(...),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -143,7 +142,7 @@ async def crear(
     req = crear_requisicion_db(
         db=db,
         solicitante_id=current_user.id,
-        departamento=departamento,
+        departamento=current_user.departamento,
         justificacion=justificacion,
     )
 

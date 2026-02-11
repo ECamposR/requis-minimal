@@ -33,6 +33,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-028` | `done` | Flujo de entrega parcial en 2 pasos: redirigir a edicion de cantidades entregadas por item y cerrar con trazabilidad.
 - `REQ-029` | `done` | Evitar items duplicados dentro de una misma requisicion (UI + validacion backend).
 - `REQ-030` | `done` | Restringir departamento de usuarios admin a lista predefinida (`Cuentas`, `Ventas`, `Bodega`, `Admon`, `Logistica`).
+- `REQ-031` | `done` | En nueva requisicion, departamento autocompletado desde usuario autenticado (sin edicion manual).
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

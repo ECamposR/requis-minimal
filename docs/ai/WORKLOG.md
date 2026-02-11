@@ -412,3 +412,15 @@
 - Resultado:
   - Admin ya no escribe departamentos libres; selecciona uno de la lista oficial.
   - Se bloquean intentos de envio con departamentos no permitidos.
+
+## 2026-02-11 17:39 UTC-6 | tool: Codex CLI
+- Objetivo: Quitar seleccion manual de departamento en creacion de requisicion.
+- Cambios:
+  - `templates/crear_requisicion.html` (departamento visible en solo lectura)
+  - `app/main.py` (`/crear` toma `departamento` desde `current_user.departamento`)
+  - `tests/test_basic_flow.py` (ajustes de payload y test para ignorar departamento enviado en request)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - El usuario no puede alterar el departamento al crear requisicion.
+  - Se evita spoofing por formulario del cliente.
