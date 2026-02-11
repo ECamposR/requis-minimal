@@ -236,6 +236,34 @@ def test_aprobar_requisicion(client: TestClient, db_session: Session):
     assert req.approval_comment == "Aprobado para continuidad operativa"
 
 
+def test_aprobador_puede_aprobar_otra_area(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req = Requisicion(
+        folio="REQ-0098",
+        solicitante_id=user.id,
+        departamento="Ventas",
+        estado="pendiente",
+        justificacion="Requisicion de otra area para validar alcance aprobador",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "aprob.ops", "pass123")
+    response = client.post(
+        f"/aprobar/{req.id}",
+        data={"comentario": "Aprobada sin restriccion por area"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "aprobada"
+    assert req.approved_by == aprobador.id
+
+
 def test_aprobador_puede_abrir_vista_gestion_aprobacion(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     req = Requisicion(

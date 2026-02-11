@@ -37,6 +37,7 @@
 - Flujo de gestion en `Aprobar` y `Bodega` movido a vistas dedicadas por requisicion (`REQ-039`).
 - Home extendido con metricas operativas simples adicionales por usuario (`REQ-040`).
 - Alta de requisicion ahora exige `Ruta Principal del Cliente` con formato validado `AA00` (`REQ-041`).
+- Rol `aprobador` ahora puede gestionar y ver todas las requisiciones (sin filtro por departamento) (`REQ-042`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).
 - Tag operativo publicado: `v1.2.0-ui-base` (punto de retorno para UI base aprobada).
 

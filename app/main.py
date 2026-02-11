@@ -111,10 +111,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
     ).count()
     pendientes_aprobar = 0
     if current_user.rol in ["aprobador", "admin"]:
-        filtros = [Requisicion.estado == "pendiente"]
-        if current_user.rol == "aprobador":
-            filtros.append(Requisicion.departamento == current_user.departamento)
-        pendientes_aprobar = db.query(Requisicion).filter(*filtros).count()
+        pendientes_aprobar = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
     mis_aprobadas_historicas = mis_requisiciones_query.filter(Requisicion.approved_by.isnot(None)).count()
     aprobadas_panel = (
         db.query(Requisicion).filter(Requisicion.approved_by.isnot(None)).count()
@@ -289,7 +286,7 @@ def aprobar_gestionar(
         raise HTTPException(status_code=404, detail="Requisicion no encontrada")
     if req.estado != "pendiente":
         return redirect_with_message("/aprobar", "Solo puedes gestionar requisiciones pendientes", "warning")
-    if not puede_aprobar(req, current_user.rol, current_user.departamento):
+    if not puede_aprobar(req, current_user.rol):
         raise HTTPException(status_code=403, detail="No autorizado")
 
     return templates.TemplateResponse(
@@ -308,7 +305,7 @@ def aprobar(
     req = db.query(Requisicion).filter(Requisicion.id == req_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="Requisicion no encontrada")
-    if not puede_aprobar(req, current_user.rol, current_user.departamento):
+    if not puede_aprobar(req, current_user.rol):
         raise HTTPException(status_code=403, detail="No autorizado")
 
     transicionar_requisicion(
@@ -332,7 +329,7 @@ def rechazar(
     req = db.query(Requisicion).filter(Requisicion.id == req_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="Requisicion no encontrada")
-    if not puede_aprobar(req, current_user.rol, current_user.departamento):
+    if not puede_aprobar(req, current_user.rol):
         raise HTTPException(status_code=403, detail="No autorizado")
 
     razon_limpia = razon.strip()
@@ -925,7 +922,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
     can_view = (
         current_user.rol == "admin"
         or current_user.id == req.solicitante_id
-        or (current_user.rol == "aprobador" and current_user.departamento == req.departamento)
+        or current_user.rol == "aprobador"
         or (current_user.rol == "bodega" and req.estado in ["aprobada", "entregada"])
     )
     if not can_view:

@@ -627,3 +627,15 @@
   - `docs/ai/HANDOFF.md`
 - Resultado:
   - Nuevas requisiciones solo se crean con ruta principal valida en formato de 2 letras + 2 numeros.
+
+## 2026-02-11 21:44 UTC-6 | tool: Codex CLI
+- Objetivo: Cambiar alcance del rol `aprobador` para que gestione requisiciones de toda la empresa.
+- Cambios:
+  - `app/crud.py` (`puede_aprobar` deja de filtrar por departamento)
+  - `app/main.py` (pendientes por aprobar global para aprobador/admin; permisos de aprobar/rechazar/gestionar y detalle API sin filtro por departamento para aprobador)
+  - `templates/aprobar.html` (boton `Gestionar` habilitado para cualquier pendiente cuando rol es aprobador/admin)
+  - `tests/test_basic_flow.py` (nuevo test: aprobador puede aprobar requisicion de otra area)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Solo usuarios `user` quedan restringidos a ver/operar lo propio; aprobadores tienen alcance global.

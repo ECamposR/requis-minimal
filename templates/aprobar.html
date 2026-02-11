@@ -40,7 +40,7 @@
         </td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td>
-            {% if req.estado == 'pendiente' and (current_user.rol == 'admin' or req.departamento == current_user.departamento) %}
+            {% if req.estado == 'pendiente' and current_user.rol in ['admin', 'aprobador'] %}
             <a href="/aprobar/{{ req.id }}/gestionar" role="button" class="secondary">Gestionar</a>
             {% elif req.estado == 'pendiente' %}
             <small class="accion-text">Sin permiso para gestionar</small>
