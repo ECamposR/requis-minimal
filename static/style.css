@@ -1,9 +1,134 @@
 :root {
+    --brand-900: #062a68;
+    --brand-800: #0a3b86;
+    --brand-700: #0f56a8;
+    --brand-500: #1991e8;
+    --ink-900: #12253d;
+    --ink-700: #374f6e;
+    --ink-500: #627791;
+    --surface-100: #f3f6fb;
+    --surface-0: #ffffff;
     --pico-font-size: 103%;
     --pico-spacing: 0.85rem;
     --pico-form-element-spacing-vertical: 0.46rem;
     --pico-form-element-spacing-horizontal: 0.62rem;
     --pico-nav-element-spacing-vertical: 0.42rem;
+    --pico-font-family: "Montserrat", "Segoe UI", sans-serif;
+    --pico-color: var(--ink-900);
+    --pico-primary: var(--brand-700);
+    --pico-primary-hover: var(--brand-800);
+    --pico-primary-focus: rgba(15, 86, 168, 0.2);
+    --pico-secondary: #e7edf6;
+    --pico-secondary-hover: #d8e4f3;
+}
+
+body {
+    background: linear-gradient(180deg, #edf2f8 0%, #f7f9fc 220px);
+    color: var(--ink-900);
+}
+
+h1,
+h2,
+h3,
+h4 {
+    color: var(--brand-800);
+    letter-spacing: -0.015em;
+}
+
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    box-shadow: 0 6px 18px rgba(16, 40, 84, 0.08);
+}
+
+.top-strip {
+    background: var(--brand-500);
+    color: #eaf5ff;
+    font-size: 0.76rem;
+}
+
+.strip-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 2rem;
+}
+
+.main-nav {
+    background: var(--surface-0);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 4.4rem;
+}
+
+.brand {
+    text-decoration: none;
+    min-width: 17rem;
+}
+
+.brand-logo {
+    display: block;
+    width: 100%;
+    max-width: 16.2rem;
+    height: auto;
+    object-fit: contain;
+}
+
+.brand small {
+    display: block;
+    color: var(--ink-500);
+    font-size: 0.76rem;
+    margin-top: 0.12rem;
+}
+
+.menu-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.menu-links a {
+    color: var(--brand-800);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.86rem;
+    padding: 0.45rem 0.62rem;
+    border-radius: 0.35rem;
+}
+
+.menu-links a:hover {
+    background: #edf4ff;
+    color: var(--brand-900);
+}
+
+.logout-form {
+    margin-left: auto;
+    margin-bottom: 0;
+}
+
+.logout-form button.secondary {
+    background: var(--brand-900);
+    color: #fff;
+    border-color: var(--brand-900);
+}
+
+.logout-form button.secondary:hover {
+    background: #001e53;
+    border-color: #001e53;
+}
+
+.app-shell {
+    background: #fff;
+    border-radius: 0.95rem;
+    padding: 1rem 1.2rem 1.4rem;
+    box-shadow: 0 20px 40px rgba(9, 30, 66, 0.08);
+    margin-top: 1rem;
+    margin-bottom: 1.2rem;
 }
 
 .item-row {
@@ -19,12 +144,22 @@ main.container {
 
 table {
     font-size: 0.97rem;
+    border-radius: 0.6rem;
+    overflow: hidden;
+    border: 1px solid #dce6f5;
+    background: #fff;
 }
 
 table th,
 table td {
     padding: 0.42rem 0.52rem;
     vertical-align: top;
+}
+
+table thead th {
+    background: #f0f5fd;
+    color: var(--brand-800);
+    font-weight: 700;
 }
 
 input,
@@ -109,6 +244,12 @@ button,
     display: block;
     margin-top: 0.25rem;
     font-size: 0.78rem;
+}
+
+article {
+    border: 1px solid #dce6f5;
+    border-radius: 0.7rem;
+    background: #fbfdff;
 }
 
 .alert {
@@ -313,5 +454,50 @@ button,
 @media (max-width: 680px) {
     .detalle-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 1080px) {
+    .main-nav {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 0.5rem 0.8rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .logout-form {
+        margin-left: 0;
+    }
+
+    .brand {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 760px) {
+    .strip-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+
+    .brand-logo {
+        max-width: 12.8rem;
+    }
+
+    .menu-links {
+        gap: 0.2rem;
+    }
+
+    .menu-links a {
+        font-size: 0.8rem;
+        padding: 0.35rem 0.48rem;
+    }
+
+    .app-shell {
+        padding: 0.8rem 0.7rem 1rem;
+        border-radius: 0.65rem;
     }
 }

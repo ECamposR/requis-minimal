@@ -471,3 +471,12 @@
   - `tests/test_basic_flow.py` (nuevo test para caso "quien recibe" obligatorio en entrega completa)
 - Resultado:
   - En UI, el usuario vuelve a `/bodega` con mensaje claro en lugar de `Bad Request` JSON.
+
+## 2026-02-11 18:47 UTC-6 | tool: Codex CLI
+- Objetivo: Iniciar V2 visual alineada a referencia corporativa ProHygiene.
+- Cambios:
+  - `templates/base.html` (header en dos franjas, marca estilo corporativo, menu horizontal y shell principal)
+  - `static/style.css` (paleta azul corporativa, tipografia Montserrat, tarjetas/tablas y ajustes responsive)
+- Resultado:
+  - La app ahora adopta una identidad visual consistente con el sitio de referencia.
+  - Mejor jerarquia visual y usabilidad en anchos medios/bajos.

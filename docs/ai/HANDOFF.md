@@ -28,6 +28,7 @@
 - Departamento de usuarios administrado por lista cerrada en alta/edicion (`REQ-030`).
 - Departamento en alta de requisicion fijado por sesion del usuario (`REQ-031`).
 - Requisicion ahora exige datos de cliente (`codigo` + `nombre`) en alta (`REQ-032`).
+- V2 visual iniciada con identidad corporativa (header/nav/paleta/tipografia) (`REQ-033`).
 
 ## En progreso
 - Smoke test funcional de `REQ-027` en navegador y tests.
@@ -56,6 +57,7 @@
 - Verificar en `/admin/usuarios` que `Departamento` se selecciona desde lista fija y backend rechaza valores fuera de catalogo.
 - Verificar en `/crear` que el departamento se muestra solo lectura y backend usa siempre `current_user.departamento` (aunque se envie otro valor en el form).
 - Verificar en `/crear` que no permite enviar requisicion sin `codigo cliente` y `nombre cliente`, y que ambos se reflejan en detalle de requisicion.
+- Revisar consistencia visual de todas las vistas restantes sobre la nueva base corporativa y ajustar componentes puntuales (tablas/formularios/modales) si hace falta.
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.

@@ -35,6 +35,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-030` | `done` | Restringir departamento de usuarios admin a lista predefinida (`Cuentas`, `Ventas`, `Bodega`, `Admon`, `Logistica`).
 - `REQ-031` | `done` | En nueva requisicion, departamento autocompletado desde usuario autenticado (sin edicion manual).
 - `REQ-032` | `done` | En creacion de requisicion, exigir `codigo cliente` y `nombre cliente` obligatorios.
+- `REQ-033` | `done` | Iniciar V2 visual corporativa (header/nav/paleta/tipografia) alineada a referencias de marca.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

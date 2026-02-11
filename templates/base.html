@@ -4,16 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Requisiciones{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<nav class="container">
-    <ul>
-        <li><strong>Sistema Requisiciones</strong></li>
-    </ul>
-    <ul>
+<header class="app-header">
+    <div class="top-strip">
+        <div class="container strip-inner">
+            <span>Requisiciones internas</span>
+            {% if current_user %}
+            <span>{{ current_user.nombre }} | {{ current_user.rol }} | {{ current_user.departamento }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <nav class="container main-nav">
+        <a href="/" class="brand">
+            <img src="/static/branding/logo-prohygiene-es.png" alt="ProHygiene" class="brand-logo">
+            <small>Sistema de requisiciones</small>
+        </a>
         {% if current_user %}
+        <ul class="menu-links">
             <li><a href="/">Inicio</a></li>
             <li><a href="/crear">Nueva Requisicion</a></li>
             <li><a href="/mis-requisiciones">Mis Requisiciones</a></li>
@@ -27,16 +40,15 @@
             <li><a href="/admin/usuarios">Usuarios</a></li>
             <li><a href="/admin/catalogo-items">Catalogo</a></li>
             {% endif %}
-            <li>
-                <form method="POST" action="/logout" style="margin:0;">
-                    <button type="submit" class="secondary">Salir</button>
-                </form>
-            </li>
+        </ul>
+        <form method="POST" action="/logout" class="logout-form">
+            <button type="submit" class="secondary">Salir</button>
+        </form>
         {% endif %}
-    </ul>
-</nav>
+    </nav>
+</header>
 
-<main class="container">
+<main class="container app-shell">
     {% set msg = request.query_params.get('msg') %}
     {% if msg %}
         {% set msg_type = request.query_params.get('type', 'success') %}
