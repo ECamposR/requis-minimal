@@ -51,20 +51,6 @@ main.container {
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
 }
 
-.top-strip {
-    background: linear-gradient(90deg, #1278d5 0%, #0d5fb1 50%, #0e4f97 100%);
-    color: #e9f5ff;
-    font-size: 0.76rem;
-    border-bottom: 1px solid rgba(175, 220, 255, 0.2);
-}
-
-.strip-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 2rem;
-}
-
 .main-nav {
     background: rgba(9, 17, 32, 0.94);
     backdrop-filter: blur(6px);
@@ -132,6 +118,17 @@ main.container {
 .logout-form {
     margin-left: auto;
     margin-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.logout-user {
+    color: #9fb8da;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
 }
 
 .logout-form button.secondary {
@@ -596,12 +593,8 @@ table td {
 }
 
 @media (max-width: 760px) {
-    .strip-inner {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.2rem;
-        padding-top: 0.25rem;
-        padding-bottom: 0.25rem;
+    .logout-user {
+        display: none;
     }
 
     .brand-logo {

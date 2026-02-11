@@ -12,14 +12,6 @@
 </head>
 <body>
 <header class="app-header">
-    <div class="top-strip">
-        <div class="container strip-inner">
-            <span>Requisiciones internas</span>
-            {% if current_user %}
-            <span>{{ current_user.nombre }} | {{ current_user.rol }} | {{ current_user.departamento }}</span>
-            {% endif %}
-        </div>
-    </div>
     <nav class="container main-nav">
         <a href="/" class="brand">
             <img src="/static/branding/logo-prohygiene-es.png" alt="ProHygiene" class="brand-logo">
@@ -42,6 +34,7 @@
             {% endif %}
         </ul>
         <form method="POST" action="/logout" class="logout-form">
+            <span class="logout-user">{{ current_user.nombre }} | {{ current_user.rol }} | {{ current_user.departamento }}</span>
             <button type="submit" class="secondary">Salir</button>
         </form>
         {% endif %}
