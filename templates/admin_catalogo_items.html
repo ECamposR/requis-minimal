@@ -4,6 +4,24 @@
 <h2>Catalogo de Items</h2>
 <p><a href="/admin/catalogo-items/nuevo" role="button">Nuevo item</a></p>
 
+<article class="gestion-card">
+    <h3>Importar catalogo</h3>
+    <form method="POST" action="/admin/catalogo-items/importar" enctype="multipart/form-data" class="gestion-form">
+        <label>
+            Archivo CSV o XLSX
+            <input type="file" name="archivo" accept=".csv,.xlsx" required>
+        </label>
+        <label>
+            <input type="checkbox" name="activar_importados" checked>
+            Marcar items importados como activos
+        </label>
+        <button type="submit">Importar archivo</button>
+    </form>
+    <p class="page-subtitle">
+        Usa una columna con encabezado <code>nombre</code> (o deja el nombre en la primera columna).
+    </p>
+</article>
+
 {% if items %}
 <table>
     <thead>

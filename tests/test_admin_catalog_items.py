@@ -110,3 +110,34 @@ def test_non_admin_cannot_access_catalog_admin_routes():
         db.close()
         Base.metadata.drop_all(bind=engine)
         app.dependency_overrides.clear()
+
+
+def test_admin_import_catalog_csv_crea_y_reactiva_items():
+    client, db, engine = _build_client()
+    try:
+        # Item existente inactivo para validar reactivacion por import
+        existente = db.query(CatalogoItem).filter(CatalogoItem.nombre == "Cable UTP Cat6").first()
+        existente.activo = False
+        db.commit()
+
+        _login(client, "admin", "admin123")
+        csv_data = "nombre\nCable UTP Cat6\nConector RJ45\nConector RJ45\n"
+        response = client.post(
+            "/admin/catalogo-items/importar",
+            files={"archivo": ("catalogo.csv", csv_data.encode("utf-8"), "text/csv")},
+            data={"activar_importados": "on"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+
+        cable = db.query(CatalogoItem).filter(CatalogoItem.nombre == "Cable UTP Cat6").first()
+        conector = db.query(CatalogoItem).filter(CatalogoItem.nombre == "Conector RJ45").first()
+        assert cable is not None
+        assert cable.activo is True
+        assert conector is not None
+        assert conector.activo is True
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()

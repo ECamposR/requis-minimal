@@ -1,9 +1,11 @@
 import os
 import re
+from io import BytesIO
+import csv
 from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -34,6 +36,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 DEPARTAMENTOS_VALIDOS = ["Cuentas", "Ventas", "Bodega", "Admon", "Logistica"]
+CATALOGO_HEADERS = {"nombre", "item", "producto", "descripcion"}
 
 
 @app.on_event("startup")
@@ -43,6 +46,69 @@ def startup_migrations() -> None:
 
 def normalize_catalog_name(value: str) -> str:
     return " ".join(value.split()).strip().casefold()
+
+
+def _extract_names_from_rows(rows: list[list[str]]) -> list[str]:
+    if not rows:
+        return []
+    header_idx = -1
+    first = [c.strip().casefold() for c in rows[0]]
+    for idx, value in enumerate(first):
+        if value in CATALOGO_HEADERS:
+            header_idx = idx
+            break
+
+    start = 1 if header_idx >= 0 else 0
+    name_idx = header_idx if header_idx >= 0 else 0
+
+    names: list[str] = []
+    seen: set[str] = set()
+    for row in rows[start:]:
+        if name_idx >= len(row):
+            continue
+        name = " ".join(str(row[name_idx]).split()).strip()
+        if len(name) < 2:
+            continue
+        key = normalize_catalog_name(name)
+        if key in seen:
+            continue
+        seen.add(key)
+        names.append(name)
+    return names
+
+
+def _parse_catalog_csv(raw: bytes) -> list[str]:
+    text = ""
+    for encoding in ("utf-8-sig", "utf-8", "latin-1"):
+        try:
+            text = raw.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    if not text:
+        raise ValueError("No se pudo leer el CSV")
+    reader = csv.reader(text.splitlines())
+    rows = [[str(cell).strip() for cell in row] for row in reader if any(str(cell).strip() for cell in row)]
+    return _extract_names_from_rows(rows)
+
+
+def _parse_catalog_xlsx(raw: bytes) -> list[str]:
+    try:
+        from openpyxl import load_workbook
+    except ModuleNotFoundError as exc:
+        raise ValueError("Falta dependencia openpyxl para importar XLSX") from exc
+
+    wb = load_workbook(filename=BytesIO(raw), read_only=True, data_only=True)
+    try:
+        ws = wb.active
+        rows: list[list[str]] = []
+        for row in ws.iter_rows(values_only=True):
+            values = ["" if value is None else str(value).strip() for value in row]
+            if any(values):
+                rows.append(values)
+        return _extract_names_from_rows(rows)
+    finally:
+        wb.close()
 
 
 def template_context(request: Request, current_user: Usuario | None = None, **kwargs: object) -> dict[str, object]:
@@ -915,6 +981,61 @@ def admin_catalogo_items(
         "admin_catalogo_items.html",
         template_context(request, current_user, items=items),
     )
+
+
+@app.post("/admin/catalogo-items/importar")
+async def admin_catalogo_item_importar(
+    archivo: UploadFile = File(...),
+    activar_importados: str | None = Form(None),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    filename = (archivo.filename or "").strip()
+    if not filename:
+        return redirect_with_message("/admin/catalogo-items", "Debes seleccionar un archivo", "error")
+
+    ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+    if ext not in {"csv", "xlsx"}:
+        return redirect_with_message("/admin/catalogo-items", "Formato no soportado. Usa CSV o XLSX", "error")
+
+    raw = await archivo.read()
+    if not raw:
+        return redirect_with_message("/admin/catalogo-items", "El archivo esta vacio", "error")
+
+    try:
+        if ext == "csv":
+            nombres = _parse_catalog_csv(raw)
+        else:
+            nombres = _parse_catalog_xlsx(raw)
+    except ValueError as exc:
+        return redirect_with_message("/admin/catalogo-items", str(exc), "error")
+
+    if not nombres:
+        return redirect_with_message("/admin/catalogo-items", "No se encontraron nombres de items validos", "error")
+
+    activar = activar_importados == "on"
+    existentes = {normalize_catalog_name(i.nombre): i for i in db.query(CatalogoItem).all()}
+    creados = 0
+    actualizados = 0
+    sin_cambios = 0
+
+    for nombre in nombres:
+        key = normalize_catalog_name(nombre)
+        existente = existentes.get(key)
+        if existente:
+            if existente.activo != activar:
+                existente.activo = activar
+                actualizados += 1
+            else:
+                sin_cambios += 1
+            continue
+        db.add(CatalogoItem(nombre=nombre, activo=activar))
+        creados += 1
+
+    db.commit()
+    msg = f"Importacion completada. Creados: {creados}, actualizados: {actualizados}, sin cambios: {sin_cambios}"
+    return redirect_with_message("/admin/catalogo-items", msg, "success")
 
 
 @app.get("/admin/catalogo-items/nuevo")

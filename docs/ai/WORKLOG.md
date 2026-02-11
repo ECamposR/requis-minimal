@@ -740,3 +740,18 @@
   - `python -m compileall templates` OK.
 - Resultado:
   - Las pantallas de gestion muestran datos clave del cliente sin ruido de departamento, mejorando decision operativa.
+
+## 2026-02-11 15:50 CST | tool: Codex CLI
+- Objetivo: Habilitar importacion masiva de catalogo desde archivo para evitar alta item por item.
+- Cambios:
+  - `app/main.py` (nuevo endpoint `POST /admin/catalogo-items/importar` + parseo CSV/XLSX + deduplicacion por nombre normalizado)
+  - `templates/admin_catalogo_items.html` (formulario de carga con archivo y opcion de activar items importados)
+  - `tests/test_admin_catalog_items.py` (caso de importacion CSV con creacion y reactivacion de items)
+  - `requirements.txt` (agrega `openpyxl` para soporte XLSX)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Validacion:
+  - `python -m compileall app templates tests` OK.
+  - `pytest` de `tests/test_admin_catalog_items.py` en este entorno no devolvio salida dentro de timeout; probable conflicto por SQLite concurrente.
+- Resultado:
+  - Se puede cargar catalogo desde CSV o XLSX de forma simple y controlada desde UI de admin.
