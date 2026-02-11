@@ -440,3 +440,26 @@
 - Resultado:
   - Toda nueva requisicion queda asociada a codigo y nombre de cliente.
   - Se mantiene trazabilidad de cliente en el detalle operativo.
+
+## 2026-02-11 18:04 UTC-6 | tool: Codex CLI
+- Objetivo: Mejorar usabilidad del modal de detalle en pantallas sub-FHD.
+- Cambios:
+  - `static/app.js` (reorganizacion del detalle en grilla horizontal + bloques de notas + tabla de items)
+  - `static/style.css` (layout responsive para modal, ancho ampliado y estilos de bloques en claro/oscuro)
+- Resultado:
+  - Menor scroll vertical en detalle de requisicion.
+  - Mejor aprovechamiento horizontal con adaptacion responsive.
+
+## 2026-02-11 18:11 UTC-6 | tool: Codex CLI
+- Objetivo: Mejorar legibilidad visual de casillas en modal de detalle.
+- Cambios:
+  - `static/style.css` (fondos con gradiente suave y contraste de texto en claro/oscuro).
+- Resultado:
+  - Se elimina el look de bloques blancos planos y mejora lectura del contenido.
+
+## 2026-02-11 18:18 UTC-6 | tool: Codex CLI
+- Objetivo: Corregir estilos del modal que estaban siendo sobreescritos (campos blancos / texto bajo contraste).
+- Cambios:
+  - `static/style.css` (selectores especificos `#modal-detalle`, contraste alto y soporte dark via `data-theme` + `prefers-color-scheme`).
+- Resultado:
+  - Las casillas del modal ya no quedan blancas y el texto gana legibilidad.

@@ -97,20 +97,24 @@ function verDetalle(id) {
             const emptyColspan = showDelivered ? 3 : 2;
 
             content.innerHTML = `
-                <p><strong>Folio:</strong> ${data.folio}</p>
-                <p><strong>Solicitante:</strong> ${data.solicitante || "-"}</p>
-                <p><strong>Codigo cliente:</strong> ${data.cliente_codigo || "-"}</p>
-                <p><strong>Nombre cliente:</strong> ${data.cliente_nombre || "-"}</p>
-                <p><strong>Justificacion:</strong> ${data.justificacion}</p>
-                <p><strong>Aprobado por:</strong> ${data.approved_by || "-"}</p>
-                <p><strong>Comentario aprobacion:</strong> ${data.approval_comment || "-"}</p>
-                <p><strong>Rechazado por:</strong> ${data.rejected_by || "-"}</p>
-                <p><strong>Razon rechazo:</strong> ${data.rejection_reason || "-"}</p>
-                <p><strong>Comentario rechazo:</strong> ${data.rejection_comment || "-"}</p>
-                <p><strong>Entregado por:</strong> ${data.delivered_by || "-"}</p>
-                <p><strong>Resultado entrega:</strong> ${data.delivery_result || "-"}</p>
-                <p><strong>Recibio:</strong> ${data.delivered_to || "-"}</p>
-                <p><strong>Comentario entrega:</strong> ${data.delivery_comment || "-"}</p>
+                <section class="detalle-grid">
+                    <div class="kv"><span>Folio</span><strong>${escapeHtml(data.folio || "-")}</strong></div>
+                    <div class="kv"><span>Solicitante</span><strong>${escapeHtml(data.solicitante || "-")}</strong></div>
+                    <div class="kv"><span>Cod. cliente</span><strong>${escapeHtml(data.cliente_codigo || "-")}</strong></div>
+                    <div class="kv"><span>Cliente</span><strong>${escapeHtml(data.cliente_nombre || "-")}</strong></div>
+                    <div class="kv"><span>Aprobado por</span><strong>${escapeHtml(data.approved_by || "-")}</strong></div>
+                    <div class="kv"><span>Rechazado por</span><strong>${escapeHtml(data.rejected_by || "-")}</strong></div>
+                    <div class="kv"><span>Entregado por</span><strong>${escapeHtml(data.delivered_by || "-")}</strong></div>
+                    <div class="kv"><span>Resultado entrega</span><strong>${escapeHtml(data.delivery_result || "-")}</strong></div>
+                    <div class="kv"><span>Recibio</span><strong>${escapeHtml(data.delivered_to || "-")}</strong></div>
+                </section>
+                <section class="detalle-notes">
+                    <div class="note"><span>Justificacion</span><p>${escapeHtml(data.justificacion || "-")}</p></div>
+                    <div class="note"><span>Comentario aprobacion</span><p>${escapeHtml(data.approval_comment || "-")}</p></div>
+                    <div class="note"><span>Razon rechazo</span><p>${escapeHtml(data.rejection_reason || "-")}</p></div>
+                    <div class="note"><span>Comentario rechazo</span><p>${escapeHtml(data.rejection_comment || "-")}</p></div>
+                    <div class="note"><span>Comentario entrega</span><p>${escapeHtml(data.delivery_comment || "-")}</p></div>
+                </section>
                 <h4>Items</h4>
                 <div class="detalle-items-wrap">
                     <table class="detalle-items-table">
