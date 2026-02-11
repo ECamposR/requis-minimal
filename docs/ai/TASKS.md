@@ -55,6 +55,9 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-050` | `done` | Unificar metrica de `Pendientes de aprobar` entre tarjetas y grafico en inicio (segun rol).
 - `REQ-051` | `done` | En vistas `Gestionar` (aprobar/bodega), mostrar datos de cliente y ruta; ocultar departamento.
 - `REQ-052` | `done` | Importar catalogo de items desde CSV/XLSX en admin (alta masiva simple con deduplicacion).
+- `REQ-053` | `done` | Redisenar modal de detalle de requisicion para layout tipo panel (items arriba + info/estado/comentarios en dos columnas).
+- `REQ-054` | `done` | Ampliar ancho del modal detalle y paneles internos para evitar contenido apinado.
+- `REQ-055` | `done` | Ajustar modal detalle a layout plano de referencia (sin tarjetas internas por campo, mas ancho util).
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

@@ -130,51 +130,74 @@ function verDetalle(id) {
             const content = document.getElementById("modal-content");
             const modal = document.getElementById("modal-detalle");
             if (!content || !modal) return;
+            const headerTitle = modal.querySelector("header h3");
+            if (headerTitle) {
+                headerTitle.textContent = `Detalle de Requisicion: ${data.folio || "-"}`;
+            }
             const items = Array.isArray(data.items) ? data.items : [];
             const showDelivered = items.some((i) => i.cantidad_entregada !== null && i.cantidad_entregada !== undefined);
             const rows = items.map((i) => `
                 <tr>
                     <td>${escapeHtml(i.descripcion || "-")}</td>
-                    <td class="qty-col">${fmtQty(i.cantidad)}</td>
-                    ${showDelivered ? `<td class="qty-col">${fmtQty(i.cantidad_entregada)}</td>` : ""}
+                    <td class="qty-col qty-solicitada">${fmtQty(i.cantidad)}</td>
+                    ${showDelivered ? `<td class="qty-col qty-despachada">${fmtQty(i.cantidad_entregada)}</td>` : ""}
                 </tr>
             `).join("");
             const emptyColspan = showDelivered ? 3 : 2;
 
             content.innerHTML = `
-                <h4>Items</h4>
-                <div class="detalle-items-wrap">
-                    <table class="detalle-items-table">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th class="qty-col">Cant. solicitada</th>
-                                ${showDelivered ? '<th class="qty-col">Cant. despachada</th>' : ""}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rows || `<tr><td colspan="${emptyColspan}">Sin items</td></tr>`}
-                        </tbody>
-                    </table>
-                </div>
-                <section class="detalle-grid">
-                    <div class="kv"><span>Folio</span><strong>${escapeHtml(data.folio || "-")}</strong></div>
-                    <div class="kv"><span>Solicitante</span><strong>${escapeHtml(data.solicitante || "-")}</strong></div>
-                    <div class="kv"><span>Cod. cliente</span><strong>${escapeHtml(data.cliente_codigo || "-")}</strong></div>
-                    <div class="kv"><span>Cliente</span><strong>${escapeHtml(data.cliente_nombre || "-")}</strong></div>
-                    <div class="kv"><span>Ruta principal</span><strong>${escapeHtml(data.cliente_ruta_principal || "-")}</strong></div>
-                    <div class="kv"><span>Aprobado por</span><strong>${escapeHtml(data.approved_by || "-")}</strong></div>
-                    <div class="kv"><span>Rechazado por</span><strong>${escapeHtml(data.rejected_by || "-")}</strong></div>
-                    <div class="kv"><span>Entregado por</span><strong>${escapeHtml(data.delivered_by || "-")}</strong></div>
-                    <div class="kv"><span>Resultado entrega</span><strong>${escapeHtml(data.delivery_result || "-")}</strong></div>
-                    <div class="kv"><span>Recibio</span><strong>${escapeHtml(data.delivered_to || "-")}</strong></div>
+                <section class="detalle-items-section">
+                    <h4>Items Solicitados</h4>
+                    <div class="detalle-items-wrap">
+                        <table class="detalle-items-table">
+                            <thead>
+                                <tr>
+                                    <th>Item / Producto</th>
+                                    <th class="qty-col">Cant. Solicitada</th>
+                                    ${showDelivered ? '<th class="qty-col">Cant. Despachada</th>' : ""}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows || `<tr><td colspan="${emptyColspan}">Sin items</td></tr>`}
+                            </tbody>
+                        </table>
+                    </div>
                 </section>
-                <section class="detalle-notes">
-                    <div class="note"><span>Justificacion</span><p>${escapeHtml(data.justificacion || "-")}</p></div>
-                    <div class="note"><span>Comentario aprobacion</span><p>${escapeHtml(data.approval_comment || "-")}</p></div>
-                    <div class="note"><span>Razon rechazo</span><p>${escapeHtml(data.rejection_reason || "-")}</p></div>
-                    <div class="note"><span>Comentario rechazo</span><p>${escapeHtml(data.rejection_comment || "-")}</p></div>
-                    <div class="note"><span>Comentario entrega</span><p>${escapeHtml(data.delivery_comment || "-")}</p></div>
+                <section class="detalle-content-grid">
+                    <section class="detalle-block detalle-main">
+                        <h4>Informacion General</h4>
+                        <div class="detalle-meta-grid">
+                            <div class="meta-line"><span>Solicitante</span><strong>${escapeHtml(data.solicitante || "-")}</strong></div>
+                            <div class="meta-line"><span>Cod. cliente</span><strong>${escapeHtml(data.cliente_codigo || "-")}</strong></div>
+                            <div class="meta-line"><span>Cliente</span><strong>${escapeHtml(data.cliente_nombre || "-")}</strong></div>
+                            <div class="meta-line"><span>Ruta principal</span><strong>${escapeHtml(data.cliente_ruta_principal || "-")}</strong></div>
+                        </div>
+                        <div class="detalle-justificacion">
+                            <span>Justificacion</span>
+                            <p>${escapeHtml(data.justificacion || "-")}</p>
+                        </div>
+                    </section>
+                    <aside class="detalle-side">
+                        <section class="detalle-block">
+                            <h4>Estado del Flujo</h4>
+                            <dl class="detalle-list">
+                                <div><dt>Aprobado por</dt><dd>${escapeHtml(data.approved_by || "-")}</dd></div>
+                                <div><dt>Rechazado por</dt><dd>${escapeHtml(data.rejected_by || "-")}</dd></div>
+                                <div><dt>Entregado por</dt><dd>${escapeHtml(data.delivered_by || "-")}</dd></div>
+                                <div><dt>Recibio</dt><dd>${escapeHtml(data.delivered_to || "-")}</dd></div>
+                                <div><dt>Resultado entrega</dt><dd>${escapeHtml(data.delivery_result || "-")}</dd></div>
+                            </dl>
+                        </section>
+                        <section class="detalle-block">
+                            <h4>Comentarios</h4>
+                            <dl class="detalle-list detalle-list-comments">
+                                <div><dt>Aprobacion</dt><dd>${escapeHtml(data.approval_comment || "-")}</dd></div>
+                                <div><dt>Razon rechazo</dt><dd>${escapeHtml(data.rejection_reason || "-")}</dd></div>
+                                <div><dt>Comentario rechazo</dt><dd>${escapeHtml(data.rejection_comment || "-")}</dd></div>
+                                <div><dt>Entrega</dt><dd>${escapeHtml(data.delivery_comment || "-")}</dd></div>
+                            </dl>
+                        </section>
+                    </aside>
                 </section>
             `;
             modal.showModal();

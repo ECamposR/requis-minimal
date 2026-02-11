@@ -766,3 +766,38 @@
   - `docs/ai/HANDOFF.md` (registro del nuevo tag de corte)
 - Resultado:
   - Punto de retorno claro y estable para comenzar siguiente fase (reporteria minima).
+
+## 2026-02-11 16:17 CST | tool: Codex CLI
+- Objetivo: Ajustar la vista de detalle de requisiciones al nuevo diseño de referencia.
+- Cambios:
+  - `static/app.js` (nuevo markup del modal detalle: items arriba + panel principal + sidebar de estado/comentarios; titulo dinamico con folio)
+  - `static/style.css` (estilos del nuevo layout: tablas, paneles, chips de resultado y jerarquia visual)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Validacion:
+  - `python -m compileall static templates` OK.
+- Resultado:
+  - El detalle deja de ser una lista plana y pasa a una composicion mas legible y operativa, priorizando visibilidad de items.
+
+## 2026-02-11 16:19 CST | tool: Codex CLI
+- Objetivo: Corregir densidad visual del modal detalle (contenido apiñado por ancho insuficiente).
+- Cambios:
+  - `static/style.css` (ancho del modal incrementado a `min(98vw, 1260px)` y ajuste de proporciones en `detalle-layout`)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Validacion:
+  - `python -m compileall static` OK.
+- Resultado:
+  - Mayor espacio horizontal para tabla/items/paneles; mejora de legibilidad en desktop.
+
+## 2026-02-11 16:22 CST | tool: Codex CLI
+- Objetivo: Re-alinear modal detalle con referencia visual (menos tarjetas, mas limpieza).
+- Cambios:
+  - `static/app.js` (nuevo markup plano en detalle: tabla superior + bloque general + listas de estado/comentarios)
+  - `static/style.css` (elimina tarjetas por campo, aumenta ancho util del modal, tipografia/espaciado mas abiertos)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Validacion:
+  - `python -m compileall static` OK.
+- Resultado:
+  - Detalle visualmente mas cercano a referencia compartida, sin sobreposiciones ni micro-cajas por dato.
