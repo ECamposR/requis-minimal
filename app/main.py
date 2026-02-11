@@ -116,6 +116,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
     pendientes_aprobar = 0
     if current_user.rol in ["aprobador", "admin"]:
         pendientes_aprobar = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
+    pendientes_aprobar_panel = pendientes_aprobar if current_user.rol in ["aprobador", "admin"] else mis_pendientes
     mis_aprobadas_historicas = mis_requisiciones_query.filter(Requisicion.approved_by.isnot(None)).count()
     aprobadas_panel = (
         db.query(Requisicion).filter(Requisicion.approved_by.isnot(None)).count()
@@ -134,7 +135,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
     escala_metricas_home = max(
         1,
         mis_creadas_mes,
-        mis_pendientes,
+        pendientes_aprobar_panel,
         pendientes_entregar_panel,
         rechazadas_panel,
         mis_entregadas_30d,
@@ -153,6 +154,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
             mis_entregadas=mis_entregadas,
             mis_creadas_mes=mis_creadas_mes,
             mis_entregadas_30d=mis_entregadas_30d,
+            pendientes_aprobar_panel=pendientes_aprobar_panel,
             pendientes_entregar_panel=pendientes_entregar_panel,
             rechazadas_panel=rechazadas_panel,
             escala_metricas_home=escala_metricas_home,

@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -152,6 +153,34 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
     assert "Entregadas (30 dias)" in html
     assert "Pendientes por aprobar" not in html
     assert "Pendientes por entregar" not in html
+
+
+def test_home_aprobador_grafico_usa_pendientes_globales(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    db_session.add(
+        Requisicion(
+            folio="REQ-2301",
+            solicitante_id=user.id,
+            departamento="Operaciones",
+            estado="pendiente",
+            justificacion="Pendiente para aprobador",
+        )
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/")
+    assert response.status_code == 200
+    html = response.text
+    assert "Pendientes por aprobar" in html
+
+    row_match = re.search(
+        r"Pendientes de aprobar.*?<strong class=\"value\">(\d+)</strong>",
+        html,
+        re.DOTALL,
+    )
+    assert row_match is not None
+    assert row_match.group(1) == "1"
 
 
 def test_crear_requisicion(client: TestClient, db_session: Session):

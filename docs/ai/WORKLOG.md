@@ -712,3 +712,19 @@
   - Nota: ejecucion de `pytest` con `TestClient` puede quedar bloqueada si hay instancia activa de `uvicorn --reload` usando la misma SQLite durante startup/migraciones.
 - Resultado:
   - Creacion de requisiciones robusta para items con caracteres especiales y variaciones de formato de entrada.
+
+## 2026-02-11 15:31 CST | tool: Codex CLI
+- Objetivo: Corregir inconsistencia en inicio para rol aprobador (tarjeta y grafico de pendientes de aprobar).
+- Causa identificada:
+  - La tarjeta usaba `pendientes_aprobar` (global) y el grafico usaba `mis_pendientes` (propias), mostrando valores distintos.
+- Cambios:
+  - `app/main.py` (nueva variable `pendientes_aprobar_panel`; escala del grafico usa esta variable)
+  - `templates/home.html` (fila `Pendientes de aprobar` del mini-grafico ahora usa `pendientes_aprobar_panel`)
+  - `tests/test_basic_flow.py` (nuevo test de regresion para aprobador)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Validacion:
+  - `python -m compileall app templates tests` OK.
+  - `pytest` del caso puntual en este entorno corta por timeout (probable bloqueo de SQLite si hay proceso concurrente con la DB).
+- Resultado:
+  - Los valores de pendientes de aprobar quedan consistentes entre tarjeta y grafico segun rol.

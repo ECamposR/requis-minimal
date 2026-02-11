@@ -54,9 +54,9 @@
         <div class="mini-chart-row">
             <span class="label">Pendientes de aprobar</span>
             <div class="bar-wrap">
-                <span class="bar bar-pending" style="width: {{ (mis_pendientes * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
+                <span class="bar bar-pending" style="width: {{ (pendientes_aprobar_panel * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
             </div>
-            <strong class="value">{{ mis_pendientes }}</strong>
+            <strong class="value">{{ pendientes_aprobar_panel }}</strong>
         </div>
         <div class="mini-chart-row">
             <span class="label">Pendientes de entregar</span>

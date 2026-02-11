@@ -52,6 +52,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-047` | `done` | Endurecer parseo backend de items para evitar falsos `Item no permitido en catalogo`.
 - `REQ-048` | `done` | Permitir eliminar requisiciones propias solo si estan en `pendiente de aprobar`.
 - `REQ-049` | `done` | Corregir validacion intermitente de catalogo al crear requisicion (escape de opciones JS + normalizacion backend de nombre de item).
+- `REQ-050` | `done` | Unificar metrica de `Pendientes de aprobar` entre tarjetas y grafico en inicio (segun rol).
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.
