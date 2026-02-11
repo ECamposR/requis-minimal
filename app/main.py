@@ -93,9 +93,12 @@ def logout(request: Request):
 
 @app.get("/")
 def home(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
-    mis_requisiciones = (
-        db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id).count()
-    )
+    mis_requisiciones_query = db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id)
+    mis_requisiciones = mis_requisiciones_query.count()
+    mis_pendientes = mis_requisiciones_query.filter(Requisicion.estado == "pendiente").count()
+    mis_aprobadas = mis_requisiciones_query.filter(Requisicion.estado == "aprobada").count()
+    mis_rechazadas = mis_requisiciones_query.filter(Requisicion.estado == "rechazada").count()
+    mis_entregadas = mis_requisiciones_query.filter(Requisicion.estado == "entregada").count()
     pendientes_aprobar = 0
     if current_user.rol in ["aprobador", "admin"]:
         filtros = [Requisicion.estado == "pendiente"]
@@ -112,6 +115,10 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
             request,
             current_user,
             mis_requisiciones=mis_requisiciones,
+            mis_pendientes=mis_pendientes,
+            mis_aprobadas=mis_aprobadas,
+            mis_rechazadas=mis_rechazadas,
+            mis_entregadas=mis_entregadas,
             pendientes_aprobar=pendientes_aprobar,
             pendientes_bodega=pendientes_bodega,
         ),

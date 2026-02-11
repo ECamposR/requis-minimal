@@ -32,6 +32,8 @@
 - Primera iteracion dark theme corporativa aplicada sobre base V2 (`REQ-034`).
 - Segunda iteracion dark aplicada (home/login/forms/tables con mayor jerarquia visual) (`REQ-035`).
 - Tercera iteracion dark aplicada (nav activo + tablas/acciones operativas refinadas) (`REQ-036`).
+- CSS consolidado para V2 dark, eliminando reglas duplicadas/conflictivas (`REQ-037`).
+- Dashboard de inicio extendido con metricas por estado para todos los usuarios (`REQ-038`).
 
 ## En progreso
 - Smoke test funcional de `REQ-027` en navegador y tests.
@@ -63,7 +65,8 @@
 - Revisar consistencia visual de todas las vistas restantes sobre la nueva base corporativa y ajustar componentes puntuales (tablas/formularios/modales) si hace falta.
 - Iterar contraste fino y micro-espaciados del dark theme con feedback visual de usuario (esta iteracion es base).
 - Ajustar siguientes detalles de V2 dark segun feedback visual: ritmo tipografico del menu y densidad de tablas largas.
-- Revisar si se desea consolidar `style.css` (hay capas de reglas historicas + overrides de iteracion).
+- Desde `REQ-037`, tomar `static/style.css` como base limpia para siguientes iteraciones visuales.
+- Validar con feedback visual si el contraste de tarjetas metricas necesita un ajuste adicional (actualmente diferenciadas por color de estado).
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.

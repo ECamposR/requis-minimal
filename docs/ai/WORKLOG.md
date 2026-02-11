@@ -514,3 +514,27 @@
   - `docs/ai/HANDOFF.md`
 - Resultado:
   - Mejor orientacion de navegacion y legibilidad de tablas en aprobacion/bodega sin perder compactacion.
+
+## 2026-02-11 19:48 UTC-6 | tool: Codex CLI
+- Objetivo: Ejecutar la iteracion propuesta de limpieza tecnica de UI.
+- Cambios:
+  - `static/style.css` reescrito y consolidado (se removieron capas duplicadas y bloques conflictivos)
+  - Se mantuvo la estetica dark corporativa con nav activo, tablas operativas, modal y responsive.
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Hoja de estilos mas mantenible y predecible para iteraciones visuales siguientes.
+  - Se corrigio deriva de cascada que estaba introduciendo resultados inconsistentes.
+
+## 2026-02-11 20:04 UTC-6 | tool: Codex CLI
+- Objetivo: Mejorar visibilidad del panel de inicio y extender informacion para roles no admin.
+- Cambios:
+  - `app/main.py` (conteos de requisiciones propias por estado: pendiente/aprobada/rechazada/entregada)
+  - `templates/home.html` (nuevas tarjetas por estado para todos los roles)
+  - `static/style.css` (colores diferenciados por tarjeta dentro de la paleta dark actual)
+  - `tests/test_basic_flow.py` (test de metricas por estado para usuario rol `user`)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Dashboard inicial mas informativo y consistente entre roles.
+  - El usuario agente ya ve sus requisiciones separadas por estado, no solo el total.

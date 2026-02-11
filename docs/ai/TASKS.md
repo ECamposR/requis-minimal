@@ -39,6 +39,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-034` | `done` | Primera iteracion dark theme corporativa (nav/superficies/tablas/modales) manteniendo identidad ProHygiene.
 - `REQ-035` | `done` | Segunda iteracion dark: home con metricas, login mejorado y formularios/tablas con mayor jerarquia visual.
 - `REQ-036` | `done` | Tercera iteracion dark: estado activo en nav + pulido de legibilidad en tablas operativas y acciones.
+- `REQ-037` | `done` | Consolidar `style.css` (eliminar duplicidad/capas conflictivas) manteniendo look dark corporativo.
+- `REQ-038` | `done` | Dashboard de inicio con metricas por estado para todos los roles + colores diferenciados por tarjeta.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

@@ -7,18 +7,34 @@
 </section>
 
 <section class="metrics-grid">
-    <article class="metric-card">
+    <article class="metric-card metric-total">
         <span>Mis requisiciones</span>
         <strong>{{ mis_requisiciones }}</strong>
     </article>
+    <article class="metric-card metric-pend">
+        <span>Mis pendientes</span>
+        <strong>{{ mis_pendientes }}</strong>
+    </article>
+    <article class="metric-card metric-apr">
+        <span>Mis aprobadas</span>
+        <strong>{{ mis_aprobadas }}</strong>
+    </article>
+    <article class="metric-card metric-rej">
+        <span>Mis rechazadas</span>
+        <strong>{{ mis_rechazadas }}</strong>
+    </article>
+    <article class="metric-card metric-ent">
+        <span>Mis entregadas</span>
+        <strong>{{ mis_entregadas }}</strong>
+    </article>
     {% if current_user.rol in ['aprobador', 'admin'] %}
-    <article class="metric-card">
+    <article class="metric-card metric-apr-queue">
         <span>Pendientes por aprobar</span>
         <strong>{{ pendientes_aprobar }}</strong>
     </article>
     {% endif %}
     {% if current_user.rol in ['bodega', 'admin'] %}
-    <article class="metric-card">
+    <article class="metric-card metric-wh-queue">
         <span>Pendientes por entregar</span>
         <strong>{{ pendientes_bodega }}</strong>
     </article>
