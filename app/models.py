@@ -46,6 +46,7 @@ class Requisicion(Base):
     departamento: Mapped[str] = mapped_column(String(80), nullable=False)
     cliente_codigo: Mapped[str | None] = mapped_column(String(40), nullable=True)
     cliente_nombre: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    cliente_ruta_principal: Mapped[str | None] = mapped_column(String(4), nullable=True)
     estado: Mapped[str] = mapped_column(String(20), default="pendiente", nullable=False)
     justificacion: Mapped[str] = mapped_column(Text, nullable=False)
 

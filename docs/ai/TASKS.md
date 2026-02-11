@@ -43,6 +43,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-038` | `done` | Dashboard de inicio con metricas por estado para todos los roles + colores diferenciados por tarjeta.
 - `REQ-039` | `done` | Reemplazar acciones compactas de `Aprobar` y `Bodega` por vistas dedicadas de gestion por requisicion.
 - `REQ-040` | `done` | Agregar metricas simples en inicio (`creadas este mes`, `pendientes +48h`, `entregadas 30 dias`) manteniendo enfoque MVP.
+- `REQ-041` | `done` | Agregar campo obligatorio `Ruta Principal del Cliente` con formato `AA00` en creacion de requisicion.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

@@ -612,3 +612,18 @@
   - Tag anotado publicado: `v1.2.0-ui-base`
 - Resultado:
   - UI base aprobada queda congelada y referenciable por cualquier IA/operador sin ambiguedad.
+
+## 2026-02-11 21:34 UTC-6 | tool: Codex CLI
+- Objetivo: Agregar nuevo campo obligatorio en alta de requisicion: `Ruta Principal del Cliente`.
+- Cambios:
+  - `app/models.py` (nuevo campo `cliente_ruta_principal` en `Requisicion`)
+  - `app/database.py` (migracion incremental SQLite para columna `cliente_ruta_principal`)
+  - `app/crud.py` (persistencia del nuevo campo)
+  - `app/main.py` (validacion obligatoria con regex `^[A-Z]{2}[0-9]{2}$`, normalizacion a mayusculas)
+  - `templates/crear_requisicion.html` (input requerido con `pattern` y ejemplo `RA02`)
+  - `static/app.js` y `app/main.py` (`/api/requisiciones/{id}` incluye ruta principal en detalle)
+  - `tests/test_basic_flow.py` (payloads de creacion actualizados + test de formato invalido)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Nuevas requisiciones solo se crean con ruta principal valida en formato de 2 letras + 2 numeros.

@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
@@ -179,16 +180,20 @@ async def crear(
     request: Request,
     cliente_codigo: str = Form(...),
     cliente_nombre: str = Form(...),
+    cliente_ruta_principal: str = Form(...),
     justificacion: str = Form(...),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     cliente_codigo_limpio = cliente_codigo.strip()
     cliente_nombre_limpio = cliente_nombre.strip()
+    cliente_ruta_principal_limpia = cliente_ruta_principal.strip().upper()
     if len(cliente_codigo_limpio) < 2:
         raise HTTPException(status_code=400, detail="Codigo de cliente invalido")
     if len(cliente_nombre_limpio) < 3:
         raise HTTPException(status_code=400, detail="Nombre de cliente invalido")
+    if not re.fullmatch(r"[A-Z]{2}\d{2}", cliente_ruta_principal_limpia):
+        raise HTTPException(status_code=400, detail="Ruta principal invalida (formato: AA00)")
 
     req = crear_requisicion_db(
         db=db,
@@ -196,6 +201,7 @@ async def crear(
         departamento=current_user.departamento,
         cliente_codigo=cliente_codigo_limpio,
         cliente_nombre=cliente_nombre_limpio,
+        cliente_ruta_principal=cliente_ruta_principal_limpia,
         justificacion=justificacion,
     )
 
@@ -932,6 +938,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "departamento": req.departamento,
         "cliente_codigo": req.cliente_codigo,
         "cliente_nombre": req.cliente_nombre,
+        "cliente_ruta_principal": req.cliente_ruta_principal,
         "estado": req.estado,
         "justificacion": req.justificacion,
         "created_at": req.created_at,

@@ -50,6 +50,8 @@ def run_migrations() -> None:
             conn.execute(text("ALTER TABLE requisiciones ADD COLUMN cliente_codigo VARCHAR(40)"))
         if "cliente_nombre" not in columns:
             conn.execute(text("ALTER TABLE requisiciones ADD COLUMN cliente_nombre VARCHAR(160)"))
+        if "cliente_ruta_principal" not in columns:
+            conn.execute(text("ALTER TABLE requisiciones ADD COLUMN cliente_ruta_principal VARCHAR(4)"))
         if "approval_comment" not in columns:
             conn.execute(text("ALTER TABLE requisiciones ADD COLUMN approval_comment TEXT"))
         if "rejection_comment" not in columns:

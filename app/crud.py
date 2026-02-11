@@ -20,6 +20,7 @@ def crear_requisicion_db(
     departamento: str,
     cliente_codigo: str,
     cliente_nombre: str,
+    cliente_ruta_principal: str,
     justificacion: str,
 ) -> Requisicion:
     req = Requisicion(
@@ -28,6 +29,7 @@ def crear_requisicion_db(
         departamento=departamento,
         cliente_codigo=cliente_codigo,
         cliente_nombre=cliente_nombre,
+        cliente_ruta_principal=cliente_ruta_principal,
         estado="pendiente",
         justificacion=justificacion,
     )

@@ -102,6 +102,7 @@ function verDetalle(id) {
                     <div class="kv"><span>Solicitante</span><strong>${escapeHtml(data.solicitante || "-")}</strong></div>
                     <div class="kv"><span>Cod. cliente</span><strong>${escapeHtml(data.cliente_codigo || "-")}</strong></div>
                     <div class="kv"><span>Cliente</span><strong>${escapeHtml(data.cliente_nombre || "-")}</strong></div>
+                    <div class="kv"><span>Ruta principal</span><strong>${escapeHtml(data.cliente_ruta_principal || "-")}</strong></div>
                     <div class="kv"><span>Aprobado por</span><strong>${escapeHtml(data.approved_by || "-")}</strong></div>
                     <div class="kv"><span>Rechazado por</span><strong>${escapeHtml(data.rejected_by || "-")}</strong></div>
                     <div class="kv"><span>Entregado por</span><strong>${escapeHtml(data.delivered_by || "-")}</strong></div>
