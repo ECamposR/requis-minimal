@@ -40,6 +40,7 @@
 - Rol `aprobador` ahora puede gestionar y ver todas las requisiciones (sin filtro por departamento) (`REQ-042`).
 - `Aprobar` y `Bodega` ahora incluyen busqueda y filtros operativos (estado/departamento/vista/resultado) (`REQ-043`).
 - UI/filtros distinguen `Pendiente de aprobar` (interno `pendiente`) y `Pendiente de entregar` (interno `aprobada`) (`REQ-044`).
+- Startup/migraciones SQLite ya soportan DB limpia sin error de tablas inexistentes (`REQ-045`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).
 - Tag operativo publicado: `v1.2.0-ui-base` (punto de retorno para UI base aprobada).
 

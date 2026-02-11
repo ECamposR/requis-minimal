@@ -47,6 +47,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-042` | `done` | Permitir que aprobadores vean/aprueben todas las requisiciones sin restriccion por departamento.
 - `REQ-043` | `done` | Agregar busqueda/filtros en `Aprobar` y `Bodega` para escalar consultas de requisiciones.
 - `REQ-044` | `done` | Separar estados operativos en UI/filtros: `Pendiente de aprobar` y `Pendiente de entregar`.
+- `REQ-045` | `done` | Robustecer `run_migrations()` para que arranque en DB limpia sin error `no such table`.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

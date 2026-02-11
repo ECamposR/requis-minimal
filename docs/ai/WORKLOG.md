@@ -664,3 +664,12 @@
   - `docs/ai/HANDOFF.md`
 - Resultado:
   - El usuario puede distinguir y filtrar claramente entre pendiente de aprobacion y pendiente de entrega, sin migrar estados de DB.
+
+## 2026-02-11 22:28 UTC-6 | tool: Codex CLI
+- Objetivo: Corregir fallo de arranque en DB limpia (`no such table: usuarios`).
+- Cambios:
+  - `app/database.py` (`run_migrations()` ahora ejecuta `Base.metadata.create_all` antes de ALTERs y verifica existencia de tablas)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Uvicorn puede iniciar correctamente tras borrar `requisiciones.db`; migraciones incrementales ya no fallan en bases nuevas.
