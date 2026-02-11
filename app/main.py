@@ -31,6 +31,8 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+DEPARTAMENTOS_VALIDOS = ["Cuentas", "Ventas", "Bodega", "Admon", "Logistica"]
+
 
 @app.on_event("startup")
 def startup_migrations() -> None:
@@ -473,6 +475,7 @@ def admin_usuario_nuevo(request: Request, current_user: Usuario = Depends(get_cu
             modo="crear",
             usuario=None,
             roles=["user", "aprobador", "bodega", "admin"],
+            departamentos=DEPARTAMENTOS_VALIDOS,
         ),
     )
 
@@ -496,6 +499,8 @@ def admin_usuario_crear(
 
     if rol not in roles_validos:
         raise HTTPException(status_code=400, detail="Rol invalido")
+    if depto_limpio not in DEPARTAMENTOS_VALIDOS:
+        raise HTTPException(status_code=400, detail="Departamento invalido")
     if len(username_limpio) < 3 or len(nombre_limpio) < 3 or len(depto_limpio) < 2:
         raise HTTPException(status_code=400, detail="Datos incompletos o invalidos")
     if len(password) < 6:
@@ -539,6 +544,7 @@ def admin_usuario_editar_form(
             modo="editar",
             usuario=usuario,
             roles=["user", "aprobador", "bodega", "admin"],
+            departamentos=DEPARTAMENTOS_VALIDOS,
         ),
     )
 
@@ -565,6 +571,8 @@ def admin_usuario_editar(
     depto_limpio = departamento.strip()
     if rol not in roles_validos:
         raise HTTPException(status_code=400, detail="Rol invalido")
+    if depto_limpio not in DEPARTAMENTOS_VALIDOS:
+        raise HTTPException(status_code=400, detail="Departamento invalido")
     if len(username_limpio) < 3 or len(nombre_limpio) < 3 or len(depto_limpio) < 2:
         raise HTTPException(status_code=400, detail="Datos incompletos o invalidos")
 

@@ -400,3 +400,15 @@
 - Resultado:
   - El usuario no puede seleccionar dos veces el mismo item en UI.
   - Si se manipula el request, backend bloquea la requisicion con error 400.
+
+## 2026-02-11 17:27 UTC-6 | tool: Codex CLI
+- Objetivo: Restringir departamento de usuarios a lista predefinida en modulo admin.
+- Cambios:
+  - `app/main.py` (constante `DEPARTAMENTOS_VALIDOS`, envio a template y validacion backend en crear/editar usuario)
+  - `templates/admin_usuario_form.html` (campo departamento cambia de input libre a selector)
+  - `tests/test_admin_users.py` (fixtures y payloads adaptados + test de departamento invalido)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Resultado:
+  - Admin ya no escribe departamentos libres; selecciona uno de la lista oficial.
+  - Se bloquean intentos de envio con departamentos no permitidos.

@@ -35,14 +35,14 @@ def _build_client():
                     password=hash_password("admin123"),
                     nombre="Administrador",
                     rol="admin",
-                    departamento="TI",
+                    departamento="Admon",
                 ),
                 Usuario(
                     username="user.ops",
                     password=hash_password("pass123"),
                     nombre="Usuario Ops",
                     rol="user",
-                    departamento="Operaciones",
+                    departamento="Logistica",
                 ),
             ]
         )
@@ -73,7 +73,7 @@ def test_admin_user_crud_flow():
                 "username": "nuevo.user",
                 "nombre": "Nuevo Usuario",
                 "rol": "aprobador",
-                "departamento": "Operaciones",
+                "departamento": "Ventas",
                 "password": "nuevo123",
             },
             follow_redirects=False,
@@ -119,6 +119,30 @@ def test_non_admin_cannot_access_user_admin_routes():
         _login(client, "user.ops", "pass123")
         response = client.get("/admin/usuarios")
         assert response.status_code == 403
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()
+
+
+def test_admin_no_puede_crear_usuario_con_departamento_invalido():
+    client, db, engine = _build_client()
+    try:
+        _login(client, "admin", "admin123")
+        response = client.post(
+            "/admin/usuarios",
+            data={
+                "username": "invalido.user",
+                "nombre": "Invalido",
+                "rol": "user",
+                "departamento": "Operaciones",
+                "password": "invalido123",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Departamento invalido"
     finally:
         client.close()
         db.close()

@@ -25,6 +25,7 @@
 - UI compacta para tablas/acciones y flujo de bodega con resultado de entrega (`REQ-027`).
 - Entrega parcial en 2 pasos con edicion de cantidades por item (`REQ-028`).
 - Bloqueo de items duplicados por requisicion en formulario y backend (`REQ-029`).
+- Departamento de usuarios administrado por lista cerrada en alta/edicion (`REQ-030`).
 
 ## En progreso
 - Smoke test funcional de `REQ-027` en navegador y tests.
@@ -50,6 +51,7 @@
 - Verificar que `parcial` y `no_entregada` exigen comentario y que `no_entregada` permite dejar vacio "Recibe".
 - Verificar que al elegir `parcial` redirige a `/entregar/{id}/parcial`, permite editar cantidades entregadas por item y guarda `cantidad_entregada`.
 - Verificar en `/crear` que un item ya seleccionado queda bloqueado en las demas filas y que backend rechaza duplicados si se fuerza request manual.
+- Verificar en `/admin/usuarios` que `Departamento` se selecciona desde lista fija y backend rechaza valores fuera de catalogo.
 
 ## Riesgos abiertos
 - Mantener consistencia entre permisos por rol y consultas por departamento.

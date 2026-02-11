@@ -25,7 +25,12 @@
 
     <label>
         Departamento
-        <input type="text" name="departamento" required minlength="2" value="{% if usuario %}{{ usuario.departamento }}{% endif %}">
+        <select name="departamento" required>
+            <option value="">Seleccionar...</option>
+            {% for d in departamentos %}
+            <option value="{{ d }}" {% if usuario and usuario.departamento == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
     </label>
 
     <label>
