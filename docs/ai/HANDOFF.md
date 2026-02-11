@@ -46,6 +46,7 @@
 - Usuarios pueden eliminar requisiciones propias exclusivamente en estado `pendiente de aprobar` (`REQ-048`).
 - Corregido error intermitente `Item no permitido en catalogo` por items con caracteres especiales en filas dinamicas y por diferencias de formato (`REQ-049`).
 - Corregida inconsistencia en dashboard: `Pendientes de aprobar` ahora usa misma fuente en tarjeta y grafico para aprobador/admin (`REQ-050`).
+- Vistas de gestion (`/aprobar/{id}/gestionar` y `/bodega/{id}/gestionar`) ahora muestran codigo/nombre/ruta de cliente y ocultan departamento (`REQ-051`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).
 - Tag operativo publicado: `v1.2.0-ui-base` (punto de retorno para UI base aprobada).
 

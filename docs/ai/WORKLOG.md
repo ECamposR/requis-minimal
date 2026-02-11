@@ -728,3 +728,15 @@
   - `pytest` del caso puntual en este entorno corta por timeout (probable bloqueo de SQLite si hay proceso concurrente con la DB).
 - Resultado:
   - Los valores de pendientes de aprobar quedan consistentes entre tarjeta y grafico segun rol.
+
+## 2026-02-11 15:44 CST | tool: Codex CLI
+- Objetivo: Mejorar contexto operativo en vistas de gestion de aprobacion y bodega.
+- Cambios:
+  - `templates/aprobar_gestionar.html` (agrega `Codigo cliente`, `Cliente` y `Ruta principal`; elimina `Departamento` del encabezado)
+  - `templates/bodega_gestionar.html` (agrega `Codigo cliente`, `Cliente` y `Ruta principal`; elimina `Departamento` del encabezado)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+- Validacion:
+  - `python -m compileall templates` OK.
+- Resultado:
+  - Las pantallas de gestion muestran datos clave del cliente sin ruido de departamento, mejorando decision operativa.

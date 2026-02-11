@@ -7,8 +7,12 @@
     <h3>{{ req.folio }}</h3>
     <p>
         Solicitante: {{ req.solicitante.nombre if req.solicitante else '-' }} |
-        Departamento: {{ req.departamento }} |
         Aprobado por: {{ req.aprobador.nombre if req.aprobador else '-' }}
+    </p>
+    <p>
+        Codigo cliente: {{ req.cliente_codigo or '-' }} |
+        Cliente: {{ req.cliente_nombre or '-' }} |
+        Ruta principal: {{ req.cliente_ruta_principal or '-' }}
     </p>
     <p>Justificacion: {{ req.justificacion }}</p>
 </section>

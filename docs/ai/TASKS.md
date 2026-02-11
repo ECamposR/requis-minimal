@@ -53,6 +53,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-048` | `done` | Permitir eliminar requisiciones propias solo si estan en `pendiente de aprobar`.
 - `REQ-049` | `done` | Corregir validacion intermitente de catalogo al crear requisicion (escape de opciones JS + normalizacion backend de nombre de item).
 - `REQ-050` | `done` | Unificar metrica de `Pendientes de aprobar` entre tarjetas y grafico en inicio (segun rol).
+- `REQ-051` | `done` | En vistas `Gestionar` (aprobar/bodega), mostrar datos de cliente y ruta; ocultar departamento.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.
