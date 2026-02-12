@@ -22,7 +22,7 @@
 
 {% macro datetime_fmt(value) -%}
 {% if value %}
-{{ value.strftime('%Y-%m-%d %H:%M:%S') }}
+{{ value.strftime('%d/%m/%Y %H:%M') }}
 {% else %}
 -
 {% endif %}

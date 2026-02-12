@@ -58,6 +58,7 @@
 - Flujo de liquidacion habilitado en bodega: pantalla dedicada (`/bodega/{id}/liquidar`), validacion por item (`entregado = usado + devuelto_sin_usar`), registro de equipo recuperado y cambio de estado a `liquidada` (`REQ-061`).
 - Trazabilidad de liquidacion completada: `liquidated_by` + `liquidated_at`, timeline con evento de liquidacion, resumen ProKey en detalle para todos los roles, y correccion de `created_at` a zona horaria El Salvador (`REQ-062`).
 - Pulido UX final: tablas ordenadas por `id` descendente, fechas renderizadas sin microsegundos y modal detalle unificado en `Historial del Flujo` con timeline vertical enriquecido (`REQ-063`).
+- Estandarizacion horaria final: frontend sin conversion de zona en JS y formato unico `dd/mm/YYYY HH:MM` en vistas/tablas/modal para evitar discrepancias entre pantallas (`REQ-064`).
 - Modal detalle alineado visualmente con captura de referencia: labels coloreados con iconos, cantidades centradas, chip de resultado entrega, cero despachado en rojo (`REQ-056`).
 - Tag de corte funcional publicado: `v1.3.0-base-estable` (commit `18c21f7`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).

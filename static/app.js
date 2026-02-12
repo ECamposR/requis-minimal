@@ -15,17 +15,15 @@ function fmtQty(value) {
     return Number(value).toLocaleString("es-ES", { maximumFractionDigits: 2 });
 }
 
-function fmtDateTime(value) {
+function formatDate(value) {
     if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return escapeHtml(value);
-    const dd = String(date.getDate()).padStart(2, "0");
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const yyyy = String(date.getFullYear());
-    const hh = String(date.getHours()).padStart(2, "0");
-    const mi = String(date.getMinutes()).padStart(2, "0");
-    const ss = String(date.getSeconds()).padStart(2, "0");
-    return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+    const raw = String(value).trim();
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?(?:Z|[+\-]\d{2}:\d{2})?$/);
+    if (match) {
+        const [, yyyy, mm, dd, hh, mi] = match;
+        return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+    }
+    return escapeHtml(raw);
 }
 
 function renderItemOptions() {
@@ -205,7 +203,7 @@ function verDetalle(id) {
                     const tituloEvento = String(event.evento || "-");
                     const actor =
                         event.actor && !tituloEvento.toLowerCase().includes(" por ") ? `por ${event.actor}` : "";
-                    const fechaHora = fmtDateTime(event.fecha_hora);
+                    const fechaHora = formatDate(event.fecha_hora);
                     const actorHtml = actor ? `<span class="timeline-actor">${escapeHtml(actor)}</span>` : "";
                     return `<div class="timeline-item">
                                 <div class="timeline-main">

@@ -1001,3 +1001,17 @@
   - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
 - Validacion:
   - `python -m compileall app static templates` OK.
+
+## 2026-02-12 13:10 CST | tool: Codex CLI
+- Objetivo: Corregir inconsistencia horaria entre vistas y modal (post-REQ-062).
+- Cambios:
+  - `templates/macros/ui.html`:
+    - `datetime_fmt()` unificado a `'%d/%m/%Y %H:%M'` para todas las tablas.
+  - `static/app.js`:
+    - Reemplazo de `fmtDateTime()` por `formatDate()` sin `new Date(...)`.
+    - Nuevo formateo basado en texto crudo (`YYYY-MM-DD HH:MM[:SS[.ms]]`) para evitar conversiones de zona horaria en navegador.
+    - Timeline del modal ahora usa `formatDate()` (sin alterar la hora guardada en DB).
+  - Se confirma que los listados relevantes ya estaban ordenados por `Requisicion.id.desc()` desde REQ-063.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
+- Resultado:
+  - La hora mostrada se mantiene consistente entre `Aprobar`, `Bodega`, `Mis Requisiciones` y modal detalle, usando el mismo criterio visual y sin conversiones en frontend.

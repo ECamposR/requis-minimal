@@ -66,6 +66,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-061` | `done` | Interfaz y flujo de liquidacion en bodega con cuadre por item (`entregado = usado + devuelto sin usar`) y registro de equipo recuperado.
 - `REQ-062` | `done` | Registrar quien/cuando liquida, corregir hora de creacion a zona El Salvador y exponer resumen ProKey en detalle para todos los roles.
 - `REQ-063` | `done` | Pulido post-REQ-062: orden por `id` descendente, fechas de tablas sin microsegundos y modal detalle con bloque unico `Historial del Flujo`.
+- `REQ-064` | `done` | Estandarizar fecha/hora visible entre vistas y modal sin conversion de zona en frontend (formato `dd/mm/YYYY HH:MM`).
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.
