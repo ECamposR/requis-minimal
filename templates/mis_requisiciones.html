@@ -34,7 +34,7 @@
                 {{ ui.status_badge(req.estado) }}
             {% endif %}
         </td>
-        <td>{{ req.created_at }}</td>
+        <td>{{ ui.datetime_fmt(req.created_at) }}</td>
         <td class="table-actions">
             <button type="button" onclick="verDetalle({{ req.id }})">Ver</button>
             {% if req.estado == 'pendiente' %}

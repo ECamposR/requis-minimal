@@ -56,6 +56,8 @@
 - Vista detalle de requisicion ahora incluye timeline de hitos con fecha-hora (incluye segundos `HH:MM:SS`) para creacion, aprobacion/rechazo, preparacion/entrega de bodega y recibido (`REQ-059`).
 - Base de liquidacion preparada en modelo/DB: `Item` ahora guarda `cantidad_usada`, `cantidad_devuelta_sin_usar`, `cantidad_devuelta_danada`; y `Requisicion.estado` admite `liquidada` (`REQ-060`).
 - Flujo de liquidacion habilitado en bodega: pantalla dedicada (`/bodega/{id}/liquidar`), validacion por item (`entregado = usado + devuelto_sin_usar`), registro de equipo recuperado y cambio de estado a `liquidada` (`REQ-061`).
+- Trazabilidad de liquidacion completada: `liquidated_by` + `liquidated_at`, timeline con evento de liquidacion, resumen ProKey en detalle para todos los roles, y correccion de `created_at` a zona horaria El Salvador (`REQ-062`).
+- Pulido UX final: tablas ordenadas por `id` descendente, fechas renderizadas sin microsegundos y modal detalle unificado en `Historial del Flujo` con timeline vertical enriquecido (`REQ-063`).
 - Modal detalle alineado visualmente con captura de referencia: labels coloreados con iconos, cantidades centradas, chip de resultado entrega, cero despachado en rojo (`REQ-056`).
 - Tag de corte funcional publicado: `v1.3.0-base-estable` (commit `18c21f7`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).

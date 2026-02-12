@@ -928,9 +928,19 @@ def test_bodega_puede_liquidar_requisicion_entregada(client: TestClient, db_sess
     db_session.refresh(req)
     db_session.refresh(item)
     assert req.estado == "liquidada"
+    assert req.liquidated_by == bodega.id
+    assert req.liquidated_at is not None
     assert item.cantidad_usada == 3
     assert item.cantidad_devuelta_sin_usar == 2
     assert item.cantidad_devuelta_danada == 1
+
+    detalle = client.get(f"/api/requisiciones/{req.id}")
+    assert detalle.status_code == 200
+    payload = detalle.json()
+    assert payload["liquidated_by"] == "Bodega Uno"
+    assert payload["liquidated_at"] is not None
+    assert any("Requisicion liquidada por Bodega Uno" in e.get("evento", "") for e in payload.get("timeline", []))
+    assert payload["prokey_summary"] == [{"descripcion": "Cable UTP Cat6", "cantidad_usada": 3}]
 
 
 def test_liquidacion_falla_si_no_cuadra_con_entregado(client: TestClient, db_session: Session):

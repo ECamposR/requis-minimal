@@ -168,26 +168,71 @@ function verDetalle(id) {
                 })
                 .join("");
 
-            const resultVal = data.delivery_result || "-";
-            const chipCls =
+            const timeline = Array.isArray(data.timeline) ? data.timeline : [];
+            const deliveryChipCls =
                 { completa: "resultado-completa", parcial: "resultado-parcial", no_entregada: "resultado-no-entregada" }[
                     data.delivery_result
                 ] || "";
-            const resultHtml = data.delivery_result
-                ? `<span class="resultado-chip ${chipCls}">${escapeHtml(resultVal)}</span>`
-                : `<span class="flujo-value">${escapeHtml(resultVal)}</span>`;
-            const timeline = Array.isArray(data.timeline) ? data.timeline : [];
+
+            function timelineExtra(evento) {
+                const e = String(evento || "").toLowerCase();
+                if (e.includes("aprobada") && data.approval_comment) {
+                    return `<div class="timeline-extra">${escapeHtml(data.approval_comment)}</div>`;
+                }
+                if (e.includes("rechazada")) {
+                    const parts = [];
+                    if (data.rejection_reason) parts.push(`Razón: ${data.rejection_reason}`);
+                    if (data.rejection_comment) parts.push(`Comentario: ${data.rejection_comment}`);
+                    if (parts.length) return `<div class="timeline-extra">${escapeHtml(parts.join(" · "))}</div>`;
+                }
+                if (e.includes("preparacion/entrega")) {
+                    const chip = data.delivery_result
+                        ? `<span class="resultado-chip ${deliveryChipCls}">${escapeHtml(data.delivery_result)}</span>`
+                        : "";
+                    const comment = data.delivery_comment
+                        ? `<div class="timeline-extra">${escapeHtml(data.delivery_comment)}</div>`
+                        : "";
+                    return `<div class="timeline-extra-wrap">${chip}${comment}</div>`;
+                }
+                if (e.includes("liquidada")) {
+                    return `<div class="timeline-extra"><span class="badge success">Liquidada</span></div>`;
+                }
+                return "";
+            }
+
             const timelineRows = timeline
+                .map((event) => {
+                    const tituloEvento = String(event.evento || "-");
+                    const actor =
+                        event.actor && !tituloEvento.toLowerCase().includes(" por ") ? `por ${event.actor}` : "";
+                    const fechaHora = fmtDateTime(event.fecha_hora);
+                    const actorHtml = actor ? `<span class="timeline-actor">${escapeHtml(actor)}</span>` : "";
+                    return `<div class="timeline-item">
+                                <div class="timeline-main">
+                                    <span class="timeline-event">${escapeHtml(tituloEvento)}</span>
+                                    ${actorHtml}
+                                    ${timelineExtra(event.evento)}
+                                </div>
+                                <div class="timeline-time">${fechaHora}</div>
+                            </div>`;
+                })
+                .join("");
+            const prokeySummary = Array.isArray(data.prokey_summary) ? data.prokey_summary : [];
+            const showProkeySummary = data.estado === "liquidada";
+            const prokeyRows = prokeySummary
                 .map(
-                    (event) => `<div class="timeline-item">
-                                    <div class="timeline-main">
-                                        <span class="timeline-event">${escapeHtml(event.evento || "-")}</span>
-                                        <span class="timeline-actor">${escapeHtml(event.actor || "-")}</span>
-                                    </div>
-                                    <div class="timeline-time">${fmtDateTime(event.fecha_hora)}</div>
-                                </div>`
+                    (item) =>
+                        `<li><strong>${fmtQty(item.cantidad_usada)}</strong> x ${escapeHtml(item.descripcion || "-")}</li>`
                 )
                 .join("");
+            const prokeyBlock = showProkeySummary
+                ? `<section class="detalle-block prokey-summary-block">
+                        <h4>RESUMEN PARA CARGA EN PROKEY</h4>
+                        <ul class="prokey-summary-list">
+                            ${prokeyRows || "<li>Sin items usados para cargar.</li>"}
+                        </ul>
+                   </section>`
+                : "";
 
             content.innerHTML = `
                 <section class="detalle-items-section">
@@ -233,24 +278,9 @@ function verDetalle(id) {
                     </section>
                     <aside class="detalle-side">
                         <section class="detalle-block">
-                            <h4>Estado del Flujo</h4>
-                            <div class="flujo-list">
-                                <div class="flujo-item flujo-item-card">
-                                    <span class="meta-label label-orange">\u25ce APROBADO POR</span>
-                                    <div class="flujo-value">${escapeHtml(data.approved_by || "-")}</div>
-                                </div>
-                                <div class="flujo-item">
-                                    <span class="meta-label">RESULTADO ENTREGA</span>
-                                    ${resultHtml}
-                                </div>
-                                <div class="flujo-item">
-                                    <span class="meta-label label-orange">\u25c9 ENTREGADO POR</span>
-                                    <div class="flujo-value">${escapeHtml(data.delivered_by || "-")}</div>
-                                </div>
-                                <div class="flujo-item">
-                                    <span class="meta-label label-orange">\u25c9 RECIBIÓ</span>
-                                    <div class="flujo-value">${escapeHtml(data.delivered_to || "-")}</div>
-                                </div>
+                            <h4>Historial del Flujo</h4>
+                            <div class="timeline-list">
+                                ${timelineRows || '<div class="timeline-item"><div class="timeline-main"><span class="timeline-event">Sin movimientos</span></div><div class="timeline-time">-</div></div>'}
                             </div>
                         </section>
                         <section class="detalle-block">
@@ -274,12 +304,7 @@ function verDetalle(id) {
                                 </div>
                             </div>
                         </section>
-                        <section class="detalle-block">
-                            <h4>Historial</h4>
-                            <div class="timeline-list">
-                                ${timelineRows || '<div class="timeline-item"><div class="timeline-main"><span class="timeline-event">Sin movimientos</span></div><div class="timeline-time">-</div></div>'}
-                            </div>
-                        </section>
+                        ${prokeyBlock}
                     </aside>
                 </section>
             `;

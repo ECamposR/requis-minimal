@@ -312,7 +312,7 @@ def mis_requisiciones(
     requisiciones = (
         db.query(Requisicion)
         .filter(Requisicion.solicitante_id == current_user.id)
-        .order_by(Requisicion.created_at.desc())
+        .order_by(Requisicion.id.desc())
         .all()
     )
     return templates.TemplateResponse(
@@ -387,7 +387,7 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
             )
         )
 
-    requisiciones = query.order_by(Requisicion.created_at.desc()).all()
+    requisiciones = query.order_by(Requisicion.id.desc()).all()
     departamentos = [
         row[0]
         for row in db.query(Requisicion.departamento).distinct().order_by(Requisicion.departamento.asc()).all()
@@ -518,7 +518,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             )
         )
 
-    pendientes_entrega = pendientes_query.order_by(Requisicion.approved_at.asc(), Requisicion.created_at.asc()).all()
+    pendientes_entrega = pendientes_query.order_by(Requisicion.id.desc()).all()
 
     historial_query = (
         db.query(Requisicion)
@@ -547,7 +547,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             )
         )
 
-    historial_entregadas = historial_query.order_by(Requisicion.delivered_at.desc()).all()
+    historial_entregadas = historial_query.order_by(Requisicion.id.desc()).all()
 
     return templates.TemplateResponse(
         "bodega.html",
@@ -1232,6 +1232,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.rechazador),
             joinedload(Requisicion.entregador),
+            joinedload(Requisicion.liquidador),
         )
         .filter(Requisicion.id == req_id)
         .first()
@@ -1289,6 +1290,24 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                     "fecha_hora": req.delivered_at,
                 }
             )
+    if req.liquidated_at:
+        liquidador_nombre = req.liquidador.nombre if req.liquidador else "-"
+        timeline.append(
+            {
+                "evento": f"Requisicion liquidada por {liquidador_nombre}",
+                "actor": req.liquidador.nombre if req.liquidador else None,
+                "fecha_hora": req.liquidated_at,
+            }
+        )
+
+    prokey_summary = [
+        {
+            "descripcion": item.descripcion,
+            "cantidad_usada": item.cantidad_usada,
+        }
+        for item in req.items
+        if (item.cantidad_usada or 0) > 0
+    ]
 
     return {
         "id": req.id,
@@ -1309,16 +1328,22 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "delivered_to": req.delivered_to,
         "delivery_result": req.delivery_result,
         "delivery_comment": req.delivery_comment,
+        "liquidated_by": req.liquidador.nombre if req.liquidador else None,
+        "liquidated_at": req.liquidated_at,
         "rejection_reason": req.rejection_reason,
         "approved_at": req.approved_at,
         "rejected_at": req.rejected_at,
         "delivered_at": req.delivered_at,
         "timeline": timeline,
+        "prokey_summary": prokey_summary,
         "items": [
             {
                 "descripcion": item.descripcion,
                 "cantidad": item.cantidad,
                 "cantidad_entregada": item.cantidad_entregada,
+                "cantidad_usada": item.cantidad_usada,
+                "cantidad_devuelta_sin_usar": item.cantidad_devuelta_sin_usar,
+                "cantidad_devuelta_danada": item.cantidad_devuelta_danada,
                 "unidad": item.unidad,
             }
             for item in req.items

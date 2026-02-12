@@ -1,7 +1,16 @@
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, func
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
+
+EL_SALVADOR_TZ = ZoneInfo("America/El_Salvador")
+
+
+def now_el_salvador_naive() -> datetime:
+    return datetime.now(EL_SALVADOR_TZ).replace(tzinfo=None, microsecond=0)
 
 
 class Usuario(Base):
@@ -35,6 +44,11 @@ class Usuario(Base):
         foreign_keys="Requisicion.delivered_by",
         back_populates="entregador",
     )
+    liquidaciones_realizadas: Mapped[list["Requisicion"]] = relationship(
+        "Requisicion",
+        foreign_keys="Requisicion.liquidated_by",
+        back_populates="liquidador",
+    )
 
 
 class Requisicion(Base):
@@ -50,7 +64,7 @@ class Requisicion(Base):
     estado: Mapped[str] = mapped_column(String(20), default="pendiente", nullable=False)
     justificacion: Mapped[str] = mapped_column(Text, nullable=False)
 
-    created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[DateTime] = mapped_column(DateTime, default=now_el_salvador_naive)
     approved_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     approved_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     approval_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -59,6 +73,8 @@ class Requisicion(Base):
     delivered_to: Mapped[str | None] = mapped_column(String(120), nullable=True)
     delivery_result: Mapped[str | None] = mapped_column(String(20), nullable=True)
     delivery_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    liquidated_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
+    liquidated_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     rejected_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     rejected_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -83,6 +99,11 @@ class Requisicion(Base):
         "Usuario",
         foreign_keys=[delivered_by],
         back_populates="entregas_realizadas",
+    )
+    liquidador: Mapped["Usuario | None"] = relationship(
+        "Usuario",
+        foreign_keys=[liquidated_by],
+        back_populates="liquidaciones_realizadas",
     )
     items: Mapped[list["Item"]] = relationship(
         "Item",

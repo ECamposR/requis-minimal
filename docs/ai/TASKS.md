@@ -64,6 +64,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-059` | `done` | Registrar en detalle de requisicion la linea de tiempo de cambios de estado (creacion, aprobacion/rechazo, preparacion/entrega y recibido) con hora `HH:MM:SS`.
 - `REQ-060` | `done` | Extender modelo para liquidacion (campos por item: usado/devuelto nuevo/devuelto danado) y habilitar estado `liquidada` con migracion SQLite.
 - `REQ-061` | `done` | Interfaz y flujo de liquidacion en bodega con cuadre por item (`entregado = usado + devuelto sin usar`) y registro de equipo recuperado.
+- `REQ-062` | `done` | Registrar quien/cuando liquida, corregir hora de creacion a zona El Salvador y exponer resumen ProKey en detalle para todos los roles.
+- `REQ-063` | `done` | Pulido post-REQ-062: orden por `id` descendente, fechas de tablas sin microsegundos y modal detalle con bloque unico `Historial del Flujo`.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

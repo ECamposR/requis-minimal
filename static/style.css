@@ -1055,10 +1055,39 @@ table td {
     color: #9bb3d6;
 }
 
+.timeline-extra-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    margin-top: 0.15rem;
+}
+
+.timeline-extra {
+    font-size: 0.82rem;
+    color: #c8dcfa;
+    margin-top: 0.15rem;
+}
+
 .timeline-time {
     font-size: 0.82rem;
     color: #85a6d1;
     white-space: nowrap;
+}
+
+.prokey-summary-block {
+    border: 1px solid #2e5e96;
+    background: linear-gradient(180deg, rgba(20, 48, 82, 0.7), rgba(15, 37, 62, 0.7));
+}
+
+.prokey-summary-list {
+    margin: 0.5rem 0 0;
+    padding-left: 1.1rem;
+    color: #d8e9ff;
+}
+
+.prokey-summary-list li {
+    margin: 0.2rem 0;
 }
 
 @media (max-width: 1080px) {

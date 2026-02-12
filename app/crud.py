@@ -1,9 +1,8 @@
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy.orm import Session
 
-from .models import Item, Requisicion
+from .models import Item, Requisicion, now_el_salvador_naive
 
 UNIDAD_POR_DEFECTO = "unidad"
 
@@ -125,24 +124,26 @@ def transicionar_requisicion(
 ) -> Requisicion:
     if nuevo_estado == "aprobada":
         requisicion.estado = "aprobada"
-        requisicion.approved_at = datetime.now()
+        requisicion.approved_at = now_el_salvador_naive()
         requisicion.approved_by = actor_id
         requisicion.approval_comment = approval_comment
     elif nuevo_estado == "rechazada":
         requisicion.estado = "rechazada"
-        requisicion.rejected_at = datetime.now()
+        requisicion.rejected_at = now_el_salvador_naive()
         requisicion.rejected_by = actor_id
         requisicion.rejection_reason = rejection_reason
         requisicion.rejection_comment = rejection_comment
     elif nuevo_estado == "entregada":
         requisicion.estado = "entregada"
-        requisicion.delivered_at = datetime.now()
+        requisicion.delivered_at = now_el_salvador_naive()
         requisicion.delivered_by = actor_id
         requisicion.delivered_to = delivered_to
         requisicion.delivery_result = delivery_result or "completa"
         requisicion.delivery_comment = delivery_comment
     elif nuevo_estado == "liquidada":
         requisicion.estado = "liquidada"
+        requisicion.liquidated_at = now_el_salvador_naive()
+        requisicion.liquidated_by = actor_id
     else:
         raise ValueError("Estado no soportado")
 

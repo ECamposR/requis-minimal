@@ -70,11 +70,20 @@ def run_migrations() -> None:
                 conn.execute(text("ALTER TABLE requisiciones ADD COLUMN delivery_result VARCHAR(20)"))
             if "delivery_comment" not in columns:
                 conn.execute(text("ALTER TABLE requisiciones ADD COLUMN delivery_comment TEXT"))
+            if "liquidated_by" not in columns:
+                conn.execute(text("ALTER TABLE requisiciones ADD COLUMN liquidated_by INTEGER"))
+            if "liquidated_at" not in columns:
+                conn.execute(text("ALTER TABLE requisiciones ADD COLUMN liquidated_at DATETIME"))
 
             req_sql = conn.execute(
                 text("SELECT sql FROM sqlite_master WHERE type='table' AND name='requisiciones'")
             ).scalar()
-            if req_sql and "'liquidada'" not in str(req_sql):
+            needs_rebuild = req_sql and (
+                "'liquidada'" not in str(req_sql)
+                or "liquidated_by" not in str(req_sql)
+                or "liquidated_at" not in str(req_sql)
+            )
+            if needs_rebuild:
                 conn.execute(text("PRAGMA foreign_keys=OFF"))
                 conn.execute(
                     text(
@@ -89,7 +98,7 @@ def run_migrations() -> None:
                             cliente_ruta_principal VARCHAR(4),
                             estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
                             justificacion TEXT NOT NULL,
-                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            created_at DATETIME NOT NULL,
                             approved_at DATETIME,
                             approved_by INTEGER,
                             approval_comment TEXT,
@@ -98,6 +107,8 @@ def run_migrations() -> None:
                             delivered_to VARCHAR(120),
                             delivery_result VARCHAR(20),
                             delivery_comment TEXT,
+                            liquidated_at DATETIME,
+                            liquidated_by INTEGER,
                             rejected_at DATETIME,
                             rejected_by INTEGER,
                             rejection_reason TEXT,
@@ -108,7 +119,8 @@ def run_migrations() -> None:
                             FOREIGN KEY(solicitante_id) REFERENCES usuarios(id),
                             FOREIGN KEY(approved_by) REFERENCES usuarios(id),
                             FOREIGN KEY(rejected_by) REFERENCES usuarios(id),
-                            FOREIGN KEY(delivered_by) REFERENCES usuarios(id)
+                            FOREIGN KEY(delivered_by) REFERENCES usuarios(id),
+                            FOREIGN KEY(liquidated_by) REFERENCES usuarios(id)
                         )
                         """
                     )
@@ -119,13 +131,15 @@ def run_migrations() -> None:
                         INSERT INTO requisiciones_new (
                             id, folio, solicitante_id, departamento, cliente_codigo, cliente_nombre, cliente_ruta_principal,
                             estado, justificacion, created_at, approved_at, approved_by, approval_comment, delivered_at,
-                            delivered_by, delivered_to, delivery_result, delivery_comment, rejected_at, rejected_by,
+                            delivered_by, delivered_to, delivery_result, delivery_comment, liquidated_at, liquidated_by,
+                            rejected_at, rejected_by,
                             rejection_reason, rejection_comment
                         )
                         SELECT
                             id, folio, solicitante_id, departamento, cliente_codigo, cliente_nombre, cliente_ruta_principal,
                             estado, justificacion, created_at, approved_at, approved_by, approval_comment, delivered_at,
-                            delivered_by, delivered_to, delivery_result, delivery_comment, rejected_at, rejected_by,
+                            delivered_by, delivered_to, delivery_result, delivery_comment, liquidated_at, liquidated_by,
+                            rejected_at, rejected_by,
                             rejection_reason, rejection_comment
                         FROM requisiciones
                         """

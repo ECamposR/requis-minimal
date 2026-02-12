@@ -942,3 +942,62 @@
 - Validacion:
   - `python -m compileall app templates static tests` OK.
   - Nota: ejecucion de `pytest` en este entorno CLI queda colgada sin salida; validar en entorno local activo.
+
+## 2026-02-12 12:20 CST | tool: Codex CLI
+- Objetivo: Implementar REQ-062 y corregir trazabilidad de liquidacion/horas.
+- Cambios:
+  - `app/models.py`:
+    - `Requisicion` agrega `liquidated_by` (FK a `usuarios.id`) y `liquidated_at` (`DateTime`).
+    - Nueva relacion `Requisicion.liquidador` y `Usuario.liquidaciones_realizadas`.
+    - `created_at` migra a default Python con zona explicita de El Salvador (`America/El_Salvador`) para evitar desfase UTC.
+  - `app/database.py`:
+    - Migracion incremental para `liquidated_by` y `liquidated_at`.
+    - Rebuild de tabla `requisiciones` cuando el esquema legacy no contiene columnas/check actuales (incluye FK de liquidacion y mantiene datos).
+  - `app/crud.py`:
+    - Transicion a estado `liquidada` ahora guarda `liquidated_by` y `liquidated_at`.
+    - Timestamps operativos usan helper de hora local El Salvador.
+  - `app/main.py` (`GET /api/requisiciones/{id}`):
+    - Timeline incluye evento de liquidacion con actor: `Requisicion liquidada por [nombre]`.
+    - Payload agrega `liquidated_by`, `liquidated_at` y `prokey_summary` (items con `cantidad_usada > 0`).
+  - `static/app.js`:
+    - Modal detalle muestra bloque destacado `RESUMEN PARA CARGA EN PROKEY` cuando estado `liquidada`.
+    - Lista formato: `[Cantidad Usada] x [Nombre del Item]`.
+  - `static/style.css`:
+    - Estilos para bloque destacado ProKey en modal.
+  - `tests/test_basic_flow.py`:
+    - Extiende prueba de liquidacion para validar:
+      - `liquidated_by`/`liquidated_at`
+      - evento timeline de liquidacion
+      - `prokey_summary` en API de detalle.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
+- Validacion:
+  - `python -m compileall app static tests` OK.
+  - Busqueda global confirma ausencia de `datetime.utcnow()` en el codigo.
+
+## 2026-02-12 12:55 CST | tool: Codex CLI
+- Objetivo: Pulido final post-REQ-062 (ordenamiento, formato de fechas y UX del modal detalle).
+- Cambios:
+  - `app/main.py`:
+    - Listados principales ahora ordenan por `Requisicion.id.desc()`:
+      - `/mis-requisiciones`
+      - `/aprobar`
+      - `/bodega` (pendientes + historial)
+  - `templates/macros/ui.html`:
+    - Nuevo macro `datetime_fmt()` para render limpio sin microsegundos (`%Y-%m-%d %H:%M:%S`).
+  - `templates/mis_requisiciones.html`, `templates/aprobar.html`, `templates/bodega.html`:
+    - Fechas de tablas migradas a `ui.datetime_fmt(...)`.
+  - `static/app.js`:
+    - Modal: se elimino seccion separada `Estado del Flujo`.
+    - Se fusiono en un solo bloque `Historial del Flujo` con timeline vertical enriquecido:
+      - Evento
+      - Actor
+      - Fecha/hora sin milisegundos
+      - Resultado/detalle contextual (incluye chip de entrega y comentarios cuando aplica)
+    - Se mantiene el bloque `RESUMEN PARA CARGA EN PROKEY` al final cuando estado `liquidada`.
+  - `static/style.css`:
+    - Estilos de soporte para detalles enriquecidos dentro del timeline.
+  - `app/models.py`:
+    - `now_el_salvador_naive()` ahora normaliza `microsecond=0` para nuevas trazas limpias.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
+- Validacion:
+  - `python -m compileall app static templates` OK.
