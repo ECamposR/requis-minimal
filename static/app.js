@@ -225,7 +225,7 @@ function verDetalle(id) {
                 .join("");
             const prokeyBlock = showProkeySummary
                 ? `<section class="detalle-block prokey-summary-block prokey-summary">
-                        <h4>RESUMEN PARA CARGA EN PROKEY</h4>
+                        <h4>LIQUIDACION</h4>
                         <div class="panel-content">
                             <ul class="prokey-summary-list">
                                 ${prokeyRows || "<li>Sin items usados para cargar.</li>"}
