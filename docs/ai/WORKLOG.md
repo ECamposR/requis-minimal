@@ -1015,3 +1015,115 @@
   - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
 - Resultado:
   - La hora mostrada se mantiene consistente entre `Aprobar`, `Bodega`, `Mis Requisiciones` y modal detalle, usando el mismo criterio visual y sin conversiones en frontend.
+
+## 2026-02-12 13:25 CST | tool: Codex CLI
+- Objetivo: Ajuste UX visual del modal detalle (feedback final de jerarquia y uso de espacio).
+- Cambios:
+  - `static/app.js`:
+    - Bloque `RESUMEN PARA CARGA EN PROKEY` movido a columna izquierda (`detalle-main`), inmediatamente despues de `Justificacion`.
+    - Eliminado de columna derecha para evitar hueco visual.
+  - `static/style.css`:
+    - Tabla de items reforzada como grid estructurada:
+      - contenedor con borde + radio
+      - encabezado con fondo diferenciado
+      - bordes inferiores por fila
+      - columnas numericas centradas
+      - peso de fuente mejorado para cantidades
+    - `prokey-summary-block` con `margin-top` para separacion visual respecto a justificacion.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
+- Validacion:
+  - `python -m compileall static` OK.
+
+## 2026-02-12 13:45 CST | tool: Codex CLI
+- Objetivo: Replicar efecto visual de contenedores/cards en modal detalle (referencia REQ-0004).
+- Cambios:
+  - `static/app.js`:
+    - Se agregan clases semanticas por bloque del modal:
+      - `items-table-container`
+      - `detalle-panel`
+      - `timeline-container`
+      - `comentarios-section`
+      - `prokey-summary`
+    - `RESUMEN PARA CARGA EN PROKEY` se mantiene en columna izquierda justo despues de Justificacion.
+  - `static/style.css`:
+    - Estilo de card comun para contenedores del detalle:
+      - fondo solido contrastante
+      - borde sutil
+      - radio 8px
+      - padding interno 1rem
+    - Titulos de seccion (`h4`) con `font-weight: 700`, color jerarquico y margen inferior de 1rem.
+    - Tabla de items refinada como grid:
+      - encabezado con fondo diferenciado
+      - bordes inferiores por fila
+      - columnas numericas centradas y peso 600
+      - sin borde externo de tabla (lo absorbe el contenedor card)
+    - Ajuste de `margin-top` en bloque ProKey para separacion visual.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
+
+## 2026-02-12 14:05 CST | tool: Codex CLI
+- Objetivo: Eliminar apariencia "partida" en paneles del modal y replicar barra sombreada de encabezado en tabla de items.
+- Cambios:
+  - `static/style.css`:
+    - Paneles del modal ajustados a unidad visual uniforme:
+      - fondo solido (`var(--card-background, #161b22)`)
+      - borde sutil
+      - radio `6px`
+      - `padding: 1.25rem`
+    - Titulos (`h4`) con fondo transparente y separacion inferior consistente.
+    - Tabla de items actualizada al estilo "encabezado sombreado":
+      - `border-collapse: collapse`
+      - `thead` con fondo oscuro (`rgba(0,0,0,0.3)`)
+      - `th` en uppercase, `0.75rem`, color muted, padding `0.75rem 1rem`
+      - `td` con padding `1rem` y bordes inferiores (sin borde en ultima fila)
+    - `items-table-container` sin padding interno para que el encabezado de tabla toque los bordes.
+    - `prokey-summary-block` conserva separacion superior (`margin-top`).
+- Validacion:
+  - `python -m compileall static` OK.
+
+## 2026-02-12 14:20 CST | tool: Codex CLI
+- Objetivo: Corregir visual de titulos "flotantes" y convertir paneles del modal en tarjetas con header real.
+- Cambios:
+  - `static/app.js`:
+    - Se agregan wrappers `.panel-content` para:
+      - Informacion General
+      - Historial del Flujo
+      - Comentarios
+      - Resumen ProKey
+    - Permite separar claramente header (franja superior) y contenido interno.
+  - `static/style.css`:
+    - Paneles (`.detalle-panel`, `.comentarios-section`, `.timeline-container`, `.prokey-summary`) ahora:
+      - `padding: 0`
+      - `overflow: hidden`
+      - `display: flex; flex-direction: column`
+    - Titulos directos (`h3/h4/.panel-title`) dentro de paneles:
+      - fondo sutil (`rgba(255,255,255,0.03)`)
+      - padding `1rem 1.25rem`
+      - `border-bottom` sutil
+      - tipografia de jerarquia (`0.9rem`, `700`)
+    - Contenido interno via `.panel-content { padding: 1.25rem; }`.
+    - Tabla items:
+      - `thead` en barra sombreada (`rgba(255,255,255,0.05)`) + border-bottom
+      - `th` con jerarquia y `text-transform: none`
+      - `td` con padding y separadores por fila.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
+- Validacion:
+  - `python -m compileall static` OK.
+
+## 2026-02-12 14:35 CST | tool: Codex CLI
+- Objetivo: Aumentar contraste visual del modal (evitar efecto negro sobre negro) siguiendo paleta REQ-0004.
+- Cambios:
+  - `static/style.css`:
+    - Cards/paneles del detalle (`.detalle-panel`, `.comentarios-section`, `.timeline-container`, `.prokey-summary`, `.items-table-container`) ahora usan:
+      - `background-color: #1e293b !important`
+      - `border: 1px solid #334155`
+      - `box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5)`
+    - Titulos de panel:
+      - texto en `#f8fafc`
+      - fondo transparente
+      - `border-bottom: 1px solid #334155`
+    - Tabla de items:
+      - `thead` con `background-color: #0f172a !important`
+      - `th` en `#94a3b8`
+      - cuerpo mantiene fondo de card para contraste inverso.
+- Validacion:
+  - `python -m compileall static` OK.

@@ -224,16 +224,18 @@ function verDetalle(id) {
                 )
                 .join("");
             const prokeyBlock = showProkeySummary
-                ? `<section class="detalle-block prokey-summary-block">
+                ? `<section class="detalle-block prokey-summary-block prokey-summary">
                         <h4>RESUMEN PARA CARGA EN PROKEY</h4>
-                        <ul class="prokey-summary-list">
-                            ${prokeyRows || "<li>Sin items usados para cargar.</li>"}
-                        </ul>
+                        <div class="panel-content">
+                            <ul class="prokey-summary-list">
+                                ${prokeyRows || "<li>Sin items usados para cargar.</li>"}
+                            </ul>
+                        </div>
                    </section>`
                 : "";
 
             content.innerHTML = `
-                <section class="detalle-items-section">
+                <section class="detalle-items-section items-table-container">
                     <h4><span class="icon-items">\u2299</span> Items Solicitados</h4>
                     <div class="detalle-items-wrap">
                         <table class="detalle-items-table">
@@ -249,60 +251,66 @@ function verDetalle(id) {
                     </div>
                 </section>
                 <section class="detalle-content-grid">
-                    <section class="detalle-block detalle-main">
+                    <section class="detalle-block detalle-main detalle-panel">
                         <h4>Informaci\u00f3n General</h4>
-                        <div class="detalle-meta-grid">
-                            <div class="meta-line">
-                                <span class="meta-label label-orange">\u25ce SOLICITANTE</span>
-                                <strong>${escapeHtml(data.solicitante || "-")}</strong>
+                        <div class="panel-content">
+                            <div class="detalle-meta-grid">
+                                <div class="meta-line">
+                                    <span class="meta-label label-orange">\u25ce SOLICITANTE</span>
+                                    <strong>${escapeHtml(data.solicitante || "-")}</strong>
+                                </div>
+                                <div class="meta-line">
+                                    <span class="meta-label label-green">\u25c9 COD. CLIENTE</span>
+                                    <strong>${escapeHtml(data.cliente_codigo || "-")}</strong>
+                                </div>
+                                <div class="meta-line">
+                                    <span class="meta-label label-blue">\u25ce CLIENTE</span>
+                                    <strong>${escapeHtml(data.cliente_nombre || "-")}</strong>
+                                </div>
+                                <div class="meta-line">
+                                    <span class="meta-label label-blue">\u25c9 RUTA PRINCIPAL</span>
+                                    <strong>${escapeHtml(data.cliente_ruta_principal || "-")}</strong>
+                                </div>
                             </div>
-                            <div class="meta-line">
-                                <span class="meta-label label-green">\u25c9 COD. CLIENTE</span>
-                                <strong>${escapeHtml(data.cliente_codigo || "-")}</strong>
-                            </div>
-                            <div class="meta-line">
-                                <span class="meta-label label-blue">\u25ce CLIENTE</span>
-                                <strong>${escapeHtml(data.cliente_nombre || "-")}</strong>
-                            </div>
-                            <div class="meta-line">
-                                <span class="meta-label label-blue">\u25c9 RUTA PRINCIPAL</span>
-                                <strong>${escapeHtml(data.cliente_ruta_principal || "-")}</strong>
+                            <div class="detalle-justificacion">
+                                <span class="meta-label label-orange">\u270e JUSTIFICACI\u00d3N</span>
+                                <p>${escapeHtml(data.justificacion || "-")}</p>
                             </div>
                         </div>
-                        <div class="detalle-justificacion">
-                            <span class="meta-label label-orange">\u270e JUSTIFICACI\u00d3N</span>
-                            <p>${escapeHtml(data.justificacion || "-")}</p>
-                        </div>
+                        ${prokeyBlock}
                     </section>
                     <aside class="detalle-side">
-                        <section class="detalle-block">
+                        <section class="detalle-block timeline-container">
                             <h4>Historial del Flujo</h4>
-                            <div class="timeline-list">
-                                ${timelineRows || '<div class="timeline-item"><div class="timeline-main"><span class="timeline-event">Sin movimientos</span></div><div class="timeline-time">-</div></div>'}
+                            <div class="panel-content">
+                                <div class="timeline-list">
+                                    ${timelineRows || '<div class="timeline-item"><div class="timeline-main"><span class="timeline-event">Sin movimientos</span></div><div class="timeline-time">-</div></div>'}
+                                </div>
                             </div>
                         </section>
-                        <section class="detalle-block">
+                        <section class="detalle-block comentarios-section">
                             <h4>Comentarios</h4>
-                            <div class="comentarios-list">
-                                <div class="comentario-item">
-                                    <span class="meta-label label-muted">APROBACI\u00d3N</span>
-                                    <p>${escapeHtml(data.approval_comment || "-")}</p>
-                                </div>
-                                <div class="comentario-item">
-                                    <span class="meta-label label-muted">RAZ\u00d3N RECHAZO</span>
-                                    <p>${escapeHtml(data.rejection_reason || "-")}</p>
-                                </div>
-                                <div class="comentario-item">
-                                    <span class="meta-label label-muted">COMENTARIO RECHAZO</span>
-                                    <p>${escapeHtml(data.rejection_comment || "-")}</p>
-                                </div>
-                                <div class="comentario-item">
-                                    <span class="meta-label label-muted">ENTREGA</span>
-                                    <p>${escapeHtml(data.delivery_comment || "-")}</p>
+                            <div class="panel-content">
+                                <div class="comentarios-list">
+                                    <div class="comentario-item">
+                                        <span class="meta-label label-muted">APROBACI\u00d3N</span>
+                                        <p>${escapeHtml(data.approval_comment || "-")}</p>
+                                    </div>
+                                    <div class="comentario-item">
+                                        <span class="meta-label label-muted">RAZ\u00d3N RECHAZO</span>
+                                        <p>${escapeHtml(data.rejection_reason || "-")}</p>
+                                    </div>
+                                    <div class="comentario-item">
+                                        <span class="meta-label label-muted">COMENTARIO RECHAZO</span>
+                                        <p>${escapeHtml(data.rejection_comment || "-")}</p>
+                                    </div>
+                                    <div class="comentario-item">
+                                        <span class="meta-label label-muted">ENTREGA</span>
+                                        <p>${escapeHtml(data.delivery_comment || "-")}</p>
+                                    </div>
                                 </div>
                             </div>
                         </section>
-                        ${prokeyBlock}
                     </aside>
                 </section>
             `;

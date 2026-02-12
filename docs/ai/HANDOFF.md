@@ -59,6 +59,11 @@
 - Trazabilidad de liquidacion completada: `liquidated_by` + `liquidated_at`, timeline con evento de liquidacion, resumen ProKey en detalle para todos los roles, y correccion de `created_at` a zona horaria El Salvador (`REQ-062`).
 - Pulido UX final: tablas ordenadas por `id` descendente, fechas renderizadas sin microsegundos y modal detalle unificado en `Historial del Flujo` con timeline vertical enriquecido (`REQ-063`).
 - Estandarizacion horaria final: frontend sin conversion de zona en JS y formato unico `dd/mm/YYYY HH:MM` en vistas/tablas/modal para evitar discrepancias entre pantallas (`REQ-064`).
+- Ajuste visual de modal detalle: bloque ProKey reubicado en columna izquierda (debajo de Justificacion) y tabla de items con estilo grid mas solido/profesional (`REQ-065`).
+- Estilo de modal detalle elevado a layout por cards/contenedores (fondo propio, borde, radio y padding interno por bloque) con titulos dentro de caja y tabla de items refinada (`REQ-066`).
+- Ajuste final de fidelidad visual del modal: paneles sin efecto partido (fondo uniforme) y tabla items con barra sombreada de encabezado estilo referencia (`REQ-067`).
+- Modal detalle actualizado a patron "card con header": franja superior de titulo con `border-bottom` + contenido desacoplado via `.panel-content`, replicando estructura de referencia (`REQ-068`).
+- Paleta de contraste del modal ajustada (slate-800 para cards y slate-900 para encabezado de tabla) para separar claramente capas visuales (`REQ-069`).
 - Modal detalle alineado visualmente con captura de referencia: labels coloreados con iconos, cantidades centradas, chip de resultado entrega, cero despachado en rojo (`REQ-056`).
 - Tag de corte funcional publicado: `v1.3.0-base-estable` (commit `18c21f7`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).

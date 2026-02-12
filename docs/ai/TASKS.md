@@ -67,6 +67,11 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-062` | `done` | Registrar quien/cuando liquida, corregir hora de creacion a zona El Salvador y exponer resumen ProKey en detalle para todos los roles.
 - `REQ-063` | `done` | Pulido post-REQ-062: orden por `id` descendente, fechas de tablas sin microsegundos y modal detalle con bloque unico `Historial del Flujo`.
 - `REQ-064` | `done` | Estandarizar fecha/hora visible entre vistas y modal sin conversion de zona en frontend (formato `dd/mm/YYYY HH:MM`).
+- `REQ-065` | `done` | Pulido visual modal detalle: mover resumen ProKey a columna izquierda y reforzar jerarquia grid de tabla de items.
+- `REQ-066` | `done` | Estilo de cards/contenedores en modal detalle (fondo solido, borde, padding interno y titulos dentro de caja) + refinamiento grid de tabla items.
+- `REQ-067` | `done` | Ajuste fino modal detalle para apariencia identica a referencia: tarjetas de fondo uniforme y tabla de items con barra de encabezado sombreada.
+- `REQ-068` | `done` | Modal detalle con estructura tipo "card con header": franja de titulo con border-bottom y contenido con padding interno dedicado.
+- `REQ-069` | `done` | Incrementar contraste en modal detalle: cards slate-800 sobre fondo oscuro y encabezado de tabla slate-900.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.
