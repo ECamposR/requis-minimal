@@ -1021,6 +1021,46 @@ table td {
     line-height: 1.45;
 }
 
+.timeline-list {
+    margin-top: 0.5rem;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #2b3f61;
+}
+
+.timeline-item:last-child {
+    border-bottom: 0;
+}
+
+.timeline-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.timeline-event {
+    font-size: 0.9rem;
+    color: #dce9ff;
+    font-weight: 600;
+}
+
+.timeline-actor {
+    font-size: 0.82rem;
+    color: #9bb3d6;
+}
+
+.timeline-time {
+    font-size: 0.82rem;
+    color: #85a6d1;
+    white-space: nowrap;
+}
+
 @media (max-width: 1080px) {
     .main-nav {
         flex-wrap: wrap;

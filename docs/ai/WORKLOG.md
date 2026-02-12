@@ -865,3 +865,27 @@
   - Seccion de barras `Indicadores rapidos` mantenida sin cambios funcionales.
 - Resultado:
   - Sistema visualmente coherente en todas las vistas clave con componentes reutilizables y tema centralizado.
+
+## 2026-02-12 10:35 CST | tool: Codex CLI
+- Objetivo: Agregar trazabilidad temporal en vista detalle de requisiciones para cada hito del flujo.
+- Cambios:
+  - `app/main.py`:
+    - `GET /api/requisiciones/{id}` ahora incluye `timeline` con eventos:
+      - `Requisicion creada`
+      - `Requisicion aprobada` o `Requisicion rechazada`
+      - `Preparacion/entrega de bodega`
+      - `Recibido` (cuando aplica)
+    - Se exponen timestamps (`approved_at`, `rejected_at`, `delivered_at`) en el payload de detalle.
+  - `static/app.js`:
+    - Se agrega `fmtDateTime()` para mostrar `dd/mm/yyyy HH:MM:SS`.
+    - Se renderiza nuevo bloque `Historial` en el modal de detalle con evento, actor y fecha-hora.
+  - `static/style.css`:
+    - Estilos para timeline (`timeline-list`, `timeline-item`, `timeline-time`, etc.).
+  - `tests/test_basic_flow.py`:
+    - Nuevo test `test_detalle_requisicion_devuelve_timeline_con_hitos`.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
+- Validacion:
+  - `python -m compileall app static tests` OK.
+  - Nota: `pytest` en este entorno CLI quedo bloqueado sin salida; validar en entorno local activo.
+- Resultado:
+  - El detalle ahora muestra historial de cambios con fecha y hora incluyendo segundos (`HH:MM:SS`), mejorando trazabilidad operativa.

@@ -15,6 +15,19 @@ function fmtQty(value) {
     return Number(value).toLocaleString("es-ES", { maximumFractionDigits: 2 });
 }
 
+function fmtDateTime(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return escapeHtml(value);
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = String(date.getFullYear());
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mi = String(date.getMinutes()).padStart(2, "0");
+    const ss = String(date.getSeconds()).padStart(2, "0");
+    return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+}
+
 function renderItemOptions() {
     const catalogo = window.CATALOGO_ITEMS || [];
     const options = ['<option value="">Seleccionar item...</option>'];
@@ -163,6 +176,18 @@ function verDetalle(id) {
             const resultHtml = data.delivery_result
                 ? `<span class="resultado-chip ${chipCls}">${escapeHtml(resultVal)}</span>`
                 : `<span class="flujo-value">${escapeHtml(resultVal)}</span>`;
+            const timeline = Array.isArray(data.timeline) ? data.timeline : [];
+            const timelineRows = timeline
+                .map(
+                    (event) => `<div class="timeline-item">
+                                    <div class="timeline-main">
+                                        <span class="timeline-event">${escapeHtml(event.evento || "-")}</span>
+                                        <span class="timeline-actor">${escapeHtml(event.actor || "-")}</span>
+                                    </div>
+                                    <div class="timeline-time">${fmtDateTime(event.fecha_hora)}</div>
+                                </div>`
+                )
+                .join("");
 
             content.innerHTML = `
                 <section class="detalle-items-section">
@@ -247,6 +272,12 @@ function verDetalle(id) {
                                     <span class="meta-label label-muted">ENTREGA</span>
                                     <p>${escapeHtml(data.delivery_comment || "-")}</p>
                                 </div>
+                            </div>
+                        </section>
+                        <section class="detalle-block">
+                            <h4>Historial</h4>
+                            <div class="timeline-list">
+                                ${timelineRows || '<div class="timeline-item"><div class="timeline-main"><span class="timeline-event">Sin movimientos</span></div><div class="timeline-time">-</div></div>'}
                             </div>
                         </section>
                     </aside>

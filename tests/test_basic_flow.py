@@ -704,6 +704,41 @@ def test_bodega_entrega_completa_requiere_recibe(client: TestClient, db_session:
     assert req.estado == "aprobada"
 
 
+def test_detalle_requisicion_devuelve_timeline_con_hitos(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req = Requisicion(
+        folio="REQ-0014",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="entregada",
+        justificacion="Timeline completo",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivered_to="Jaime Campos",
+        delivery_result="completa",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "user.ops", "pass123")
+    response = client.get(f"/api/requisiciones/{req.id}")
+    assert response.status_code == 200
+    data = response.json()
+    timeline = data.get("timeline", [])
+
+    eventos = [item.get("evento") for item in timeline]
+    assert "Requisicion creada" in eventos
+    assert "Requisicion aprobada" in eventos
+    assert "Preparacion/entrega de bodega" in eventos
+    assert "Recibido" in eventos
+
+
 def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

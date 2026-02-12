@@ -61,6 +61,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-056` | `done` | Alinear aspecto visual del modal detalle con captura de referencia (labels coloreados, cantidades centradas, chip de resultado).
 - `REQ-057` | `done` | Iteracion UI dashboard: header/nav estilo prototipo + metric cards estilo prototipo (sin tocar seccion de barras).
 - `REQ-058` | `done` | Unificar tema visual en vistas operativas/admin (navbar reusable, paneles, formularios, tablas, badges) sin cambios de logica.
+- `REQ-059` | `done` | Registrar en detalle de requisicion la linea de tiempo de cambios de estado (creacion, aprobacion/rechazo, preparacion/entrega y recibido) con hora `HH:MM:SS`.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

@@ -53,6 +53,7 @@
 - Modal detalle refinado a estilo plano de referencia (sin tarjetas por campo, estructura limpia y mas aire) (`REQ-055`).
 - Dashboard actualizado en UI: header/nav tipo capsule con iconos + metric cards estilo prototipo; bloque de barras no modificado (`REQ-057`).
 - Tema UI unificado en vistas operativas/admin mediante `theme.css` + componentes Jinja reutilizables (sin alterar logica backend) (`REQ-058`).
+- Vista detalle de requisicion ahora incluye timeline de hitos con fecha-hora (incluye segundos `HH:MM:SS`) para creacion, aprobacion/rechazo, preparacion/entrega de bodega y recibido (`REQ-059`).
 - Modal detalle alineado visualmente con captura de referencia: labels coloreados con iconos, cantidades centradas, chip de resultado entrega, cero despachado en rojo (`REQ-056`).
 - Tag de corte funcional publicado: `v1.3.0-base-estable` (commit `18c21f7`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).

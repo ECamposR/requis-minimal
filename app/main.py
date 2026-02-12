@@ -1158,6 +1158,48 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
     if not can_view:
         raise HTTPException(status_code=403, detail="No autorizado")
 
+    timeline: list[dict[str, object]] = []
+    if req.created_at:
+        timeline.append(
+            {
+                "evento": "Requisicion creada",
+                "actor": req.solicitante.nombre if req.solicitante else None,
+                "fecha_hora": req.created_at,
+            }
+        )
+    if req.approved_at:
+        timeline.append(
+            {
+                "evento": "Requisicion aprobada",
+                "actor": req.aprobador.nombre if req.aprobador else None,
+                "fecha_hora": req.approved_at,
+            }
+        )
+    if req.rejected_at:
+        timeline.append(
+            {
+                "evento": "Requisicion rechazada",
+                "actor": req.rechazador.nombre if req.rechazador else None,
+                "fecha_hora": req.rejected_at,
+            }
+        )
+    if req.delivered_at:
+        timeline.append(
+            {
+                "evento": "Preparacion/entrega de bodega",
+                "actor": req.entregador.nombre if req.entregador else None,
+                "fecha_hora": req.delivered_at,
+            }
+        )
+        if req.delivered_to:
+            timeline.append(
+                {
+                    "evento": "Recibido",
+                    "actor": req.delivered_to,
+                    "fecha_hora": req.delivered_at,
+                }
+            )
+
     return {
         "id": req.id,
         "folio": req.folio,
@@ -1178,6 +1220,10 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "delivery_result": req.delivery_result,
         "delivery_comment": req.delivery_comment,
         "rejection_reason": req.rejection_reason,
+        "approved_at": req.approved_at,
+        "rejected_at": req.rejected_at,
+        "delivered_at": req.delivered_at,
+        "timeline": timeline,
         "items": [
             {
                 "descripcion": item.descripcion,
