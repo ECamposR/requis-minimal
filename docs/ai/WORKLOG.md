@@ -814,3 +814,21 @@
   - Cambios exclusivamente de UI/CSS, sin tocar logica backend ni rutas.
 - Resultado:
   - Modal detalle visualmente identico a referencia: labels con color semantico, cantidades centradas, resultado de entrega como badge, todos los campos siempre visibles.
+
+## 2026-02-12 09:24 CST | tool: Codex CLI
+- Objetivo: Iteracion UI de dashboard para replicar prototipo en header/nav y metric cards.
+- Cambios:
+  - `templates/base.html` (nuevo layout de topbar: marca textual + nav capsule con iconos SVG inline + avatar chip + boton salir sobrio)
+  - `templates/home.html` (cards de metricas con wrappers/clases minimas para titulo, valor e icono, sin cambiar cantidad/orden)
+  - `static/style.css` (bloque `V2 prototipo header + metric cards` con estilos dark compactos y acentos por tipo)
+  - `docs/ai/TASKS.md` (registro de `REQ-057`)
+  - `docs/ai/HANDOFF.md` (estado visual actualizado)
+  - `docs/ai/WORKLOG.md` (entrada de sesion)
+- Validacion:
+  - `python -m compileall templates static` OK.
+  - Startup smoke-test: `uvicorn` levanta y cierra correctamente bajo `timeout`.
+- Restricciones respetadas:
+  - No se cambio logica/rutas/contadores.
+  - No se modifico HTML/CSS del bloque `Indicadores rapidos` con barras.
+- Resultado:
+  - Header/nav y tarjetas adoptan lenguaje visual del prototipo sin afectar la estructura funcional existente.
