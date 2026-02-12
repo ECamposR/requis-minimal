@@ -259,6 +259,55 @@ table tbody tr:hover td {
     margin: 0;
 }
 
+.liquidacion-panel .liquidacion-note {
+    margin-bottom: 0.85rem;
+}
+
+.liquidacion-table input[readonly] {
+    opacity: 0.9;
+    font-weight: 600;
+    text-align: center;
+}
+
+.liquidacion-table .qty-col input {
+    text-align: center;
+    min-width: 7.2rem;
+}
+
+.cuadre-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 6.9rem;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+}
+
+.cuadre-chip.is-ok {
+    background: rgba(50, 135, 95, 0.28);
+    color: #a8efc8;
+    border-color: rgba(84, 206, 149, 0.3);
+}
+
+.cuadre-chip.is-bad {
+    background: rgba(133, 45, 63, 0.3);
+    color: #ffc3cf;
+    border-color: rgba(241, 121, 146, 0.32);
+}
+
+.liquidacion-error {
+    margin-bottom: 0.7rem;
+    border-radius: 10px;
+    border: 1px solid rgba(241, 121, 146, 0.4);
+    background: rgba(133, 45, 63, 0.25);
+    color: #ffd5de;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.86rem;
+}
+
 .table-actions .inline {
     display: inline-block;
 }

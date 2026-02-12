@@ -875,3 +875,106 @@ def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_s
     assert response.status_code == 200
     assert "REQ-0302" in response.text
     assert "REQ-0301" not in response.text
+
+
+def test_bodega_puede_liquidar_requisicion_entregada(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req = Requisicion(
+        folio="REQ-0401",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="entregada",
+        justificacion="Liquidacion operativa",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivered_to="Cliente Test",
+        delivery_result="completa",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    item = Item(
+        requisicion_id=req.id,
+        descripcion="Cable UTP Cat6",
+        cantidad=5,
+        cantidad_entregada=5,
+        unidad="unidad",
+    )
+    db_session.add(item)
+    db_session.commit()
+    db_session.refresh(item)
+
+    login(client, "bodega.1", "pass123")
+    view = client.get(f"/bodega/{req.id}/liquidar")
+    assert view.status_code == 200
+    assert "Equipo Recuperado/Viejo" in view.text
+
+    response = client.post(
+        f"/bodega/{req.id}/liquidar",
+        data={
+            f"usada_{item.id}": "3",
+            f"devuelta_sin_usar_{item.id}": "2",
+            f"recuperada_{item.id}": "1",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    db_session.refresh(req)
+    db_session.refresh(item)
+    assert req.estado == "liquidada"
+    assert item.cantidad_usada == 3
+    assert item.cantidad_devuelta_sin_usar == 2
+    assert item.cantidad_devuelta_danada == 1
+
+
+def test_liquidacion_falla_si_no_cuadra_con_entregado(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req = Requisicion(
+        folio="REQ-0402",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="entregada",
+        justificacion="Liquidacion con descuadre",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivered_to="Cliente Test",
+        delivery_result="completa",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    item = Item(
+        requisicion_id=req.id,
+        descripcion="Conector RJ45",
+        cantidad=4,
+        cantidad_entregada=4,
+        unidad="unidad",
+    )
+    db_session.add(item)
+    db_session.commit()
+    db_session.refresh(item)
+
+    login(client, "bodega.1", "pass123")
+    response = client.post(
+        f"/bodega/{req.id}/liquidar",
+        data={
+            f"usada_{item.id}": "1",
+            f"devuelta_sin_usar_{item.id}": "1",
+            f"recuperada_{item.id}": "0",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "Descuadre en item" in response.json()["detail"]

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+{% block title %}Liquidar Requisicion{% endblock %}
+{% block content %}
+{{ ui.page_header("Liquidar Requisicion", "Define lo cargado a ProKey y lo que regresa fisicamente a bodega.") }}
+
+<section class="page-hero panel">
+    <h3>{{ req.folio }}</h3>
+    <p>
+        Solicitante: {{ req.solicitante.nombre if req.solicitante else '-' }} |
+        Entregado por: {{ req.entregador.nombre if req.entregador else '-' }} |
+        Recibio: {{ req.delivered_to or '-' }}
+    </p>
+    <p>
+        Codigo cliente: {{ req.cliente_codigo or '-' }} |
+        Cliente: {{ req.cliente_nombre or '-' }} |
+        Ruta principal: {{ req.cliente_ruta_principal or '-' }}
+    </p>
+</section>
+
+<section class="panel view-panel liquidacion-panel">
+    <p class="page-subtitle liquidacion-note">
+        El equipo recuperado/viejo es para registro de ingreso fisico y no afecta el balance de carga a ProKey.
+    </p>
+    <form method="POST" action="/bodega/{{ req.id }}/liquidar" id="liquidacion-form">
+        <div id="liquidacion-error" class="liquidacion-error" hidden></div>
+        <div class="table-wrap">
+            <table class="table-compact liquidacion-table">
+                <thead>
+                <tr>
+                    <th>Item</th>
+                    <th class="qty-col">Entregado</th>
+                    <th class="qty-col">Usado (Cargar a ProKey)</th>
+                    <th class="qty-col">Devuelto Sin Usar (A Stock)</th>
+                    <th class="qty-col">Equipo Recuperado/Viejo</th>
+                    <th class="qty-col">Cuadre</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in req.items %}
+                {% set entregado = (item.cantidad_entregada if item.cantidad_entregada is not none else 0) %}
+                <tr class="liquidacion-row" data-entregado="{{ entregado }}">
+                    <td>{{ item.descripcion }}</td>
+                    <td class="qty-col">
+                        <input type="number" value="{{ entregado }}" readonly tabindex="-1">
+                    </td>
+                    <td class="qty-col">
+                        <input
+                            type="number"
+                            name="usada_{{ item.id }}"
+                            min="0"
+                            step="1"
+                            value="{{ item.cantidad_usada }}"
+                            class="js-usada"
+                            required
+                        >
+                    </td>
+                    <td class="qty-col">
+                        <input
+                            type="number"
+                            name="devuelta_sin_usar_{{ item.id }}"
+                            min="0"
+                            step="1"
+                            value="{{ item.cantidad_devuelta_sin_usar }}"
+                            class="js-devuelta"
+                            required
+                        >
+                    </td>
+                    <td class="qty-col">
+                        <input
+                            type="number"
+                            name="recuperada_{{ item.id }}"
+                            min="0"
+                            step="1"
+                            value="{{ item.cantidad_devuelta_danada }}"
+                            class="js-recuperada"
+                            required
+                        >
+                    </td>
+                    <td class="qty-col">
+                        <span class="cuadre-chip js-cuadre">Pendiente</span>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="form-actions">
+            <button type="submit">Guardar liquidacion</button>
+            <a href="/bodega" role="button" class="secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+
+<script>
+(() => {
+    const form = document.getElementById("liquidacion-form");
+    if (!form) return;
+    const errorBox = document.getElementById("liquidacion-error");
+    const rows = Array.from(form.querySelectorAll(".liquidacion-row"));
+
+    function toInt(value) {
+        const n = Number.parseInt(String(value ?? "").trim(), 10);
+        return Number.isNaN(n) ? 0 : n;
+    }
+
+    function evalRow(row) {
+        const entregado = Number(row.dataset.entregado || "0");
+        const usada = toInt(row.querySelector(".js-usada")?.value);
+        const devuelta = toInt(row.querySelector(".js-devuelta")?.value);
+        const chip = row.querySelector(".js-cuadre");
+        const ok = Math.abs((usada + devuelta) - entregado) < 1e-9;
+        if (chip) {
+            chip.textContent = ok ? "Cuadre OK" : "Descuadre";
+            chip.classList.toggle("is-ok", ok);
+            chip.classList.toggle("is-bad", !ok);
+        }
+        return ok;
+    }
+
+    function validateAll() {
+        let allOk = true;
+        for (const row of rows) {
+            const ok = evalRow(row);
+            if (!ok) allOk = false;
+        }
+        if (errorBox) {
+            if (allOk) {
+                errorBox.hidden = true;
+                errorBox.textContent = "";
+            } else {
+                errorBox.hidden = false;
+                errorBox.textContent = "Hay filas con descuadre. Debe cumplirse: Entregado = Usado + Devuelto Sin Usar.";
+            }
+        }
+        return allOk;
+    }
+
+    form.addEventListener("input", (event) => {
+        if (event.target instanceof HTMLInputElement) {
+            const row = event.target.closest(".liquidacion-row");
+            if (row) evalRow(row);
+            validateAll();
+        }
+    });
+
+    form.addEventListener("submit", (event) => {
+        if (!validateAll()) {
+            event.preventDefault();
+        }
+    });
+
+    validateAll();
+})();
+</script>
+{% endblock %}

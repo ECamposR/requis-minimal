@@ -909,3 +909,36 @@
   - No se implementan validaciones matematicas aun (se reserva para REQ-061): `entregado == usado + devuelto_sin_usar`, con `devuelto_danada` independiente.
 - Validacion:
   - `python -m compileall app` OK.
+
+## 2026-02-12 11:40 CST | tool: Codex CLI
+- Objetivo: Implementar REQ-061 (UI + flujo de liquidacion con recuperacion de equipos).
+- Cambios:
+  - `app/main.py`:
+    - `GET /bodega/{id}/liquidar`: nueva vista de liquidacion para requisiciones en estado `entregada`.
+    - `POST /bodega/{id}/liquidar`: valida por item `cantidad_entregada == cantidad_usada + cantidad_devuelta_sin_usar`; persiste campos y cambia estado a `liquidada`.
+    - `/bodega` historial ahora incluye estados `entregada` y `liquidada`.
+  - `app/crud.py`:
+    - `transicionar_requisicion()` soporta nuevo estado `liquidada`.
+  - `app/database.py`:
+    - Migracion de compatibilidad para SQLite: reconstruccion de tabla `requisiciones` cuando el check constraint no contiene `liquidada`.
+  - `templates/bodega.html`:
+    - Historial muestra estado y agrega accion `Liquidar` para requisiciones `entregada`.
+  - `templates/bodega_liquidar.html` (nuevo):
+    - Tabla de liquidacion con columnas:
+      - Item
+      - Entregado (solo lectura)
+      - Usado (cargar a ProKey)
+      - Devuelto Sin Usar (a stock)
+      - Equipo Recuperado/Viejo
+      - Cuadre por fila
+    - Nota de UX aclarando que recuperado/viejo es solo registro fisico.
+    - JS cliente: bloqueo de envio si hay descuadre y chips visuales `Cuadre OK/Descuadre`.
+  - `static/theme.css`:
+    - Estilos para pantalla de liquidacion (tabla/chips/error).
+  - `tests/test_basic_flow.py`:
+    - `test_bodega_puede_liquidar_requisicion_entregada`
+    - `test_liquidacion_falla_si_no_cuadra_con_entregado`
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
+- Validacion:
+  - `python -m compileall app templates static tests` OK.
+  - Nota: ejecucion de `pytest` en este entorno CLI queda colgada sin salida; validar en entorno local activo.

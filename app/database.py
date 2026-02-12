@@ -71,6 +71,71 @@ def run_migrations() -> None:
             if "delivery_comment" not in columns:
                 conn.execute(text("ALTER TABLE requisiciones ADD COLUMN delivery_comment TEXT"))
 
+            req_sql = conn.execute(
+                text("SELECT sql FROM sqlite_master WHERE type='table' AND name='requisiciones'")
+            ).scalar()
+            if req_sql and "'liquidada'" not in str(req_sql):
+                conn.execute(text("PRAGMA foreign_keys=OFF"))
+                conn.execute(
+                    text(
+                        """
+                        CREATE TABLE requisiciones_new (
+                            id INTEGER NOT NULL PRIMARY KEY,
+                            folio VARCHAR(30) NOT NULL UNIQUE,
+                            solicitante_id INTEGER NOT NULL,
+                            departamento VARCHAR(80) NOT NULL,
+                            cliente_codigo VARCHAR(40),
+                            cliente_nombre VARCHAR(160),
+                            cliente_ruta_principal VARCHAR(4),
+                            estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+                            justificacion TEXT NOT NULL,
+                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            approved_at DATETIME,
+                            approved_by INTEGER,
+                            approval_comment TEXT,
+                            delivered_at DATETIME,
+                            delivered_by INTEGER,
+                            delivered_to VARCHAR(120),
+                            delivery_result VARCHAR(20),
+                            delivery_comment TEXT,
+                            rejected_at DATETIME,
+                            rejected_by INTEGER,
+                            rejection_reason TEXT,
+                            rejection_comment TEXT,
+                            CONSTRAINT ck_requisiciones_estado CHECK (
+                                estado in ('pendiente', 'aprobada', 'rechazada', 'entregada', 'liquidada')
+                            ),
+                            FOREIGN KEY(solicitante_id) REFERENCES usuarios(id),
+                            FOREIGN KEY(approved_by) REFERENCES usuarios(id),
+                            FOREIGN KEY(rejected_by) REFERENCES usuarios(id),
+                            FOREIGN KEY(delivered_by) REFERENCES usuarios(id)
+                        )
+                        """
+                    )
+                )
+                conn.execute(
+                    text(
+                        """
+                        INSERT INTO requisiciones_new (
+                            id, folio, solicitante_id, departamento, cliente_codigo, cliente_nombre, cliente_ruta_principal,
+                            estado, justificacion, created_at, approved_at, approved_by, approval_comment, delivered_at,
+                            delivered_by, delivered_to, delivery_result, delivery_comment, rejected_at, rejected_by,
+                            rejection_reason, rejection_comment
+                        )
+                        SELECT
+                            id, folio, solicitante_id, departamento, cliente_codigo, cliente_nombre, cliente_ruta_principal,
+                            estado, justificacion, created_at, approved_at, approved_by, approval_comment, delivered_at,
+                            delivered_by, delivered_to, delivery_result, delivery_comment, rejected_at, rejected_by,
+                            rejection_reason, rejection_comment
+                        FROM requisiciones
+                        """
+                    )
+                )
+                conn.execute(text("DROP TABLE requisiciones"))
+                conn.execute(text("ALTER TABLE requisiciones_new RENAME TO requisiciones"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_requisiciones_id ON requisiciones (id)"))
+                conn.execute(text("PRAGMA foreign_keys=ON"))
+
         if "items" in tables:
             item_columns = {
                 row[1]

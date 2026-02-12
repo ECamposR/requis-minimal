@@ -527,7 +527,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.entregador),
         )
-        .filter(Requisicion.estado == "entregada")
+        .filter(Requisicion.estado.in_(["entregada", "liquidada"]))
     )
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(Requisicion.delivered_by == current_user.id)
@@ -739,6 +739,96 @@ async def entrega_parcial_guardar(
         delivery_comment=comentario_limpio,
     )
     return redirect_with_message("/bodega", "Requisicion marcada como entrega parcial", "warning")
+
+
+@app.get("/bodega/{req_id}/liquidar")
+def bodega_liquidar_form(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.rol not in ["bodega", "admin"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    req = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.entregador),
+        )
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if req.estado != "entregada":
+        return redirect_with_message("/bodega", "Solo puedes liquidar requisiciones entregadas", "warning")
+    if current_user.rol == "bodega" and req.delivered_by != current_user.id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    return templates.TemplateResponse(
+        "bodega_liquidar.html",
+        template_context(request, current_user, req=req),
+    )
+
+
+@app.post("/bodega/{req_id}/liquidar")
+async def bodega_liquidar_guardar(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.rol not in ["bodega", "admin"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    req = db.query(Requisicion).options(joinedload(Requisicion.items)).filter(Requisicion.id == req_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if req.estado != "entregada":
+        return redirect_with_message("/bodega", "Solo puedes liquidar requisiciones entregadas", "warning")
+    if current_user.rol == "bodega" and req.delivered_by != current_user.id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    form_data = await request.form()
+    for item in req.items:
+        raw_usada = str(form_data.get(f"usada_{item.id}", "0")).strip() or "0"
+        raw_dev_sin = str(form_data.get(f"devuelta_sin_usar_{item.id}", "0")).strip() or "0"
+        raw_recup = str(form_data.get(f"recuperada_{item.id}", "0")).strip() or "0"
+        try:
+            cantidad_usada = int(raw_usada)
+            cantidad_devuelta_sin_usar = int(raw_dev_sin)
+            cantidad_devuelta_danada = int(raw_recup)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Liquidacion invalida: usa solo cantidades enteras") from exc
+
+        if cantidad_usada < 0 or cantidad_devuelta_sin_usar < 0 or cantidad_devuelta_danada < 0:
+            raise HTTPException(status_code=400, detail="Liquidacion invalida: no se permiten cantidades negativas")
+
+        entregado = float(item.cantidad_entregada or 0)
+        if abs(entregado - (cantidad_usada + cantidad_devuelta_sin_usar)) > 1e-9:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Descuadre en item '{item.descripcion}': "
+                    "Entregado debe ser igual a Usado + Devuelto Sin Usar"
+                ),
+            )
+
+        item.cantidad_usada = cantidad_usada
+        item.cantidad_devuelta_sin_usar = cantidad_devuelta_sin_usar
+        item.cantidad_devuelta_danada = cantidad_devuelta_danada
+
+    transicionar_requisicion(
+        db,
+        req,
+        nuevo_estado="liquidada",
+        actor_id=current_user.id,
+    )
+    return redirect_with_message("/bodega", "Liquidacion registrada correctamente", "success")
 
 
 @app.get("/admin/usuarios")

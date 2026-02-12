@@ -72,12 +72,14 @@
         <th class="col-folio">Folio</th>
         <th>Solicitante</th>
         <th>Departamento</th>
+        <th>Estado</th>
         <th>Aprobado por</th>
         <th>Entregado por</th>
         <th>Resultado</th>
         <th>Recibio</th>
         <th class="col-fecha">Entregada en</th>
         <th class="col-detalle">Detalle</th>
+        <th class="col-acciones">Acciones</th>
     </tr>
     </thead>
     <tbody>
@@ -86,6 +88,7 @@
         <td>{{ req.folio }}</td>
         <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
         <td>{{ req.departamento }}</td>
+        <td>{{ ui.status_badge(req.estado) }}</td>
         <td>{{ req.aprobador.nombre if req.aprobador else '-' }}</td>
         <td>{{ req.entregador.nombre if req.entregador else '-' }}</td>
         <td>
@@ -100,6 +103,13 @@
         <td>{{ req.delivered_to or '-' }}</td>
         <td>{{ req.delivered_at }}</td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
+        <td class="table-actions">
+            {% if req.estado == 'entregada' %}
+            <a href="/bodega/{{ req.id }}/liquidar" role="button" class="secondary">Liquidar</a>
+            {% else %}
+            <span class="badge success">Liquidada</span>
+            {% endif %}
+        </td>
     </tr>
     {% endfor %}
     </tbody>

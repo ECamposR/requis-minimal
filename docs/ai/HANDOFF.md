@@ -55,6 +55,7 @@
 - Tema UI unificado en vistas operativas/admin mediante `theme.css` + componentes Jinja reutilizables (sin alterar logica backend) (`REQ-058`).
 - Vista detalle de requisicion ahora incluye timeline de hitos con fecha-hora (incluye segundos `HH:MM:SS`) para creacion, aprobacion/rechazo, preparacion/entrega de bodega y recibido (`REQ-059`).
 - Base de liquidacion preparada en modelo/DB: `Item` ahora guarda `cantidad_usada`, `cantidad_devuelta_sin_usar`, `cantidad_devuelta_danada`; y `Requisicion.estado` admite `liquidada` (`REQ-060`).
+- Flujo de liquidacion habilitado en bodega: pantalla dedicada (`/bodega/{id}/liquidar`), validacion por item (`entregado = usado + devuelto_sin_usar`), registro de equipo recuperado y cambio de estado a `liquidada` (`REQ-061`).
 - Modal detalle alineado visualmente con captura de referencia: labels coloreados con iconos, cantidades centradas, chip de resultado entrega, cero despachado en rojo (`REQ-056`).
 - Tag de corte funcional publicado: `v1.3.0-base-estable` (commit `18c21f7`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).
