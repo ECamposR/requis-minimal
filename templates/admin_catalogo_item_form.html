@@ -16,6 +16,11 @@
         Activo
     </label>
 
+    <label>
+        <input type="checkbox" name="es_servicio" {% if item and item.es_servicio %}checked{% endif %}>
+        Requiere retorno fisico (Mopas/Alfombras)
+    </label>
+
     <div class="form-actions">
         <button type="submit">{% if modo == 'crear' %}Crear{% else %}Guardar cambios{% endif %}</button>
         <a href="/admin/catalogo-items" role="button" class="secondary">Cancelar</a>

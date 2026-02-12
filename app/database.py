@@ -167,3 +167,11 @@ def run_migrations() -> None:
                 conn.execute(
                     text("ALTER TABLE items ADD COLUMN cantidad_devuelta_danada INTEGER NOT NULL DEFAULT 0")
                 )
+
+        if "catalogo_items" in tables:
+            catalogo_columns = {
+                row[1]
+                for row in conn.execute(text("PRAGMA table_info(catalogo_items)")).fetchall()
+            }
+            if "es_servicio" not in catalogo_columns:
+                conn.execute(text("ALTER TABLE catalogo_items ADD COLUMN es_servicio BOOLEAN NOT NULL DEFAULT 0"))

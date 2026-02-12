@@ -739,6 +739,39 @@ def test_detalle_requisicion_devuelve_timeline_con_hitos(client: TestClient, db_
     assert "Recibido" in eventos
 
 
+def test_detalle_requisicion_incluye_es_servicio_en_items(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    catalogo_item = db_session.query(CatalogoItem).filter(CatalogoItem.nombre == "Cable UTP Cat6").first()
+    catalogo_item.es_servicio = True
+    db_session.commit()
+
+    req = Requisicion(
+        folio="REQ-0015",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="Validar flag servicio en detalle",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    item = Item(
+        requisicion_id=req.id,
+        descripcion="Cable UTP Cat6",
+        cantidad=2,
+        unidad="unidad",
+    )
+    db_session.add(item)
+    db_session.commit()
+
+    login(client, "user.ops", "pass123")
+    response = client.get(f"/api/requisiciones/{req.id}")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["items"][0]["es_servicio"] is True
+
+
 def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

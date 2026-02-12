@@ -1127,3 +1127,26 @@
       - cuerpo mantiene fondo de card para contraste inverso.
 - Validacion:
   - `python -m compileall static` OK.
+
+## 2026-02-12 15:05 CST | tool: Codex CLI
+- Objetivo: Implementar identificacion de activos de servicio en catalogo (solicitud REQ-065 funcional).
+- Cambios:
+  - `app/models.py`:
+    - `CatalogoItem` agrega `es_servicio` (`Boolean`, `default=False`, `nullable=False`).
+  - `app/database.py`:
+    - Migracion incremental SQLite: `ALTER TABLE catalogo_items ADD COLUMN es_servicio BOOLEAN NOT NULL DEFAULT 0` si no existe.
+  - `app/main.py`:
+    - Admin catalogo:
+      - `POST /admin/catalogo-items` acepta `es_servicio`.
+      - `POST /admin/catalogo-items/{id}/editar` acepta `es_servicio`.
+    - `GET /api/requisiciones/{id}`:
+      - `items[]` ahora incluye `es_servicio`, resuelto desde catalogo por nombre normalizado.
+  - `templates/admin_catalogo_item_form.html`:
+    - Checkbox nuevo: `Requiere retorno fisico (Mopas/Alfombras)`.
+  - Tests:
+    - `tests/test_admin_catalog_items.py`: valida persistencia de `es_servicio` en alta/edicion.
+    - `tests/test_basic_flow.py`: valida que `es_servicio` viaje en `GET /api/requisiciones/{id}`.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
+- Validacion:
+  - `python -m compileall app templates tests` OK.
+  - Nota: ejecucion de `pytest` en este entorno CLI quedo colgada sin salida; validar en entorno local activo.

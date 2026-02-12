@@ -67,7 +67,7 @@ def test_admin_catalog_item_crud_flow():
 
         create_resp = client.post(
             "/admin/catalogo-items",
-            data={"nombre": "Canaleta PVC", "activo": "on"},
+            data={"nombre": "Canaleta PVC", "activo": "on", "es_servicio": "on"},
             follow_redirects=False,
         )
         assert create_resp.status_code == 303
@@ -75,16 +75,18 @@ def test_admin_catalog_item_crud_flow():
         item = db.query(CatalogoItem).filter(CatalogoItem.nombre == "Canaleta PVC").first()
         assert item is not None
         assert item.activo is True
+        assert item.es_servicio is True
 
         edit_resp = client.post(
             f"/admin/catalogo-items/{item.id}/editar",
-            data={"nombre": "Canaleta PVC 20x12"},
+            data={"nombre": "Canaleta PVC 20x12", "es_servicio": "on"},
             follow_redirects=False,
         )
         assert edit_resp.status_code == 303
         db.refresh(item)
         assert item.nombre == "Canaleta PVC 20x12"
         assert item.activo is False
+        assert item.es_servicio is True
 
         delete_resp = client.post(
             f"/admin/catalogo-items/{item.id}/eliminar",

@@ -146,3 +146,4 @@ class CatalogoItem(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     nombre: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    es_servicio: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

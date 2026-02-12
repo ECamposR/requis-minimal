@@ -1141,6 +1141,7 @@ def admin_catalogo_item_nuevo(request: Request, current_user: Usuario = Depends(
 def admin_catalogo_item_crear(
     nombre: str = Form(...),
     activo: str = Form("on"),
+    es_servicio: str | None = Form(None),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -1153,7 +1154,11 @@ def admin_catalogo_item_crear(
     if existe:
         return redirect_with_message("/admin/catalogo-items", "El item ya existe", "error")
 
-    nuevo = CatalogoItem(nombre=nombre_limpio, activo=(activo == "on"))
+    nuevo = CatalogoItem(
+        nombre=nombre_limpio,
+        activo=(activo == "on"),
+        es_servicio=(es_servicio == "on"),
+    )
     db.add(nuevo)
     db.commit()
     return redirect_with_message("/admin/catalogo-items", "Item creado", "success")
@@ -1181,6 +1186,7 @@ def admin_catalogo_item_editar(
     item_id: int,
     nombre: str = Form(...),
     activo: str | None = Form(None),
+    es_servicio: str | None = Form(None),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -1203,6 +1209,7 @@ def admin_catalogo_item_editar(
 
     item.nombre = nombre_limpio
     item.activo = activo == "on"
+    item.es_servicio = es_servicio == "on"
     db.commit()
     return redirect_with_message("/admin/catalogo-items", "Item actualizado", "success")
 
@@ -1308,6 +1315,10 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         for item in req.items
         if (item.cantidad_usada or 0) > 0
     ]
+    catalogo_map = {
+        normalize_catalog_name(row.nombre): row.es_servicio
+        for row in db.query(CatalogoItem.nombre, CatalogoItem.es_servicio).all()
+    }
 
     return {
         "id": req.id,
@@ -1344,6 +1355,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                 "cantidad_usada": item.cantidad_usada,
                 "cantidad_devuelta_sin_usar": item.cantidad_devuelta_sin_usar,
                 "cantidad_devuelta_danada": item.cantidad_devuelta_danada,
+                "es_servicio": catalogo_map.get(normalize_catalog_name(item.descripcion), False),
                 "unidad": item.unidad,
             }
             for item in req.items

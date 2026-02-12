@@ -72,6 +72,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-067` | `done` | Ajuste fino modal detalle para apariencia identica a referencia: tarjetas de fondo uniforme y tabla de items con barra de encabezado sombreada.
 - `REQ-068` | `done` | Modal detalle con estructura tipo "card con header": franja de titulo con border-bottom y contenido con padding interno dedicado.
 - `REQ-069` | `done` | Incrementar contraste en modal detalle: cards slate-800 sobre fondo oscuro y encabezado de tabla slate-900.
+- `REQ-070` | `done` | Identificacion de activos de servicio en catalogo (`es_servicio`) + exposicion en API detalle para preparar alertas de retorno fisico.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.
