@@ -215,21 +215,36 @@ function verDetalle(id) {
                             </div>`;
                 })
                 .join("");
-            const prokeySummary = Array.isArray(data.prokey_summary) ? data.prokey_summary : [];
             const showProkeySummary = data.estado === "liquidada";
-            const prokeyRows = prokeySummary
+            const liquidacionRows = items
                 .map(
-                    (item) =>
-                        `<li><strong>${fmtQty(item.cantidad_usada)}</strong> x ${escapeHtml(item.descripcion || "-")}</li>`
+                    (item) => `<tr>
+                        <td>${escapeHtml(item.descripcion || "-")}</td>
+                        <td class="qty-col">${fmtQty(item.cantidad_usada)}</td>
+                        <td class="qty-col">${fmtQty(item.cantidad_devuelta_sin_usar)}</td>
+                        <td class="qty-col">${fmtQty(item.cantidad_devuelta_danada)}</td>
+                    </tr>`
                 )
                 .join("");
             const prokeyBlock = showProkeySummary
                 ? `<section class="detalle-block prokey-summary-block prokey-summary">
                         <h4>LIQUIDACION</h4>
                         <div class="panel-content">
-                            <ul class="prokey-summary-list">
-                                ${prokeyRows || "<li>Sin items usados para cargar.</li>"}
-                            </ul>
+                            <div class="detalle-items-wrap">
+                                <table class="detalle-items-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th class="qty-col">Usado (ProKey)</th>
+                                            <th class="qty-col">Devuelto Sin Usar</th>
+                                            <th class="qty-col">Recuperado/Viejo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${liquidacionRows || '<tr><td colspan="4">Sin datos de liquidacion.</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                    </section>`
                 : "";
