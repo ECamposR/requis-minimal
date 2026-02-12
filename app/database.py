@@ -78,3 +78,13 @@ def run_migrations() -> None:
             }
             if "cantidad_entregada" not in item_columns:
                 conn.execute(text("ALTER TABLE items ADD COLUMN cantidad_entregada FLOAT"))
+            if "cantidad_usada" not in item_columns:
+                conn.execute(text("ALTER TABLE items ADD COLUMN cantidad_usada INTEGER NOT NULL DEFAULT 0"))
+            if "cantidad_devuelta_sin_usar" not in item_columns:
+                conn.execute(
+                    text("ALTER TABLE items ADD COLUMN cantidad_devuelta_sin_usar INTEGER NOT NULL DEFAULT 0")
+                )
+            if "cantidad_devuelta_danada" not in item_columns:
+                conn.execute(
+                    text("ALTER TABLE items ADD COLUMN cantidad_devuelta_danada INTEGER NOT NULL DEFAULT 0")
+                )

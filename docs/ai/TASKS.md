@@ -62,6 +62,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-057` | `done` | Iteracion UI dashboard: header/nav estilo prototipo + metric cards estilo prototipo (sin tocar seccion de barras).
 - `REQ-058` | `done` | Unificar tema visual en vistas operativas/admin (navbar reusable, paneles, formularios, tablas, badges) sin cambios de logica.
 - `REQ-059` | `done` | Registrar en detalle de requisicion la linea de tiempo de cambios de estado (creacion, aprobacion/rechazo, preparacion/entrega y recibido) con hora `HH:MM:SS`.
+- `REQ-060` | `done` | Extender modelo para liquidacion (campos por item: usado/devuelto nuevo/devuelto danado) y habilitar estado `liquidada` con migracion SQLite.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

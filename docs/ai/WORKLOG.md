@@ -889,3 +889,23 @@
   - Nota: `pytest` en este entorno CLI quedo bloqueado sin salida; validar en entorno local activo.
 - Resultado:
   - El detalle ahora muestra historial de cambios con fecha y hora incluyendo segundos (`HH:MM:SS`), mejorando trazabilidad operativa.
+
+## 2026-02-12 11:05 CST | tool: Codex CLI
+- Objetivo: Implementar REQ-060 (base de datos para liquidacion y soporte a estado `liquidada`).
+- Cambios:
+  - `app/models.py`:
+    - `Requisicion.estado` (check constraint) ahora admite `liquidada`.
+    - `Item` agrega tres campos enteros (`NOT NULL`, `default=0`):
+      - `cantidad_usada`
+      - `cantidad_devuelta_sin_usar`
+      - `cantidad_devuelta_danada`
+  - `app/database.py`:
+    - Migraciones incrementales SQLite para crear esas tres columnas en `items` cuando no existan.
+  - `app/main.py`:
+    - Filtros de estado en `/aprobar` incluyen `liquidada`.
+    - Permiso de detalle para rol `bodega` ahora contempla estado `liquidada`.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`, `docs/ai/WORKLOG.md`.
+- Alcance deliberado:
+  - No se implementan validaciones matematicas aun (se reserva para REQ-061): `entregado == usado + devuelto_sin_usar`, con `devuelto_danada` independiente.
+- Validacion:
+  - `python -m compileall app` OK.

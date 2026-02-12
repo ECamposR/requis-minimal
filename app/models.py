@@ -92,7 +92,7 @@ class Requisicion(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "estado in ('pendiente', 'aprobada', 'rechazada', 'entregada')",
+            "estado in ('pendiente', 'aprobada', 'rechazada', 'entregada', 'liquidada')",
             name="ck_requisiciones_estado",
         ),
     )
@@ -109,6 +109,9 @@ class Item(Base):
     descripcion: Mapped[str] = mapped_column(Text, nullable=False)
     cantidad: Mapped[float] = mapped_column(Float, nullable=False)
     cantidad_entregada: Mapped[float | None] = mapped_column(Float, nullable=True)
+    cantidad_usada: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cantidad_devuelta_sin_usar: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cantidad_devuelta_danada: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     unidad: Mapped[str] = mapped_column(String(40), nullable=False)
 
     requisicion: Mapped["Requisicion"] = relationship("Requisicion", back_populates="items")
