@@ -9,75 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/theme.css">
 </head>
 <body>
 {% if request.url.path != '/login' %}
 <header class="app-header">
-    <nav class="container main-nav topbar">
-        <a href="/" class="brand">
-            <span class="brand-title">ProHygiene</span>
-            <small class="brand-subtitle">SISTEMA DE REQUISICIONES</small>
-        </a>
-        {% if current_user %}
-        {% set name_parts = current_user.nombre.split() %}
-        {% set avatar_text = ((name_parts[0][0] if name_parts else current_user.nombre[0]) ~ (name_parts[1][0] if name_parts|length > 1 else current_user.nombre[1:2]))|upper %}
-        <ul class="menu-links nav-pill">
-            <li>
-                <a href="/" class="nav-item {% if request.url.path == '/' %}is-active{% endif %}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span>Inicio</span>
-                </a>
-            </li>
-            <li>
-                <a href="/crear" class="nav-item {% if request.url.path.startswith('/crear') %}is-active{% endif %}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    <span>Nueva Requisicion</span>
-                </a>
-            </li>
-            <li>
-                <a href="/mis-requisiciones" class="nav-item {% if request.url.path.startswith('/mis-requisiciones') %}is-active{% endif %}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h11M8 12h11M8 18h11M4 6h.01M4 12h.01M4 18h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    <span>Mis Requisiciones</span>
-                </a>
-            </li>
-            {% if current_user.rol in ['aprobador', 'admin'] %}
-            <li>
-                <a href="/aprobar" class="nav-item {% if request.url.path.startswith('/aprobar') %}is-active{% endif %}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span>Aprobar</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if current_user.rol in ['bodega', 'admin'] %}
-            <li>
-                <a href="/bodega" class="nav-item {% if request.url.path.startswith('/bodega') or request.url.path.startswith('/entregar') %}is-active{% endif %}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.5 12 4l9 4.5-9 4.5zM3 8.5V16l9 4 9-4V8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-                    <span>Bodega</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if current_user.rol == 'admin' %}
-            <li>
-                <a href="/admin/usuarios" class="nav-item {% if request.url.path.startswith('/admin/usuarios') %}is-active{% endif %}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8-1a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm5 10v-1a4 4 0 0 0-3-3.87" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span>Usuarios</span>
-                </a>
-            </li>
-            <li>
-                <a href="/admin/catalogo-items" class="nav-item {% if request.url.path.startswith('/admin/catalogo-items') %}is-active{% endif %}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12M4 7h16M6 11h12M6 15h12M6 19h12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    <span>Catalogo</span>
-                </a>
-            </li>
-            {% endif %}
-        </ul>
-        <form method="POST" action="/logout" class="logout-form topbar-right">
-            <span class="avatar-chip" title="{{ current_user.nombre }}">{{ avatar_text }}</span>
-            <span class="logout-user">{{ current_user.nombre }}</span>
-            <button type="submit" class="logout-btn">Salir</button>
-        </form>
-        {% endif %}
-    </nav>
+    {% include "partials/navbar.html" %}
 </header>
 {% endif %}
 

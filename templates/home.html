@@ -1,12 +1,10 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 {% block title %}Inicio{% endblock %}
 {% block content %}
-<section class="page-hero">
-    <h2>Panel de Requisiciones</h2>
-    <p>Controla solicitudes, aprobaciones y entregas desde una sola vista operativa.</p>
-</section>
+{{ ui.page_header("Panel de Requisiciones", "Controla solicitudes, aprobaciones y entregas desde una sola vista operativa.") }}
 
-<section class="metrics-grid">
+<section class="metrics-grid view-panel panel">
     <article class="metric-card metric-total">
         <div class="metric-body">
             <span class="metric-title">Mis requisiciones</span>

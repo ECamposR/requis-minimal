@@ -1,0 +1,30 @@
+{% if current_user %}
+{% set name_parts = current_user.nombre.split() %}
+{% set avatar_text = ((name_parts[0][0] if name_parts else current_user.nombre[0]) ~ (name_parts[1][0] if name_parts|length > 1 else current_user.nombre[1:2]))|upper %}
+<nav class="container main-nav topbar">
+    <a href="/" class="brand">
+        <span class="brand-title">ProHygiene</span>
+        <small class="brand-subtitle">SISTEMA DE REQUISICIONES</small>
+    </a>
+    <ul class="menu-links nav-pill">
+        <li><a href="/" class="nav-item {% if request.url.path == '/' %}is-active{% endif %}"><span>Inicio</span></a></li>
+        <li><a href="/crear" class="nav-item {% if request.url.path.startswith('/crear') %}is-active{% endif %}"><span>Nueva Requisicion</span></a></li>
+        <li><a href="/mis-requisiciones" class="nav-item {% if request.url.path.startswith('/mis-requisiciones') %}is-active{% endif %}"><span>Mis Requisiciones</span></a></li>
+        {% if current_user.rol in ['aprobador', 'admin'] %}
+        <li><a href="/aprobar" class="nav-item {% if request.url.path.startswith('/aprobar') %}is-active{% endif %}"><span>Aprobar</span></a></li>
+        {% endif %}
+        {% if current_user.rol in ['bodega', 'admin'] %}
+        <li><a href="/bodega" class="nav-item {% if request.url.path.startswith('/bodega') or request.url.path.startswith('/entregar') %}is-active{% endif %}"><span>Bodega</span></a></li>
+        {% endif %}
+        {% if current_user.rol == 'admin' %}
+        <li><a href="/admin/usuarios" class="nav-item {% if request.url.path.startswith('/admin/usuarios') %}is-active{% endif %}"><span>Usuarios</span></a></li>
+        <li><a href="/admin/catalogo-items" class="nav-item {% if request.url.path.startswith('/admin/catalogo-items') %}is-active{% endif %}"><span>Catalogo</span></a></li>
+        {% endif %}
+    </ul>
+    <form method="POST" action="/logout" class="logout-form topbar-right">
+        <span class="avatar-chip" title="{{ current_user.nombre }}">{{ avatar_text }}</span>
+        <span class="logout-user">{{ current_user.nombre }}</span>
+        <button type="submit" class="logout-btn">Salir</button>
+    </form>
+</nav>
+{% endif %}

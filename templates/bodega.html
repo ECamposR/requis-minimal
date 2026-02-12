@@ -1,9 +1,9 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 {% block title %}Bodega{% endblock %}
 {% block content %}
-<h2>Bodega</h2>
-<p class="page-subtitle">Procesa entregas y consulta trazabilidad de despacho por requisicion.</p>
-<form method="GET" class="filters-bar">
+{{ ui.page_header("Bodega", "Procesa entregas y consulta trazabilidad de despacho por requisicion.") }}
+<form method="GET" class="filters-bar panel">
     <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por folio, cliente, solicitante...">
     <select name="vista">
         <option value="todos" {% if filtro_vista == 'todos' %}selected{% endif %}>Pendientes + Historial</option>
@@ -25,6 +25,7 @@
 {% if filtro_vista != 'historial' %}
 <h3>Pendientes por entregar</h3>
 {% if pendientes_entrega %}
+<section class="panel view-panel table-wrap">
 <table class="table-compact">
     <thead>
     <tr>
@@ -48,13 +49,14 @@
         <td class="truncate" title="{{ req.justificacion }}">{{ req.justificacion }}</td>
         <td>{{ req.approved_at }}</td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
-        <td>
+        <td class="table-actions">
             <a href="/bodega/{{ req.id }}/gestionar" role="button" class="secondary">Gestionar</a>
         </td>
     </tr>
     {% endfor %}
     </tbody>
 </table>
+</section>
 {% else %}
 <p>No hay requisiciones aprobadas pendientes de entrega.</p>
 {% endif %}
@@ -63,6 +65,7 @@
 {% if filtro_vista != 'pendientes' %}
 <h3>Historial de bodega</h3>
 {% if historial_entregadas %}
+<section class="panel view-panel table-wrap">
 <table class="table-compact">
     <thead>
     <tr>
@@ -87,11 +90,11 @@
         <td>{{ req.entregador.nombre if req.entregador else '-' }}</td>
         <td>
             {% if req.delivery_result == 'parcial' %}
-            <span class="badge badge-warning">parcial</span>
+            {{ ui.status_badge('parcial') }}
             {% elif req.delivery_result == 'no_entregada' %}
-            <span class="badge badge-error">no entregada</span>
+            {{ ui.status_badge('no entregada') }}
             {% else %}
-            <span class="badge badge-success">completa</span>
+            {{ ui.status_badge('completa') }}
             {% endif %}
         </td>
         <td>{{ req.delivered_to or '-' }}</td>
@@ -101,6 +104,7 @@
     {% endfor %}
     </tbody>
 </table>
+</section>
 {% else %}
 <p>No hay movimientos registrados en historial.</p>
 {% endif %}

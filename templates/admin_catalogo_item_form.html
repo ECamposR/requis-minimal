@@ -1,8 +1,10 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 {% block title %}{% if modo == 'crear' %}Nuevo Item{% else %}Editar Item{% endif %}{% endblock %}
 {% block content %}
-<h2>{% if modo == 'crear' %}Nuevo Item{% else %}Editar Item{% endif %}</h2>
+{{ ui.page_header('Nuevo Item' if modo == 'crear' else 'Editar Item', 'Define nombre y estado de disponibilidad en catalogo.') }}
 
+<section class="panel view-panel">
 <form method="POST" action="{% if modo == 'crear' %}/admin/catalogo-items{% else %}/admin/catalogo-items/{{ item.id }}/editar{% endif %}">
     <label>
         Nombre
@@ -14,7 +16,10 @@
         Activo
     </label>
 
-    <button type="submit">{% if modo == 'crear' %}Crear{% else %}Guardar cambios{% endif %}</button>
-    <a href="/admin/catalogo-items" role="button" class="secondary">Cancelar</a>
+    <div class="form-actions">
+        <button type="submit">{% if modo == 'crear' %}Crear{% else %}Guardar cambios{% endif %}</button>
+        <a href="/admin/catalogo-items" role="button" class="secondary">Cancelar</a>
+    </div>
 </form>
+</section>
 {% endblock %}

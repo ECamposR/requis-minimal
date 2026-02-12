@@ -1,9 +1,9 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 {% block title %}Gestionar Entrega{% endblock %}
 {% block content %}
-<h2>Gestionar Entrega</h2>
-
-<section class="page-hero">
+{{ ui.page_header("Gestionar Entrega", "Registra resultado de despacho y trazabilidad de entrega.") }}
+<section class="page-hero panel">
     <h3>{{ req.folio }}</h3>
     <p>
         Solicitante: {{ req.solicitante.nombre if req.solicitante else '-' }} |
@@ -18,7 +18,7 @@
 </section>
 
 <section class="gestion-layout">
-    <article class="gestion-card">
+    <article class="gestion-card panel">
         <h3>Items aprobados para entrega</h3>
         <table class="table-compact">
             <thead>
@@ -38,7 +38,7 @@
         </table>
     </article>
 
-    <article class="gestion-card">
+    <article class="gestion-card panel">
         <h3>Registrar resultado de entrega</h3>
         <form method="POST" action="/entregar/{{ req.id }}" class="gestion-form">
             <label>

@@ -1,8 +1,10 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 {% block title %}{% if modo == 'crear' %}Nuevo Usuario{% else %}Editar Usuario{% endif %}{% endblock %}
 {% block content %}
-<h2>{% if modo == 'crear' %}Nuevo Usuario{% else %}Editar Usuario{% endif %}</h2>
+{{ ui.page_header('Nuevo Usuario' if modo == 'crear' else 'Editar Usuario', 'Configura credenciales, rol y departamento.') }}
 
+<section class="panel view-panel">
 <form method="POST" action="{% if modo == 'crear' %}/admin/usuarios{% else %}/admin/usuarios/{{ usuario.id }}/editar{% endif %}">
     <label>
         Username
@@ -43,7 +45,10 @@
         >
     </label>
 
-    <button type="submit">{% if modo == 'crear' %}Crear{% else %}Guardar cambios{% endif %}</button>
-    <a href="/admin/usuarios" role="button" class="secondary">Cancelar</a>
+    <div class="form-actions">
+        <button type="submit">{% if modo == 'crear' %}Crear{% else %}Guardar cambios{% endif %}</button>
+        <a href="/admin/usuarios" role="button" class="secondary">Cancelar</a>
+    </div>
 </form>
+</section>
 {% endblock %}

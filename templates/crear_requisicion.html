@@ -1,9 +1,9 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 {% block title %}Nueva Requisicion{% endblock %}
 {% block content %}
-<article>
-    <h2>Nueva Requisicion</h2>
-    <p class="page-subtitle">Registra la solicitud para cliente y agrega los items requeridos.</p>
+{{ ui.page_header("Nueva Requisicion", "Registra la solicitud para cliente y agrega los items requeridos.") }}
+<article class="panel view-panel">
     <form method="POST" action="/crear">
         <div class="form-grid-3">
             <label>
@@ -49,8 +49,10 @@
             </div>
         </fieldset>
 
-        <button type="button" onclick="agregarItem()">+ Agregar item</button>
-        <button type="submit">Crear y enviar</button>
+        <div class="form-actions">
+            <button type="button" class="secondary" onclick="agregarItem()">+ Agregar item</button>
+            <button type="submit">Crear y enviar</button>
+        </div>
     </form>
 </article>
 

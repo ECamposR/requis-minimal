@@ -1,9 +1,9 @@
 {% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
 {% block title %}Aprobar{% endblock %}
 {% block content %}
-<h2>Aprobar Requisiciones</h2>
-<p class="page-subtitle">Gestiona solicitudes pendientes y consulta el historial completo de decisiones.</p>
-<form method="GET" class="filters-bar">
+{{ ui.page_header("Aprobar Requisiciones", "Gestiona solicitudes pendientes y consulta el historial completo de decisiones.") }}
+<form method="GET" class="filters-bar panel">
     <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por folio, cliente, solicitante...">
     <select name="estado">
         <option value="todos" {% if filtro_estado == 'todos' %}selected{% endif %}>Todos los estados</option>
@@ -22,6 +22,7 @@
     <a href="/aprobar" role="button" class="secondary">Limpiar</a>
 </form>
 {% if requisiciones %}
+<section class="panel view-panel table-wrap">
 <table class="table-compact">
     <thead>
     <tr>
@@ -42,15 +43,15 @@
         <td>{{ req.folio }}</td>
         <td>
             {% if req.estado == 'pendiente' %}
-                <span class="badge badge-warning">pendiente de aprobar</span>
+                {{ ui.status_badge('pendiente de aprobar') }}
             {% elif req.estado == 'aprobada' %}
-                <span class="badge badge-info">pendiente de entregar</span>
+                {{ ui.status_badge('pendiente de entregar') }}
             {% elif req.estado == 'rechazada' %}
-                <span class="badge badge-error">rechazada</span>
+                {{ ui.status_badge('rechazada') }}
             {% elif req.estado == 'entregada' %}
-                <span class="badge badge-success">entregada</span>
+                {{ ui.status_badge('entregada') }}
             {% else %}
-                <span class="badge badge-muted">{{ req.estado }}</span>
+                {{ ui.status_badge(req.estado) }}
             {% endif %}
         </td>
         <td>{{ req.solicitante.nombre }}</td>
@@ -69,19 +70,20 @@
             {% endif %}
         </td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
-        <td>
+        <td class="table-actions">
             {% if req.estado == 'pendiente' and current_user.rol in ['admin', 'aprobador'] %}
             <a href="/aprobar/{{ req.id }}/gestionar" role="button" class="secondary">Gestionar</a>
             {% elif req.estado == 'pendiente' %}
-            <small class="accion-text">Sin permiso para gestionar</small>
+            <small class="status-muted">Sin permiso para gestionar</small>
             {% else %}
-            <small class="accion-text">Sin acciones</small>
+            <small class="status-muted">Sin acciones</small>
             {% endif %}
         </td>
     </tr>
     {% endfor %}
     </tbody>
 </table>
+</section>
 {% else %}
 <p>No hay requisiciones en historial de aprobacion.</p>
 {% endif %}

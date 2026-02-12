@@ -832,3 +832,36 @@
   - No se modifico HTML/CSS del bloque `Indicadores rapidos` con barras.
 - Resultado:
   - Header/nav y tarjetas adoptan lenguaje visual del prototipo sin afectar la estructura funcional existente.
+
+## 2026-02-12 09:53 CST | tool: Codex CLI
+- Objetivo: Unificar diseno UI en todas las vistas operativas y administrativas sin tocar logica de negocio.
+- Cambios:
+  - `templates/base.html` (carga `theme.css` y navbar via include reutilizable)
+  - `templates/partials/navbar.html` (componente de navegacion centralizado)
+  - `templates/macros/ui.html` (macros reutilizables: `page_header`, `status_badge`)
+  - Vistas actualizadas con layout consistente de paneles/tablas/forms:
+    - `templates/home.html`
+    - `templates/crear_requisicion.html`
+    - `templates/mis_requisiciones.html`
+    - `templates/aprobar.html`
+    - `templates/aprobar_gestionar.html`
+    - `templates/bodega.html`
+    - `templates/bodega_gestionar.html`
+    - `templates/bodega_entrega_parcial.html`
+    - `templates/admin_usuarios.html`
+    - `templates/admin_usuario_form.html`
+    - `templates/admin_catalogo_items.html`
+    - `templates/admin_catalogo_item_form.html`
+  - `static/theme.css` (tokens dark + overrides de navbar, cards, paneles, tablas, badges, botones y forms)
+  - `docs/ai/TASKS.md` (`REQ-058`)
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Validacion:
+  - `python -m compileall templates static` OK.
+  - Smoke startup: `uvicorn` inicia y apaga correctamente bajo `timeout`.
+- Restricciones respetadas:
+  - Sin cambios en rutas/endpoints, nombres de campos, payloads, validaciones o flujo.
+  - Sin dependencias nuevas.
+  - Seccion de barras `Indicadores rapidos` mantenida sin cambios funcionales.
+- Resultado:
+  - Sistema visualmente coherente en todas las vistas clave con componentes reutilizables y tema centralizado.
