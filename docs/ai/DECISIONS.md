@@ -22,3 +22,17 @@
   - Evitar perdida de contexto y reducir onboarding entre sesiones.
 - Impacto:
   - Overhead minimo de documentacion, alto retorno en continuidad.
+
+## ADR-003 | 2026-02-13 | Reinicio de liquidacion desde baseline pre-feature
+- Contexto:
+  - La primera implementacion de liquidacion resulto insatisfactoria a nivel funcional/UX.
+  - Se necesita rehacerla con menor complejidad, partiendo de un estado estable previo.
+- Decision:
+  - Reanclar el trabajo en commit `3d7702b` (estado pre-liquidacion) en rama dedicada `feat/liquidacion-rework-v2`.
+  - Reabrir `REQ-060+` como nueva linea de ejecucion para liquidacion.
+- Motivo:
+  - Reducir deuda de decisiones iterativas y evitar arrastrar logica confusa.
+  - Mantener simplicidad operativa y trazabilidad clara para multi-IA.
+- Impacto:
+  - No cambia la base funcional previa (`REQ-001` a `REQ-059`).
+  - A partir de este punto, liquidacion se rediseña incrementalmente y cada paso debe quedar registrado en `TASKS` + `WORKLOG` + `HANDOFF`.

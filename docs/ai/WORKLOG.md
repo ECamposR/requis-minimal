@@ -889,3 +889,18 @@
   - Nota: `pytest` en este entorno CLI quedo bloqueado sin salida; validar en entorno local activo.
 - Resultado:
   - El detalle ahora muestra historial de cambios con fecha y hora incluyendo segundos (`HH:MM:SS`), mejorando trazabilidad operativa.
+
+## 2026-02-13 13:05 CST | tool: Codex CLI
+- Objetivo: Registrar reinicio de la linea de liquidacion desde baseline pre-liquidacion.
+- Cambios:
+  - Rama nueva creada desde `3d7702b`: `feat/liquidacion-rework-v2`.
+  - `docs/ai/HANDOFF.md`: reducido a handoff activo corto y ejecutable para reinicio.
+  - `docs/ai/TASKS.md`: reabiertos `REQ-060`, `REQ-061`, `REQ-062` en bloque de reinicio.
+  - `docs/ai/DECISIONS.md`: nuevo `ADR-003` formalizando el reinicio desde baseline.
+  - `docs/ai/WORKLOG.md`: registro de esta sesion.
+- Codigo de app:
+  - No se realizaron cambios en backend/frontend/logica; solo documentacion de gobernanza.
+- Resultado:
+  - Queda oficializado en gobernanza IA que la liquidacion se rehara desde este punto, evitando arrastrar implementaciones previas no satisfactorias.
+- Proximo paso:
+  - Implementar `REQ-060` minimo en esta rama y validar flujo base sin agregar complejidad adicional.
