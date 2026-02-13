@@ -65,6 +65,8 @@
 - Modal detalle actualizado a patron "card con header": franja superior de titulo con `border-bottom` + contenido desacoplado via `.panel-content`, replicando estructura de referencia (`REQ-068`).
 - Paleta de contraste del modal ajustada (slate-800 para cards y slate-900 para encabezado de tabla) para separar claramente capas visuales (`REQ-069`).
 - Catalogo ahora soporta identificacion de activos de servicio (`CatalogoItem.es_servicio`) editable desde admin y expuesto en `GET /api/requisiciones/{id}` por item (`REQ-070`).
+- Modal detalle: bloque ProKey renombrado a `LIQUIDACION` para alinearlo al lenguaje operativo actual (`REQ-071`).
+- Modal detalle: `LIQUIDACION` ahora muestra cuadro completo por item con `Usado (ProKey)`, `Devuelto Sin Usar` y `Recuperado/Viejo` (`REQ-072`).
 - Modal detalle alineado visualmente con captura de referencia: labels coloreados con iconos, cantidades centradas, chip de resultado entrega, cero despachado en rojo (`REQ-056`).
 - Tag de corte funcional publicado: `v1.3.0-base-estable` (commit `18c21f7`).
 - Baseline UI consolidada en `main` tras merge de `feat/ui-v2-prohygiene` (merge commit `0817f61`).

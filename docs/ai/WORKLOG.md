@@ -1150,3 +1150,25 @@
 - Validacion:
   - `python -m compileall app templates tests` OK.
   - Nota: ejecucion de `pytest` en este entorno CLI quedo colgada sin salida; validar en entorno local activo.
+
+## 2026-02-13 08:29 CST | tool: Codex CLI
+- Objetivo: Ajuste de copy en modal detalle para reflejar termino operativo.
+- Cambios:
+  - Commit `32b3b5e`
+  - `static/app.js`:
+    - Titulo del bloque de detalle cambiado de `RESUMEN PARA CARGA EN PROKEY` a `LIQUIDACION`.
+- Resultado:
+  - Terminologia del modal alineada con el flujo de liquidacion del proceso.
+
+## 2026-02-13 08:29 CST | tool: Codex CLI
+- Objetivo: Exponer resultado integral de liquidacion en el detalle de requisicion.
+- Cambios:
+  - Commit `9489870`
+  - `static/app.js`:
+    - El bloque `LIQUIDACION` deja de mostrar solo resumen ProKey.
+    - Se renderiza tabla por item con columnas:
+      - `Usado (ProKey)` (`cantidad_usada`)
+      - `Devuelto Sin Usar` (`cantidad_devuelta_sin_usar`)
+      - `Recuperado/Viejo` (`cantidad_devuelta_danada`)
+- Resultado:
+  - El detalle refleja la liquidacion completa y no solo la porcion de carga a ProKey.

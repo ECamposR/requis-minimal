@@ -73,6 +73,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-068` | `done` | Modal detalle con estructura tipo "card con header": franja de titulo con border-bottom y contenido con padding interno dedicado.
 - `REQ-069` | `done` | Incrementar contraste en modal detalle: cards slate-800 sobre fondo oscuro y encabezado de tabla slate-900.
 - `REQ-070` | `done` | Identificacion de activos de servicio en catalogo (`es_servicio`) + exposicion en API detalle para preparar alertas de retorno fisico.
+- `REQ-071` | `done` | Renombrar bloque de detalle de requisicion de `RESUMEN PARA CARGA EN PROKEY` a `LIQUIDACION`.
+- `REQ-072` | `done` | Mostrar resultado integral de liquidacion en modal detalle (usado, devuelto sin usar y recuperado/viejo por item).
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.
