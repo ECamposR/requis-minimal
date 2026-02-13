@@ -1274,3 +1274,30 @@
   - No se agregaron dependencias ni se altero flujo core/estados.
 - Proximo paso:
   - Validacion manual de 4 escenarios: instalacion, swap con override, `Regresa > Lleva`, y refresco de alertas en vivo.
+
+## 2026-02-13 11:40 CST | tool: Codex CLI
+- Objetivo: Reducir friccion en retornables/swaps con accion rapida `Registrar en ProKey` por fila en liquidacion.
+- Archivos tocados:
+  - `templates/bodega_liquidar.html`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios clave:
+  - Nueva interaccion por fila en columna `Ingreso PK`:
+    - Checkbox `Registrar en ProKey`.
+    - ON: setea override automaticamente a `Lleva` (`pk_qty_override = lleva`).
+    - OFF: limpia override (input vacio -> backend lo persiste como `NULL`).
+  - Se mantiene boton `Editar` para ajuste manual del override:
+    - Al editar, el checkbox queda ON.
+    - Si se limpia el input manual, se revierte a modo auto (checkbox OFF).
+  - Visualizacion siempre explicita del valor final:
+    - `Auto: {No regresa}` cuando no hay override.
+    - `Manual: {override}` cuando hay override.
+  - Alertas superiores y cuadre por fila se mantienen en recalculo en vivo con cada cambio.
+- Backend/DB:
+  - Sin cambios de esquema ni nuevas dependencias.
+  - Se reutiliza logica actual que interpreta override vacio como `NULL`.
+- Validacion:
+  - `python -m compileall app templates` OK.
+- Proximo paso:
+  - Smoke manual de casos: swap (ON auto 10), instalacion (auto), edicion parcial (manual 3), desactivar override (OFF -> auto).
