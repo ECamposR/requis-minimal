@@ -1,4 +1,4 @@
-# Checklist Ejecutable MVP (CLI + Vibecoding)
+# Checklist Ejecutable v1.x (CLI + Vibecoding)
 
 Uso: copiar este checklist al iniciar cada sesion de Codex/Claude/Gemini CLI.
 
@@ -6,7 +6,7 @@ Uso: copiar este checklist al iniciar cada sesion de Codex/Claude/Gemini CLI.
 - [ ] Leer `docs/ai/CONTRACT.md` (decisiones congeladas).
 - [ ] Leer `docs/ai/HANDOFF.md` (estado real y siguiente paso).
 - [ ] Tomar 1 tarea `todo` en `docs/ai/TASKS.md` y pasarla a `in_progress`.
-- [ ] Confirmar que no se cambia el alcance MVP.
+- [ ] Confirmar que no se cambia el alcance definido en `CONTRACT.md`.
 
 ## B. Implementacion (ciclo corto)
 - [ ] Implementar solo 1 tarea por ciclo.
@@ -46,14 +46,14 @@ Uso: copiar este checklist al iniciar cada sesion de Codex/Claude/Gemini CLI.
 - Crear `app/schemas.py` solo cuando tengas varios endpoints JSON y necesites contratos estrictos.
 - Mientras predomine SSR + un JSON simple, no hace falta ese archivo.
 
-## No necesario para este MVP
+## No necesario para este alcance v1.x
 - Docker/compose
 - Alembic/migraciones formales (todavia)
 - colas/background jobs
 - arquitectura por capas complejas (services/repositories separados extra)
 - sistema de permisos declarativo sofisticado
 
-## Estructura minima recomendada (ultra simple)
+## Estructura minima recomendada (simple y mantenible)
 ```text
 app/
   main.py

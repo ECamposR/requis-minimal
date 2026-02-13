@@ -1,40 +1,69 @@
-# AI Collaboration Contract (MVP)
+# CONTRATO DE GOBERNANZA v1.x
 
-## 1) Objetivo
-Construir un MVP interno de requisiciones en LAN, rapido y simple, evitando sobreingenieria.
+## 1) Objetivo del sistema
+- Operar un sistema interno de requisiciones para LAN.
+- Prioridad: simpleza, mantenibilidad y continuidad entre IAs (vibecoding controlado).
+- Criterio de valor: resolver necesidad operativa real con el menor costo de complejidad.
 
-## 2) Decisiones Congeladas de Alcance
-- Framework backend: `FastAPI`.
-- Persistencia: `SQLite` local (`requisiciones.db`).
-- Frontend: `Jinja2 + HTML forms + Vanilla JS + PicoCSS`.
-- Sin Docker en MVP.
-- Sin integraciones externas (ERP, email, bots, webhooks).
-- Sin notificaciones automáticas en MVP.
-- Sin borradores y sin edicion post-envio.
-- Flujo de estados: `pendiente -> aprobada|rechazada -> entregada`.
+## 2) Decisiones congeladas (se mantienen)
+- Backend: `FastAPI`.
+- Persistencia: `SQLite` local.
+- UI: `SSR Jinja2 + HTML forms + Vanilla JS + PicoCSS`.
+- Sin Docker.
+- Sin integraciones externas directas (ERP/CRM/email/webhooks/bots).
+- Sin jobs en background, colas ni workers.
+- Autenticacion por formulario + sesion firmada.
+- Roles base: `user`, `aprobador`, `bodega`, `admin`.
 
-## 3) Autenticacion (decision cerrada)
-- Se usara `login por formulario` + `cookie de sesion firmada`.
-- No se usara `HTTP Basic` en el MVP porque el sistema es SSR con navegacion de menu y `logout`.
-- Passwords siempre hasheados con `bcrypt`.
-- Roles permitidos: `user`, `aprobador`, `bodega`, `admin`.
+## 3) Decisiones evolucionadas (ya parte del producto)
+- El sistema ya opera como v1.x con trazabilidad por flujo.
+- Hay gestion operativa por rol para crear, aprobar/rechazar, entregar y liquidar requisiciones.
+- Existen vistas de historial y detalle con linea de tiempo.
+- El catalogo de items es administrable desde la app.
+- Se mantiene enfoque monolitico simple: todo dentro del mismo servicio.
 
-## 4) Reglas de Implementacion
-- Mantener funciones y archivos pequenos, con nombres descriptivos.
-- Cualquier cambio de alcance debe registrarse en `docs/ai/DECISIONS.md`.
-- No agregar librerias sin justificar en `DECISIONS.md`.
-- No introducir background jobs ni colas en MVP.
+## 4) Flujo de estados vigente
+- Estados persistidos en requisicion:
+  - `pendiente`
+  - `aprobada`
+  - `rechazada`
+  - `entregada`
+  - `liquidada`
+- Aclaracion operativa:
+  - "Pendiente de aprobar" y "Pendiente de entregar" son etiquetas de vista/filtro.
+  - No implican estados tecnicos nuevos en base de datos.
 
-## 5) Definition of Done (DoD) por tarea
-- Criterio funcional cumplido.
-- Permisos por rol respetados.
-- Validaciones minimas de backend implementadas.
-- Test minimo agregado/actualizado (cuando aplique).
-- Registro en `docs/ai/WORKLOG.md` y estado en `docs/ai/TASKS.md`.
+## 4.1) Glosario corto
+- Estado persistido:
+  - Valor guardado en base de datos que gobierna reglas del flujo.
+- Etiqueta operativa:
+  - Nombre de vista/filtro para el usuario; no cambia el estado en base.
 
-## 6) Entrega entre IAs
-Antes de cerrar una sesion:
-- Actualizar `HANDOFF.md` con estado real y siguiente paso exacto.
-- Registrar cambios y comandos en `WORKLOG.md`.
-- Marcar tareas en `TASKS.md`.
-- Documentar decisiones no triviales en `DECISIONS.md`.
+## 5) Reglas anti-deriva
+- No microservicios.
+- No colas ni eventos asincronos.
+- No nuevas capas arquitectonicas sin necesidad operativa clara.
+- No nuevas dependencias si el problema se resuelve con stack actual.
+- Cada feature nueva debe justificar: valor operativo + costo de complejidad.
+- Cambios de permisos globales requieren ADR.
+- Cambios de estado o reglas core requieren ADR.
+- Documentacion de sesion obligatoria en `TASKS`, `WORKLOG` y `HANDOFF`.
+
+## 6) Definicion de cambio de alcance
+- Se considera cambio de alcance:
+  - Agregar/eliminar estados del flujo.
+  - Cambiar semantica de roles o permisos globales.
+  - Cambiar reglas core de aprobacion/entrega/liquidacion.
+  - Introducir integraciones externas.
+  - Cambiar estrategia de persistencia o migraciones complejas.
+- No se considera cambio de alcance:
+  - Pulido UI/UX y estilos.
+  - Ajustes de textos/copy.
+  - Refactors documentales o de legibilidad sin cambiar comportamiento.
+
+## 7) Fuentes de verdad de gobernanza
+- `CONTRACT.md`: reglas del juego vigentes.
+- `DECISIONS.md`: ADRs de cambios core.
+- `TASKS.md`: estado de trabajo.
+- `WORKLOG.md`: registro cronologico append-only.
+- `HANDOFF.md`: estado activo para continuidad entre IAs.
