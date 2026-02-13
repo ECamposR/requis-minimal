@@ -1301,3 +1301,46 @@
   - `python -m compileall app templates` OK.
 - Proximo paso:
   - Smoke manual de casos: swap (ON auto 10), instalacion (auto), edicion parcial (manual 3), desactivar override (OFF -> auto).
+
+## 2026-02-13 12:20 CST | tool: Codex CLI
+- Objetivo: Probar iteracion "modelo papel" para liquidacion separando flujo fisico y criterio de transcripcion ProKey.
+- Archivos tocados:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/main.py`
+  - `templates/bodega_liquidar.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios clave:
+  - Modelo/DB:
+    - Nuevo campo `Item.pk_register` (`BOOLEAN`, `default=False`) con migracion SQLite idempotente.
+    - Se conserva `pk_qty_override` (legacy), pero se deja fuera del flujo activo de esta iteracion.
+  - UI liquidacion:
+    - Columna vuelve a `Ocupo` (se elimina la logica visual de override numerico).
+    - Se agrega checkbox por item `Registrar en ProKey` (`pk_register_{id}`).
+    - Default del checkbox:
+      - ON para items retornables (`CatalogoItem.es_servicio = true`).
+      - OFF para no retornables.
+    - Alertas operativas y detectadas recalculadas en vivo al editar `Regresa`, `Ocupo`, `Recuperado` o checkbox.
+  - Reglas ProKey en backend:
+    - `consumible`: incluir en `prokey_summary` si `Ocupo > 0`.
+    - `retornable`: incluir solo si `pk_register = true` y `Ocupo > 0`.
+    - Cantidad siempre = `Ocupo`.
+  - Warnings no bloqueantes:
+    - `Ocupo > Lleva`
+    - `Regresa > Lleva`
+    - `Ocupo + Regresa != Lleva`
+    - `retornable con Ocupo > 0 sin marcar Registrar en ProKey`
+  - Persistencia liquidacion:
+    - Guarda `pk_register` por item.
+    - Limpia `pk_qty_override` a `NULL` en esta modalidad para evitar conflicto semantico.
+  - Tests:
+    - Se actualiza el caso principal de liquidacion para `pk_register`.
+    - Se agrega caso donde retornable sin `pk_register` no aparece en resumen ProKey.
+- Validacion:
+  - `python -m compileall app templates tests` OK.
+  - `pytest -k liquidacion` en este entorno CLI vuelve a quedar sin salida; pendiente ejecutar smoke manual local.
+- Proximo paso:
+  - Validar manualmente casos 1-5 de la historia operativa (incluyendo swap y `Regresa > Lleva`) y confirmar resumen ProKey/Retornos en detalle.

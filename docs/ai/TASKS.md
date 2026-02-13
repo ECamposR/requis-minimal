@@ -86,6 +86,7 @@ Los `REQ-GOV-*` son una excepcion controlada para mantenimiento de gobernanza; n
 - `REQ-073` | `done` | Ajustar liquidacion operativa con `INGRESO PK` override opcional por item, warnings no bloqueantes (incluye `Regresa > Lleva`) y detalle con resumen ProKey + retornos reportados.
 - `REQ-074` | `done` | Ajustar UX de liquidacion: `Ocupo` -> `No regresa`, mostrar `Ingreso PK` auto/manual visible y recalcular alertas en tiempo real sin bloqueo.
 - `REQ-075` | `done` | Agregar checkbox por fila `Registrar en ProKey`: ON => override automatico = `Lleva`, OFF => vuelve a `Auto` (NULL), manteniendo `Editar` para ajuste manual.
+- `REQ-076` | `done` | Iteracion modelo "papel" en liquidacion: volver a `Ocupo`, persistir `pk_register` y generar resumen ProKey por reglas simples (`consumible: Ocupo>0`, `retornable: checkbox ON`).
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

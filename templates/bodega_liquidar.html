@@ -21,10 +21,10 @@
 <section class="panel view-panel liquidacion-panel">
     <div class="page-subtitle liquidacion-note">
         <p>Regresa: lo que vuelve fisicamente a bodega (aunque venga usado).</p>
-        <p>No regresa: lo que se queda fuera (instalado/consumido).</p>
+        <p>Ocupo: lo usado/consumido o lo que quedo instalado fuera de bodega.</p>
         <p>
-            Ingreso PK: lo que se registrara en ProKey. Auto = No regresa. En swaps, usa Editar si necesitas
-            registrar el movimiento en ProKey aunque No regresa sea 0.
+            Registrar en ProKey: marca el item cuando deba incluirse en el resumen para transcribir en ProKey, en
+            especial para retornables (mopas/alfombras/equipos).
         </p>
     </div>
     <div id="liquidacion-warning" class="liquidacion-warning" hidden></div>
@@ -37,8 +37,8 @@
                     <th>Item</th>
                     <th class="qty-col">Lleva</th>
                     <th class="qty-col">Regresa</th>
-                    <th class="qty-col">No regresa</th>
-                    <th class="qty-col">Ingreso PK</th>
+                    <th class="qty-col">Ocupo</th>
+                    <th class="qty-col">Registrar en ProKey</th>
                     <th class="qty-col">Equipo Recuperado/Viejo</th>
                     <th class="qty-col">Cuadre</th>
                 </tr>
@@ -46,7 +46,14 @@
                 <tbody>
                 {% for item in req.items %}
                 {% set entregado = (item.cantidad_entregada if item.cantidad_entregada is not none else 0) %}
-                <tr class="liquidacion-row" data-entregado="{{ entregado }}" data-item="{{ item.descripcion }}">
+                {% set es_retornable = retornables_por_item.get(item.id, false) %}
+                {% set pk_default = item.pk_register or es_retornable %}
+                <tr
+                    class="liquidacion-row"
+                    data-entregado="{{ entregado }}"
+                    data-item="{{ item.descripcion }}"
+                    data-retornable="{{ '1' if es_retornable else '0' }}"
+                >
                     <td>{{ item.descripcion }}</td>
                     <td class="qty-col">
                         <input type="number" value="{{ entregado }}" readonly tabindex="-1" class="js-lleva">
@@ -75,26 +82,17 @@
                     </td>
                     <td class="qty-col">
                         <label class="pk-toggle">
-                            <input type="checkbox" class="js-pk-register" {% if item.pk_qty_override is not none %}checked{% endif %}>
+                            <input
+                                type="checkbox"
+                                class="js-pk-register"
+                                name="pk_register_{{ item.id }}"
+                                {% if pk_default %}checked{% endif %}
+                            >
                             Registrar en ProKey
                         </label>
-                        <div class="pk-display js-pk-display">
-                            {% if item.pk_qty_override is none %}
-                            Auto: {{ item.cantidad_usada }}
-                            {% else %}
-                            Manual: {{ item.pk_qty_override }}
-                            {% endif %}
-                        </div>
-                        <button type="button" class="secondary outline pk-edit-btn js-pk-edit">Editar</button>
-                        <input
-                            type="number"
-                            name="pk_override_{{ item.id }}"
-                            min="0"
-                            step="1"
-                            value="{{ item.pk_qty_override if item.pk_qty_override is not none else '' }}"
-                            class="js-pk-override is-hidden"
-                            readonly
-                        >
+                        {% if es_retornable %}
+                        <small class="status-muted">Retornable</small>
+                        {% endif %}
                     </td>
                     <td class="qty-col">
                         <input
@@ -144,9 +142,6 @@
         const ocupo = toIntOrNull(row.querySelector(".js-ocupo")?.value);
         const recuperada = toIntOrNull(row.querySelector(".js-recuperada")?.value);
         const registerToggle = row.querySelector(".js-pk-register");
-        const editButton = row.querySelector(".js-pk-edit");
-        const pkOverride = row.querySelector(".js-pk-override");
-        const pkDisplay = row.querySelector(".js-pk-display");
         const chip = row.querySelector(".js-cuadre");
         const errors = [];
         const warnings = [];
@@ -157,30 +152,14 @@
 
         const regresaVal = regresa ?? 0;
         const ocupoVal = ocupo ?? 0;
+        const isRetornable = row.dataset.retornable === "1";
+        const isPkRegister = registerToggle instanceof HTMLInputElement ? registerToggle.checked : false;
         const ok = Math.abs((ocupoVal + regresaVal) - entregado) < 1e-9;
-        if (!ok) warnings.push(`${itemName}: No cuadra (No regresa + Regresa != Lleva).`);
+        if (!ok) warnings.push(`${itemName}: No cuadra (Ocupo + Regresa != Lleva).`);
         if (regresaVal > entregado) warnings.push(`${itemName}: Regresa mayor a lo entregado.`);
-
-        const isOverride = registerToggle instanceof HTMLInputElement ? registerToggle.checked : false;
-        if (pkOverride instanceof HTMLInputElement) {
-            if (!isOverride) {
-                pkOverride.value = "";
-                pkOverride.readOnly = true;
-                pkOverride.classList.add("is-hidden");
-                if (pkDisplay) pkDisplay.textContent = `Auto: ${ocupoVal}`;
-            } else {
-                if (pkOverride.readOnly) {
-                    if (!pkOverride.value.trim()) {
-                        pkOverride.value = String(Number.isFinite(entregado) ? Math.trunc(entregado) : 0);
-                    }
-                    pkOverride.classList.add("is-hidden");
-                }
-                const manualVal = toIntOrNull(pkOverride.value);
-                if (pkDisplay) pkDisplay.textContent = `Manual: ${manualVal ?? 0}`;
-            }
-        }
-        if (editButton instanceof HTMLButtonElement) {
-            editButton.disabled = !isOverride;
+        if (ocupoVal > entregado) warnings.push(`${itemName}: Ocupo mayor a Lleva.`);
+        if (isRetornable && ocupoVal > 0 && !isPkRegister) {
+            warnings.push(`${itemName}: Retornable con Ocupo > 0 sin marcar Registrar en ProKey.`);
         }
 
         row.classList.toggle("is-over-return", regresaVal > entregado);
@@ -227,28 +206,6 @@
         if (event.target instanceof HTMLInputElement) {
             const row = event.target.closest(".liquidacion-row");
             if (!row) return;
-            if (event.target.classList.contains("js-pk-register")) {
-                const pkOverride = row.querySelector(".js-pk-override");
-                const lleva = Number(row.dataset.entregado || "0");
-                if (pkOverride instanceof HTMLInputElement) {
-                    if (event.target.checked) {
-                        pkOverride.value = String(Number.isFinite(lleva) ? Math.trunc(lleva) : 0);
-                    } else {
-                        pkOverride.value = "";
-                    }
-                    pkOverride.readOnly = true;
-                    pkOverride.classList.add("is-hidden");
-                }
-            } else if (event.target.classList.contains("js-pk-override")) {
-                const registerToggle = row.querySelector(".js-pk-register");
-                if (registerToggle instanceof HTMLInputElement) {
-                    registerToggle.checked = event.target.value.trim() !== "";
-                }
-                if (event.target.value.trim() === "") {
-                    event.target.readOnly = true;
-                    event.target.classList.add("is-hidden");
-                }
-            }
             evalRow(row);
             validateAll();
         }
@@ -256,39 +213,8 @@
 
     form.addEventListener("input", onChange);
     form.addEventListener("change", onChange);
-    form.addEventListener("click", (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement) || !target.classList.contains("js-pk-edit")) return;
-        const row = target.closest(".liquidacion-row");
-        if (!row) return;
-        const registerToggle = row.querySelector(".js-pk-register");
-        const pkOverride = row.querySelector(".js-pk-override");
-        const lleva = Number(row.dataset.entregado || "0");
-        if (registerToggle instanceof HTMLInputElement) {
-            registerToggle.checked = true;
-        }
-        if (pkOverride instanceof HTMLInputElement) {
-            if (!pkOverride.value.trim()) {
-                pkOverride.value = String(Number.isFinite(lleva) ? Math.trunc(lleva) : 0);
-            }
-            pkOverride.readOnly = false;
-            pkOverride.classList.remove("is-hidden");
-            pkOverride.focus();
-            pkOverride.select();
-        }
-        evalRow(row);
-        validateAll();
-    });
 
     form.addEventListener("submit", (event) => {
-        for (const row of rows) {
-            const toggle = row.querySelector(".js-pk-register");
-            const pkOverride = row.querySelector(".js-pk-override");
-            const isOverride = toggle instanceof HTMLInputElement ? toggle.checked : false;
-            if (!isOverride && pkOverride instanceof HTMLInputElement) {
-                pkOverride.value = "";
-            }
-        }
         if (!validateAll()) {
             event.preventDefault();
         }

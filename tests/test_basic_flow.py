@@ -910,7 +910,7 @@ def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_s
     assert "REQ-0301" not in response.text
 
 
-def test_bodega_liquidacion_guarda_override_pk_y_refleja_ingreso_final(client: TestClient, db_session: Session):
+def test_bodega_liquidacion_guarda_pk_register_y_refleja_resumen_prokey(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
@@ -939,6 +939,9 @@ def test_bodega_liquidacion_guarda_override_pk_y_refleja_ingreso_final(client: T
         cantidad_entregada=5,
         unidad="unidad",
     )
+    catalogo_item = db_session.query(CatalogoItem).filter(CatalogoItem.nombre == "Cable UTP Cat6").first()
+    catalogo_item.es_servicio = True
+    db_session.add(catalogo_item)
     db_session.add(item)
     db_session.commit()
     db_session.refresh(item)
@@ -946,7 +949,7 @@ def test_bodega_liquidacion_guarda_override_pk_y_refleja_ingreso_final(client: T
     login(client, "bodega.1", "pass123")
     view = client.get(f"/bodega/{req.id}/liquidar")
     assert view.status_code == 200
-    assert "Ingreso PK" in view.text
+    assert "Registrar en ProKey" in view.text
 
     response = client.post(
         f"/bodega/{req.id}/liquidar",
@@ -954,7 +957,7 @@ def test_bodega_liquidacion_guarda_override_pk_y_refleja_ingreso_final(client: T
             f"usada_{item.id}": "3",
             f"devuelta_sin_usar_{item.id}": "2",
             f"recuperada_{item.id}": "1",
-            f"pk_override_{item.id}": "1",
+            f"pk_register_{item.id}": "on",
         },
         follow_redirects=False,
     )
@@ -967,7 +970,8 @@ def test_bodega_liquidacion_guarda_override_pk_y_refleja_ingreso_final(client: T
     assert item.cantidad_usada == 3
     assert item.cantidad_devuelta_sin_usar == 2
     assert item.cantidad_devuelta_danada == 1
-    assert item.pk_qty_override == 1
+    assert item.pk_register is True
+    assert item.pk_qty_override is None
 
     detalle = client.get(f"/api/requisiciones/{req.id}")
     assert detalle.status_code == 200
@@ -975,7 +979,7 @@ def test_bodega_liquidacion_guarda_override_pk_y_refleja_ingreso_final(client: T
     assert payload["liquidated_by"] == "Bodega Uno"
     assert payload["liquidated_at"] is not None
     assert any("Requisicion liquidada por Bodega Uno" in e.get("evento", "") for e in payload.get("timeline", []))
-    assert payload["prokey_summary"] == [{"descripcion": "Cable UTP Cat6", "ingreso_pk_final": 1}]
+    assert payload["prokey_summary"] == [{"descripcion": "Cable UTP Cat6", "ingreso_pk_final": 3}]
 
 
 def test_liquidacion_permite_regresa_mayor_que_lleva_y_devuelve_warning(client: TestClient, db_session: Session):
@@ -1027,3 +1031,58 @@ def test_liquidacion_permite_regresa_mayor_que_lleva_y_devuelve_warning(client: 
     db_session.refresh(item)
     assert req.estado == "liquidada"
     assert item.cantidad_devuelta_sin_usar == 5
+
+
+def test_liquidacion_retornable_sin_pk_register_no_se_incluye_en_prokey(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req = Requisicion(
+        folio="REQ-0403",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="entregada",
+        justificacion="Retornable sin registro PK",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivered_to="Cliente Test",
+        delivery_result="completa",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    catalogo_item = db_session.query(CatalogoItem).filter(CatalogoItem.nombre == "Cable UTP Cat6").first()
+    catalogo_item.es_servicio = True
+    db_session.add(catalogo_item)
+
+    item = Item(
+        requisicion_id=req.id,
+        descripcion="Cable UTP Cat6",
+        cantidad=5,
+        cantidad_entregada=5,
+        unidad="unidad",
+    )
+    db_session.add(item)
+    db_session.commit()
+    db_session.refresh(item)
+
+    login(client, "bodega.1", "pass123")
+    response = client.post(
+        f"/bodega/{req.id}/liquidar",
+        data={
+            f"usada_{item.id}": "3",
+            f"devuelta_sin_usar_{item.id}": "2",
+            f"recuperada_{item.id}": "0",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    detalle = client.get(f"/api/requisiciones/{req.id}")
+    assert detalle.status_code == 200
+    payload = detalle.json()
+    assert payload["prokey_summary"] == []

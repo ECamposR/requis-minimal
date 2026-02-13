@@ -137,17 +137,18 @@ def _parse_non_negative_int(value: object, field_name: str, allow_null: bool = F
     return parsed
 
 
-def _ingreso_pk_final(item: Item) -> int:
-    return int(item.pk_qty_override) if item.pk_qty_override is not None else int(item.cantidad_usada or 0)
-
-
-def _liquidacion_warnings(items: list[Item]) -> list[str]:
+def _liquidacion_warnings(items: list[Item], retornables_por_item: dict[int, bool] | None = None) -> list[str]:
     warnings: list[str] = []
+    retornables_por_item = retornables_por_item or {}
     for item in items:
         entregado = float(item.cantidad_entregada or 0)
         usada = int(item.cantidad_usada or 0)
         regresa = int(item.cantidad_devuelta_sin_usar or 0)
 
+        if usada > entregado:
+            warnings.append(
+                f"{item.descripcion}: Ocupo ({usada}) es mayor que Lleva ({int(entregado) if entregado.is_integer() else entregado})."
+            )
         if regresa > entregado:
             warnings.append(
                 f"{item.descripcion}: Regresa ({regresa}) es mayor que Lleva ({int(entregado) if entregado.is_integer() else entregado})."
@@ -156,7 +157,18 @@ def _liquidacion_warnings(items: list[Item]) -> list[str]:
             warnings.append(
                 f"{item.descripcion}: No cuadra (Ocupo + Regresa = {usada + regresa}, Lleva = {int(entregado) if entregado.is_integer() else entregado})."
             )
+        if retornables_por_item.get(item.id, False) and usada > 0 and not bool(item.pk_register):
+            warnings.append(f"{item.descripcion}: Retornable con Ocupo > 0 sin marcar Registrar en ProKey.")
     return warnings
+
+
+def _prokey_qty_for_item(item: Item, es_servicio: bool) -> int:
+    usada = int(item.cantidad_usada or 0)
+    if usada <= 0:
+        return 0
+    if es_servicio:
+        return usada if bool(item.pk_register) else 0
+    return usada
 
 
 def ensure_admin(current_user: Usuario) -> None:
@@ -806,9 +818,24 @@ def bodega_liquidar_form(
     if current_user.rol == "bodega" and req.delivered_by != current_user.id:
         raise HTTPException(status_code=403, detail="No autorizado")
 
+    catalogo_map = {
+        normalize_catalog_name(row.nombre): row.es_servicio
+        for row in db.query(CatalogoItem.nombre, CatalogoItem.es_servicio).all()
+    }
+    retornables_por_item = {
+        item.id: bool(catalogo_map.get(normalize_catalog_name(item.descripcion), False))
+        for item in req.items
+    }
+
     return templates.TemplateResponse(
         "bodega_liquidar.html",
-        template_context(request, current_user, req=req, liquidacion_warnings=_liquidacion_warnings(req.items)),
+        template_context(
+            request,
+            current_user,
+            req=req,
+            retornables_por_item=retornables_por_item,
+            liquidacion_warnings=_liquidacion_warnings(req.items, retornables_por_item),
+        ),
     )
 
 
@@ -830,6 +857,15 @@ async def bodega_liquidar_guardar(
     if current_user.rol == "bodega" and req.delivered_by != current_user.id:
         raise HTTPException(status_code=403, detail="No autorizado")
 
+    catalogo_map = {
+        normalize_catalog_name(row.nombre): row.es_servicio
+        for row in db.query(CatalogoItem.nombre, CatalogoItem.es_servicio).all()
+    }
+    retornables_por_item = {
+        item.id: bool(catalogo_map.get(normalize_catalog_name(item.descripcion), False))
+        for item in req.items
+    }
+
     form_data = await request.form()
     for item in req.items:
         cantidad_usada = _parse_non_negative_int(form_data.get(f"usada_{item.id}", 0), "Ocupo")
@@ -837,16 +873,14 @@ async def bodega_liquidar_guardar(
             form_data.get(f"devuelta_sin_usar_{item.id}", 0), "Regresa"
         )
         cantidad_devuelta_danada = _parse_non_negative_int(form_data.get(f"recuperada_{item.id}", 0), "Recuperado")
-        pk_qty_override = _parse_non_negative_int(
-            form_data.get(f"pk_override_{item.id}", ""),
-            "Ingreso PK override",
-            allow_null=True,
-        )
+        pk_register = str(form_data.get(f"pk_register_{item.id}", "")).strip().lower() in {"on", "1", "true", "yes"}
 
         item.cantidad_usada = cantidad_usada
         item.cantidad_devuelta_sin_usar = cantidad_devuelta_sin_usar
         item.cantidad_devuelta_danada = cantidad_devuelta_danada
-        item.pk_qty_override = pk_qty_override
+        item.pk_register = pk_register
+        # Se mantiene columna legacy, pero no participa en esta iteracion.
+        item.pk_qty_override = None
 
     transicionar_requisicion(
         db,
@@ -854,7 +888,7 @@ async def bodega_liquidar_guardar(
         nuevo_estado="liquidada",
         actor_id=current_user.id,
     )
-    warnings = _liquidacion_warnings(req.items)
+    warnings = _liquidacion_warnings(req.items, retornables_por_item)
     if warnings:
         return redirect_with_message(
             "/bodega",
@@ -1340,13 +1374,21 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             }
         )
 
+    catalogo_map = {
+        normalize_catalog_name(row.nombre): row.es_servicio
+        for row in db.query(CatalogoItem.nombre, CatalogoItem.es_servicio).all()
+    }
+
     prokey_summary = [
         {
             "descripcion": item.descripcion,
-            "ingreso_pk_final": _ingreso_pk_final(item),
+            "ingreso_pk_final": _prokey_qty_for_item(
+                item,
+                bool(catalogo_map.get(normalize_catalog_name(item.descripcion), False)),
+            ),
         }
         for item in req.items
-        if _ingreso_pk_final(item) > 0
+        if _prokey_qty_for_item(item, bool(catalogo_map.get(normalize_catalog_name(item.descripcion), False))) > 0
     ]
     retornos_summary = [
         {
@@ -1356,10 +1398,6 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         for item in req.items
         if int(item.cantidad_devuelta_sin_usar or 0) > 0
     ]
-    catalogo_map = {
-        normalize_catalog_name(row.nombre): row.es_servicio
-        for row in db.query(CatalogoItem.nombre, CatalogoItem.es_servicio).all()
-    }
 
     return {
         "id": req.id,
@@ -1397,8 +1435,12 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                 "cantidad_usada": item.cantidad_usada,
                 "cantidad_devuelta_sin_usar": item.cantidad_devuelta_sin_usar,
                 "cantidad_devuelta_danada": item.cantidad_devuelta_danada,
+                "pk_register": bool(item.pk_register),
                 "pk_qty_override": item.pk_qty_override,
-                "ingreso_pk_final": _ingreso_pk_final(item),
+                "ingreso_pk_final": _prokey_qty_for_item(
+                    item,
+                    bool(catalogo_map.get(normalize_catalog_name(item.descripcion), False)),
+                ),
                 "es_servicio": catalogo_map.get(normalize_catalog_name(item.descripcion), False),
                 "unidad": item.unidad,
             }
