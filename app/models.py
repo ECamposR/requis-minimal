@@ -133,6 +133,7 @@ class Item(Base):
     cantidad_usada: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     cantidad_devuelta_sin_usar: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     cantidad_devuelta_danada: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    pk_qty_override: Mapped[int | None] = mapped_column(Integer, nullable=True)
     unidad: Mapped[str] = mapped_column(String(40), nullable=False)
 
     requisicion: Mapped["Requisicion"] = relationship("Requisicion", back_populates="items")

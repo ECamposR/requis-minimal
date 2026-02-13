@@ -910,7 +910,7 @@ def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_s
     assert "REQ-0301" not in response.text
 
 
-def test_bodega_puede_liquidar_requisicion_entregada(client: TestClient, db_session: Session):
+def test_bodega_liquidacion_guarda_override_pk_y_refleja_ingreso_final(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
@@ -946,7 +946,7 @@ def test_bodega_puede_liquidar_requisicion_entregada(client: TestClient, db_sess
     login(client, "bodega.1", "pass123")
     view = client.get(f"/bodega/{req.id}/liquidar")
     assert view.status_code == 200
-    assert "Equipo Recuperado/Viejo" in view.text
+    assert "Ingreso PK" in view.text
 
     response = client.post(
         f"/bodega/{req.id}/liquidar",
@@ -954,6 +954,7 @@ def test_bodega_puede_liquidar_requisicion_entregada(client: TestClient, db_sess
             f"usada_{item.id}": "3",
             f"devuelta_sin_usar_{item.id}": "2",
             f"recuperada_{item.id}": "1",
+            f"pk_override_{item.id}": "1",
         },
         follow_redirects=False,
     )
@@ -966,6 +967,7 @@ def test_bodega_puede_liquidar_requisicion_entregada(client: TestClient, db_sess
     assert item.cantidad_usada == 3
     assert item.cantidad_devuelta_sin_usar == 2
     assert item.cantidad_devuelta_danada == 1
+    assert item.pk_qty_override == 1
 
     detalle = client.get(f"/api/requisiciones/{req.id}")
     assert detalle.status_code == 200
@@ -973,10 +975,10 @@ def test_bodega_puede_liquidar_requisicion_entregada(client: TestClient, db_sess
     assert payload["liquidated_by"] == "Bodega Uno"
     assert payload["liquidated_at"] is not None
     assert any("Requisicion liquidada por Bodega Uno" in e.get("evento", "") for e in payload.get("timeline", []))
-    assert payload["prokey_summary"] == [{"descripcion": "Cable UTP Cat6", "cantidad_usada": 3}]
+    assert payload["prokey_summary"] == [{"descripcion": "Cable UTP Cat6", "ingreso_pk_final": 1}]
 
 
-def test_liquidacion_falla_si_no_cuadra_con_entregado(client: TestClient, db_session: Session):
+def test_liquidacion_permite_regresa_mayor_que_lleva_y_devuelve_warning(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
@@ -1014,10 +1016,14 @@ def test_liquidacion_falla_si_no_cuadra_con_entregado(client: TestClient, db_ses
         f"/bodega/{req.id}/liquidar",
         data={
             f"usada_{item.id}": "1",
-            f"devuelta_sin_usar_{item.id}": "1",
+            f"devuelta_sin_usar_{item.id}": "5",
             f"recuperada_{item.id}": "0",
         },
         follow_redirects=False,
     )
-    assert response.status_code == 400
-    assert "Descuadre en item" in response.json()["detail"]
+    assert response.status_code == 303
+    assert "type=warning" in response.headers["location"]
+    db_session.refresh(req)
+    db_session.refresh(item)
+    assert req.estado == "liquidada"
+    assert item.cantidad_devuelta_sin_usar == 5

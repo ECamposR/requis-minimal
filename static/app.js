@@ -216,13 +216,21 @@ function verDetalle(id) {
                 })
                 .join("");
             const showProkeySummary = data.estado === "liquidada";
-            const liquidacionRows = items
+            const prokeySummary = Array.isArray(data.prokey_summary) ? data.prokey_summary : [];
+            const retornosSummary = Array.isArray(data.retornos_summary) ? data.retornos_summary : [];
+            const prokeyRows = prokeySummary
                 .map(
-                    (item) => `<tr>
-                        <td>${escapeHtml(item.descripcion || "-")}</td>
-                        <td class="qty-col">${fmtQty(item.cantidad_usada)}</td>
-                        <td class="qty-col">${fmtQty(item.cantidad_devuelta_sin_usar)}</td>
-                        <td class="qty-col">${fmtQty(item.cantidad_devuelta_danada)}</td>
+                    (row) => `<tr>
+                        <td>${escapeHtml(row.descripcion || "-")}</td>
+                        <td class="qty-col">${fmtQty(row.ingreso_pk_final)}</td>
+                    </tr>`
+                )
+                .join("");
+            const retornosRows = retornosSummary
+                .map(
+                    (row) => `<tr>
+                        <td>${escapeHtml(row.descripcion || "-")}</td>
+                        <td class="qty-col">${fmtQty(row.regresa)}</td>
                     </tr>`
                 )
                 .join("");
@@ -231,17 +239,30 @@ function verDetalle(id) {
                         <h4>LIQUIDACION</h4>
                         <div class="panel-content">
                             <div class="detalle-items-wrap">
+                                <h5 class="liquidacion-subtitle">Resumen para ProKey</h5>
                                 <table class="detalle-items-table">
                                     <thead>
                                         <tr>
                                             <th>Item</th>
-                                            <th class="qty-col">Usado (ProKey)</th>
-                                            <th class="qty-col">Devuelto Sin Usar</th>
-                                            <th class="qty-col">Recuperado/Viejo</th>
+                                            <th class="qty-col">Ingreso PK final</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${liquidacionRows || '<tr><td colspan="4">Sin datos de liquidacion.</td></tr>'}
+                                        ${prokeyRows || '<tr><td colspan="2">Sin items para carga en ProKey.</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="detalle-items-wrap">
+                                <h5 class="liquidacion-subtitle">Retornos reportados</h5>
+                                <table class="detalle-items-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th class="qty-col">Regresa</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${retornosRows || '<tr><td colspan="2">Sin retornos reportados.</td></tr>'}
                                     </tbody>
                                 </table>
                             </div>

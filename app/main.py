@@ -24,7 +24,7 @@ from .crud import (
     transicionar_requisicion,
 )
 from .database import get_db, run_migrations
-from .models import CatalogoItem, Requisicion, Usuario
+from .models import CatalogoItem, Item, Requisicion, Usuario
 
 load_dotenv()
 
@@ -120,6 +120,43 @@ def redirect_with_message(url: str, message: str, level: str = "success") -> Red
     safe_level = quote_plus(level)
     sep = "&" if "?" in url else "?"
     return RedirectResponse(url=f"{url}{sep}msg={safe_msg}&type={safe_level}", status_code=303)
+
+
+def _parse_non_negative_int(value: object, field_name: str, allow_null: bool = False) -> int | None:
+    raw = str(value if value is not None else "").strip()
+    if allow_null and raw == "":
+        return None
+    if raw == "":
+        raw = "0"
+    try:
+        parsed = int(raw)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"Campo invalido: {field_name}") from exc
+    if parsed < 0:
+        raise HTTPException(status_code=400, detail=f"Campo invalido: {field_name} no permite negativos")
+    return parsed
+
+
+def _ingreso_pk_final(item: Item) -> int:
+    return int(item.pk_qty_override) if item.pk_qty_override is not None else int(item.cantidad_usada or 0)
+
+
+def _liquidacion_warnings(items: list[Item]) -> list[str]:
+    warnings: list[str] = []
+    for item in items:
+        entregado = float(item.cantidad_entregada or 0)
+        usada = int(item.cantidad_usada or 0)
+        regresa = int(item.cantidad_devuelta_sin_usar or 0)
+
+        if regresa > entregado:
+            warnings.append(
+                f"{item.descripcion}: Regresa ({regresa}) es mayor que Lleva ({int(entregado) if entregado.is_integer() else entregado})."
+            )
+        if abs((usada + regresa) - entregado) > 1e-9:
+            warnings.append(
+                f"{item.descripcion}: No cuadra (Ocupo + Regresa = {usada + regresa}, Lleva = {int(entregado) if entregado.is_integer() else entregado})."
+            )
+    return warnings
 
 
 def ensure_admin(current_user: Usuario) -> None:
@@ -771,7 +808,7 @@ def bodega_liquidar_form(
 
     return templates.TemplateResponse(
         "bodega_liquidar.html",
-        template_context(request, current_user, req=req),
+        template_context(request, current_user, req=req, liquidacion_warnings=_liquidacion_warnings(req.items)),
     )
 
 
@@ -795,32 +832,21 @@ async def bodega_liquidar_guardar(
 
     form_data = await request.form()
     for item in req.items:
-        raw_usada = str(form_data.get(f"usada_{item.id}", "0")).strip() or "0"
-        raw_dev_sin = str(form_data.get(f"devuelta_sin_usar_{item.id}", "0")).strip() or "0"
-        raw_recup = str(form_data.get(f"recuperada_{item.id}", "0")).strip() or "0"
-        try:
-            cantidad_usada = int(raw_usada)
-            cantidad_devuelta_sin_usar = int(raw_dev_sin)
-            cantidad_devuelta_danada = int(raw_recup)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail="Liquidacion invalida: usa solo cantidades enteras") from exc
-
-        if cantidad_usada < 0 or cantidad_devuelta_sin_usar < 0 or cantidad_devuelta_danada < 0:
-            raise HTTPException(status_code=400, detail="Liquidacion invalida: no se permiten cantidades negativas")
-
-        entregado = float(item.cantidad_entregada or 0)
-        if abs(entregado - (cantidad_usada + cantidad_devuelta_sin_usar)) > 1e-9:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Descuadre en item '{item.descripcion}': "
-                    "Entregado debe ser igual a Usado + Devuelto Sin Usar"
-                ),
-            )
+        cantidad_usada = _parse_non_negative_int(form_data.get(f"usada_{item.id}", 0), "Ocupo")
+        cantidad_devuelta_sin_usar = _parse_non_negative_int(
+            form_data.get(f"devuelta_sin_usar_{item.id}", 0), "Regresa"
+        )
+        cantidad_devuelta_danada = _parse_non_negative_int(form_data.get(f"recuperada_{item.id}", 0), "Recuperado")
+        pk_qty_override = _parse_non_negative_int(
+            form_data.get(f"pk_override_{item.id}", ""),
+            "Ingreso PK override",
+            allow_null=True,
+        )
 
         item.cantidad_usada = cantidad_usada
         item.cantidad_devuelta_sin_usar = cantidad_devuelta_sin_usar
         item.cantidad_devuelta_danada = cantidad_devuelta_danada
+        item.pk_qty_override = pk_qty_override
 
     transicionar_requisicion(
         db,
@@ -828,6 +854,13 @@ async def bodega_liquidar_guardar(
         nuevo_estado="liquidada",
         actor_id=current_user.id,
     )
+    warnings = _liquidacion_warnings(req.items)
+    if warnings:
+        return redirect_with_message(
+            "/bodega",
+            f"Liquidacion registrada con alertas ({len(warnings)}). Revisa detalle.",
+            "warning",
+        )
     return redirect_with_message("/bodega", "Liquidacion registrada correctamente", "success")
 
 
@@ -1310,10 +1343,18 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
     prokey_summary = [
         {
             "descripcion": item.descripcion,
-            "cantidad_usada": item.cantidad_usada,
+            "ingreso_pk_final": _ingreso_pk_final(item),
         }
         for item in req.items
-        if (item.cantidad_usada or 0) > 0
+        if _ingreso_pk_final(item) > 0
+    ]
+    retornos_summary = [
+        {
+            "descripcion": item.descripcion,
+            "regresa": int(item.cantidad_devuelta_sin_usar or 0),
+        }
+        for item in req.items
+        if int(item.cantidad_devuelta_sin_usar or 0) > 0
     ]
     catalogo_map = {
         normalize_catalog_name(row.nombre): row.es_servicio
@@ -1347,6 +1388,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "delivered_at": req.delivered_at,
         "timeline": timeline,
         "prokey_summary": prokey_summary,
+        "retornos_summary": retornos_summary,
         "items": [
             {
                 "descripcion": item.descripcion,
@@ -1355,6 +1397,8 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                 "cantidad_usada": item.cantidad_usada,
                 "cantidad_devuelta_sin_usar": item.cantidad_devuelta_sin_usar,
                 "cantidad_devuelta_danada": item.cantidad_devuelta_danada,
+                "pk_qty_override": item.pk_qty_override,
+                "ingreso_pk_final": _ingreso_pk_final(item),
                 "es_servicio": catalogo_map.get(normalize_catalog_name(item.descripcion), False),
                 "unidad": item.unidad,
             }

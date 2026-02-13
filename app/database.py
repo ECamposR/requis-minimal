@@ -167,6 +167,8 @@ def run_migrations() -> None:
                 conn.execute(
                     text("ALTER TABLE items ADD COLUMN cantidad_devuelta_danada INTEGER NOT NULL DEFAULT 0")
                 )
+            if "pk_qty_override" not in item_columns:
+                conn.execute(text("ALTER TABLE items ADD COLUMN pk_qty_override INTEGER"))
 
         if "catalogo_items" in tables:
             catalogo_columns = {

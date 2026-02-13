@@ -1,6 +1,14 @@
-# MVP Task Board
+# v1.x Task Board
 
 Estados: `todo` | `in_progress` | `done` | `blocked`
+
+## Gobernanza / Mantenimiento
+- `REQ-GOV-001` | `done` | Alinear `CONTRACT.md` a gobernanza v1.x operativa.
+- `REQ-GOV-002` | `done` | Registrar ADR de transicion MVP -> v1.x (ADR-003).
+- `REQ-GOV-003` | `done` | Normalizar nomenclatura operativa con glosario corto en contrato.
+
+Nota:
+Los `REQ-GOV-*` son una excepcion controlada para mantenimiento de gobernanza; no reemplazan la numeracion historica `REQ-###`.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.
@@ -75,6 +83,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-070` | `done` | Identificacion de activos de servicio en catalogo (`es_servicio`) + exposicion en API detalle para preparar alertas de retorno fisico.
 - `REQ-071` | `done` | Renombrar bloque de detalle de requisicion de `RESUMEN PARA CARGA EN PROKEY` a `LIQUIDACION`.
 - `REQ-072` | `done` | Mostrar resultado integral de liquidacion en modal detalle (usado, devuelto sin usar y recuperado/viejo por item).
+- `REQ-073` | `done` | Ajustar liquidacion operativa con `INGRESO PK` override opcional por item, warnings no bloqueantes (incluye `Regresa > Lleva`) y detalle con resumen ProKey + retornos reportados.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

@@ -22,6 +22,17 @@
     <p class="page-subtitle liquidacion-note">
         El equipo recuperado/viejo es para registro de ingreso fisico y no afecta el balance de carga a ProKey.
     </p>
+    <div id="liquidacion-warning" class="liquidacion-warning" hidden></div>
+    {% if liquidacion_warnings %}
+    <div class="liquidacion-warning is-server">
+        <strong>Alertas detectadas en esta liquidacion:</strong>
+        <ul>
+            {% for warning in liquidacion_warnings %}
+            <li>{{ warning }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
     <form method="POST" action="/bodega/{{ req.id }}/liquidar" id="liquidacion-form">
         <div id="liquidacion-error" class="liquidacion-error" hidden></div>
         <div class="table-wrap">
@@ -29,9 +40,10 @@
                 <thead>
                 <tr>
                     <th>Item</th>
-                    <th class="qty-col">Entregado</th>
-                    <th class="qty-col">Usado (Cargar a ProKey)</th>
-                    <th class="qty-col">Devuelto Sin Usar (A Stock)</th>
+                    <th class="qty-col">Lleva</th>
+                    <th class="qty-col">Regresa</th>
+                    <th class="qty-col">Ocupo</th>
+                    <th class="qty-col">Ingreso PK</th>
                     <th class="qty-col">Equipo Recuperado/Viejo</th>
                     <th class="qty-col">Cuadre</th>
                 </tr>
@@ -42,18 +54,7 @@
                 <tr class="liquidacion-row" data-entregado="{{ entregado }}">
                     <td>{{ item.descripcion }}</td>
                     <td class="qty-col">
-                        <input type="number" value="{{ entregado }}" readonly tabindex="-1">
-                    </td>
-                    <td class="qty-col">
-                        <input
-                            type="number"
-                            name="usada_{{ item.id }}"
-                            min="0"
-                            step="1"
-                            value="{{ item.cantidad_usada }}"
-                            class="js-usada"
-                            required
-                        >
+                        <input type="number" value="{{ entregado }}" readonly tabindex="-1" class="js-lleva">
                     </td>
                     <td class="qty-col">
                         <input
@@ -62,9 +63,38 @@
                             min="0"
                             step="1"
                             value="{{ item.cantidad_devuelta_sin_usar }}"
-                            class="js-devuelta"
+                            class="js-regresa"
                             required
                         >
+                    </td>
+                    <td class="qty-col">
+                        <input
+                            type="number"
+                            name="usada_{{ item.id }}"
+                            min="0"
+                            step="1"
+                            value="{{ item.cantidad_usada }}"
+                            class="js-ocupo"
+                            required
+                        >
+                    </td>
+                    <td class="qty-col">
+                        <label class="pk-toggle">
+                            <input type="checkbox" class="js-pk-toggle" {% if item.pk_qty_override is not none %}checked{% endif %}>
+                            Editar
+                        </label>
+                        <input
+                            type="number"
+                            name="pk_override_{{ item.id }}"
+                            min="0"
+                            step="1"
+                            value="{{ item.pk_qty_override if item.pk_qty_override is not none else '' }}"
+                            class="js-pk-override"
+                            {% if item.pk_qty_override is none %}readonly{% endif %}
+                        >
+                        <small class="status-muted js-pk-auto">
+                            {% if item.pk_qty_override is none %}auto = Ocupo{% else %}override manual{% endif %}
+                        </small>
                     </td>
                     <td class="qty-col">
                         <input
@@ -97,43 +127,87 @@
     const form = document.getElementById("liquidacion-form");
     if (!form) return;
     const errorBox = document.getElementById("liquidacion-error");
+    const warningBox = document.getElementById("liquidacion-warning");
     const rows = Array.from(form.querySelectorAll(".liquidacion-row"));
 
-    function toInt(value) {
-        const n = Number.parseInt(String(value ?? "").trim(), 10);
-        return Number.isNaN(n) ? 0 : n;
+    function toIntOrNull(value) {
+        const raw = String(value ?? "").trim();
+        if (raw === "") return 0;
+        if (!/^\d+$/.test(raw)) return null;
+        return Number.parseInt(raw, 10);
     }
 
     function evalRow(row) {
         const entregado = Number(row.dataset.entregado || "0");
-        const usada = toInt(row.querySelector(".js-usada")?.value);
-        const devuelta = toInt(row.querySelector(".js-devuelta")?.value);
+        const regresa = toIntOrNull(row.querySelector(".js-regresa")?.value);
+        const ocupo = toIntOrNull(row.querySelector(".js-ocupo")?.value);
+        const recuperada = toIntOrNull(row.querySelector(".js-recuperada")?.value);
+        const toggle = row.querySelector(".js-pk-toggle");
+        const pkOverride = row.querySelector(".js-pk-override");
+        const pkAuto = row.querySelector(".js-pk-auto");
         const chip = row.querySelector(".js-cuadre");
-        const ok = Math.abs((usada + devuelta) - entregado) < 1e-9;
+        const errors = [];
+        const warnings = [];
+
+        if (regresa === null || ocupo === null || recuperada === null) {
+            errors.push("Usa solo enteros no negativos.");
+        }
+
+        const regresaVal = regresa ?? 0;
+        const ocupoVal = ocupo ?? 0;
+        const ok = Math.abs((ocupoVal + regresaVal) - entregado) < 1e-9;
+        if (!ok) warnings.push("No cuadra (Ocupo + Regresa != Lleva).");
+        if (regresaVal > entregado) warnings.push("Regresa mayor a lo entregado.");
+
+        const isOverride = toggle instanceof HTMLInputElement ? toggle.checked : false;
+        if (pkOverride instanceof HTMLInputElement) {
+            pkOverride.readOnly = !isOverride;
+            if (!isOverride) {
+                pkOverride.value = "";
+                if (pkAuto) pkAuto.textContent = "auto = Ocupo";
+            } else if (pkAuto) {
+                pkAuto.textContent = "override manual";
+            }
+        }
+
+        row.classList.toggle("is-over-return", regresaVal > entregado);
         if (chip) {
-            chip.textContent = ok ? "Cuadre OK" : "Descuadre";
+            chip.textContent = ok ? "Cuadre OK" : "No cuadra";
             chip.classList.toggle("is-ok", ok);
             chip.classList.toggle("is-bad", !ok);
         }
-        return ok;
+        return { errors, warnings };
     }
 
     function validateAll() {
-        let allOk = true;
+        const allErrors = [];
+        const allWarnings = [];
         for (const row of rows) {
-            const ok = evalRow(row);
-            if (!ok) allOk = false;
+            const result = evalRow(row);
+            for (const err of result.errors) allErrors.push(err);
+            for (const warn of result.warnings) allWarnings.push(warn);
         }
+
         if (errorBox) {
-            if (allOk) {
+            if (!allErrors.length) {
                 errorBox.hidden = true;
                 errorBox.textContent = "";
             } else {
                 errorBox.hidden = false;
-                errorBox.textContent = "Hay filas con descuadre. Debe cumplirse: Entregado = Usado + Devuelto Sin Usar.";
+                errorBox.textContent = "Hay valores invalidos. Usa solo enteros no negativos.";
             }
         }
-        return allOk;
+        if (warningBox) {
+            if (!allWarnings.length) {
+                warningBox.hidden = true;
+                warningBox.innerHTML = "";
+            } else {
+                const uniqueWarnings = [...new Set(allWarnings)];
+                warningBox.hidden = false;
+                warningBox.innerHTML = `<strong>Alertas operativas:</strong><ul>${uniqueWarnings.map((w) => `<li>${w}</li>`).join("")}</ul>`;
+            }
+        }
+        return allErrors.length === 0;
     }
 
     form.addEventListener("input", (event) => {
@@ -145,6 +219,14 @@
     });
 
     form.addEventListener("submit", (event) => {
+        for (const row of rows) {
+            const toggle = row.querySelector(".js-pk-toggle");
+            const pkOverride = row.querySelector(".js-pk-override");
+            const isOverride = toggle instanceof HTMLInputElement ? toggle.checked : false;
+            if (!isOverride && pkOverride instanceof HTMLInputElement) {
+                pkOverride.value = "";
+            }
+        }
         if (!validateAll()) {
             event.preventDefault();
         }

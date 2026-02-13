@@ -1172,3 +1172,81 @@
       - `Recuperado/Viejo` (`cantidad_devuelta_danada`)
 - Resultado:
   - El detalle refleja la liquidacion completa y no solo la porcion de carga a ProKey.
+
+## 2026-02-13 08:29 CST | tool: Codex CLI
+- Objetivo: Alinear gobernanza multi-IA al estado real v1.x operativa sin tocar codigo de app.
+- Archivos docs tocados:
+  - `docs/ai/CONTRACT.md`
+  - `docs/ai/DECISIONS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - Solo lectura/edicion de markdown en `docs/ai/`.
+- Resultado:
+  - Contrato migrado de "MVP congelado" a "Gobernanza v1.x".
+  - ADR-003 agregado para formalizar transicion MVP -> v1.x.
+  - ADR-004 agregado para aclarar etiquetas operativas vs estados persistidos.
+  - Handoff reducido a estado ejecutable y consistente con alcance actual.
+  - Tablero incluye tareas `REQ-GOV-*` para mantenimiento de gobernanza.
+- Proximo paso:
+  - Ejecutar smoke test manual corto y registrar hallazgos operativos en `WORKLOG.md`.
+
+## 2026-02-13 09:20 CST | tool: Codex CLI
+- Objetivo: Normalizar documentacion operativa para coherencia v1.x (sin cambios en app).
+- Archivos docs tocados:
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/CHECKLIST_EJECUCION.md` (renombrado desde `CHECKLIST_EJECUCION_MVP.md`)
+  - `docs/ai/TASKS.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios realizados:
+  - `HANDOFF` confirmado como unico handoff activo corto y ejecutable; se agrega regla de archivado para handoffs largos/contradictorios.
+  - Checklist renombrado y actualizado de nomenclatura `MVP` a `v1.x`/`CONTRACT`.
+  - Titulo de tablero actualizado de `MVP Task Board` a `v1.x Task Board`.
+- Codigo de app:
+  - No se toco codigo de backend, DB, templates ni static.
+- Verificacion (checklist de aceptacion):
+  - [x] No hay "MVP" en nombres/titulos de docs operativos activos.
+  - [x] Existe un unico handoff activo, corto y ejecutable.
+  - [x] `CONTRACT`/`DECISIONS`/`TASKS`/`WORKLOG`/`HANDOFF`/Checklist cuentan historia consistente v1.x.
+- Proximo paso:
+  - Ejecutar smoke test manual corto y registrar resultado en `WORKLOG.md`.
+
+## 2026-02-13 10:35 CST | tool: Codex CLI
+- Objetivo: Alinear liquidacion al formato operativo `LLEVA/REGRESA/OCUPO/INGRESO PK` con override opcional y alertas no bloqueantes.
+- Archivos tocados:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/main.py`
+  - `templates/bodega_liquidar.html`
+  - `static/theme.css`
+  - `static/app.js`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios clave:
+  - Se agrega `Item.pk_qty_override` (nullable) y migracion SQLite incremental.
+  - Calculo backend de `ingreso_pk_final`:
+    - Si `pk_qty_override` es `NULL` -> usa `cantidad_usada`.
+    - Si `pk_qty_override` tiene valor -> usa override.
+  - Liquidacion (`POST /bodega/{id}/liquidar`):
+    - Acepta `pk_override_{item_id}`.
+    - Convierte vacio a `NULL`.
+    - Valida no negativos.
+    - Ya no bloquea por descuadre; genera alertas operativas (incluye caso `Regresa > Lleva`).
+  - UI liquidacion:
+    - Nuevas columnas operativas: `Lleva`, `Regresa`, `Ocupo`, `Ingreso PK`.
+    - `Ingreso PK` editable por fila con toggle; por defecto modo auto (`Ocupo`).
+    - Alertas visuales resumidas arriba de la tabla (sin bloquear guardado salvo datos invalidos).
+  - Detalle (`/api/requisiciones/{id}` + modal):
+    - Se agregan `ingreso_pk_final` y `pk_qty_override` por item.
+    - Nuevo `prokey_summary` con `ingreso_pk_final`.
+    - Nuevo `retornos_summary` con cantidades `Regresa`.
+    - Modal muestra dos bloques: `Resumen para ProKey` y `Retornos reportados`.
+- Validacion:
+  - `python -m compileall app templates tests` OK.
+  - `pytest` no pudo correrse en Python global por dependencias faltantes y en `.venv` quedo sin salida en este entorno CLI; pendiente validar local interactivo.
+- Resultado:
+  - La liquidacion queda adaptable a casos reales sin romper flujo operativo y mantiene trazabilidad para transcripcion en ProKey.
+- Proximo paso:
+  - Ejecutar smoke test manual end-to-end (entrega -> liquidacion con/ sin override -> detalle) y confirmar mensajes de alerta esperados.
