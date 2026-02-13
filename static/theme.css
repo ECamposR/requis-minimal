@@ -263,6 +263,10 @@ table tbody tr:hover td {
     margin-bottom: 0.85rem;
 }
 
+.liquidacion-panel .liquidacion-note p {
+    margin: 0.2rem 0;
+}
+
 .liquidacion-table input[readonly] {
     opacity: 0.9;
     font-weight: 600;
@@ -327,6 +331,13 @@ table tbody tr:hover td {
     margin-top: 0.3rem;
 }
 
+.liquidacion-table .pk-display {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #cfe3ff;
+    margin-bottom: 0.25rem;
+}
+
 .liquidacion-table .pk-toggle {
     display: inline-flex;
     align-items: center;
@@ -337,6 +348,10 @@ table tbody tr:hover td {
 
 .liquidacion-table .js-pk-override[readonly] {
     opacity: 0.75;
+}
+
+.liquidacion-table .js-pk-override.is-hidden {
+    display: none;
 }
 
 .liquidacion-row.is-over-return {

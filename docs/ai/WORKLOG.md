@@ -1250,3 +1250,27 @@
   - La liquidacion queda adaptable a casos reales sin romper flujo operativo y mantiene trazabilidad para transcripcion en ProKey.
 - Proximo paso:
   - Ejecutar smoke test manual end-to-end (entrega -> liquidacion con/ sin override -> detalle) y confirmar mensajes de alerta esperados.
+
+## 2026-02-13 11:05 CST | tool: Codex CLI
+- Objetivo: Reducir confusion operativa en liquidacion separando balance fisico de carga ProKey en la UI.
+- Archivos tocados:
+  - `templates/bodega_liquidar.html`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios clave:
+  - En UI de liquidacion se renombra `Ocupo` a `No regresa` (manteniendo backend/DB en `cantidad_usada`).
+  - Microcopy agregado para explicar:
+    - `Regresa` (retorno fisico),
+    - `No regresa` (queda fuera),
+    - `Ingreso PK` (valor a transcribir en ProKey).
+  - Columna `Ingreso PK` ahora muestra estado visible por fila:
+    - `Auto: X` cuando no hay override.
+    - `Manual: X` cuando hay override.
+    - Input override oculto hasta activar `Editar`.
+  - Lista superior `Alertas detectadas en esta liquidacion` ahora se recalcula en cada `input/change` y refleja estado actual (sin valores stale).
+  - Se mantienen warnings no bloqueantes (`No cuadra`, `Regresa > Lleva`); solo errores de formato/negativos bloquean guardado.
+- Codigo de app:
+  - No se agregaron dependencias ni se altero flujo core/estados.
+- Proximo paso:
+  - Validacion manual de 4 escenarios: instalacion, swap con override, `Regresa > Lleva`, y refresco de alertas en vivo.

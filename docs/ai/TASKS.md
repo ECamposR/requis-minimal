@@ -84,6 +84,7 @@ Los `REQ-GOV-*` son una excepcion controlada para mantenimiento de gobernanza; n
 - `REQ-071` | `done` | Renombrar bloque de detalle de requisicion de `RESUMEN PARA CARGA EN PROKEY` a `LIQUIDACION`.
 - `REQ-072` | `done` | Mostrar resultado integral de liquidacion en modal detalle (usado, devuelto sin usar y recuperado/viejo por item).
 - `REQ-073` | `done` | Ajustar liquidacion operativa con `INGRESO PK` override opcional por item, warnings no bloqueantes (incluye `Regresa > Lleva`) y detalle con resumen ProKey + retornos reportados.
+- `REQ-074` | `done` | Ajustar UX de liquidacion: `Ocupo` -> `No regresa`, mostrar `Ingreso PK` auto/manual visible y recalcular alertas en tiempo real sin bloqueo.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

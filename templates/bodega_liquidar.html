@@ -19,20 +19,15 @@
 </section>
 
 <section class="panel view-panel liquidacion-panel">
-    <p class="page-subtitle liquidacion-note">
-        El equipo recuperado/viejo es para registro de ingreso fisico y no afecta el balance de carga a ProKey.
-    </p>
-    <div id="liquidacion-warning" class="liquidacion-warning" hidden></div>
-    {% if liquidacion_warnings %}
-    <div class="liquidacion-warning is-server">
-        <strong>Alertas detectadas en esta liquidacion:</strong>
-        <ul>
-            {% for warning in liquidacion_warnings %}
-            <li>{{ warning }}</li>
-            {% endfor %}
-        </ul>
+    <div class="page-subtitle liquidacion-note">
+        <p>Regresa: lo que vuelve fisicamente a bodega (aunque venga usado).</p>
+        <p>No regresa: lo que se queda fuera (instalado/consumido).</p>
+        <p>
+            Ingreso PK: lo que se registrara en ProKey. Auto = No regresa. En swaps, usa Editar si necesitas
+            registrar el movimiento en ProKey aunque No regresa sea 0.
+        </p>
     </div>
-    {% endif %}
+    <div id="liquidacion-warning" class="liquidacion-warning" hidden></div>
     <form method="POST" action="/bodega/{{ req.id }}/liquidar" id="liquidacion-form">
         <div id="liquidacion-error" class="liquidacion-error" hidden></div>
         <div class="table-wrap">
@@ -42,7 +37,7 @@
                     <th>Item</th>
                     <th class="qty-col">Lleva</th>
                     <th class="qty-col">Regresa</th>
-                    <th class="qty-col">Ocupo</th>
+                    <th class="qty-col">No regresa</th>
                     <th class="qty-col">Ingreso PK</th>
                     <th class="qty-col">Equipo Recuperado/Viejo</th>
                     <th class="qty-col">Cuadre</th>
@@ -51,7 +46,7 @@
                 <tbody>
                 {% for item in req.items %}
                 {% set entregado = (item.cantidad_entregada if item.cantidad_entregada is not none else 0) %}
-                <tr class="liquidacion-row" data-entregado="{{ entregado }}">
+                <tr class="liquidacion-row" data-entregado="{{ entregado }}" data-item="{{ item.descripcion }}">
                     <td>{{ item.descripcion }}</td>
                     <td class="qty-col">
                         <input type="number" value="{{ entregado }}" readonly tabindex="-1" class="js-lleva">
@@ -83,6 +78,13 @@
                             <input type="checkbox" class="js-pk-toggle" {% if item.pk_qty_override is not none %}checked{% endif %}>
                             Editar
                         </label>
+                        <div class="pk-display js-pk-display">
+                            {% if item.pk_qty_override is none %}
+                            Auto: {{ item.cantidad_usada }}
+                            {% else %}
+                            Manual: {{ item.pk_qty_override }}
+                            {% endif %}
+                        </div>
                         <input
                             type="number"
                             name="pk_override_{{ item.id }}"
@@ -92,9 +94,6 @@
                             class="js-pk-override"
                             {% if item.pk_qty_override is none %}readonly{% endif %}
                         >
-                        <small class="status-muted js-pk-auto">
-                            {% if item.pk_qty_override is none %}auto = Ocupo{% else %}override manual{% endif %}
-                        </small>
                     </td>
                     <td class="qty-col">
                         <input
@@ -139,12 +138,13 @@
 
     function evalRow(row) {
         const entregado = Number(row.dataset.entregado || "0");
+        const itemName = row.dataset.item || "Item";
         const regresa = toIntOrNull(row.querySelector(".js-regresa")?.value);
         const ocupo = toIntOrNull(row.querySelector(".js-ocupo")?.value);
         const recuperada = toIntOrNull(row.querySelector(".js-recuperada")?.value);
         const toggle = row.querySelector(".js-pk-toggle");
         const pkOverride = row.querySelector(".js-pk-override");
-        const pkAuto = row.querySelector(".js-pk-auto");
+        const pkDisplay = row.querySelector(".js-pk-display");
         const chip = row.querySelector(".js-cuadre");
         const errors = [];
         const warnings = [];
@@ -156,17 +156,19 @@
         const regresaVal = regresa ?? 0;
         const ocupoVal = ocupo ?? 0;
         const ok = Math.abs((ocupoVal + regresaVal) - entregado) < 1e-9;
-        if (!ok) warnings.push("No cuadra (Ocupo + Regresa != Lleva).");
-        if (regresaVal > entregado) warnings.push("Regresa mayor a lo entregado.");
+        if (!ok) warnings.push(`${itemName}: No cuadra (No regresa + Regresa != Lleva).`);
+        if (regresaVal > entregado) warnings.push(`${itemName}: Regresa mayor a lo entregado.`);
 
         const isOverride = toggle instanceof HTMLInputElement ? toggle.checked : false;
         if (pkOverride instanceof HTMLInputElement) {
             pkOverride.readOnly = !isOverride;
+            pkOverride.classList.toggle("is-hidden", !isOverride);
             if (!isOverride) {
                 pkOverride.value = "";
-                if (pkAuto) pkAuto.textContent = "auto = Ocupo";
-            } else if (pkAuto) {
-                pkAuto.textContent = "override manual";
+                if (pkDisplay) pkDisplay.textContent = `Auto: ${ocupoVal}`;
+            } else {
+                const manualVal = toIntOrNull(pkOverride.value);
+                if (pkDisplay) pkDisplay.textContent = `Manual: ${manualVal ?? 0}`;
             }
         }
 
@@ -202,21 +204,24 @@
                 warningBox.hidden = true;
                 warningBox.innerHTML = "";
             } else {
-                const uniqueWarnings = [...new Set(allWarnings)];
+                const uniqueWarnings = [...new Set(allWarnings)].sort();
                 warningBox.hidden = false;
-                warningBox.innerHTML = `<strong>Alertas operativas:</strong><ul>${uniqueWarnings.map((w) => `<li>${w}</li>`).join("")}</ul>`;
+                warningBox.innerHTML = `<strong>Alertas detectadas en esta liquidacion:</strong><ul>${uniqueWarnings.map((w) => `<li>${w}</li>`).join("")}</ul>`;
             }
         }
         return allErrors.length === 0;
     }
 
-    form.addEventListener("input", (event) => {
+    function onChange(event) {
         if (event.target instanceof HTMLInputElement) {
             const row = event.target.closest(".liquidacion-row");
             if (row) evalRow(row);
             validateAll();
         }
-    });
+    }
+
+    form.addEventListener("input", onChange);
+    form.addEventListener("change", onChange);
 
     form.addEventListener("submit", (event) => {
         for (const row of rows) {
