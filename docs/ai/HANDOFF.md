@@ -6,14 +6,16 @@
 - Baseline de entrega normalizado: en entrega completa, `cantidad_entregada` queda persistida por item (sin depender de fallbacks).
 - `REQ-061` completada: captura de liquidacion en UI/endpoint con alertas no bloqueantes e inmutabilidad post-liquidacion.
 - `REQ-062` completada: detalle de requisiciones liquidadas en modo solo lectura con tabla papel, resumen de liquidacion y timeline.
+- `REQ-063` completada: tests de integracion de flujo completo de liquidacion y escenarios canónicos.
 
 ## En progreso
+- Stabilizar ejecucion de suite legacy basada en `TestClient` (en este entorno CLI algunas pruebas quedan colgadas).
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 
 ## Proximo paso exacto
-1. Acordar alcance de reporte minimo (indicadores + export simple) sin agregar complejidad arquitectonica.
-2. Priorizar requerimientos y abrir siguiente REQ en `TASKS`.
-3. Mantener enfoque incremental: pruebas + registro en gobernanza por cada cambio.
+1. Diagnosticar y corregir hang de pruebas legacy con `TestClient` para volver a tener `pytest tests/` estable.
+2. Acordar alcance de reporte minimo (indicadores + export simple) sin agregar complejidad arquitectonica.
+3. Priorizar requerimientos y abrir siguiente REQ en `TASKS`.
 
 ## Riesgos abiertos
 - Drift entre lo ya experimentado y lo que se va a rehacer en esta rama.

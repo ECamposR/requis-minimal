@@ -1031,3 +1031,30 @@
   - Requisiciones liquidadas ahora se auditan en detalle con formato operativo completo, sin permitir cambios.
 - Proximo paso:
   - Definir y priorizar siguiente REQ de reporteria minima manteniendo simplicidad v1.x.
+
+## 2026-02-25 16:05 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-063` (tests de integracion/smoke para flujo completo con liquidacion).
+- Cambios de codigo:
+  - `tests/test_liquidacion_integration.py` (nuevo)
+    - Cobertura de flujo completo de requisicion con liquidacion:
+      - escenario canónico sin alertas (2 items, deltas en 0),
+      - faltante (`ALERTA_FALTANTE`),
+      - retorno extra (`ALERTA_SOBRANTE` + `ALERTA_RETORNO_EXTRA`),
+      - salida sin soporte (`ALERTA_SOBRANTE` + `ALERTA_SALIDA_SIN_SOPORTE`),
+      - precondiciones (`prokey_ref` obligatorio, no liquidar si no entregada, no liquidar `no_entregada`),
+      - inmutabilidad de requisicion liquidada,
+      - timeline con evento de liquidacion,
+      - redireccion en `GET /liquidar/{id}` cuando ya esta liquidada.
+    - Fixtures aisladas con SQLite en memoria (`StaticPool`) para evitar lock de archivos temporales.
+    - Backend anyio fijado a `asyncio` para evitar parametrizacion `trio` no instalada.
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-063` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado actualizado y riesgo abierto de hang en pruebas legacy con `TestClient`.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -v` -> **10 passed**
+  - `timeout 900 .venv/bin/python -m pytest -q tests/ -v` -> en este entorno CLI quedo colgado en pruebas legacy (`TestClient`), no concluyente.
+- Resultado:
+  - Cobertura de regresion de liquidacion fortalecida con escenarios de negocio completos y verificaciones de detalle/timeline.
+- Proximo paso:
+  - Estabilizar ejecucion de `pytest tests/` completa en entorno CLI para recuperar smoke global automatizado.
