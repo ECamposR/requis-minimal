@@ -30,6 +30,8 @@
                 {{ ui.status_badge('Rechazada') }}
             {% elif req.estado == 'entregada' %}
                 {{ ui.status_badge('Entregada') }}
+            {% elif req.estado == 'liquidada' %}
+                {{ ui.status_badge('Liquidada') }}
             {% else %}
                 {{ ui.status_badge(req.estado) }}
             {% endif %}

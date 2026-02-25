@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from io import BytesIO
 import csv
 from datetime import datetime, timedelta
@@ -369,6 +370,7 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.rechazador),
             joinedload(Requisicion.entregador),
+            joinedload(Requisicion.liquidator),
         )
         .filter(Requisicion.estado.in_(["pendiente", "aprobada", "rechazada", "entregada", "liquidada"]))
     )
@@ -1250,6 +1252,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.rechazador),
             joinedload(Requisicion.entregador),
+            joinedload(Requisicion.liquidator),
         )
         .filter(Requisicion.id == req_id)
         .first()
@@ -1307,6 +1310,53 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                     "fecha_hora": req.delivered_at,
                 }
             )
+    if req.liquidated_at:
+        timeline.append(
+            {
+                "evento": "Requisicion liquidada",
+                "actor": req.liquidator.nombre if req.liquidator else None,
+                "fecha_hora": req.liquidated_at,
+            }
+        )
+
+    items_payload: list[dict[str, object]] = []
+    for item in req.items:
+        item_data: dict[str, object] = {
+            "descripcion": item.descripcion,
+            "cantidad": item.cantidad,
+            "cantidad_entregada": item.cantidad_entregada,
+            "unidad": item.unidad,
+        }
+        if req.estado == "liquidada":
+            qty_returned = item.qty_returned_to_warehouse or 0
+            qty_used = item.qty_used or 0
+            qty_left = item.qty_left_at_client or 0
+            qty_ocupo = qty_used + qty_left
+            delivered = item.cantidad_entregada or 0
+            delta = delivered - (qty_used + qty_left + qty_returned)
+
+            parsed_alerts: list[dict[str, object]] = []
+            if item.liquidation_alerts:
+                try:
+                    parsed = json.loads(item.liquidation_alerts)
+                    if isinstance(parsed, list):
+                        parsed_alerts = parsed
+                except json.JSONDecodeError:
+                    parsed_alerts = []
+
+            item_data.update(
+                {
+                    "qty_returned_to_warehouse": qty_returned,
+                    "qty_used": qty_used,
+                    "qty_left_at_client": qty_left,
+                    "item_liquidation_note": item.item_liquidation_note,
+                    "liquidation_alerts": parsed_alerts,
+                    "qty_ocupo": qty_ocupo,
+                    "pk_ingreso_qty": qty_returned,
+                    "delta": delta,
+                }
+            )
+        items_payload.append(item_data)
 
     return {
         "id": req.id,
@@ -1331,14 +1381,10 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "approved_at": req.approved_at,
         "rejected_at": req.rejected_at,
         "delivered_at": req.delivered_at,
+        "prokey_ref": req.prokey_ref,
+        "liquidation_comment": req.liquidation_comment,
+        "liquidated_by_name": req.liquidator.nombre if req.liquidator else None,
+        "liquidated_at": req.liquidated_at,
         "timeline": timeline,
-        "items": [
-            {
-                "descripcion": item.descripcion,
-                "cantidad": item.cantidad,
-                "cantidad_entregada": item.cantidad_entregada,
-                "unidad": item.unidad,
-            }
-            for item in req.items
-        ],
+        "items": items_payload,
     }

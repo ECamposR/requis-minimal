@@ -987,3 +987,47 @@
   - REQ-061 queda implementada end-to-end sin bloquear liquidacion por inconsistencias y manteniendo reglas de acceso/inmutabilidad.
 - Proximo paso:
   - Iniciar `REQ-062` para trazabilidad y exposicion de datos de liquidacion en detalle/API.
+
+## 2026-02-25 15:05 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-062` (detalle solo lectura para requisiciones liquidadas).
+- Cambios de codigo:
+  - `app/main.py`
+    - `GET /api/requisiciones/{id}` ahora incluye para estado `liquidada`:
+      - campos de cabecera: `prokey_ref`, `liquidation_comment`, `liquidated_by_name`, `liquidated_at`.
+      - campos por item: `qty_returned_to_warehouse`, `qty_used`, `qty_left_at_client`, `item_liquidation_note`, `liquidation_alerts` (JSON deserializado).
+      - derivados por item: `qty_ocupo`, `pk_ingreso_qty`, `delta`.
+      - evento de timeline: `Requisicion liquidada`.
+    - `aprobar_view` incluye `joinedload(Requisicion.liquidator)` para tabla de gestionado por.
+  - `static/app.js`
+    - Modal detalle detecta `estado=liquidada` y renderiza tabla estilo papel:
+      - `Descripcion`, `Solicitado`, `Lleva`, `Regresa`, `Ocupo`, `Ingreso PK`, `Delta`, `Alertas`.
+    - Bloque nuevo `Resumen de Liquidacion` en cabecera del modal con:
+      - referencia Prokey, actor, fecha/hora, comentario y conteo global de alertas.
+    - Delta con resaltado visual (`delta-warn` / `delta-danger`).
+    - Alertas por item como badges por severidad (`warn`/`high`) y nota por item cuando aplica.
+  - `static/theme.css`
+    - Estilos para resumen de liquidacion, tabla papel, badges de alertas y estados de delta.
+  - `templates/aprobar.html`
+    - Filtro y badge para estado `liquidada`.
+    - Columna "Gestionado por" muestra `liquidator` para requisiciones liquidadas.
+  - `templates/mis_requisiciones.html`
+    - Badge explicito para estado `liquidada`.
+  - `templates/macros/ui.html`
+    - `status_badge` reconoce `liquidada` con estilo diferenciado.
+  - `tests/test_liquidacion.py`
+    - Nuevos tests:
+      - `test_detalle_liquidada_incluye_campos`
+      - `test_detalle_liquidada_campos_derivados`
+      - `test_liquidada_es_solo_lectura`
+      - `test_liquidar_get_redirige_si_ya_liquidada`
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-062` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado post-REQ-062 y siguiente bloque de trabajo.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app static templates tests/test_liquidacion.py` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **16 passed**
+- Resultado:
+  - Requisiciones liquidadas ahora se auditan en detalle con formato operativo completo, sin permitir cambios.
+- Proximo paso:
+  - Definir y priorizar siguiente REQ de reporteria minima manteniendo simplicidad v1.x.

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.auth import hash_password
 from app.crud import puede_liquidar
-from app.main import liquidar_guardar
+from app.main import detalle_requisicion, liquidar_form, liquidar_guardar
 from app.models import Base, Item, Requisicion, Usuario
 
 TEST_DB_URL = "sqlite://"
@@ -378,3 +378,117 @@ async def test_liquidar_rechaza_rol_no_permitido(db_session: Session):
             db=db_session,
         )
     assert exc_info.value.status_code == 403
+
+
+@pytest.mark.anyio
+async def test_detalle_liquidada_incluye_campos(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=5)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "6",
+                f"qty_used_{item.id}": "0",
+                f"qty_left_{item.id}": "0",
+                f"note_{item.id}": "Retiro de equipo",
+                "prokey_ref": "PK-DET-01",
+                "liquidation_comment": "Cierre liquidacion",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    db_session.refresh(req)
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+
+    assert payload["prokey_ref"] == "PK-DET-01"
+    assert payload["liquidated_by_name"] == bodega.nombre
+    assert payload["liquidated_at"] is not None
+    assert any(t["evento"] == "Requisicion liquidada" for t in payload["timeline"])
+    liq_item = payload["items"][0]
+    assert "qty_returned_to_warehouse" in liq_item
+    assert "qty_used" in liq_item
+    assert "qty_left_at_client" in liq_item
+    assert "item_liquidation_note" in liq_item
+    assert "liquidation_alerts" in liq_item
+
+
+@pytest.mark.anyio
+async def test_detalle_liquidada_campos_derivados(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "3",
+                f"qty_used_{item.id}": "4",
+                f"qty_left_{item.id}": "1",
+                "prokey_ref": "PK-DET-02",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+    liq_item = payload["items"][0]
+    assert liq_item["qty_ocupo"] == 5
+    assert liq_item["pk_ingreso_qty"] == 3
+    assert liq_item["delta"] == 2
+
+
+@pytest.mark.anyio
+async def test_liquidada_es_solo_lectura(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=8)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "2",
+                f"qty_used_{item.id}": "3",
+                f"qty_left_{item.id}": "3",
+                "prokey_ref": "PK-DET-03",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    db_session.refresh(req)
+    prev_ref = req.prokey_ref
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "0",
+                f"qty_used_{item.id}": "8",
+                f"qty_left_{item.id}": "0",
+                "prokey_ref": "PK-NEW",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    assert response.status_code == 303
+    assert "Ya+fue+liquidada" in response.headers["location"]
+    db_session.refresh(req)
+    assert req.prokey_ref == prev_ref
+
+
+def test_liquidar_get_redirige_si_ya_liquidada(db_session: Session):
+    req = create_req_entregada(db_session, estado="liquidada")
+    req.prokey_ref = "PK-LIQ"
+    db_session.commit()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    class ReqStub:
+        session = {}
+
+    response = liquidar_form(req.id, request=ReqStub(), current_user=bodega, db=db_session)
+    assert response.status_code == 303
+    assert "ya+fue+liquidada" in response.headers["location"].lower()

@@ -273,6 +273,115 @@ table tbody tr:hover td {
     color: var(--ui-danger);
 }
 
+.liquidacion-summary {
+    border: 1px solid var(--ui-border);
+    border-left: 4px solid var(--ui-primary);
+    border-radius: 12px;
+    padding: 0.8rem 0.9rem;
+    margin-bottom: 0.8rem;
+    background: rgba(13, 32, 54, 0.9);
+}
+
+.liquidacion-summary h4 {
+    margin: 0 0 0.55rem;
+}
+
+.liquidacion-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem 0.9rem;
+}
+
+.liquidacion-summary-grid strong {
+    display: block;
+}
+
+.liquidacion-summary-comment {
+    margin-top: 0.6rem;
+}
+
+.liquidacion-summary-comment p {
+    margin: 0.2rem 0 0;
+}
+
+.liquidacion-paper-wrap {
+    border: 1px solid var(--ui-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.liquidacion-paper-table {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+}
+
+.liquidacion-paper-table thead th {
+    background: var(--ui-surface-2);
+}
+
+.liquidacion-paper-table tbody tr td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.liquidacion-paper-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.liquidacion-paper-table .qty-col {
+    text-align: center;
+    font-weight: 600;
+}
+
+.liq-alert-badge {
+    display: inline-block;
+    padding: 0.15rem 0.42rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-right: 0.25rem;
+    margin-bottom: 0.2rem;
+}
+
+.liq-alert-badge.warn {
+    background: rgba(244, 191, 102, 0.2);
+    border: 1px solid rgba(244, 191, 102, 0.45);
+    color: #ffd590;
+}
+
+.liq-alert-badge.high {
+    background: rgba(241, 120, 143, 0.2);
+    border: 1px solid rgba(241, 120, 143, 0.45);
+    color: #ffc3cf;
+}
+
+.liq-alert-empty {
+    color: var(--ui-muted);
+    font-size: 0.78rem;
+}
+
+.liq-item-note {
+    margin-top: 0.2rem;
+    color: var(--ui-muted);
+    font-size: 0.78rem;
+}
+
+.pk-help {
+    cursor: help;
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+}
+
+.liquidacion-paper-table .delta-warn {
+    background: rgba(244, 191, 102, 0.12);
+    color: #ffd590;
+}
+
+.liquidacion-paper-table .delta-danger {
+    background: rgba(241, 120, 143, 0.12);
+    color: #ffc3cf;
+}
+
 .table-actions .inline {
     display: inline-block;
 }
