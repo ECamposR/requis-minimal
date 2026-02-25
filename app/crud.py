@@ -1,9 +1,10 @@
 from datetime import datetime
+import json
 from typing import Any
 
 from sqlalchemy.orm import Session
 
-from .models import Item, Requisicion
+from .models import Item, Requisicion, Usuario
 
 UNIDAD_POR_DEFECTO = "unidad"
 
@@ -109,6 +110,98 @@ def puede_entregar(requisicion: Requisicion, rol: str) -> bool:
     if rol not in ["bodega", "admin"]:
         return False
     return requisicion.estado == "aprobada"
+
+
+def puede_liquidar(requisicion: Requisicion, usuario: Usuario) -> bool:
+    """Retorna True solo si la requisición es elegible para liquidación por este usuario."""
+    if requisicion.estado != "entregada":
+        return False
+    if requisicion.delivery_result not in ("completa", "parcial"):
+        return False
+    if usuario.rol not in ("admin", "bodega"):
+        return False
+    return True
+
+
+def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
+    """Calcula alertas para un ítem liquidado. No bloquea por delta != 0."""
+    alertas: list[dict[str, Any]] = []
+    delivered = item.cantidad_entregada
+    returned = item.qty_returned_to_warehouse or 0
+    used = item.qty_used or 0
+    left = item.qty_left_at_client or 0
+    declared_total = used + left + returned
+    delta = (delivered or 0) - declared_total
+
+    if delta > 0:
+        alertas.append(
+            {
+                "type": "ALERTA_FALTANTE",
+                "severity": "warn",
+                "data": {"delivered": delivered, "declared_total": declared_total, "delta": delta},
+            }
+        )
+    if delta < 0:
+        alertas.append(
+            {
+                "type": "ALERTA_SOBRANTE",
+                "severity": "warn",
+                "data": {"delivered": delivered, "declared_total": declared_total, "delta": delta},
+            }
+        )
+    if returned > (delivered or 0):
+        alertas.append(
+            {
+                "type": "ALERTA_RETORNO_EXTRA",
+                "severity": "high",
+                "data": {"returned": returned, "delivered": delivered},
+            }
+        )
+    if (used + left) > (delivered or 0):
+        alertas.append(
+            {
+                "type": "ALERTA_SALIDA_SIN_SOPORTE",
+                "severity": "high",
+                "data": {"used_plus_left": used + left, "delivered": delivered},
+            }
+        )
+
+    return alertas
+
+
+def ejecutar_liquidacion(
+    db: Session,
+    requisicion: Requisicion,
+    usuario: Usuario,
+    prokey_ref: str,
+    liquidation_comment: str | None,
+    items_data: dict[int, dict[str, Any]],
+) -> None:
+    """
+    Ejecuta la liquidación de una requisición.
+    items_data: {item_id: {qty_returned_to_warehouse, qty_used, qty_left_at_client, item_liquidation_note}}
+    Requisición debe estar en estado 'entregada'. NO se bloquea por delta != 0.
+    """
+    if requisicion.estado == "liquidada":
+        raise ValueError("Esta requisición ya fue liquidada")
+
+    for item in requisicion.items:
+        data = items_data.get(item.id, {})
+        item.qty_returned_to_warehouse = int(data.get("qty_returned_to_warehouse", 0))
+        item.qty_used = int(data.get("qty_used", 0))
+        item.qty_left_at_client = int(data.get("qty_left_at_client", 0))
+        item.item_liquidation_note = data.get("item_liquidation_note") or None
+
+        alertas = calcular_alertas_item(item)
+        item.liquidation_alerts = json.dumps(alertas) if alertas else None
+
+    requisicion.estado = "liquidada"
+    requisicion.prokey_ref = prokey_ref
+    requisicion.liquidation_comment = liquidation_comment or None
+    requisicion.liquidated_by = usuario.id
+    requisicion.liquidated_at = datetime.utcnow()
+
+    db.commit()
 
 
 def transicionar_requisicion(

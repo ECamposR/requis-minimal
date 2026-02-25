@@ -941,3 +941,49 @@
   - REQ-060 queda base lista para construir UI/flujo de liquidacion sin romper el flujo operativo vigente.
 - Proximo paso:
   - Iniciar `REQ-061` (captura de liquidacion en interfaz, validaciones y persistencia usando campos nuevos).
+
+## 2026-02-25 14:05 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-061` (endpoint + UI de liquidacion) con alertas no bloqueantes e inmutabilidad.
+- Cambios de codigo:
+  - `app/crud.py`
+    - Nuevas funciones:
+      - `puede_liquidar(requisicion, usuario)` (roles `admin`/`bodega`, estado `entregada`, resultado `completa|parcial`).
+      - `calcular_alertas_item(item)` con reglas:
+        - `ALERTA_FALTANTE` (`warn`) para `delta > 0`.
+        - `ALERTA_SOBRANTE` (`warn`) para `delta < 0`.
+        - `ALERTA_RETORNO_EXTRA` (`high`) para `returned > delivered`.
+        - `ALERTA_SALIDA_SIN_SOPORTE` (`high`) para `used+left > delivered`.
+      - `ejecutar_liquidacion(...)`:
+        - persiste cantidades/nota por item,
+        - persiste `liquidation_alerts` como JSON,
+        - transiciona a `liquidada`,
+        - guarda `prokey_ref`, `liquidation_comment`, `liquidated_by`, `liquidated_at`,
+        - impide reliquidar (`ValueError`).
+  - `app/main.py`
+    - Nuevas rutas:
+      - `GET /liquidar/{req_id}`: validacion de elegibilidad + inmutabilidad.
+      - `POST /liquidar/{req_id}`: parseo de formulario, validacion de enteros >=0, `prokey_ref` obligatorio, ejecucion de liquidacion.
+    - `bodega_view` ahora incluye historial de estados `entregada` y `liquidada`.
+  - `templates/liquidar.html` (nuevo)
+    - Tabla de captura: `Entregado`, `Regresa`, `Usado`, `Dejado en cliente`, `Ocupo`, `Delta`, `Nota`.
+    - JS en vivo: recalculo `ocupo` y `delta`, resaltado visual no bloqueante (`delta-warn`/`delta-danger`).
+    - Campos finales: `prokey_ref` obligatorio y `liquidation_comment` opcional.
+  - `templates/bodega.html`
+    - En historial se agrega columna `Liquidacion` con boton `Liquidar` solo para casos elegibles (`estado=entregada` y `delivery_result` en `completa|parcial`).
+    - Requisiciones ya `liquidada` muestran badge.
+  - `static/theme.css`
+    - Estilos de celdas de calculo y resaltado de delta.
+  - `tests/test_liquidacion.py` (nuevo)
+    - 12 pruebas cubriendo elegibilidad, guardado, alertas por tipo/severity, no bloqueo por delta, `prokey_ref` requerido, inmutabilidad, y restriccion por rol.
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-061` marcado `done`.
+  - `docs/ai/HANDOFF.md`: siguiente objetivo movido a `REQ-062`.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app init_db.py templates` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **12 passed**
+  - Intento smoke `tests/test_basic_flow.py` selectivo: en este entorno CLI quedo colgado (no concluyente).
+- Resultado:
+  - REQ-061 queda implementada end-to-end sin bloquear liquidacion por inconsistencias y manteniendo reglas de acceso/inmutabilidad.
+- Proximo paso:
+  - Iniciar `REQ-062` para trazabilidad y exposicion de datos de liquidacion en detalle/API.

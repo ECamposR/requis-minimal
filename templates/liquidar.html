@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+{% block title %}Liquidar Requisicion{% endblock %}
+{% block content %}
+{{ ui.page_header("Liquidar Requisicion #" ~ req.id, "Registra cantidades finales por item para cerrar el despacho.") }}
+
+<section class="panel view-panel">
+    <p>
+        <strong>Folio:</strong> {{ req.folio }} |
+        <strong>Cliente:</strong> {{ req.cliente_nombre or '-' }} |
+        <strong>Codigo:</strong> {{ req.cliente_codigo or '-' }} |
+        <strong>Ruta:</strong> {{ req.cliente_ruta_principal or '-' }}
+    </p>
+    <p>
+        <strong>Resultado de entrega:</strong> {{ req.delivery_result or '-' }} |
+        <strong>Solicitante:</strong> {{ req.solicitante.nombre if req.solicitante else '-' }}
+    </p>
+</section>
+
+<section class="panel view-panel">
+    <form method="POST" action="/liquidar/{{ req.id }}">
+        <div class="table-wrap">
+            <table class="table-compact liquidacion-table">
+                <thead>
+                    <tr>
+                        <th>Descripcion</th>
+                        <th>Entregado</th>
+                        <th>Regresa</th>
+                        <th>Usado</th>
+                        <th>Dejado en cliente</th>
+                        <th>Ocupo</th>
+                        <th>Delta</th>
+                        <th>Nota</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in req.items %}
+                    <tr data-liquidacion-row>
+                        <td>{{ item.descripcion }}</td>
+                        <td data-delivered="{{ item.cantidad_entregada }}">{{ item.cantidad_entregada }}</td>
+                        <td>
+                            <input type="number" min="0" step="1" name="qty_returned_{{ item.id }}" value="0" required>
+                        </td>
+                        <td>
+                            <input type="number" min="0" step="1" name="qty_used_{{ item.id }}" value="0" required>
+                        </td>
+                        <td>
+                            <input type="number" min="0" step="1" name="qty_left_{{ item.id }}" value="0" required>
+                        </td>
+                        <td data-ocupo>0</td>
+                        <td data-delta>0</td>
+                        <td>
+                            <input type="text" name="note_{{ item.id }}" placeholder="Opcional">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="form-grid-3">
+            <label>
+                Referencia de comprobante Prokey *
+                <input type="text" name="prokey_ref" required>
+            </label>
+        </div>
+
+        <label>
+            Comentario de liquidacion (opcional)
+            <textarea name="liquidation_comment" rows="3" placeholder="Observaciones de cierre"></textarea>
+        </label>
+
+        <div class="form-actions">
+            <button type="submit">Liquidar</button>
+            <a href="/bodega" role="button" class="secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+
+<script>
+    function parseNum(value) {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : 0;
+    }
+
+    function formatNum(value) {
+        if (Number.isInteger(value)) return String(value);
+        return value.toFixed(2);
+    }
+
+    function recalcRow(row) {
+        const deliveredCell = row.querySelector("[data-delivered]");
+        const delivered = parseNum(deliveredCell.dataset.delivered);
+        const returned = parseNum(row.querySelector("input[name^='qty_returned_']").value);
+        const used = parseNum(row.querySelector("input[name^='qty_used_']").value);
+        const left = parseNum(row.querySelector("input[name^='qty_left_']").value);
+        const ocupo = used + left;
+        const delta = delivered - (returned + used + left);
+
+        const ocupoCell = row.querySelector("[data-ocupo]");
+        const deltaCell = row.querySelector("[data-delta]");
+        ocupoCell.textContent = formatNum(ocupo);
+        deltaCell.textContent = formatNum(delta);
+
+        deltaCell.classList.remove("delta-warn", "delta-danger");
+        if (delta !== 0) {
+            deltaCell.classList.add("delta-warn");
+        }
+        if (delta < 0) {
+            deltaCell.classList.add("delta-danger");
+        }
+    }
+
+    function bindLiquidacion() {
+        const rows = document.querySelectorAll("[data-liquidacion-row]");
+        rows.forEach((row) => {
+            const inputs = row.querySelectorAll("input[name^='qty_returned_'], input[name^='qty_used_'], input[name^='qty_left_']");
+            inputs.forEach((input) => input.addEventListener("input", () => recalcRow(row)));
+            recalcRow(row);
+        });
+    }
+
+    bindLiquidacion();
+</script>
+{% endblock %}

@@ -17,6 +17,8 @@ from urllib.parse import quote_plus
 from .auth import authenticate_user, get_current_user, login_user, logout_user
 from .crud import (
     agregar_item_db,
+    ejecutar_liquidacion,
+    puede_liquidar,
     crear_requisicion_db,
     parse_items_from_form,
     puede_aprobar,
@@ -527,7 +529,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.entregador),
         )
-        .filter(Requisicion.estado == "entregada")
+        .filter(Requisicion.estado.in_(["entregada", "liquidada"]))
     )
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(Requisicion.delivered_by == current_user.id)
@@ -740,6 +742,111 @@ async def entrega_parcial_guardar(
         delivery_comment=comentario_limpio,
     )
     return redirect_with_message("/bodega", "Requisicion marcada como entrega parcial", "warning")
+
+
+@app.get("/liquidar/{req_id}")
+def liquidar_form(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.rol not in ("admin", "bodega"):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    req = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
+        )
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if req.estado == "liquidada":
+        return redirect_with_message("/bodega", "Esta requisicion ya fue liquidada", "warning")
+    if not puede_liquidar(req, current_user):
+        return redirect_with_message("/bodega", "Requisicion no elegible para liquidacion", "error")
+
+    return templates.TemplateResponse("liquidar.html", template_context(request, current_user, req=req))
+
+
+@app.post("/liquidar/{req_id}")
+async def liquidar_guardar(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.rol not in ("admin", "bodega"):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    req = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.items),
+        )
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if req.estado == "liquidada":
+        return redirect_with_message("/bodega", "Ya fue liquidada", "warning")
+    if not puede_liquidar(req, current_user):
+        return redirect_with_message("/bodega", "Requisicion no elegible para liquidacion", "error")
+
+    form_data = await request.form()
+    prokey_ref = str(form_data.get("prokey_ref", "")).strip()
+    if not prokey_ref:
+        return redirect_with_message(f"/liquidar/{req_id}", "Referencia Prokey es obligatoria", "error")
+    liquidation_comment = str(form_data.get("liquidation_comment", "")).strip() or None
+
+    items_data: dict[int, dict[str, int | str | None]] = {}
+
+    def parse_non_negative_int(raw: str, field_label: str) -> int:
+        try:
+            value = int(raw)
+        except ValueError as exc:
+            raise ValueError(f"{field_label} invalido") from exc
+        if value < 0:
+            raise ValueError(f"{field_label} no puede ser negativo")
+        return value
+
+    for item in req.items:
+        qty_returned_raw = str(form_data.get(f"qty_returned_{item.id}", "0")).strip() or "0"
+        qty_used_raw = str(form_data.get(f"qty_used_{item.id}", "0")).strip() or "0"
+        qty_left_raw = str(form_data.get(f"qty_left_{item.id}", "0")).strip() or "0"
+        note = str(form_data.get(f"note_{item.id}", "")).strip() or None
+        try:
+            qty_returned = parse_non_negative_int(qty_returned_raw, "Regresa")
+            qty_used = parse_non_negative_int(qty_used_raw, "Usado")
+            qty_left = parse_non_negative_int(qty_left_raw, "Dejado en cliente")
+        except ValueError as exc:
+            return redirect_with_message(f"/liquidar/{req_id}", str(exc), "error")
+
+        items_data[item.id] = {
+            "qty_returned_to_warehouse": qty_returned,
+            "qty_used": qty_used,
+            "qty_left_at_client": qty_left,
+            "item_liquidation_note": note,
+        }
+
+    try:
+        ejecutar_liquidacion(
+            db=db,
+            requisicion=req,
+            usuario=current_user,
+            prokey_ref=prokey_ref,
+            liquidation_comment=liquidation_comment,
+            items_data=items_data,
+        )
+    except ValueError as exc:
+        return redirect_with_message("/bodega", str(exc), "warning")
+
+    return redirect_with_message("/bodega", "Liquidacion registrada", "success")
 
 
 @app.get("/admin/usuarios")

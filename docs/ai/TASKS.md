@@ -4,7 +4,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 
 ## Reinicio Liquidacion (desde `3d7702b`)
 - `REQ-060` | `done` | Base de liquidacion implementada: estado `liquidada`, campos base en `requisiciones/items`, migracion robusta e idempotente + baseline de entrega (`cantidad_entregada`) normalizado.
-- `REQ-061` | `todo` | Implementar UI y flujo de liquidacion sobre la nueva base (`REQ-060`) sin sobreingenieria.
+- `REQ-061` | `done` | Endpoint y UI de captura de liquidacion (`GET/POST /liquidar/{id}`), alertas no bloqueantes persistidas por item, `prokey_ref` obligatorio e inmutabilidad post-liquidacion.
 - `REQ-062` | `todo` | Agregar trazabilidad final de liquidacion (quien/cuando) y resumen operativo en detalle.
 
 ## Prioridad Alta

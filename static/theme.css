@@ -259,6 +259,20 @@ table tbody tr:hover td {
     margin: 0;
 }
 
+.liquidacion-table td[data-ocupo],
+.liquidacion-table td[data-delta] {
+    text-align: center;
+    font-weight: 700;
+}
+
+.liquidacion-table .delta-warn {
+    color: var(--ui-warning);
+}
+
+.liquidacion-table .delta-danger {
+    color: var(--ui-danger);
+}
+
 .table-actions .inline {
     display: inline-block;
 }
