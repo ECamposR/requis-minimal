@@ -1,4 +1,5 @@
 import os
+import logging
 from collections.abc import Generator
 
 from dotenv import load_dotenv
@@ -15,6 +16,7 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+logger = logging.getLogger(__name__)
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -78,3 +80,42 @@ def run_migrations() -> None:
             }
             if "cantidad_entregada" not in item_columns:
                 conn.execute(text("ALTER TABLE items ADD COLUMN cantidad_entregada FLOAT"))
+
+        liq_migrations = [
+            "ALTER TABLE requisiciones ADD COLUMN prokey_ref TEXT",
+            "ALTER TABLE requisiciones ADD COLUMN liquidation_comment TEXT",
+            "ALTER TABLE requisiciones ADD COLUMN liquidated_by INTEGER REFERENCES usuarios(id)",
+            "ALTER TABLE requisiciones ADD COLUMN liquidated_at TIMESTAMP",
+            "ALTER TABLE items ADD COLUMN qty_returned_to_warehouse INTEGER",
+            "ALTER TABLE items ADD COLUMN qty_used INTEGER",
+            "ALTER TABLE items ADD COLUMN qty_left_at_client INTEGER",
+            "ALTER TABLE items ADD COLUMN item_liquidation_note TEXT",
+            "ALTER TABLE items ADD COLUMN liquidation_alerts TEXT",
+        ]
+
+        for sql in liq_migrations:
+            try:
+                conn.execute(text(sql))
+            except Exception as e:
+                err_msg = str(e).lower()
+                if "duplicate column" in err_msg or "already exists" in err_msg:
+                    continue
+                logger.error("Error en migracion de liquidacion: %s -> %s", sql, e)
+                raise
+
+        # Backfill baseline de entrega para historicos de entrega completa.
+        try:
+            conn.execute(
+                text(
+                    """
+                    UPDATE items SET cantidad_entregada = cantidad
+                    WHERE cantidad_entregada IS NULL
+                    AND requisicion_id IN (
+                        SELECT id FROM requisiciones
+                        WHERE estado = 'entregada' AND delivery_result = 'completa'
+                    )
+                    """
+                )
+            )
+        except Exception as e:
+            logger.warning("Backfill cantidad_entregada: %s", e)

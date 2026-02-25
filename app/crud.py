@@ -141,6 +141,8 @@ def transicionar_requisicion(
         requisicion.delivered_to = delivered_to
         requisicion.delivery_result = delivery_result or "completa"
         requisicion.delivery_comment = delivery_comment
+    elif nuevo_estado == "liquidada":
+        requisicion.estado = "liquidada"
     else:
         raise ValueError("Estado no soportado")
 

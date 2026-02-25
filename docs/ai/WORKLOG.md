@@ -904,3 +904,40 @@
   - Queda oficializado en gobernanza IA que la liquidacion se rehara desde este punto, evitando arrastrar implementaciones previas no satisfactorias.
 - Proximo paso:
   - Implementar `REQ-060` minimo en esta rama y validar flujo base sin agregar complejidad adicional.
+
+## 2026-02-25 13:02 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-060` (modelo de datos + migracion + baseline de entrega) sin cambios de UI.
+- Cambios de codigo:
+  - `app/models.py`
+    - Estado `liquidada` agregado al `CheckConstraint` de `requisiciones`.
+    - Nuevos campos en `Requisicion`: `prokey_ref`, `liquidation_comment`, `liquidated_by`, `liquidated_at`.
+    - Nueva relacion: `liquidator`.
+    - Nuevos campos en `Item`: `qty_returned_to_warehouse`, `qty_used`, `qty_left_at_client`, `item_liquidation_note`, `liquidation_alerts` (todos nullable, sin default).
+  - `app/database.py`
+    - Migraciones incrementales para 9 columnas nuevas de liquidacion.
+    - Manejo de error especifico en ALTER TABLE:
+      - tolera solo "duplicate column/already exists",
+      - loguea y relanza cualquier error real.
+    - Backfill de `cantidad_entregada` para historicos con `estado='entregada'` y `delivery_result='completa'`.
+  - `app/main.py`
+    - Normalizacion baseline en entrega completa: antes de transicionar, si `cantidad_entregada` es `NULL` se setea a `cantidad`.
+    - Estados validos de filtros ampliados con `liquidada`.
+    - Acceso de rol bodega al detalle incluye estado `liquidada`.
+  - `app/crud.py`
+    - `transicionar_requisicion` ahora acepta `nuevo_estado='liquidada'`.
+  - `tests/test_liquidacion_model.py` (nuevo)
+    - 7 pruebas: estado `liquidada`, nullables de liquidacion, baseline completa, no sobreescritura parcial, migracion en DB nueva e idempotencia.
+- Cambios de gobernanza:
+  - `docs/ai/TASKS.md` (`REQ-060` -> `done`).
+  - `docs/ai/HANDOFF.md` actualizado con estado post-REQ-060 y siguiente paso `REQ-061`.
+  - `docs/ai/WORKLOG.md` (esta entrada).
+- Comandos ejecutados:
+  - `python -m compileall app init_db.py`
+  - `python -m compileall app init_db.py tests/test_liquidacion_model.py`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_model.py -v` -> **7 passed**
+  - `.venv/bin/python init_db.py` -> OK
+  - `timeout 8s .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8015` -> startup/shutdown OK (timeout esperado).
+- Resultado:
+  - REQ-060 queda base lista para construir UI/flujo de liquidacion sin romper el flujo operativo vigente.
+- Proximo paso:
+  - Iniciar `REQ-061` (captura de liquidacion en interfaz, validaciones y persistencia usando campos nuevos).

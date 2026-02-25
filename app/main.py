@@ -359,7 +359,7 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
         "pendiente_entregar": "aprobada",
     }
     estado_real = alias_estado.get(estado, estado)
-    estados_validos = {"pendiente", "aprobada", "rechazada", "entregada"}
+    estados_validos = {"pendiente", "aprobada", "rechazada", "entregada", "liquidada"}
     query = (
         db.query(Requisicion)
         .options(
@@ -368,7 +368,7 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
             joinedload(Requisicion.rechazador),
             joinedload(Requisicion.entregador),
         )
-        .filter(Requisicion.estado.in_(["pendiente", "aprobada", "rechazada", "entregada"]))
+        .filter(Requisicion.estado.in_(["pendiente", "aprobada", "rechazada", "entregada", "liquidada"]))
     )
     if estado_real in estados_validos:
         query = query.filter(Requisicion.estado == estado_real)
@@ -629,6 +629,11 @@ def entregar(
             "error",
         )
 
+    if resultado == "completa":
+        for item in req.items:
+            if item.cantidad_entregada is None:
+                item.cantidad_entregada = item.cantidad
+
     transicionar_requisicion(
         db,
         req,
@@ -638,10 +643,6 @@ def entregar(
         delivery_result=resultado,
         delivery_comment=comentario_limpio or None,
     )
-    if resultado == "completa":
-        for item in req.items:
-            item.cantidad_entregada = item.cantidad
-        db.commit()
     if resultado == "no_entregada":
         for item in req.items:
             item.cantidad_entregada = 0
@@ -1153,7 +1154,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         current_user.rol == "admin"
         or current_user.id == req.solicitante_id
         or current_user.rol == "aprobador"
-        or (current_user.rol == "bodega" and req.estado in ["aprobada", "entregada"])
+        or (current_user.rol == "bodega" and req.estado in ["aprobada", "entregada", "liquidada"])
     )
     if not can_view:
         raise HTTPException(status_code=403, detail="No autorizado")
