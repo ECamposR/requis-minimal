@@ -1295,3 +1295,45 @@
   - REQ-070 completada sin cambios de rutas ni DB.
 - Proximo paso:
   - Validar visualmente en navegador el modal con comentarios multilinea y filas con/sin nota.
+
+## 2026-02-26 15:59 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-071` (rediseño visual del modal detalle a vista dashboard + mejoras UX de conciliación).
+- Cambios:
+  - `static/app.js`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Sin cambios en backend ni endpoints.
+  - Se renombra copy operativo a `Alertas de conciliación` y se mantienen labels humanos de alertas.
+  - DIF con semántica visual por signo (`dif--pos`, `dif--neg`, `dif--zero`).
+  - Notas por item resaltadas cuando el item tiene alertas.
+  - Comentarios secundarios movidos a bloque colapsable para reducir scroll.
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall app static templates`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v`
+- Resultado:
+  - Suite de liquidación: `32 passed`.
+  - REQ-071 completada en capa UI con no-regresión funcional.
+- Proximo paso:
+  - Smoke manual del nuevo modal en navegador para validar comportamiento responsive y legibilidad.
+
+## 2026-02-26 16:05 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-072` (refinamiento visual del modal dashboard sin tocar lógica).
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Estilos scopiados bajo `#modal-detalle` para evitar regresiones en otras páginas.
+  - Mejora de legibilidad en badges por severidad y DIF por signo.
+  - Ajuste de densidad en tabla de ítems y énfasis visual de notas con alertas.
+  - Colapsables con hover/active más claros.
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall static`
+- Resultado:
+  - REQ-072 completada en capa CSS/UX, sin cambios en backend ni JS.
+- Proximo paso:
+  - Smoke manual del modal en liquidadas/no liquidadas para confirmar percepción visual final.

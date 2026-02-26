@@ -211,7 +211,7 @@ function verDetalle(id) {
             const liquidacionRows = items
                 .map((i) => {
                     const difference = Number(i.difference ?? i.delta ?? 0);
-                    const differenceCls = difference < 0 ? "delta-danger" : difference !== 0 ? "delta-warn" : "";
+                    const differenceCls = difference > 0 ? "dif dif--pos" : difference < 0 ? "dif dif--neg" : "dif dif--zero";
                     const alerts = Array.isArray(i.liquidation_alerts) ? i.liquidation_alerts : [];
                     const alertBadges = alerts.length
                         ? alerts
@@ -226,8 +226,9 @@ function verDetalle(id) {
                               })
                               .join("")
                         : '<span class="liq-alert-empty">Sin alertas</span>';
+                    const noteAttentionClass = alerts.length ? "item-note--attention" : "";
                     const noteHtml = i.item_liquidation_note
-                        ? `<div class="liq-item-note item-note">${escapeHtml(i.item_liquidation_note)}</div>`
+                        ? `<div class="liq-item-note item-note ${noteAttentionClass}">${escapeHtml(i.item_liquidation_note)}</div>`
                         : "";
                     const mode = (i.mode || "RETORNABLE").toUpperCase();
                     const ingresoPk = mode === "RETORNABLE" ? fmtQty(i.pk_ingreso_qty) : "0";
@@ -269,11 +270,7 @@ function verDetalle(id) {
                 .join("");
             const allAlerts = items.flatMap((i) => (Array.isArray(i.liquidation_alerts) ? i.liquidation_alerts : []));
             const highAlerts = allAlerts.filter((a) => a?.severity === "high").length;
-            const resumenAlertas =
-                allAlerts.length > 0
-                    ? `${allAlerts.length} alertas (${highAlerts} de severidad alta)`
-                    : "Sin alertas";
-            const topAlertTypes = Object.entries(
+            const topAlertEntries = Object.entries(
                 allAlerts.reduce((acc, current) => {
                     const key = alertLabel(current?.type);
                     acc[key] = (acc[key] || 0) + 1;
@@ -281,9 +278,10 @@ function verDetalle(id) {
                 }, {})
             )
                 .sort((a, b) => b[1] - a[1])
-                .slice(0, 2)
-                .map(([label, count]) => `${escapeHtml(label)} (${count})`)
-                .join(", ");
+                .slice(0, 3);
+            const topAlertTypes = topAlertEntries.length
+                ? topAlertEntries.map(([label, count]) => `${escapeHtml(label)} (${count})`).join(", ")
+                : "Ninguno";
             const prokeyRefHtml = data.prokey_ref
                 ? escapeHtml(data.prokey_ref)
                 : `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
@@ -291,22 +289,6 @@ function verDetalle(id) {
             const liquidationComment = data.liquidation_comment
                 ? escapeHtml(data.liquidation_comment)
                 : "—";
-            const liquidacionHeader = isLiquidada
-                ? `<section class="liquidacion-summary">
-                    <h4>Resumen de Liquidacion</h4>
-                    <div class="liquidacion-summary-grid">
-                        <div><span class="meta-label">Referencia Prokey</span><strong>${prokeyRefHtml}</strong></div>
-                        <div><span class="meta-label">Liquidado por</span><strong>${escapeHtml(data.liquidated_by_name || "-")}</strong></div>
-                        <div><span class="meta-label">Fecha</span><strong>${fmtDateTime(data.liquidated_at)}</strong></div>
-                        <div><span class="meta-label">Alertas</span><strong>${escapeHtml(resumenAlertas)}</strong></div>
-                    </div>
-                    ${topAlertTypes ? `<p class="status-muted"><strong>Tipos frecuentes:</strong> ${topAlertTypes}</p>` : ""}
-                    <div class="liquidacion-summary-comment">
-                        <span class="meta-label">Comentario</span>
-                        <p class="liquidation-comment">${liquidationComment}</p>
-                    </div>
-                </section>`
-                : "";
             const itemsSection = isLiquidada
                 ? `<section class="detalle-items-section">
                     <h4><span class="icon-items">\u2299</span> Items Liquidados</h4>
@@ -319,8 +301,8 @@ function verDetalle(id) {
                                 <th class="qty-col">Usado</th>
                                 <th class="qty-col">No usado</th>
                                 <th class="qty-col">Regresa</th>
-                                <th class="qty-col">Diferencia</th>
-                                <th class="qty-col">Ingreso PK</th>
+                                <th class="qty-col" title="Diferencia (Esperado - Regresa)">DIF</th>
+                                <th class="qty-col" title="Pendiente de ingresar en Prokey por bodega (solo retornables)">Ingreso PK</th>
                                 <th>Alertas</th>
                             </tr></thead>
                             <tbody>
@@ -344,95 +326,113 @@ function verDetalle(id) {
                         </table>
                     </div>
                 </section>`;
+            const pdfAction = data.pdf_url
+                ? `<a class="secondary" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer">Ver PDF</a>`
+                : `<button type="button" class="secondary" disabled title="En desarrollo">Ver PDF</button>`;
+            const commentsToggleHtml = `
+                <details class="detalle-collapsible">
+                    <summary>Otros comentarios y proceso</summary>
+                    <div class="comentarios-list">
+                        <div class="comentario-item">
+                            <span class="meta-label label-muted">APROBACIÓN</span>
+                            <p>${escapeHtml(data.approval_comment || "-")}</p>
+                        </div>
+                        <div class="comentario-item">
+                            <span class="meta-label label-muted">RAZÓN RECHAZO</span>
+                            <p>${escapeHtml(data.rejection_reason || "-")}</p>
+                        </div>
+                        <div class="comentario-item">
+                            <span class="meta-label label-muted">COMENTARIO RECHAZO</span>
+                            <p>${escapeHtml(data.rejection_comment || "-")}</p>
+                        </div>
+                        <div class="comentario-item">
+                            <span class="meta-label label-muted">COMENTARIO ENTREGA</span>
+                            <p>${escapeHtml(data.delivery_comment || "-")}</p>
+                        </div>
+                    </div>
+                </details>
+            `;
 
             content.innerHTML = `
-                ${liquidacionHeader}
-                ${itemsSection}
-                <section class="detalle-content-grid">
-                    <section class="detalle-block detalle-main">
-                        <h4>Informaci\u00f3n General</h4>
+                <section class="detalle-dashboard-header">
+                    <div>
+                        <h4 class="detalle-dashboard-title">Requisición ${escapeHtml(data.folio || "-")}</h4>
+                        <span class="badge info">Creada: ${fmtDateTime(data.created_at)}</span>
+                    </div>
+                    <div class="detalle-dashboard-actions">
+                        ${pdfAction}
+                    </div>
+                </section>
+                <section class="detalle-dashboard-grid">
+                    <article class="detalle-block dashboard-card">
+                        <h4>Información general</h4>
                         <div class="detalle-meta-grid">
                             <div class="meta-line">
-                                <span class="meta-label label-orange">\u25ce SOLICITANTE</span>
-                                <strong>${escapeHtml(data.solicitante || "-")}</strong>
-                            </div>
-                            <div class="meta-line">
-                                <span class="meta-label label-green">\u25c9 COD. CLIENTE</span>
-                                <strong>${escapeHtml(data.cliente_codigo || "-")}</strong>
-                            </div>
-                            <div class="meta-line">
-                                <span class="meta-label label-blue">\u25ce CLIENTE</span>
+                                <span class="meta-label label-blue">CLIENTE</span>
                                 <strong>${escapeHtml(data.cliente_nombre || "-")}</strong>
                             </div>
                             <div class="meta-line">
-                                <span class="meta-label label-blue">\u25c9 RUTA PRINCIPAL</span>
+                                <span class="meta-label label-green">COD. CLIENTE</span>
+                                <strong>${escapeHtml(data.cliente_codigo || "-")}</strong>
+                            </div>
+                            <div class="meta-line">
+                                <span class="meta-label label-blue">RUTA PRINCIPAL</span>
                                 <strong>${escapeHtml(data.cliente_ruta_principal || "-")}</strong>
                             </div>
+                            <div class="meta-line">
+                                <span class="meta-label label-orange">SOLICITANTE</span>
+                                <strong>${escapeHtml(data.solicitante || "-")}</strong>
+                            </div>
                         </div>
-                        <div class="detalle-justificacion">
-                            <span class="meta-label label-orange">\u270e JUSTIFICACI\u00d3N</span>
-                            <p>${escapeHtml(data.justificacion || "-")}</p>
+                    </article>
+                    <article class="detalle-block dashboard-card">
+                        <h4>Estado liquidación</h4>
+                        <div class="flujo-list">
+                            <div class="flujo-item">
+                                <span class="meta-label">Estado</span>
+                                <div class="flujo-value">${escapeHtml(data.estado || "-")}</div>
+                            </div>
+                            <div class="flujo-item">
+                                <span class="meta-label">Resultado entrega</span>
+                                ${resultHtml}
+                            </div>
+                            <div class="flujo-item">
+                                <span class="meta-label">Por</span>
+                                <div class="flujo-value">${escapeHtml(data.liquidated_by_name || data.delivered_by || "-")}</div>
+                            </div>
+                            <div class="flujo-item">
+                                <span class="meta-label">Ref Prokey</span>
+                                <div class="flujo-value">${prokeyRefHtml}</div>
+                            </div>
                         </div>
-                    </section>
-                    <aside class="detalle-side">
-                        <section class="detalle-block">
-                            <h4>Estado del Flujo</h4>
-                            <div class="flujo-list">
-                                <div class="flujo-item flujo-item-card">
-                                    <span class="meta-label label-orange">\u25ce APROBADO POR</span>
-                                    <div class="flujo-value">${escapeHtml(data.approved_by || "-")}</div>
-                                </div>
-                                <div class="flujo-item">
-                                    <span class="meta-label">RESULTADO ENTREGA</span>
-                                    ${resultHtml}
-                                </div>
-                                <div class="flujo-item">
-                                    <span class="meta-label label-orange">\u25c9 ENTREGADO POR</span>
-                                    <div class="flujo-value">${escapeHtml(data.delivered_by || "-")}</div>
-                                </div>
-                                <div class="flujo-item">
-                                    <span class="meta-label label-orange">\u25c9 RECIBIÓ</span>
-                                    <div class="flujo-value">${escapeHtml(data.delivered_to || "-")}</div>
-                                </div>
-                                ${
-                                    isLiquidada
-                                        ? `<div class="flujo-item">
-                                            <span class="meta-label label-orange">\u25c9 LIQUIDADO POR</span>
-                                            <div class="flujo-value">${escapeHtml(data.liquidated_by_name || "-")}</div>
-                                        </div>`
-                                        : ""
-                                }
-                            </div>
-                        </section>
-                        <section class="detalle-block">
-                            <h4>Comentarios</h4>
-                            <div class="comentarios-list">
-                                <div class="comentario-item">
-                                    <span class="meta-label label-muted">APROBACI\u00d3N</span>
-                                    <p>${escapeHtml(data.approval_comment || "-")}</p>
-                                </div>
-                                <div class="comentario-item">
-                                    <span class="meta-label label-muted">RAZ\u00d3N RECHAZO</span>
-                                    <p>${escapeHtml(data.rejection_reason || "-")}</p>
-                                </div>
-                                <div class="comentario-item">
-                                    <span class="meta-label label-muted">COMENTARIO RECHAZO</span>
-                                    <p>${escapeHtml(data.rejection_comment || "-")}</p>
-                                </div>
-                                <div class="comentario-item">
-                                    <span class="meta-label label-muted">ENTREGA</span>
-                                    <p>${escapeHtml(data.delivery_comment || "-")}</p>
-                                </div>
-                            </div>
-                        </section>
-                        <section class="detalle-block">
-                            <h4>Historial</h4>
-                            <div class="timeline-list">
-                                ${timelineRows || '<div class="timeline-item"><div class="timeline-main"><span class="timeline-event">Sin movimientos</span></div><div class="timeline-time">-</div></div>'}
-                            </div>
-                        </section>
-                    </aside>
+                    </article>
+                    <article class="detalle-block dashboard-card">
+                        <h4>Alertas de conciliación</h4>
+                        <div class="liquidacion-summary-grid">
+                            <div><span class="meta-label">Total</span><strong>${allAlerts.length} detectadas</strong></div>
+                            <div><span class="meta-label">Severidad alta</span><strong>${highAlerts}</strong></div>
+                        </div>
+                        <p class="status-muted"><strong>Tipos frecuentes:</strong> ${topAlertTypes}</p>
+                    </article>
+                    <article class="detalle-block dashboard-card dashboard-timeline">
+                        <h4>Línea de tiempo del flujo</h4>
+                        <div class="timeline-list">
+                            ${timelineRows || '<div class="timeline-item"><div class="timeline-main"><span class="timeline-event">Sin movimientos</span></div><div class="timeline-time">-</div></div>'}
+                        </div>
+                    </article>
                 </section>
+                ${itemsSection}
+                <section class="detalle-bottom-grid">
+                    <article class="detalle-block dashboard-card">
+                        <h4>Comentario de liquidación</h4>
+                        <p class="liquidation-comment">${liquidationComment}</p>
+                    </article>
+                    <article class="detalle-block dashboard-card">
+                        <h4>Justificación</h4>
+                        <p>${escapeHtml(data.justificacion || "-")}</p>
+                    </article>
+                </section>
+                ${commentsToggleHtml}
             `;
             modal.showModal();
         });

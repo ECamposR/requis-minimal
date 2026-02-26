@@ -14,6 +14,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-068` | `done` | Bloqueo de liquidacion para items sin definir (`entregado>0` y `usado+no_usado+regresa=0`), con validacion backend obligatoria + validacion frontend de apoyo y preservacion de datos digitados.
 - `REQ-069` | `done` | Alertas de liquidacion en modal con etiquetas humanas (`Faltante/Sobrante/Retorno extra/Inconsistencia`), tooltip con detalle numerico y codigo interno, mas robustez de payload `liquidation_alerts=[]`.
 - `REQ-070` | `done` | Modal detalle liquidada muestra comentario general de liquidacion (con `—` si vacio) y nota por item bajo descripcion; payload JSON normalizado para `liquidation_comment` e `item_liquidation_note`.
+- `REQ-071` | `done` | Rediseño del modal detalle a vista dashboard: cards superiores + timeline lateral + tabla central, “Alertas de conciliación”, DIF por signo, notas de ítem destacadas y comentarios secundarios colapsables.
+- `REQ-072` | `done` | Refinamiento visual de la vista dashboard del modal: badges/severidades más legibles, DIF con mayor contraste, densidad de tabla ajustada y estilos scoped para no afectar otras vistas.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.

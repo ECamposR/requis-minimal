@@ -14,16 +14,20 @@
 - `REQ-068` completada: bloqueo de liquidacion si un item entregado queda "sin definir" (todo en cero), con re-render conservando datos, resaltado de filas incompletas y defensa doble en backend.
 - `REQ-069` completada: modal de detalle traduce codigos `ALERTA_*` a etiquetas humanas y muestra detalle numerico en tooltip, manteniendo severidad visual y trazabilidad interna.
 - `REQ-070` completada: modal liquidada ahora muestra comentario general (con placeholder `—` cuando falta) y nota por item bajo la descripcion; endpoint normaliza ambos campos.
+- `REQ-071` completada: modal detalle rediseñado a formato dashboard con cards de contexto/estado/alertas de conciliación, timeline lateral, DIF consistente por signo y secciones secundarias colapsables.
+- `REQ-072` completada: refinamiento visual del dashboard del modal (badges/severidades, contraste DIF, densidad de tabla, notas y colapsables), todo scoped a `#modal-detalle`.
 
 ## En progreso
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - Ejecutar smoke manual de liquidacion en UI para validar experiencia completa de bloqueo/edicion.
 - Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
 - Validar UX del comentario y notas en modal (saltos de linea y legibilidad en resoluciones medias).
+- Validar UX del layout dashboard (desktop/laptop) para evitar overflow y scroll excesivo.
+- Confirmar que el scope CSS del modal no afecta vistas externas (aprobar/bodega/listados).
 
 ## Proximo paso exacto
-1. Ejecutar smoke manual en navegador para REQ-070 (con y sin comentario, con y sin notas por item).
-2. Correr `pytest -q tests/test_liquidacion.py -v` como validacion cruzada tras REQ-070.
+1. Ejecutar smoke manual de REQ-072 en `/aprobar` y `/bodega` (liquidada/no liquidada) validando badges DIF/notas/colapsables.
+2. Revisar visual en 1366x768 y móvil para confirmar que timeline y cards apilan correctamente.
 3. Definir siguiente REQ funcional (reporteria/export) en `TASKS`.
 
 ## Riesgos abiertos
