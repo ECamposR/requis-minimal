@@ -33,6 +33,8 @@ def crear_requisicion_db(
         cliente_ruta_principal=cliente_ruta_principal,
         estado="pendiente",
         justificacion=justificacion,
+        # Evita depender del server_default SQLite (UTC) para mantener hora local consistente.
+        created_at=datetime.now(),
     )
     db.add(req)
     db.commit()

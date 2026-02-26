@@ -68,6 +68,23 @@ function alertMessage(alert) {
     return "";
 }
 
+function getAccionSugerida(alertCounts) {
+    const count = (label) => Number(alertCounts?.[label] || 0);
+    if (count("Retorno extra") > 0) {
+        return "Acción sugerida: Revisar retorno extra del cliente y preparar ingreso en Prokey.";
+    }
+    if (count("Faltante") > 0) {
+        return "Acción sugerida: Conciliar faltante con técnico/cliente antes de cerrar en Prokey.";
+    }
+    if (count("Inconsistencia") > 0) {
+        return "Acción sugerida: Revisar cantidades ingresadas (posible error de captura).";
+    }
+    if (count("Sobrante") > 0) {
+        return "Acción sugerida: Validar sobrante y documentar motivo.";
+    }
+    return "";
+}
+
 function renderItemOptions() {
     const catalogo = window.CATALOGO_ITEMS || [];
     const options = ['<option value="">Seleccionar item...</option>'];
@@ -231,17 +248,17 @@ function verDetalle(id) {
                         ? `<div class="liq-item-note item-note ${noteAttentionClass}">${escapeHtml(i.item_liquidation_note)}</div>`
                         : "";
                     const mode = (i.mode || "RETORNABLE").toUpperCase();
-                    const ingresoPk = mode === "RETORNABLE" ? fmtQty(i.pk_ingreso_qty) : "0";
+                    const ingresoPk = mode === "RETORNABLE" ? fmtQty(i.pk_ingreso_qty) : '<span class="muted">—</span>';
                     const differenceText = difference > 0 ? `+${fmtQty(difference)}` : fmtQty(difference);
                     return `<tr>
                         <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${noteHtml}</td>
-                        <td class="qty-col">${fmtQty(i.cantidad_entregada)}</td>
-                        <td class="qty-col">${escapeHtml(mode)}</td>
-                        <td class="qty-col">${fmtQty(i.used ?? i.qty_used)}</td>
-                        <td class="qty-col">${fmtQty(i.not_used ?? i.qty_left_at_client)}</td>
-                        <td class="qty-col">${fmtQty(i.returned ?? i.qty_returned_to_warehouse)}</td>
-                        <td class="qty-col"><span class="${differenceCls}">${differenceText}</span></td>
-                        <td class="qty-col">
+                        <td class="qty-col td-num">${fmtQty(i.cantidad_entregada)}</td>
+                        <td class="qty-col td-center">${escapeHtml(mode)}</td>
+                        <td class="qty-col td-num">${fmtQty(i.used ?? i.qty_used)}</td>
+                        <td class="qty-col td-num">${fmtQty(i.not_used ?? i.qty_left_at_client)}</td>
+                        <td class="qty-col td-num">${fmtQty(i.returned ?? i.qty_returned_to_warehouse)}</td>
+                        <td class="qty-col td-num"><span class="${differenceCls}">${differenceText}</span></td>
+                        <td class="qty-col td-num">
                             <span class="pk-help" title="Pendiente de ingresar en Prokey por bodega (solo retornables)">${ingresoPk}</span>
                         </td>
                         <td>${alertBadges}</td>
@@ -268,18 +285,18 @@ function verDetalle(id) {
                 .join("");
             const allAlerts = items.flatMap((i) => (Array.isArray(i.liquidation_alerts) ? i.liquidation_alerts : []));
             const highAlerts = allAlerts.filter((a) => a?.severity === "high").length;
-            const topAlertEntries = Object.entries(
-                allAlerts.reduce((acc, current) => {
-                    const key = alertLabel(current?.type);
-                    acc[key] = (acc[key] || 0) + 1;
-                    return acc;
-                }, {})
-            )
+            const alertCounts = allAlerts.reduce((acc, current) => {
+                const key = alertLabel(current?.type);
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {});
+            const topAlertEntries = Object.entries(alertCounts)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 3);
             const topAlertTypes = topAlertEntries.length
                 ? topAlertEntries.map(([label, count]) => `${escapeHtml(label)} (${count})`).join(", ")
                 : "Ninguno";
+            const accionSugerida = getAccionSugerida(alertCounts);
             const alertCardClass = highAlerts > 0 ? "dd-card--alert dd-card--alert-high" : allAlerts.length > 0 ? "dd-card--alert" : "";
             const prokeyRefHtml = data.prokey_ref
                 ? escapeHtml(data.prokey_ref)
@@ -325,9 +342,10 @@ function verDetalle(id) {
                         </table>
                     </div>
                 </section>`;
-            const pdfAction = data.pdf_url
+            const isPdfEnabled = data.estado === "liquidada" && !!data.pdf_url;
+            const pdfAction = isPdfEnabled
                 ? `<a class="secondary" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer">Ver PDF</a>`
-                : `<button type="button" class="secondary" disabled title="En desarrollo">Ver PDF</button>`;
+                : `<button type="button" class="secondary btn-disabled" disabled title="${data.estado === "liquidada" ? "En desarrollo" : "Disponible al liquidar"}">Ver PDF</button>`;
             const commentsToggleHtml = `
                 <details class="detalle-collapsible dd-collapse">
                     <summary>Otros comentarios y proceso</summary>
@@ -382,8 +400,9 @@ function verDetalle(id) {
                     <article class="detalle-block dashboard-card dd-card ${alertCardClass}">
                         <h4 class="dd-card-title">Alertas de conciliación</h4>
                         <div class="dd-kv"><div class="dd-kv-label">Total</div><div class="dd-kv-value">${allAlerts.length} detectadas</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Severidad alta</div><div class="dd-kv-value">${highAlerts}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Alta severidad</div><div class="dd-kv-value">${highAlerts}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Tipos frecuentes</div><div class="dd-kv-value">${topAlertTypes}</div></div>
+                        ${accionSugerida ? `<div class="dd-kv"><div class="dd-kv-label">Acción sugerida</div><div class="dd-kv-value dd-kv-muted">${escapeHtml(accionSugerida)}</div></div>` : ""}
                     </article>
                     <article class="detalle-block dashboard-card dd-card dashboard-timeline">
                         <h4 class="dd-card-title">Línea de tiempo del flujo</h4>
@@ -395,12 +414,12 @@ function verDetalle(id) {
                 ${itemsSection}
                 <section class="detalle-bottom-grid">
                     <article class="detalle-block dashboard-card dd-card">
-                        <h4 class="dd-card-title">Comentario de liquidación</h4>
-                        <p class="liquidation-comment">${liquidationComment}</p>
-                    </article>
-                    <article class="detalle-block dashboard-card dd-card">
                         <h4 class="dd-card-title">Justificación</h4>
                         <p>${escapeHtml(data.justificacion || "-")}</p>
+                    </article>
+                    <article class="detalle-block dashboard-card dd-card">
+                        <h4 class="dd-card-title">Comentario de liquidación</h4>
+                        <p class="liquidation-comment">${liquidationComment}</p>
                     </article>
                 </section>
                 ${commentsToggleHtml}

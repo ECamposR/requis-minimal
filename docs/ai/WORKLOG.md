@@ -1408,3 +1408,49 @@
   - Ajuste de padding del dialog para aprovechar mejor el viewport.
 - Resultado esperado:
   - El detalle de requisición/liquidación ocupa casi todo el ancho disponible sin encogerse.
+
+## 2026-02-26 16:30 UTC-06:00 | tool: Codex CLI
+- Objetivo: Ajuste puntual de orden visual en modal dashboard.
+- Cambios:
+  - `static/app.js`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Se intercambió la posición de los cajones `Justificación` y `Comentario de liquidación` en `detalle-bottom-grid`.
+- Resultado:
+  - El cajón de comentario ocupa ahora la posición previa de justificación, y viceversa.
+
+## 2026-02-26 16:44 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-074` (ajustes finos UX en vista dashboard del detalle, sin tocar backend).
+- Cambios:
+  - `static/app.js`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Label de card actualizado de `Severidad alta` a `Alta severidad`.
+  - Nueva línea dinámica `Acción sugerida` en `Alertas de conciliación`, según prioridad de tipos detectados.
+  - Columna `Ingreso PK` muestra `—` para ítems `CONSUMIBLE` (manteniendo valor numérico en `RETORNABLE`).
+  - Celdas numéricas marcadas con clases `td-num`/`td-center` y estilos scoped para centrado consistente.
+  - Botón `Ver PDF` habilitado solo cuando la requisición está `liquidada`; en otros estados queda deshabilitado con tooltip `Disponible al liquidar`.
+- Comandos ejecutados:
+  - `python -m compileall static`
+- Resultado:
+  - Ajustes UX aplicados sin cambiar lógica de negocio ni payload backend.
+
+## 2026-02-26 16:54 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir desfase de hora en creación mostrado en detalle (`created_at` +6h).
+- Causa raíz:
+  - `created_at` dependía de `server_default=func.now()` en SQLite, que guarda en UTC.
+  - Otros hitos (`approved_at`, `rejected_at`, `delivered_at`) se guardan con `datetime.now()` local, por eso solo creación quedaba adelantada.
+- Cambios:
+  - `app/crud.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Fix aplicado:
+  - En `crear_requisicion_db(...)`, se persiste `created_at=datetime.now()` explícitamente (hora local).
+- Comandos ejecutados:
+  - `python -m compileall app`
+- Resultado:
+  - Nuevas requisiciones quedan con hora de creación consistente con el resto de eventos del timeline/modal.

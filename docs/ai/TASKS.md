@@ -17,6 +17,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-071` | `done` | Rediseño del modal detalle a vista dashboard: cards superiores + timeline lateral + tabla central, “Alertas de conciliación”, DIF por signo, notas de ítem destacadas y comentarios secundarios colapsables.
 - `REQ-072` | `done` | Refinamiento visual de la vista dashboard del modal: badges/severidades más legibles, DIF con mayor contraste, densidad de tabla ajustada y estilos scoped para no afectar otras vistas.
 - `REQ-073` | `done` | UI polish del dashboard en modal: cards más compactas con patrón label/valor, timeline vertical con nodos, DIF como chip con signo, modal casi fullscreen y notas por ítem con mayor énfasis contextual.
+- `REQ-074` | `done` | Ajustes finos UX en dashboard del detalle: “Alta severidad”, acción sugerida por alertas, `Ingreso PK` como `—` en consumibles, centrado numérico y botón PDF habilitado solo en `liquidada`.
+- `REQ-075` | `done` | Corrección de hora de creación en detalle: `created_at` ya no depende de `func.now()` (UTC SQLite) y se persiste en hora local al crear requisición.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.
