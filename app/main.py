@@ -118,11 +118,26 @@ def template_context(request: Request, current_user: Usuario | None = None, **kw
     return {"request": request, "current_user": current_user, **kwargs}
 
 
+def infer_liquidation_mode(descripcion: str) -> str:
+    desc = (descripcion or "").upper()
+    retornable_keys = ("MOPA", "ALFOMBRA", "HERRAMIENTA", "EQUIPO")
+    consumible_keys = ("SPRAY", "PILA", "QUIM", "DOSIS")
+    if any(token in desc for token in consumible_keys):
+        return "CONSUMIBLE"
+    if any(token in desc for token in retornable_keys):
+        return "RETORNABLE"
+    return "RETORNABLE"
+
+
 def redirect_with_message(url: str, message: str, level: str = "success") -> RedirectResponse:
     safe_msg = quote_plus(message)
     safe_level = quote_plus(level)
     sep = "&" if "?" in url else "?"
     return RedirectResponse(url=f"{url}{sep}msg={safe_msg}&type={safe_level}", status_code=303)
+
+
+def puede_editar_prokey_ref(req: Requisicion, current_user: Usuario) -> bool:
+    return req.estado == "liquidada" and (current_user.rol == "admin" or req.solicitante_id == current_user.id)
 
 
 def ensure_admin(current_user: Usuario) -> None:
@@ -772,6 +787,9 @@ def liquidar_form(
     if not puede_liquidar(req, current_user):
         return redirect_with_message("/bodega", "Requisicion no elegible para liquidacion", "error")
 
+    for item in req.items:
+        item.default_mode = infer_liquidation_mode(item.descripcion)
+
     return templates.TemplateResponse("liquidar.html", template_context(request, current_user, req=req))
 
 
@@ -801,9 +819,7 @@ async def liquidar_guardar(
         return redirect_with_message("/bodega", "Requisicion no elegible para liquidacion", "error")
 
     form_data = await request.form()
-    prokey_ref = str(form_data.get("prokey_ref", "")).strip()
-    if not prokey_ref:
-        return redirect_with_message(f"/liquidar/{req_id}", "Referencia Prokey es obligatoria", "error")
+    prokey_ref = str(form_data.get("prokey_ref", "")).strip() or None
     liquidation_comment = str(form_data.get("liquidation_comment", "")).strip() or None
 
     items_data: dict[int, dict[str, int | str | None]] = {}
@@ -820,19 +836,23 @@ async def liquidar_guardar(
     for item in req.items:
         qty_returned_raw = str(form_data.get(f"qty_returned_{item.id}", "0")).strip() or "0"
         qty_used_raw = str(form_data.get(f"qty_used_{item.id}", "0")).strip() or "0"
-        qty_left_raw = str(form_data.get(f"qty_left_{item.id}", "0")).strip() or "0"
+        qty_not_used_raw = str(form_data.get(f"qty_not_used_{item.id}", form_data.get(f"qty_left_{item.id}", "0"))).strip() or "0"
+        mode_raw = str(form_data.get(f"mode_{item.id}", "RETORNABLE")).strip().upper() or "RETORNABLE"
         note = str(form_data.get(f"note_{item.id}", "")).strip() or None
         try:
             qty_returned = parse_non_negative_int(qty_returned_raw, "Regresa")
             qty_used = parse_non_negative_int(qty_used_raw, "Usado")
-            qty_left = parse_non_negative_int(qty_left_raw, "Dejado en cliente")
+            qty_not_used = parse_non_negative_int(qty_not_used_raw, "No usado")
         except ValueError as exc:
             return redirect_with_message(f"/liquidar/{req_id}", str(exc), "error")
+        if mode_raw not in ("RETORNABLE", "CONSUMIBLE"):
+            return redirect_with_message(f"/liquidar/{req_id}", "Modo de liquidacion invalido", "error")
 
         items_data[item.id] = {
             "qty_returned_to_warehouse": qty_returned,
             "qty_used": qty_used,
-            "qty_left_at_client": qty_left,
+            "qty_left_at_client": qty_not_used,
+            "liquidation_mode": mode_raw,
             "item_liquidation_note": note,
         }
 
@@ -849,6 +869,62 @@ async def liquidar_guardar(
         return redirect_with_message("/bodega", str(exc), "warning")
 
     return redirect_with_message("/bodega", "Liquidacion registrada", "success")
+
+
+@app.get("/requisiciones/{req_id}/prokey-ref")
+def editar_prokey_ref_form(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.solicitante))
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+
+    if req.estado != "liquidada":
+        return redirect_with_message("/mis-requisiciones", "Solo se puede completar referencia en requisiciones liquidadas", "error")
+    if not puede_editar_prokey_ref(req, current_user):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    cancel_url = "/bodega" if current_user.rol == "admin" else "/mis-requisiciones"
+    return templates.TemplateResponse(
+        "editar_prokey_ref.html",
+        template_context(request, current_user, req=req, cancel_url=cancel_url),
+    )
+
+
+@app.post("/requisiciones/{req_id}/prokey-ref")
+async def editar_prokey_ref_guardar(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    req = db.query(Requisicion).options(joinedload(Requisicion.items)).filter(Requisicion.id == req_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+
+    if req.estado != "liquidada":
+        return redirect_with_message("/mis-requisiciones", "Solo se puede completar referencia en requisiciones liquidadas", "error")
+    if not puede_editar_prokey_ref(req, current_user):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    form_data = await request.form()
+    prokey_ref = str(form_data.get("prokey_ref", "")).strip()
+    if not prokey_ref:
+        return redirect_with_message(f"/requisiciones/{req_id}/prokey-ref", "La referencia Prokey es obligatoria", "error")
+
+    req.prokey_ref = prokey_ref
+    db.commit()
+
+    target = "/bodega" if current_user.rol == "admin" else "/mis-requisiciones"
+    return redirect_with_message(target, "Referencia Prokey actualizada", "success")
 
 
 @app.get("/admin/usuarios")

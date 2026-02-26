@@ -8,8 +8,14 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.auth import hash_password
-from app.crud import puede_liquidar
-from app.main import detalle_requisicion, liquidar_form, liquidar_guardar
+from app.crud import calcular_alertas_item, puede_liquidar
+from app.main import (
+    detalle_requisicion,
+    editar_prokey_ref_form,
+    editar_prokey_ref_guardar,
+    liquidar_form,
+    liquidar_guardar,
+)
 from app.models import Base, Item, Requisicion, Usuario
 
 TEST_DB_URL = "sqlite://"
@@ -57,6 +63,13 @@ def test_engine():
                     nombre="Admin Uno",
                     rol="admin",
                     departamento="Admon",
+                ),
+                Usuario(
+                    username="user.otro",
+                    password=hash_password("pass123"),
+                    nombre="Usuario Otro",
+                    rol="user",
+                    departamento="Operaciones",
                 ),
             ]
         )
@@ -170,9 +183,10 @@ async def test_liquidar_flujo_feliz_sin_alertas(db_session: Session):
         req.id,
         DummyRequest(
             {
-                f"qty_returned_{item.id}": "3",
+                f"qty_returned_{item.id}": "2",
                 f"qty_used_{item.id}": "5",
                 f"qty_left_{item.id}": "2",
+                f"mode_{item.id}": "CONSUMIBLE",
                 f"note_{item.id}": "",
                 "prokey_ref": "PK-001",
                 "liquidation_comment": "",
@@ -266,8 +280,68 @@ async def test_liquidar_salida_sin_soporte(db_session: Session):
     alertas = json.loads(item.liquidation_alerts)
     types = {a["type"] for a in alertas}
     severities = {a["severity"] for a in alertas}
-    assert {"ALERTA_SOBRANTE", "ALERTA_SALIDA_SIN_SOPORTE"}.issubset(types)
+    assert {"ALERTA_FALTANTE", "ALERTA_SALIDA_SIN_SOPORTE"}.issubset(types)
     assert {"warn", "high"}.issubset(severities)
+
+
+def test_diferencia_retornable_cuadra(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=5)
+    item = get_item(db_session, req)
+    item.qty_used = 3
+    item.qty_left_at_client = 2
+    item.qty_returned_to_warehouse = 5
+    item.liquidation_mode = "RETORNABLE"
+    alertas = calcular_alertas_item(item)
+    tipos = {a["type"] for a in alertas}
+    assert "ALERTA_FALTANTE" not in tipos
+    assert "ALERTA_SOBRANTE" not in tipos
+
+
+def test_diferencia_retornable_retorno_extra(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=2)
+    item = get_item(db_session, req)
+    item.qty_used = 1
+    item.qty_left_at_client = 1
+    item.qty_returned_to_warehouse = 3
+    item.liquidation_mode = "RETORNABLE"
+    alertas = calcular_alertas_item(item)
+    tipos = {a["type"] for a in alertas}
+    assert {"ALERTA_SOBRANTE", "ALERTA_RETORNO_EXTRA"}.issubset(tipos)
+
+
+def test_diferencia_consumible_cuadra(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=5)
+    item = get_item(db_session, req)
+    item.qty_used = 3
+    item.qty_left_at_client = 2
+    item.qty_returned_to_warehouse = 2
+    item.liquidation_mode = "CONSUMIBLE"
+    alertas = calcular_alertas_item(item)
+    tipos = {a["type"] for a in alertas}
+    assert "ALERTA_FALTANTE" not in tipos
+    assert "ALERTA_SOBRANTE" not in tipos
+
+
+def test_diferencia_consumible_faltante(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=5)
+    item = get_item(db_session, req)
+    item.qty_used = 3
+    item.qty_left_at_client = 2
+    item.qty_returned_to_warehouse = 1
+    item.liquidation_mode = "CONSUMIBLE"
+    alertas = calcular_alertas_item(item)
+    assert any(a["type"] == "ALERTA_FALTANTE" and a["severity"] == "warn" for a in alertas)
+
+
+def test_salida_sin_soporte(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=2)
+    item = get_item(db_session, req)
+    item.qty_used = 2
+    item.qty_left_at_client = 1
+    item.qty_returned_to_warehouse = 0
+    item.liquidation_mode = "CONSUMIBLE"
+    alertas = calcular_alertas_item(item)
+    assert any(a["type"] == "ALERTA_SALIDA_SIN_SOPORTE" and a["severity"] == "high" for a in alertas)
 
 
 @pytest.mark.anyio
@@ -294,7 +368,7 @@ async def test_liquidar_no_bloquea_por_delta(db_session: Session):
 
 
 @pytest.mark.anyio
-async def test_liquidar_requiere_prokey_ref(db_session: Session):
+async def test_liquidar_permite_prokey_ref_vacio(db_session: Session):
     req = create_req_entregada(db_session)
     item = get_item(db_session, req)
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
@@ -312,9 +386,9 @@ async def test_liquidar_requiere_prokey_ref(db_session: Session):
         db=db_session,
     )
     assert response.status_code == 303
-    assert f"/liquidar/{req.id}" in response.headers["location"]
     db_session.refresh(req)
-    assert req.estado == "entregada"
+    assert req.estado == "liquidada"
+    assert req.prokey_ref is None
 
 
 @pytest.mark.anyio
@@ -492,3 +566,189 @@ def test_liquidar_get_redirige_si_ya_liquidada(db_session: Session):
     response = liquidar_form(req.id, request=ReqStub(), current_user=bodega, db=db_session)
     assert response.status_code == 303
     assert "ya+fue+liquidada" in response.headers["location"].lower()
+
+
+@pytest.mark.anyio
+async def test_update_prokey_ref_permite_admin(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=5)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "2",
+                f"qty_used_{item.id}": "2",
+                f"qty_left_{item.id}": "1",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    db_session.refresh(item)
+    original_qty_used = item.qty_used
+    original_alerts = item.liquidation_alerts
+
+    admin = db_session.query(Usuario).filter(Usuario.username == "admin.1").first()
+    response = await editar_prokey_ref_guardar(
+        req.id,
+        DummyRequest({"prokey_ref": "PK-POST-001"}),
+        current_user=admin,
+        db=db_session,
+    )
+    assert response.status_code == 303
+    db_session.refresh(req)
+    db_session.refresh(item)
+    assert req.estado == "liquidada"
+    assert req.prokey_ref == "PK-POST-001"
+    assert item.qty_used == original_qty_used
+    assert item.liquidation_alerts == original_alerts
+
+
+@pytest.mark.anyio
+async def test_update_prokey_ref_permite_propietario(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=4)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    owner = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "1",
+                f"qty_used_{item.id}": "2",
+                f"qty_left_{item.id}": "1",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    response = await editar_prokey_ref_guardar(
+        req.id,
+        DummyRequest({"prokey_ref": "PK-OWNER-001"}),
+        current_user=owner,
+        db=db_session,
+    )
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.prokey_ref == "PK-OWNER-001"
+
+
+@pytest.mark.anyio
+async def test_update_prokey_ref_bloquea_no_propietario(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=3)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    otro = db_session.query(Usuario).filter(Usuario.username == "user.otro").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "1",
+                f"qty_used_{item.id}": "1",
+                f"qty_left_{item.id}": "1",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        await editar_prokey_ref_guardar(
+            req.id,
+            DummyRequest({"prokey_ref": "PK-NOPE-001"}),
+            current_user=otro,
+            db=db_session,
+        )
+    assert exc_info.value.status_code == 403
+
+
+@pytest.mark.anyio
+async def test_update_prokey_ref_requiere_estado_liquidada(db_session: Session):
+    req = create_req_entregada(db_session, estado="entregada", cantidad=3)
+    admin = db_session.query(Usuario).filter(Usuario.username == "admin.1").first()
+    response = await editar_prokey_ref_guardar(
+        req.id,
+        DummyRequest({"prokey_ref": "PK-SHOULD-NOT-SAVE"}),
+        current_user=admin,
+        db=db_session,
+    )
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+    assert req.prokey_ref is None
+
+
+@pytest.mark.anyio
+async def test_update_prokey_ref_no_permite_vacio(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=3)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    owner = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "1",
+                f"qty_used_{item.id}": "1",
+                f"qty_left_{item.id}": "1",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    response = await editar_prokey_ref_guardar(
+        req.id,
+        DummyRequest({"prokey_ref": "  "}),
+        current_user=owner,
+        db=db_session,
+    )
+    assert response.status_code == 303
+    assert f"/requisiciones/{req.id}/prokey-ref" in response.headers["location"]
+    db_session.refresh(req)
+    assert req.prokey_ref is None
+
+
+@pytest.mark.anyio
+async def test_api_detalle_refleja_prokey_ref_actualizado(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=3)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    admin = db_session.query(Usuario).filter(Usuario.username == "admin.1").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "1",
+                f"qty_used_{item.id}": "1",
+                f"qty_left_{item.id}": "1",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    await editar_prokey_ref_guardar(
+        req.id,
+        DummyRequest({"prokey_ref": "PK-API-001"}),
+        current_user=admin,
+        db=db_session,
+    )
+    payload = detalle_requisicion(req.id, current_user=admin, db=db_session)
+    assert payload["prokey_ref"] == "PK-API-001"
+
+
+def test_update_prokey_ref_get_form_permitido(db_session: Session):
+    req = create_req_entregada(db_session, estado="liquidada")
+    owner = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+
+    class ReqStub:
+        session = {}
+        url = type("URL", (), {"path": "/requisiciones/1/prokey-ref"})()
+        query_params: dict[str, str] = {}
+
+    response = editar_prokey_ref_form(req.id, request=ReqStub(), current_user=owner, db=db_session)
+    assert response.status_code == 200

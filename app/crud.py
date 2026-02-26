@@ -124,32 +124,45 @@ def puede_liquidar(requisicion: Requisicion, usuario: Usuario) -> bool:
 
 
 def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
-    """Calcula alertas para un ítem liquidado. No bloquea por delta != 0."""
+    """Calcula alertas para un ítem liquidado. No bloquea por diferencia != 0."""
     alertas: list[dict[str, Any]] = []
-    delivered = item.cantidad_entregada
+    delivered = item.cantidad_entregada or 0
     returned = item.qty_returned_to_warehouse or 0
     used = item.qty_used or 0
-    left = item.qty_left_at_client or 0
-    declared_total = used + left + returned
-    delta = (delivered or 0) - declared_total
+    not_used = item.qty_left_at_client or 0
+    mode = (item.liquidation_mode or "RETORNABLE").upper()
+    if mode not in ("RETORNABLE", "CONSUMIBLE"):
+        mode = "RETORNABLE"
+    expected_return = (used + not_used) if mode == "RETORNABLE" else not_used
+    diferencia = expected_return - returned
 
-    if delta > 0:
+    if diferencia > 0:
         alertas.append(
             {
                 "type": "ALERTA_FALTANTE",
                 "severity": "warn",
-                "data": {"delivered": delivered, "declared_total": declared_total, "delta": delta},
+                "data": {
+                    "mode": mode,
+                    "expected_return": expected_return,
+                    "returned": returned,
+                    "diferencia": diferencia,
+                },
             }
         )
-    if delta < 0:
+    if diferencia < 0:
         alertas.append(
             {
                 "type": "ALERTA_SOBRANTE",
                 "severity": "warn",
-                "data": {"delivered": delivered, "declared_total": declared_total, "delta": delta},
+                "data": {
+                    "mode": mode,
+                    "expected_return": expected_return,
+                    "returned": returned,
+                    "diferencia": diferencia,
+                },
             }
         )
-    if returned > (delivered or 0):
+    if returned > delivered:
         alertas.append(
             {
                 "type": "ALERTA_RETORNO_EXTRA",
@@ -157,12 +170,18 @@ def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
                 "data": {"returned": returned, "delivered": delivered},
             }
         )
-    if (used + left) > (delivered or 0):
+    total_out = used + not_used
+    if total_out > delivered:
         alertas.append(
             {
                 "type": "ALERTA_SALIDA_SIN_SOPORTE",
                 "severity": "high",
-                "data": {"used_plus_left": used + left, "delivered": delivered},
+                "data": {
+                    "delivered": delivered,
+                    "used": used,
+                    "not_used": not_used,
+                    "total_out": total_out,
+                },
             }
         )
 
@@ -173,7 +192,7 @@ def ejecutar_liquidacion(
     db: Session,
     requisicion: Requisicion,
     usuario: Usuario,
-    prokey_ref: str,
+    prokey_ref: str | None,
     liquidation_comment: str | None,
     items_data: dict[int, dict[str, Any]],
 ) -> None:
@@ -190,13 +209,17 @@ def ejecutar_liquidacion(
         item.qty_returned_to_warehouse = int(data.get("qty_returned_to_warehouse", 0))
         item.qty_used = int(data.get("qty_used", 0))
         item.qty_left_at_client = int(data.get("qty_left_at_client", 0))
+        mode = str(data.get("liquidation_mode", "RETORNABLE")).upper()
+        if mode not in ("RETORNABLE", "CONSUMIBLE"):
+            mode = "RETORNABLE"
+        item.liquidation_mode = mode
         item.item_liquidation_note = data.get("item_liquidation_note") or None
 
         alertas = calcular_alertas_item(item)
         item.liquidation_alerts = json.dumps(alertas) if alertas else None
 
     requisicion.estado = "liquidada"
-    requisicion.prokey_ref = prokey_ref
+    requisicion.prokey_ref = prokey_ref or None
     requisicion.liquidation_comment = liquidation_comment or None
     requisicion.liquidated_by = usuario.id
     requisicion.liquidated_at = datetime.utcnow()

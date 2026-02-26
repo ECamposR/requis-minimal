@@ -89,6 +89,7 @@ def run_migrations() -> None:
             "ALTER TABLE items ADD COLUMN qty_returned_to_warehouse INTEGER",
             "ALTER TABLE items ADD COLUMN qty_used INTEGER",
             "ALTER TABLE items ADD COLUMN qty_left_at_client INTEGER",
+            "ALTER TABLE items ADD COLUMN liquidation_mode TEXT",
             "ALTER TABLE items ADD COLUMN item_liquidation_note TEXT",
             "ALTER TABLE items ADD COLUMN liquidation_alerts TEXT",
         ]

@@ -1058,3 +1058,127 @@
   - Cobertura de regresion de liquidacion fortalecida con escenarios de negocio completos y verificaciones de detalle/timeline.
 - Proximo paso:
   - Estabilizar ejecucion de `pytest tests/` completa en entorno CLI para recuperar smoke global automatizado.
+
+## 2026-02-25 15:08 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-064` para permitir liquidar sin `prokey_ref` y marcar Prokey pendiente en el detalle.
+- Cambios de codigo:
+  - `app/main.py`
+    - `POST /liquidar/{req_id}` ya no bloquea por referencia vacia.
+    - `prokey_ref` se normaliza a `None` cuando llega vacio (`strip()` + conversion a null).
+  - `app/crud.py`
+    - `ejecutar_liquidacion(...)` ahora acepta `prokey_ref` opcional y persiste `requisicion.prokey_ref = prokey_ref or None`.
+  - `templates/liquidar.html`
+    - Campo de referencia Prokey cambiado a opcional (sin `required`).
+    - Nuevo microcopy: se puede completar despues.
+  - `static/app.js`
+    - En resumen de liquidacion, si `prokey_ref` no existe muestra `Pendiente` + badge `Prokey pendiente`.
+  - `static/theme.css`
+    - Estilo para badge visual de Prokey pendiente.
+  - `tests/test_liquidacion.py`
+    - Reemplazo de prueba de obligatoriedad por `test_liquidar_permite_prokey_ref_vacio` (liquida y guarda `NULL`).
+  - `tests/test_liquidacion_integration.py`
+    - Reemplazo de precondicion antigua por `test_liquidar_sin_prokey_ref_guarda_null` (flujo integrado + detalle API con `prokey_ref=None`).
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-064` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado actual incluye cierre de REQ-064.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app static templates tests` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **16 passed**
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -v` -> **10 passed**
+- Resultado:
+  - Liquidacion ya no depende de referencia inmediata de Prokey.
+  - Se conserva trazabilidad de cierre y se explicita pendiente operativo en detalle.
+- Proximo paso:
+  - Definir si se agrega flujo posterior de "completar referencia Prokey" para requisiciones ya liquidadas.
+
+## 2026-02-25 15:17 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-065` para completar `prokey_ref` despues de liquidar sin reabrir cantidades.
+- Cambios de codigo:
+  - `app/main.py`
+    - Helper `puede_editar_prokey_ref(req, current_user)`: solo `estado=liquidada` y (`admin` o solicitante).
+    - Nueva ruta `GET /requisiciones/{id}/prokey-ref`: renderiza formulario de edicion y valida permisos/estado.
+    - Nueva ruta `POST /requisiciones/{id}/prokey-ref`: valida permisos/estado, exige referencia no vacia y actualiza solo `requisicion.prokey_ref`.
+  - `templates/editar_prokey_ref.html` (nuevo)
+    - Pantalla dedicada para completar referencia Prokey con contexto de requisicion y botones Guardar/Cancelar.
+  - `static/app.js`
+    - En detalle de requisiciones liquidadas con referencia pendiente, agrega link `Agregar referencia Prokey` hacia `/requisiciones/{id}/prokey-ref`.
+  - `static/theme.css`
+    - Estilo del link de accion en resumen de liquidacion (`.prokey-add-link`).
+  - `tests/test_liquidacion.py`
+    - Nuevos tests:
+      - `test_update_prokey_ref_permite_admin`
+      - `test_update_prokey_ref_permite_propietario`
+      - `test_update_prokey_ref_bloquea_no_propietario`
+      - `test_update_prokey_ref_requiere_estado_liquidada`
+      - `test_update_prokey_ref_no_permite_vacio`
+      - `test_api_detalle_refleja_prokey_ref_actualizado`
+      - `test_update_prokey_ref_get_form_permitido`
+    - Validacion explicita de inmutabilidad: actualizar referencia no toca cantidades ni `liquidation_alerts`.
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-065` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado actual incluye cierre de REQ-065.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app static templates tests` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py::test_update_prokey_ref_get_form_permitido -v` -> **1 passed**
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **23 passed**
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -v` -> **10 passed**
+- Resultado:
+  - `prokey_ref` ya puede completarse post-liquidacion por usuarios autorizados sin alterar la trazabilidad de liquidacion.
+- Proximo paso:
+  - Evaluar si se agrega filtro/lista de requisiciones liquidadas con `prokey_ref` pendiente para cierre operativo diario.
+
+## 2026-02-25 17:06 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-066` (modo por item RETORNABLE/CONSUMIBLE, campo `No usado` y nueva formula de diferencia/alertas).
+- Cambios de codigo:
+  - `app/models.py`
+    - Nuevo campo en `Item`: `liquidation_mode` (`String(20)`, nullable).
+  - `app/database.py`
+    - Migracion incremental agregada: `ALTER TABLE items ADD COLUMN liquidation_mode TEXT`.
+  - `app/main.py`
+    - Nueva heuristica `infer_liquidation_mode(descripcion)` para default de selector en UI:
+      - RETORNABLE: `MOPA`, `ALFOMBRA`, `HERRAMIENTA`, `EQUIPO`.
+      - CONSUMIBLE: `SPRAY`, `PILA`, `QUIM`, `DOSIS`.
+      - default conservador: `RETORNABLE`.
+    - `GET /liquidar/{id}` inyecta `default_mode` por item para render.
+    - `POST /liquidar/{id}` parsea `mode_{item_id}` y `qty_not_used_{item_id}` (mantiene fallback a `qty_left_{item_id}` por compatibilidad de pruebas).
+    - Validacion de modo: solo `RETORNABLE` o `CONSUMIBLE`.
+  - `app/crud.py`
+    - `ejecutar_liquidacion(...)` persiste `item.liquidation_mode`.
+    - `calcular_alertas_item(item)` refactor:
+      - `not_used = qty_left_at_client` (reinterpretado como "No usado"),
+      - `expected_return` por modo:
+        - RETORNABLE: `used + not_used`,
+        - CONSUMIBLE: `not_used`,
+      - `diferencia = expected_return - returned`,
+      - alertas `ALERTA_FALTANTE/ALERTA_SOBRANTE` segun signo de `diferencia`,
+      - mantiene alertas high: `ALERTA_SALIDA_SIN_SOPORTE` y `ALERTA_RETORNO_EXTRA`.
+  - `templates/liquidar.html`
+    - Columna nueva `Tipo` (selector por item).
+    - Etiqueta `Dejado en cliente` renombrada a `No usado`.
+    - `Delta` renombrado a `Diferencia`.
+    - JS en vivo actualizado para calcular diferencia por modo y mostrar `Esperado regrese: X`.
+  - `tests/test_liquidacion.py`
+    - Ajustes a expectativas con nueva semantica.
+    - Nuevos tests agregados:
+      - `test_diferencia_retornable_cuadra`
+      - `test_diferencia_retornable_retorno_extra`
+      - `test_diferencia_consumible_cuadra`
+      - `test_diferencia_consumible_faltante`
+      - `test_salida_sin_soporte`
+  - `tests/test_liquidacion_integration.py`
+    - Ajuste de helper para enviar `mode_{item_id}`.
+    - Ajuste de escenario sin alertas y expectativa de `salida_sin_soporte`.
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-066` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado actual incluye cierre de REQ-066.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app templates static tests` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **28 passed**
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -v` -> **10 passed**
+- Resultado:
+  - La captura de liquidacion deja de generar falsos positivos por una formula unica; ahora cada item se interpreta por modo operativo y mantiene comportamiento no bloqueante.
+- Proximo paso:
+  - `REQ-067`: reflejar en modal detalle el nuevo significado (`No usado`, `liquidation_mode`) y la diferencia por modo para auditoria consistente.

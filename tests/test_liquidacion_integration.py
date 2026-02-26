@@ -133,6 +133,7 @@ async def liquidar(
         form_data[f"qty_returned_{item_id}"] = values.get("returned", "0")
         form_data[f"qty_used_{item_id}"] = values.get("used", "0")
         form_data[f"qty_left_{item_id}"] = values.get("left", "0")
+        form_data[f"mode_{item_id}"] = values.get("mode", "RETORNABLE")
         form_data[f"note_{item_id}"] = values.get("note", "")
     return await liquidar_guardar(req.id, DummyRequest(form_data), current_user=bode, db=db)
 
@@ -147,8 +148,8 @@ async def test_flujo_completo_liquidacion_sin_alertas(db_session: Session):
         db_session,
         req,
         {
-            items[0].id: {"returned": "3", "used": "5", "left": "2"},
-            items[1].id: {"returned": "1", "used": "2", "left": "2"},
+            items[0].id: {"returned": "2", "used": "5", "left": "2", "mode": "CONSUMIBLE"},
+            items[1].id: {"returned": "2", "used": "2", "left": "2", "mode": "CONSUMIBLE"},
         },
         "PK-INT-001",
     )
@@ -229,11 +230,11 @@ async def test_flujo_completo_salida_sin_soporte(db_session: Session):
     payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
     liq_item = payload["items"][0]
     assert liq_item["delta"] == -1
-    assert {"ALERTA_SOBRANTE", "ALERTA_SALIDA_SIN_SOPORTE"}.issubset(alert_types(liq_item))
+    assert {"ALERTA_FALTANTE", "ALERTA_SALIDA_SIN_SOPORTE"}.issubset(alert_types(liq_item))
 
 
 @pytest.mark.anyio
-async def test_no_liquidar_sin_prokey_ref(db_session: Session):
+async def test_liquidar_sin_prokey_ref_guarda_null(db_session: Session):
     req = build_req(db_session, [("Item A", 4)])
     aprobar_req(db_session, req)
     entregar_completa_req(db_session, req)
@@ -246,7 +247,11 @@ async def test_no_liquidar_sin_prokey_ref(db_session: Session):
     )
     assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "entregada"
+    assert req.estado == "liquidada"
+    assert req.prokey_ref is None
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+    assert payload["prokey_ref"] is None
 
 
 @pytest.mark.anyio

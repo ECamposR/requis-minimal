@@ -4,9 +4,12 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 
 ## Reinicio Liquidacion (desde `3d7702b`)
 - `REQ-060` | `done` | Base de liquidacion implementada: estado `liquidada`, campos base en `requisiciones/items`, migracion robusta e idempotente + baseline de entrega (`cantidad_entregada`) normalizado.
-- `REQ-061` | `done` | Endpoint y UI de captura de liquidacion (`GET/POST /liquidar/{id}`), alertas no bloqueantes persistidas por item, `prokey_ref` obligatorio e inmutabilidad post-liquidacion.
+- `REQ-061` | `done` | Endpoint y UI de captura de liquidacion (`GET/POST /liquidar/{id}`), alertas no bloqueantes persistidas por item e inmutabilidad post-liquidacion.
 - `REQ-062` | `done` | Modal detalle de requisiciones liquidadas en solo lectura: tabla estilo papel, resumen de liquidacion en cabecera, alertas por item y evento de timeline.
 - `REQ-063` | `done` | Suite de integracion de flujo completo con liquidacion y escenarios canónicos (sin alertas, faltante, retorno extra, salida sin soporte) + precondiciones/inmutabilidad/timeline.
+- `REQ-064` | `done` | Liquidacion permite `prokey_ref` vacio: guarda `NULL`, no bloquea cierre, y detalle muestra "Pendiente" con badge "Prokey pendiente".
+- `REQ-065` | `done` | Edicion posterior de `prokey_ref` para requisiciones liquidadas (admin o solicitante), sin reabrir ni modificar cantidades/alertas.
+- `REQ-066` | `done` | Liquidacion por item con modo `RETORNABLE/CONSUMIBLE`, campo UI `No usado` y alertas/diferencia recalculadas por modo (no bloqueantes).
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.

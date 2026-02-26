@@ -225,11 +225,15 @@ function verDetalle(id) {
                 allAlerts.length > 0
                     ? `${allAlerts.length} alertas (${highAlerts} de severidad alta)`
                     : "Sin alertas";
+            const prokeyRefHtml = data.prokey_ref
+                ? escapeHtml(data.prokey_ref)
+                : `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
+                   <a href="/requisiciones/${data.id}/prokey-ref" class="prokey-add-link">Agregar referencia Prokey</a>`;
             const liquidacionHeader = isLiquidada
                 ? `<section class="liquidacion-summary">
                     <h4>Resumen de Liquidacion</h4>
                     <div class="liquidacion-summary-grid">
-                        <div><span class="meta-label">Referencia Prokey</span><strong>${escapeHtml(data.prokey_ref || "-")}</strong></div>
+                        <div><span class="meta-label">Referencia Prokey</span><strong>${prokeyRefHtml}</strong></div>
                         <div><span class="meta-label">Liquidado por</span><strong>${escapeHtml(data.liquidated_by_name || "-")}</strong></div>
                         <div><span class="meta-label">Fecha</span><strong>${fmtDateTime(data.liquidated_at)}</strong></div>
                         <div><span class="meta-label">Alertas</span><strong>${escapeHtml(resumenAlertas)}</strong></div>

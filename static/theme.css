@@ -296,6 +296,18 @@ table tbody tr:hover td {
     display: block;
 }
 
+.prokey-pending-badge {
+    margin-left: 0.45rem;
+    vertical-align: middle;
+}
+
+.prokey-add-link {
+    margin-left: 0.55rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .liquidacion-summary-comment {
     margin-top: 0.6rem;
 }
