@@ -1182,3 +1182,38 @@
   - La captura de liquidacion deja de generar falsos positivos por una formula unica; ahora cada item se interpreta por modo operativo y mantiene comportamiento no bloqueante.
 - Proximo paso:
   - `REQ-067`: reflejar en modal detalle el nuevo significado (`No usado`, `liquidation_mode`) y la diferencia por modo para auditoria consistente.
+
+## 2026-02-26 14:12 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-067` para alinear detalle de requisiciones liquidadas con el modelo por modo de liquidacion.
+- Cambios de codigo:
+  - `app/main.py` (`GET /api/requisiciones/{id}`)
+    - Payload de item liquidado enriquecido con:
+      - `mode`, `used`, `not_used`, `returned`, `delivered`,
+      - `expected_return`,
+      - `difference` (nuevo nombre operativo),
+      - `pk_ingreso_qty` (solo retornables; consumible = 0).
+    - Se mantiene `delta` como alias compatible apuntando a `difference`.
+    - Payload de cabecera agrega `prokey_pending`.
+  - `static/app.js`
+    - Tabla papel de liquidada rediseñada a columnas:
+      - `Descripcion`, `Entregado`, `Tipo`, `Usado`, `No usado`, `Regresa`, `Diferencia`, `Ingreso PK`, `Alertas`.
+    - `Ingreso PK` muestra tooltip: "Pendiente de ingresar en Prokey por bodega (solo retornables)".
+    - En modo consumible muestra `Ingreso PK = 0`.
+    - Resaltado visual de `Diferencia` mantiene clases `delta-warn` / `delta-danger`.
+  - `tests/test_liquidacion_integration.py`
+    - Nuevos escenarios:
+      - mezcla retornable/consumible validando `mode`, `difference` y `pk_ingreso_qty`.
+      - retorno extra retornable con diferencia negativa y alertas esperadas.
+    - Ajustes en escenarios existentes para declarar `mode` y expectativas de `difference`.
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-067` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado actual incluye cierre de REQ-067.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app static tests` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -v` -> **12 passed**
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **28 passed**
+- Resultado:
+  - El detalle de liquidacion ahora representa correctamente la semantica operacional por tipo de item y evita lectura ambigua del ingreso Prokey.
+- Proximo paso:
+  - Definir `REQ-068` para reporte operativo minimo (p. ej. lista de liquidaciones pendientes de referencia Prokey/export simple).

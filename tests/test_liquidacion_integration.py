@@ -167,6 +167,43 @@ async def test_flujo_completo_liquidacion_sin_alertas(db_session: Session):
 
 
 @pytest.mark.anyio
+async def test_detalle_liquidada_muestra_campos_por_modo_y_pk(db_session: Session):
+    req = build_req(db_session, [("Equipo A", 5), ("Quimico B", 5)])
+    aprobar_req(db_session, req)
+    entregar_completa_req(db_session, req)
+    items = list(req.items)
+    response = await liquidar(
+        db_session,
+        req,
+        {
+            items[0].id: {"returned": "5", "used": "3", "left": "2", "mode": "RETORNABLE"},
+            items[1].id: {"returned": "2", "used": "3", "left": "2", "mode": "CONSUMIBLE"},
+        },
+        "PK-INT-MIX-001",
+    )
+    assert response.status_code == 303
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+    rows = {r["descripcion"]: r for r in payload["items"]}
+
+    retornable = rows["Equipo A"]
+    assert retornable["mode"] == "RETORNABLE"
+    assert retornable["used"] == 3
+    assert retornable["not_used"] == 2
+    assert retornable["returned"] == 5
+    assert retornable["difference"] == 0
+    assert retornable["pk_ingreso_qty"] == 5
+
+    consumible = rows["Quimico B"]
+    assert consumible["mode"] == "CONSUMIBLE"
+    assert consumible["used"] == 3
+    assert consumible["not_used"] == 2
+    assert consumible["returned"] == 2
+    assert consumible["difference"] == 0
+    assert consumible["pk_ingreso_qty"] == 0
+
+
+@pytest.mark.anyio
 async def test_flujo_completo_con_faltante(db_session: Session):
     req = build_req(db_session, [("Item A", 5)])
     aprobar_req(db_session, req)
@@ -176,7 +213,7 @@ async def test_flujo_completo_con_faltante(db_session: Session):
     response = await liquidar(
         db_session,
         req,
-        {item.id: {"returned": "0", "used": "3", "left": "0"}},
+        {item.id: {"returned": "0", "used": "3", "left": "2", "mode": "CONSUMIBLE"}},
         "PK-INT-002",
     )
     assert response.status_code == 303
@@ -186,9 +223,29 @@ async def test_flujo_completo_con_faltante(db_session: Session):
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
     liq_item = payload["items"][0]
-    assert liq_item["delta"] == 2
+    assert liq_item["difference"] == 2
     assert "ALERTA_FALTANTE" in alert_types(liq_item)
     assert any(a.get("severity") == "warn" for a in liq_item["liquidation_alerts"])
+
+
+@pytest.mark.anyio
+async def test_retorno_extra_retornable_alerta_y_diferencia_negativa(db_session: Session):
+    req = build_req(db_session, [("Equipo Retirable", 2)])
+    aprobar_req(db_session, req)
+    entregar_completa_req(db_session, req)
+    item = req.items[0]
+    response = await liquidar(
+        db_session,
+        req,
+        {item.id: {"returned": "3", "used": "1", "left": "1", "mode": "RETORNABLE"}},
+        "PK-INT-EXTRA-001",
+    )
+    assert response.status_code == 303
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+    liq_item = payload["items"][0]
+    assert liq_item["difference"] == -1
+    assert {"ALERTA_SOBRANTE", "ALERTA_RETORNO_EXTRA"}.issubset(alert_types(liq_item))
 
 
 @pytest.mark.anyio
@@ -200,7 +257,7 @@ async def test_flujo_completo_con_retorno_extra(db_session: Session):
     response = await liquidar(
         db_session,
         req,
-        {item.id: {"returned": "5", "used": "0", "left": "0"}},
+        {item.id: {"returned": "5", "used": "1", "left": "2", "mode": "RETORNABLE"}},
         "PK-INT-003",
     )
     assert response.status_code == 303
@@ -208,7 +265,7 @@ async def test_flujo_completo_con_retorno_extra(db_session: Session):
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
     liq_item = payload["items"][0]
-    assert liq_item["delta"] == -2
+    assert liq_item["difference"] == -2
     assert {"ALERTA_SOBRANTE", "ALERTA_RETORNO_EXTRA"}.issubset(alert_types(liq_item))
 
 
@@ -221,7 +278,7 @@ async def test_flujo_completo_salida_sin_soporte(db_session: Session):
     response = await liquidar(
         db_session,
         req,
-        {item.id: {"returned": "0", "used": "3", "left": "0"}},
+        {item.id: {"returned": "0", "used": "3", "left": "1", "mode": "CONSUMIBLE"}},
         "PK-INT-004",
     )
     assert response.status_code == 303
@@ -229,7 +286,7 @@ async def test_flujo_completo_salida_sin_soporte(db_session: Session):
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
     liq_item = payload["items"][0]
-    assert liq_item["delta"] == -1
+    assert liq_item["difference"] == 1
     assert {"ALERTA_FALTANTE", "ALERTA_SALIDA_SIN_SOPORTE"}.issubset(alert_types(liq_item))
 
 

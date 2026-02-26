@@ -170,8 +170,8 @@ function verDetalle(id) {
                 .join("");
             const liquidacionRows = items
                 .map((i) => {
-                    const delta = Number(i.delta || 0);
-                    const deltaCls = delta < 0 ? "delta-danger" : delta !== 0 ? "delta-warn" : "";
+                    const difference = Number(i.difference ?? i.delta ?? 0);
+                    const differenceCls = difference < 0 ? "delta-danger" : difference !== 0 ? "delta-warn" : "";
                     const alerts = Array.isArray(i.liquidation_alerts) ? i.liquidation_alerts : [];
                     const alertBadges = alerts.length
                         ? alerts
@@ -184,16 +184,19 @@ function verDetalle(id) {
                     const noteHtml = i.item_liquidation_note
                         ? `<div class="liq-item-note">${escapeHtml(i.item_liquidation_note)}</div>`
                         : "";
+                    const mode = (i.mode || "RETORNABLE").toUpperCase();
+                    const ingresoPk = mode === "RETORNABLE" ? fmtQty(i.pk_ingreso_qty) : "0";
                     return `<tr>
                         <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${noteHtml}</td>
-                        <td class="qty-col">${fmtQty(i.cantidad)}</td>
                         <td class="qty-col">${fmtQty(i.cantidad_entregada)}</td>
-                        <td class="qty-col">${fmtQty(i.qty_returned_to_warehouse)}</td>
-                        <td class="qty-col">${fmtQty(i.qty_ocupo)}</td>
+                        <td class="qty-col">${escapeHtml(mode)}</td>
+                        <td class="qty-col">${fmtQty(i.used ?? i.qty_used)}</td>
+                        <td class="qty-col">${fmtQty(i.not_used ?? i.qty_left_at_client)}</td>
+                        <td class="qty-col">${fmtQty(i.returned ?? i.qty_returned_to_warehouse)}</td>
+                        <td class="qty-col ${differenceCls}">${fmtQty(difference)}</td>
                         <td class="qty-col">
-                            <span class="pk-help" title="Pendiente de ingresar en Prokey por bodega">${fmtQty(i.pk_ingreso_qty)}</span>
+                            <span class="pk-help" title="Pendiente de ingresar en Prokey por bodega (solo retornables)">${ingresoPk}</span>
                         </td>
-                        <td class="qty-col ${deltaCls}">${fmtQty(delta)}</td>
                         <td>${alertBadges}</td>
                     </tr>`;
                 })
@@ -252,16 +255,17 @@ function verDetalle(id) {
                         <table class="detalle-items-table liquidacion-paper-table">
                             <thead><tr>
                                 <th>Descripcion</th>
-                                <th class="qty-col">Solicitado</th>
-                                <th class="qty-col">Lleva</th>
+                                <th class="qty-col">Entregado</th>
+                                <th class="qty-col">Tipo</th>
+                                <th class="qty-col">Usado</th>
+                                <th class="qty-col">No usado</th>
                                 <th class="qty-col">Regresa</th>
-                                <th class="qty-col">Ocupo</th>
+                                <th class="qty-col">Diferencia</th>
                                 <th class="qty-col">Ingreso PK</th>
-                                <th class="qty-col">Delta</th>
                                 <th>Alertas</th>
                             </tr></thead>
                             <tbody>
-                                ${liquidacionRows || '<tr><td colspan="8">Sin items</td></tr>'}
+                                ${liquidacionRows || '<tr><td colspan="9">Sin items</td></tr>'}
                             </tbody>
                         </table>
                     </div>

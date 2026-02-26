@@ -10,6 +10,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-064` | `done` | Liquidacion permite `prokey_ref` vacio: guarda `NULL`, no bloquea cierre, y detalle muestra "Pendiente" con badge "Prokey pendiente".
 - `REQ-065` | `done` | Edicion posterior de `prokey_ref` para requisiciones liquidadas (admin o solicitante), sin reabrir ni modificar cantidades/alertas.
 - `REQ-066` | `done` | Liquidacion por item con modo `RETORNABLE/CONSUMIBLE`, campo UI `No usado` y alertas/diferencia recalculadas por modo (no bloqueantes).
+- `REQ-067` | `done` | Modal detalle de requisiciones liquidadas actualizado al modelo por modo: `Tipo/Usado/No usado/Regresa/Diferencia/Ingreso PK` y payload enriquecido.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.

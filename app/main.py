@@ -1404,12 +1404,16 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             "unidad": item.unidad,
         }
         if req.estado == "liquidada":
+            mode = (item.liquidation_mode or "RETORNABLE").upper()
+            if mode not in ("RETORNABLE", "CONSUMIBLE"):
+                mode = "RETORNABLE"
             qty_returned = item.qty_returned_to_warehouse or 0
             qty_used = item.qty_used or 0
-            qty_left = item.qty_left_at_client or 0
-            qty_ocupo = qty_used + qty_left
+            qty_not_used = item.qty_left_at_client or 0
             delivered = item.cantidad_entregada or 0
-            delta = delivered - (qty_used + qty_left + qty_returned)
+            expected_return = (qty_used + qty_not_used) if mode == "RETORNABLE" else qty_not_used
+            difference = expected_return - qty_returned
+            pk_ingreso_qty = qty_returned if mode == "RETORNABLE" else 0
 
             parsed_alerts: list[dict[str, object]] = []
             if item.liquidation_alerts:
@@ -1422,14 +1426,21 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
 
             item_data.update(
                 {
+                    "mode": mode,
+                    "used": qty_used,
+                    "not_used": qty_not_used,
+                    "returned": qty_returned,
+                    "delivered": delivered,
+                    "expected_return": expected_return,
+                    "difference": difference,
                     "qty_returned_to_warehouse": qty_returned,
                     "qty_used": qty_used,
-                    "qty_left_at_client": qty_left,
+                    "qty_left_at_client": qty_not_used,
                     "item_liquidation_note": item.item_liquidation_note,
                     "liquidation_alerts": parsed_alerts,
-                    "qty_ocupo": qty_ocupo,
-                    "pk_ingreso_qty": qty_returned,
-                    "delta": delta,
+                    "qty_ocupo": qty_used + qty_not_used,
+                    "pk_ingreso_qty": pk_ingreso_qty,
+                    "delta": difference,
                 }
             )
         items_payload.append(item_data)
@@ -1458,6 +1469,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "rejected_at": req.rejected_at,
         "delivered_at": req.delivered_at,
         "prokey_ref": req.prokey_ref,
+        "prokey_pending": not bool(req.prokey_ref),
         "liquidation_comment": req.liquidation_comment,
         "liquidated_by_name": req.liquidator.nombre if req.liquidator else None,
         "liquidated_at": req.liquidated_at,
