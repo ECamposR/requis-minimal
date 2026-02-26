@@ -16,6 +16,7 @@
 - `REQ-070` completada: modal liquidada ahora muestra comentario general (con placeholder `—` cuando falta) y nota por item bajo la descripcion; endpoint normaliza ambos campos.
 - `REQ-071` completada: modal detalle rediseñado a formato dashboard con cards de contexto/estado/alertas de conciliación, timeline lateral, DIF consistente por signo y secciones secundarias colapsables.
 - `REQ-072` completada: refinamiento visual del dashboard del modal (badges/severidades, contraste DIF, densidad de tabla, notas y colapsables), todo scoped a `#modal-detalle`.
+- `REQ-073` completada: ajuste fino visual acercando la propuesta (cards compactas con kv, timeline vertical con nodos, DIF como chip con signo y modal casi fullscreen scoped).
 
 ## En progreso
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
@@ -24,10 +25,11 @@
 - Validar UX del comentario y notas en modal (saltos de linea y legibilidad en resoluciones medias).
 - Validar UX del layout dashboard (desktop/laptop) para evitar overflow y scroll excesivo.
 - Confirmar que el scope CSS del modal no afecta vistas externas (aprobar/bodega/listados).
+- Revisar balance final de densidad visual para evitar sobrecarga en pantallas pequeñas.
 
 ## Proximo paso exacto
-1. Ejecutar smoke manual de REQ-072 en `/aprobar` y `/bodega` (liquidada/no liquidada) validando badges DIF/notas/colapsables.
-2. Revisar visual en 1366x768 y móvil para confirmar que timeline y cards apilan correctamente.
+1. Ejecutar smoke manual de REQ-073 en `/aprobar` y `/bodega` (liquidada/no liquidada) verificando fullscreen, chips DIF y timeline vertical.
+2. Confirmar en 1366x768 y móvil que el modal no genera scroll horizontal y mantiene legibilidad.
 3. Definir siguiente REQ funcional (reporteria/export) en `TASKS`.
 
 ## Riesgos abiertos

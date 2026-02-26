@@ -1337,3 +1337,74 @@
   - REQ-072 completada en capa CSS/UX, sin cambios en backend ni JS.
 - Proximo paso:
   - Smoke manual del modal en liquidadas/no liquidadas para confirmar percepción visual final.
+
+## 2026-02-26 16:12 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-073` (polish visual del modal dashboard para acercarlo a propuesta objetivo).
+- Cambios:
+  - `static/app.js`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Sin cambios de backend ni lógica de liquidación.
+  - Estructura del modal migrada a patrón `detail-dashboard` con cards compactas y key/value.
+  - Timeline convertido a flujo vertical con nodos (`dd-timeline`).
+  - DIF renderizado como chip con signo (`+/-/0`) y clases semánticas.
+  - Modal en modo casi fullscreen solo cuando aplica clase `modal--detail-dashboard`.
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall static app`
+- Resultado:
+  - REQ-073 completada en capa UI/UX, manteniendo compatibilidad de datos y rutas existentes.
+- Proximo paso:
+  - Smoke manual en navegador para validar percepción visual final y responsive.
+
+## 2026-02-26 16:14 UTC-06:00 | tool: Codex CLI
+- Objetivo: Ajuste rápido de usabilidad visual en modal dashboard (detalle de requisición).
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/WORKLOG.md`
+- Regla aplicada:
+  - Se incrementa anchura del modal solo en modo `modal--detail-dashboard` para evitar vista apretada.
+- Detalle técnico:
+  - `width: min(1400px, 96vw)` -> `width: min(1650px, 99vw)`
+- Resultado:
+  - Más espacio horizontal para acomodar cards y tabla en desktop.
+- Proximo paso:
+  - Validación visual manual en navegador para confirmar distribución de objetos.
+
+## 2026-02-26 16:16 UTC-06:00 | tool: Codex CLI
+- Objetivo: Segundo ajuste de ancho modal dashboard para eliminar sensación de vista apretada.
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/WORKLOG.md`
+- Detalle técnico:
+  - Modal dashboard: `width` ahora `99.6vw` y `height` `95vh`.
+  - Contenido interno: padding reducido para ganar espacio útil horizontal.
+- Resultado:
+  - Mayor aprovechamiento de pantalla y más aire para cards + tabla.
+
+## 2026-02-26 16:23 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir modal de detalle aun "apretado" tras ajustes de ancho.
+- Hallazgo:
+  - Regla legacy en `static/style.css` fijaba `#modal-detalle article` a `max-width: 1380px`, afectando cards del dashboard.
+- Cambios:
+  - `static/style.css`
+  - `docs/ai/WORKLOG.md`
+- Fix aplicado:
+  - Regla legacy ahora solo aplica fuera del modo dashboard:
+    - `#modal-detalle:not(.modal--detail-dashboard) article { ... }`
+- Resultado esperado:
+  - El detalle de requisición/liquidación aprovecha realmente el ancho casi fullscreen definido en `theme.css`.
+
+## 2026-02-26 16:25 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir contracción del modal dashboard tras desacoplar regla legacy.
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/WORKLOG.md`
+- Fix aplicado:
+  - Forzado explícito del contenedor interno del modal dashboard:
+    - `#modal-detalle.modal--detail-dashboard article { width: 100%; max-width: none; ... }`
+  - Ajuste de padding del dialog para aprovechar mejor el viewport.
+- Resultado esperado:
+  - El detalle de requisición/liquidación ocupa casi todo el ancho disponible sin encogerse.

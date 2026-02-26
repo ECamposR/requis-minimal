@@ -222,7 +222,7 @@ function verDetalle(id) {
                                   const detail = alertMessage(a);
                                   const detailText = detail ? `${escapeHtml(detail)} · ` : "";
                                   const title = `${label}: ${detailText}(interno: ${code})`;
-                                  return `<span class="liq-alert-badge ${sev}" title="${title}">${label}</span>`;
+                                  return `<span class="alert-badge alert-badge--${sev} liq-alert-badge ${sev}" title="${title}">${label}</span>`;
                               })
                               .join("")
                         : '<span class="liq-alert-empty">Sin alertas</span>';
@@ -232,6 +232,7 @@ function verDetalle(id) {
                         : "";
                     const mode = (i.mode || "RETORNABLE").toUpperCase();
                     const ingresoPk = mode === "RETORNABLE" ? fmtQty(i.pk_ingreso_qty) : "0";
+                    const differenceText = difference > 0 ? `+${fmtQty(difference)}` : fmtQty(difference);
                     return `<tr>
                         <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${noteHtml}</td>
                         <td class="qty-col">${fmtQty(i.cantidad_entregada)}</td>
@@ -239,7 +240,7 @@ function verDetalle(id) {
                         <td class="qty-col">${fmtQty(i.used ?? i.qty_used)}</td>
                         <td class="qty-col">${fmtQty(i.not_used ?? i.qty_left_at_client)}</td>
                         <td class="qty-col">${fmtQty(i.returned ?? i.qty_returned_to_warehouse)}</td>
-                        <td class="qty-col ${differenceCls}">${fmtQty(difference)}</td>
+                        <td class="qty-col"><span class="${differenceCls}">${differenceText}</span></td>
                         <td class="qty-col">
                             <span class="pk-help" title="Pendiente de ingresar en Prokey por bodega (solo retornables)">${ingresoPk}</span>
                         </td>
@@ -259,13 +260,10 @@ function verDetalle(id) {
             const timeline = Array.isArray(data.timeline) ? data.timeline : [];
             const timelineRows = timeline
                 .map(
-                    (event) => `<div class="timeline-item">
-                                    <div class="timeline-main">
-                                        <span class="timeline-event">${escapeHtml(event.evento || "-")}</span>
-                                        <span class="timeline-actor">${escapeHtml(event.actor || "-")}</span>
-                                    </div>
-                                    <div class="timeline-time">${fmtDateTime(event.fecha_hora)}</div>
-                                </div>`
+                    (event) => `<li class="dd-timeline__item">
+                                    <div class="dd-timeline__title">${escapeHtml(event.evento || "-")}</div>
+                                    <div class="dd-timeline__meta">${escapeHtml(event.actor || "-")} · ${fmtDateTime(event.fecha_hora)}</div>
+                                </li>`
                 )
                 .join("");
             const allAlerts = items.flatMap((i) => (Array.isArray(i.liquidation_alerts) ? i.liquidation_alerts : []));
@@ -282,6 +280,7 @@ function verDetalle(id) {
             const topAlertTypes = topAlertEntries.length
                 ? topAlertEntries.map(([label, count]) => `${escapeHtml(label)} (${count})`).join(", ")
                 : "Ninguno";
+            const alertCardClass = highAlerts > 0 ? "dd-card--alert dd-card--alert-high" : allAlerts.length > 0 ? "dd-card--alert" : "";
             const prokeyRefHtml = data.prokey_ref
                 ? escapeHtml(data.prokey_ref)
                 : `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
@@ -330,7 +329,7 @@ function verDetalle(id) {
                 ? `<a class="secondary" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer">Ver PDF</a>`
                 : `<button type="button" class="secondary" disabled title="En desarrollo">Ver PDF</button>`;
             const commentsToggleHtml = `
-                <details class="detalle-collapsible">
+                <details class="detalle-collapsible dd-collapse">
                     <summary>Otros comentarios y proceso</summary>
                     <div class="comentarios-list">
                         <div class="comentario-item">
@@ -353,7 +352,9 @@ function verDetalle(id) {
                 </details>
             `;
 
+            modal.classList.add("modal--detail-dashboard");
             content.innerHTML = `
+                <div class="detail-dashboard">
                 <section class="detalle-dashboard-header">
                     <div>
                         <h4 class="detalle-dashboard-title">Requisición ${escapeHtml(data.folio || "-")}</h4>
@@ -363,76 +364,47 @@ function verDetalle(id) {
                         ${pdfAction}
                     </div>
                 </section>
-                <section class="detalle-dashboard-grid">
-                    <article class="detalle-block dashboard-card">
-                        <h4>Información general</h4>
-                        <div class="detalle-meta-grid">
-                            <div class="meta-line">
-                                <span class="meta-label label-blue">CLIENTE</span>
-                                <strong>${escapeHtml(data.cliente_nombre || "-")}</strong>
-                            </div>
-                            <div class="meta-line">
-                                <span class="meta-label label-green">COD. CLIENTE</span>
-                                <strong>${escapeHtml(data.cliente_codigo || "-")}</strong>
-                            </div>
-                            <div class="meta-line">
-                                <span class="meta-label label-blue">RUTA PRINCIPAL</span>
-                                <strong>${escapeHtml(data.cliente_ruta_principal || "-")}</strong>
-                            </div>
-                            <div class="meta-line">
-                                <span class="meta-label label-orange">SOLICITANTE</span>
-                                <strong>${escapeHtml(data.solicitante || "-")}</strong>
-                            </div>
-                        </div>
+                <section class="detalle-dashboard-grid dd-grid">
+                    <article class="detalle-block dashboard-card dd-card">
+                        <h4 class="dd-card-title">Información general</h4>
+                        <div class="dd-kv"><div class="dd-kv-label">Cliente</div><div class="dd-kv-value">${escapeHtml(data.cliente_nombre || "-")}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Código cliente</div><div class="dd-kv-value">${escapeHtml(data.cliente_codigo || "-")}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Ruta principal</div><div class="dd-kv-value">${escapeHtml(data.cliente_ruta_principal || "-")}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Solicitante</div><div class="dd-kv-value">${escapeHtml(data.solicitante || "-")}</div></div>
                     </article>
-                    <article class="detalle-block dashboard-card">
-                        <h4>Estado liquidación</h4>
-                        <div class="flujo-list">
-                            <div class="flujo-item">
-                                <span class="meta-label">Estado</span>
-                                <div class="flujo-value">${escapeHtml(data.estado || "-")}</div>
-                            </div>
-                            <div class="flujo-item">
-                                <span class="meta-label">Resultado entrega</span>
-                                ${resultHtml}
-                            </div>
-                            <div class="flujo-item">
-                                <span class="meta-label">Por</span>
-                                <div class="flujo-value">${escapeHtml(data.liquidated_by_name || data.delivered_by || "-")}</div>
-                            </div>
-                            <div class="flujo-item">
-                                <span class="meta-label">Ref Prokey</span>
-                                <div class="flujo-value">${prokeyRefHtml}</div>
-                            </div>
-                        </div>
+                    <article class="detalle-block dashboard-card dd-card">
+                        <h4 class="dd-card-title">Estado liquidación</h4>
+                        <div class="dd-kv"><div class="dd-kv-label">Estado</div><div class="dd-kv-value">${escapeHtml(data.estado || "-")}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Resultado entrega</div><div class="dd-kv-value">${resultHtml}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Por</div><div class="dd-kv-value">${escapeHtml(data.liquidated_by_name || data.delivered_by || "-")}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Ref Prokey</div><div class="dd-kv-value">${prokeyRefHtml}</div></div>
                     </article>
-                    <article class="detalle-block dashboard-card">
-                        <h4>Alertas de conciliación</h4>
-                        <div class="liquidacion-summary-grid">
-                            <div><span class="meta-label">Total</span><strong>${allAlerts.length} detectadas</strong></div>
-                            <div><span class="meta-label">Severidad alta</span><strong>${highAlerts}</strong></div>
-                        </div>
-                        <p class="status-muted"><strong>Tipos frecuentes:</strong> ${topAlertTypes}</p>
+                    <article class="detalle-block dashboard-card dd-card ${alertCardClass}">
+                        <h4 class="dd-card-title">Alertas de conciliación</h4>
+                        <div class="dd-kv"><div class="dd-kv-label">Total</div><div class="dd-kv-value">${allAlerts.length} detectadas</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Severidad alta</div><div class="dd-kv-value">${highAlerts}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Tipos frecuentes</div><div class="dd-kv-value">${topAlertTypes}</div></div>
                     </article>
-                    <article class="detalle-block dashboard-card dashboard-timeline">
-                        <h4>Línea de tiempo del flujo</h4>
-                        <div class="timeline-list">
-                            ${timelineRows || '<div class="timeline-item"><div class="timeline-main"><span class="timeline-event">Sin movimientos</span></div><div class="timeline-time">-</div></div>'}
-                        </div>
+                    <article class="detalle-block dashboard-card dd-card dashboard-timeline">
+                        <h4 class="dd-card-title">Línea de tiempo del flujo</h4>
+                        <ol class="dd-timeline">
+                            ${timelineRows || '<li class="dd-timeline__item"><div class="dd-timeline__title">Sin movimientos</div><div class="dd-timeline__meta">-</div></li>'}
+                        </ol>
                     </article>
                 </section>
                 ${itemsSection}
                 <section class="detalle-bottom-grid">
-                    <article class="detalle-block dashboard-card">
-                        <h4>Comentario de liquidación</h4>
+                    <article class="detalle-block dashboard-card dd-card">
+                        <h4 class="dd-card-title">Comentario de liquidación</h4>
                         <p class="liquidation-comment">${liquidationComment}</p>
                     </article>
-                    <article class="detalle-block dashboard-card">
-                        <h4>Justificación</h4>
+                    <article class="detalle-block dashboard-card dd-card">
+                        <h4 class="dd-card-title">Justificación</h4>
                         <p>${escapeHtml(data.justificacion || "-")}</p>
                     </article>
                 </section>
                 ${commentsToggleHtml}
+                </div>
             `;
             modal.showModal();
         });
@@ -440,5 +412,8 @@ function verDetalle(id) {
 
 function cerrarModal() {
     const modal = document.getElementById("modal-detalle");
-    if (modal) modal.close();
+    if (modal) {
+        modal.classList.remove("modal--detail-dashboard");
+        modal.close();
+    }
 }

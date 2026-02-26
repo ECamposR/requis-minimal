@@ -16,6 +16,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-070` | `done` | Modal detalle liquidada muestra comentario general de liquidacion (con `—` si vacio) y nota por item bajo descripcion; payload JSON normalizado para `liquidation_comment` e `item_liquidation_note`.
 - `REQ-071` | `done` | Rediseño del modal detalle a vista dashboard: cards superiores + timeline lateral + tabla central, “Alertas de conciliación”, DIF por signo, notas de ítem destacadas y comentarios secundarios colapsables.
 - `REQ-072` | `done` | Refinamiento visual de la vista dashboard del modal: badges/severidades más legibles, DIF con mayor contraste, densidad de tabla ajustada y estilos scoped para no afectar otras vistas.
+- `REQ-073` | `done` | UI polish del dashboard en modal: cards más compactas con patrón label/valor, timeline vertical con nodos, DIF como chip con signo, modal casi fullscreen y notas por ítem con mayor énfasis contextual.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.
