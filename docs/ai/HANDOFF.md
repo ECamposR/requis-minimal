@@ -13,15 +13,17 @@
 - `REQ-067` completada: detalle (API + modal) de requisiciones liquidadas ya refleja columnas y calculos por modo, incluyendo `Ingreso PK` solo para retornables.
 - `REQ-068` completada: bloqueo de liquidacion si un item entregado queda "sin definir" (todo en cero), con re-render conservando datos, resaltado de filas incompletas y defensa doble en backend.
 - `REQ-069` completada: modal de detalle traduce codigos `ALERTA_*` a etiquetas humanas y muestra detalle numerico en tooltip, manteniendo severidad visual y trazabilidad interna.
+- `REQ-070` completada: modal liquidada ahora muestra comentario general (con placeholder `—` cuando falta) y nota por item bajo la descripcion; endpoint normaliza ambos campos.
 
 ## En progreso
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - Ejecutar smoke manual de liquidacion en UI para validar experiencia completa de bloqueo/edicion.
 - Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
+- Validar UX del comentario y notas en modal (saltos de linea y legibilidad en resoluciones medias).
 
 ## Proximo paso exacto
-1. Correr `pytest -q tests/test_liquidacion_integration.py -v` para confirmar que no hay regresiones entre unitarios e integracion.
-2. Validar manualmente REQ-069 en navegador con requisiciones liquidadas que tengan y no tengan alertas.
+1. Ejecutar smoke manual en navegador para REQ-070 (con y sin comentario, con y sin notas por item).
+2. Correr `pytest -q tests/test_liquidacion.py -v` como validacion cruzada tras REQ-070.
 3. Definir siguiente REQ funcional (reporteria/export) en `TASKS`.
 
 ## Riesgos abiertos

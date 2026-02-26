@@ -1270,3 +1270,28 @@
   - REQ-069 completada sin cambios de endpoints ni esquema de DB.
 - Proximo paso:
   - Ejecutar smoke manual de modal en navegador para validar copy/tooltips con alertas de severidad `warn` y `high`.
+
+## 2026-02-26 15:32 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-070` para mostrar comentario general y notas por item en modal de detalle de requisiciones liquidadas.
+- Cambios:
+  - `app/main.py`
+  - `static/app.js`
+  - `static/theme.css`
+  - `tests/test_liquidacion_integration.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Payload JSON normalizado para `liquidation_comment` e `item_liquidation_note` con convención `null` cuando está vacío.
+  - Modal liquidada muestra siempre bloque de comentario (`—` cuando no existe).
+  - Nota por item visible debajo de la descripción en tabla de items liquidados.
+- Test agregado/ajustado:
+  - `test_detalle_liquidada_incluye_comentario_y_nota_item` en integración.
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall app static tests`
+  - `.venv/bin/pytest -q tests/test_liquidacion_integration.py -v`
+- Resultado:
+  - Integración de liquidación: `13 passed`.
+  - REQ-070 completada sin cambios de rutas ni DB.
+- Proximo paso:
+  - Validar visualmente en navegador el modal con comentarios multilinea y filas con/sin nota.

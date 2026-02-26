@@ -126,9 +126,10 @@ async def liquidar(
     req: Requisicion,
     payload_by_item_id: dict[int, dict[str, str]],
     prokey_ref: str,
+    liquidation_comment: str = "Liquidacion integracion",
 ):
     bode = db.query(Usuario).filter(Usuario.username == "bodega.1").first()
-    form_data: dict[str, str] = {"prokey_ref": prokey_ref, "liquidation_comment": "Liquidacion integracion"}
+    form_data: dict[str, str] = {"prokey_ref": prokey_ref, "liquidation_comment": liquidation_comment}
     for item_id, values in payload_by_item_id.items():
         form_data[f"qty_returned_{item_id}"] = values.get("returned", "0")
         form_data[f"qty_used_{item_id}"] = values.get("used", "0")
@@ -201,6 +202,35 @@ async def test_detalle_liquidada_muestra_campos_por_modo_y_pk(db_session: Sessio
     assert consumible["returned"] == 2
     assert consumible["difference"] == 0
     assert consumible["pk_ingreso_qty"] == 0
+
+
+@pytest.mark.anyio
+async def test_detalle_liquidada_incluye_comentario_y_nota_item(db_session: Session):
+    req = build_req(db_session, [("Equipo A", 5)])
+    aprobar_req(db_session, req)
+    entregar_completa_req(db_session, req)
+    item = req.items[0]
+    response = await liquidar(
+        db_session,
+        req,
+        {
+            item.id: {
+                "returned": "5",
+                "used": "3",
+                "left": "2",
+                "mode": "RETORNABLE",
+                "note": "Cliente solicito dejar equipo anterior en sitio",
+            }
+        },
+        "PK-INT-NOTE-001",
+        liquidation_comment="Obs cierre",
+    )
+    assert response.status_code == 303
+
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+    assert payload["liquidation_comment"] == "Obs cierre"
+    assert payload["items"][0]["item_liquidation_note"] == "Cliente solicito dejar equipo anterior en sitio"
 
 
 @pytest.mark.anyio

@@ -13,6 +13,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-067` | `done` | Modal detalle de requisiciones liquidadas actualizado al modelo por modo: `Tipo/Usado/No usado/Regresa/Diferencia/Ingreso PK` y payload enriquecido.
 - `REQ-068` | `done` | Bloqueo de liquidacion para items sin definir (`entregado>0` y `usado+no_usado+regresa=0`), con validacion backend obligatoria + validacion frontend de apoyo y preservacion de datos digitados.
 - `REQ-069` | `done` | Alertas de liquidacion en modal con etiquetas humanas (`Faltante/Sobrante/Retorno extra/Inconsistencia`), tooltip con detalle numerico y codigo interno, mas robustez de payload `liquidation_alerts=[]`.
+- `REQ-070` | `done` | Modal detalle liquidada muestra comentario general de liquidacion (con `—` si vacio) y nota por item bajo descripcion; payload JSON normalizado para `liquidation_comment` e `item_liquidation_note`.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.

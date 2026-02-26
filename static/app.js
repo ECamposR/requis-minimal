@@ -227,7 +227,7 @@ function verDetalle(id) {
                               .join("")
                         : '<span class="liq-alert-empty">Sin alertas</span>';
                     const noteHtml = i.item_liquidation_note
-                        ? `<div class="liq-item-note">${escapeHtml(i.item_liquidation_note)}</div>`
+                        ? `<div class="liq-item-note item-note">${escapeHtml(i.item_liquidation_note)}</div>`
                         : "";
                     const mode = (i.mode || "RETORNABLE").toUpperCase();
                     const ingresoPk = mode === "RETORNABLE" ? fmtQty(i.pk_ingreso_qty) : "0";
@@ -288,6 +288,9 @@ function verDetalle(id) {
                 ? escapeHtml(data.prokey_ref)
                 : `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
                    <a href="/requisiciones/${data.id}/prokey-ref" class="prokey-add-link">Agregar referencia Prokey</a>`;
+            const liquidationComment = data.liquidation_comment
+                ? escapeHtml(data.liquidation_comment)
+                : "—";
             const liquidacionHeader = isLiquidada
                 ? `<section class="liquidacion-summary">
                     <h4>Resumen de Liquidacion</h4>
@@ -298,11 +301,10 @@ function verDetalle(id) {
                         <div><span class="meta-label">Alertas</span><strong>${escapeHtml(resumenAlertas)}</strong></div>
                     </div>
                     ${topAlertTypes ? `<p class="status-muted"><strong>Tipos frecuentes:</strong> ${topAlertTypes}</p>` : ""}
-                    ${
-                        data.liquidation_comment
-                            ? `<div class="liquidacion-summary-comment"><span class="meta-label">Comentario</span><p>${escapeHtml(data.liquidation_comment)}</p></div>`
-                            : ""
-                    }
+                    <div class="liquidacion-summary-comment">
+                        <span class="meta-label">Comentario</span>
+                        <p class="liquidation-comment">${liquidationComment}</p>
+                    </div>
                 </section>`
                 : "";
             const itemsSection = isLiquidada

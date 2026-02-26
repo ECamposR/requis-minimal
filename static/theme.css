@@ -405,6 +405,16 @@ table tbody tr:hover td {
     font-size: 0.78rem;
 }
 
+.item-note {
+    font-size: 0.85em;
+    opacity: 0.8;
+    margin-top: 4px;
+}
+
+.liquidation-comment {
+    white-space: pre-wrap;
+}
+
 .pk-help {
     cursor: help;
     text-decoration: underline dotted;

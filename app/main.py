@@ -129,6 +129,13 @@ def infer_liquidation_mode(descripcion: str) -> str:
     return "RETORNABLE"
 
 
+def normalize_optional_text(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return cleaned or None
+
+
 def redirect_with_message(url: str, message: str, level: str = "success") -> RedirectResponse:
     safe_msg = quote_plus(message)
     safe_level = quote_plus(level)
@@ -1511,7 +1518,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                     "qty_returned_to_warehouse": qty_returned,
                     "qty_used": qty_used,
                     "qty_left_at_client": qty_not_used,
-                    "item_liquidation_note": item.item_liquidation_note,
+                    "item_liquidation_note": normalize_optional_text(item.item_liquidation_note),
                     "liquidation_alerts": parsed_alerts,
                     "qty_ocupo": qty_used + qty_not_used,
                     "pk_ingreso_qty": pk_ingreso_qty,
@@ -1545,7 +1552,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "delivered_at": req.delivered_at,
         "prokey_ref": req.prokey_ref,
         "prokey_pending": not bool(req.prokey_ref),
-        "liquidation_comment": req.liquidation_comment,
+        "liquidation_comment": normalize_optional_text(req.liquidation_comment),
         "liquidated_by_name": req.liquidator.nombre if req.liquidator else None,
         "liquidated_at": req.liquidated_at,
         "timeline": timeline,
