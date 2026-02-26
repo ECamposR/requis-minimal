@@ -1246,3 +1246,27 @@
   - REQ-068 completada sin cambios de endpoints adicionales ni regresion en reglas de estado.
 - Proximo paso:
   - Ejecutar smoke manual en UI para validar flujo visual en navegador (bloqueo, resaltado y preservacion de formulario).
+
+## 2026-02-26 15:21 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-069` para volver humanas las alertas de liquidacion en el modal de detalle, sin cambiar logica backend.
+- Cambios:
+  - `static/app.js`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Se mantienen codigos internos `ALERTA_*` para trazabilidad.
+  - Se agregan etiquetas legibles para usuario: `Faltante`, `Sobrante`, `Retorno extra`, `Inconsistencia`.
+  - Tooltips ahora incluyen detalle numerico cuando hay data y el codigo interno de respaldo.
+  - Si no hay alertas en item liquidado, UI mantiene `Sin alertas` y payload robusto como lista vacia.
+- Test agregado:
+  - `test_api_detalle_alertas_null_se_convierte_a_lista_vacia`
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall app static`
+  - `.venv/bin/pytest -q tests/test_liquidacion.py -v`
+- Resultado:
+  - Suite de liquidacion: `32 passed`.
+  - REQ-069 completada sin cambios de endpoints ni esquema de DB.
+- Proximo paso:
+  - Ejecutar smoke manual de modal en navegador para validar copy/tooltips con alertas de severidad `warn` y `high`.

@@ -28,6 +28,46 @@ function fmtDateTime(value) {
     return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
 }
 
+function alertLabel(type) {
+    const key = String(type || "").toUpperCase();
+    const map = {
+        ALERTA_FALTANTE: "Faltante",
+        ALERTA_SOBRANTE: "Sobrante",
+        ALERTA_RETORNO_EXTRA: "Retorno extra",
+        ALERTA_SALIDA_SIN_SOPORTE: "Inconsistencia",
+    };
+    return map[key] || String(type || "Alerta");
+}
+
+function alertMessage(alert) {
+    const type = String(alert?.type || "").toUpperCase();
+    const data = alert?.data && typeof alert.data === "object" ? alert.data : {};
+    if (type === "ALERTA_FALTANTE" || type === "ALERTA_SOBRANTE") {
+        if (
+            data.expected_return !== undefined &&
+            data.returned !== undefined &&
+            (data.diferencia !== undefined || data.difference !== undefined)
+        ) {
+            const diff = data.diferencia !== undefined ? data.diferencia : data.difference;
+            return `Esperado regrese ${fmtQty(data.expected_return)}, regresó ${fmtQty(data.returned)}, dif ${fmtQty(diff)}`;
+        }
+        return "";
+    }
+    if (type === "ALERTA_RETORNO_EXTRA") {
+        if (data.delivered !== undefined && data.returned !== undefined) {
+            return `Regresó ${fmtQty(data.returned)}, entregado ${fmtQty(data.delivered)}`;
+        }
+        return "";
+    }
+    if (type === "ALERTA_SALIDA_SIN_SOPORTE") {
+        if (data.total_out !== undefined && data.delivered !== undefined) {
+            return `Salió ${fmtQty(data.total_out)}, entregado ${fmtQty(data.delivered)}`;
+        }
+        return "";
+    }
+    return "";
+}
+
 function renderItemOptions() {
     const catalogo = window.CATALOGO_ITEMS || [];
     const options = ['<option value="">Seleccionar item...</option>'];
@@ -177,7 +217,12 @@ function verDetalle(id) {
                         ? alerts
                               .map((a) => {
                                   const sev = a?.severity === "high" ? "high" : "warn";
-                                  return `<span class="liq-alert-badge ${sev}">${escapeHtml(a?.type || "ALERTA")}</span>`;
+                                  const code = escapeHtml(a?.type || "ALERTA");
+                                  const label = escapeHtml(alertLabel(a?.type));
+                                  const detail = alertMessage(a);
+                                  const detailText = detail ? `${escapeHtml(detail)} · ` : "";
+                                  const title = `${label}: ${detailText}(interno: ${code})`;
+                                  return `<span class="liq-alert-badge ${sev}" title="${title}">${label}</span>`;
                               })
                               .join("")
                         : '<span class="liq-alert-empty">Sin alertas</span>';
@@ -228,6 +273,17 @@ function verDetalle(id) {
                 allAlerts.length > 0
                     ? `${allAlerts.length} alertas (${highAlerts} de severidad alta)`
                     : "Sin alertas";
+            const topAlertTypes = Object.entries(
+                allAlerts.reduce((acc, current) => {
+                    const key = alertLabel(current?.type);
+                    acc[key] = (acc[key] || 0) + 1;
+                    return acc;
+                }, {})
+            )
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 2)
+                .map(([label, count]) => `${escapeHtml(label)} (${count})`)
+                .join(", ");
             const prokeyRefHtml = data.prokey_ref
                 ? escapeHtml(data.prokey_ref)
                 : `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
@@ -241,6 +297,7 @@ function verDetalle(id) {
                         <div><span class="meta-label">Fecha</span><strong>${fmtDateTime(data.liquidated_at)}</strong></div>
                         <div><span class="meta-label">Alertas</span><strong>${escapeHtml(resumenAlertas)}</strong></div>
                     </div>
+                    ${topAlertTypes ? `<p class="status-muted"><strong>Tipos frecuentes:</strong> ${topAlertTypes}</p>` : ""}
                     ${
                         data.liquidation_comment
                             ? `<div class="liquidacion-summary-comment"><span class="meta-label">Comentario</span><p>${escapeHtml(data.liquidation_comment)}</p></div>`

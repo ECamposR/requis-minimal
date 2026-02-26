@@ -12,14 +12,16 @@
 - `REQ-066` completada: captura de liquidacion por item ahora usa modo `RETORNABLE/CONSUMIBLE`, renombra `No usado` y calcula alertas por diferencia segun modo.
 - `REQ-067` completada: detalle (API + modal) de requisiciones liquidadas ya refleja columnas y calculos por modo, incluyendo `Ingreso PK` solo para retornables.
 - `REQ-068` completada: bloqueo de liquidacion si un item entregado queda "sin definir" (todo en cero), con re-render conservando datos, resaltado de filas incompletas y defensa doble en backend.
+- `REQ-069` completada: modal de detalle traduce codigos `ALERTA_*` a etiquetas humanas y muestra detalle numerico en tooltip, manteniendo severidad visual y trazabilidad interna.
 
 ## En progreso
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - Ejecutar smoke manual de liquidacion en UI para validar experiencia completa de bloqueo/edicion.
+- Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
 
 ## Proximo paso exacto
-1. Validar en navegador REQ-068 con tres casos: item incompleto bloqueado, `entregado=0` permitido y item con un campo >0 permitido.
-2. Correr `pytest -q tests/test_liquidacion_integration.py -v` para confirmar que no hay regresiones entre unitarios e integracion.
+1. Correr `pytest -q tests/test_liquidacion_integration.py -v` para confirmar que no hay regresiones entre unitarios e integracion.
+2. Validar manualmente REQ-069 en navegador con requisiciones liquidadas que tengan y no tengan alertas.
 3. Definir siguiente REQ funcional (reporteria/export) en `TASKS`.
 
 ## Riesgos abiertos

@@ -571,6 +571,34 @@ async def test_detalle_liquidada_incluye_campos(db_session: Session):
 
 
 @pytest.mark.anyio
+async def test_api_detalle_alertas_null_se_convierte_a_lista_vacia(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "2",
+                f"qty_used_{item.id}": "5",
+                f"qty_not_used_{item.id}": "2",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "PK-DET-NULL-01",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    db_session.refresh(item)
+    assert item.liquidation_alerts is None
+
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+    liq_item = payload["items"][0]
+    assert isinstance(liq_item["liquidation_alerts"], list)
+    assert liq_item["liquidation_alerts"] == []
+
+
+@pytest.mark.anyio
 async def test_detalle_liquidada_campos_derivados(db_session: Session):
     req = create_req_entregada(db_session, cantidad=10)
     item = get_item(db_session, req)
