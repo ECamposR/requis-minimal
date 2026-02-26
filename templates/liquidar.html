@@ -18,6 +18,14 @@
 </section>
 
 <section class="panel view-panel">
+    {% if error_message %}
+    <article class="liquidacion-inline-error" role="alert">
+        {{ error_message }}
+    </article>
+    {% endif %}
+    <article class="liquidacion-inline-error liquidacion-inline-error-client" role="alert" data-client-error hidden>
+        Hay items sin definir. Completa Usado/No usado/Regresa.
+    </article>
     <form method="POST" action="/liquidar/{{ req.id }}">
         <div class="table-wrap">
             <table class="table-compact liquidacion-table">
@@ -36,31 +44,33 @@
                 </thead>
                 <tbody>
                     {% for item in req.items %}
-                    <tr data-liquidacion-row>
+                    {% set values = liquidacion_values.get(item.id, {}) if liquidacion_values else {} %}
+                    <tr data-liquidacion-row {% if item.id in item_incompletos %}class="row-incomplete"{% endif %}>
                         <td>{{ item.descripcion }}</td>
                         <td>
                             <select name="mode_{{ item.id }}" data-mode>
-                                <option value="RETORNABLE" {% if item.default_mode == 'RETORNABLE' %}selected{% endif %}>RETORNABLE</option>
-                                <option value="CONSUMIBLE" {% if item.default_mode == 'CONSUMIBLE' %}selected{% endif %}>CONSUMIBLE</option>
+                                <option value="RETORNABLE" {% if values.get('mode', item.default_mode) == 'RETORNABLE' %}selected{% endif %}>RETORNABLE</option>
+                                <option value="CONSUMIBLE" {% if values.get('mode', item.default_mode) == 'CONSUMIBLE' %}selected{% endif %}>CONSUMIBLE</option>
                             </select>
                         </td>
                         <td data-delivered="{{ item.cantidad_entregada }}">{{ item.cantidad_entregada }}</td>
                         <td>
-                            <input type="number" min="0" step="1" name="qty_returned_{{ item.id }}" value="0" required>
+                            <input type="number" min="0" step="1" name="qty_returned_{{ item.id }}" value="{{ values.get('qty_returned', '0') }}" required>
                         </td>
                         <td>
-                            <input type="number" min="0" step="1" name="qty_used_{{ item.id }}" value="0" required>
+                            <input type="number" min="0" step="1" name="qty_used_{{ item.id }}" value="{{ values.get('qty_used', '0') }}" required>
                         </td>
                         <td>
-                            <input type="number" min="0" step="1" name="qty_not_used_{{ item.id }}" value="0" required>
+                            <input type="number" min="0" step="1" name="qty_not_used_{{ item.id }}" value="{{ values.get('qty_not_used', '0') }}" required>
                         </td>
                         <td data-ocupo>0</td>
                         <td>
                             <span data-delta>0</span>
                             <small data-expected-return class="status-muted">Esperado regrese: 0</small>
+                            <small class="hint-incomplete" data-incomplete-hint {% if item.id not in item_incompletos %}hidden{% endif %}>Completar este item</small>
                         </td>
                         <td>
-                            <input type="text" name="note_{{ item.id }}" placeholder="Opcional">
+                            <input type="text" name="note_{{ item.id }}" placeholder="Opcional" value="{{ values.get('note', '') }}">
                         </td>
                     </tr>
                     {% endfor %}
@@ -71,14 +81,14 @@
         <div class="form-grid-3">
             <label>
                 Referencia comprobante Prokey (opcional, se completa despues)
-                <input type="text" name="prokey_ref">
+                <input type="text" name="prokey_ref" value="{{ liquidacion_meta.get('prokey_ref', '') if liquidacion_meta else '' }}">
                 <small>Se usa para enlazar con el comprobante en Prokey una vez se cree.</small>
             </label>
         </div>
 
         <label>
             Comentario de liquidacion (opcional)
-            <textarea name="liquidation_comment" rows="3" placeholder="Observaciones de cierre"></textarea>
+            <textarea name="liquidation_comment" rows="3" placeholder="Observaciones de cierre">{{ liquidacion_meta.get('liquidation_comment', '') if liquidacion_meta else '' }}</textarea>
         </label>
 
         <div class="form-actions">
@@ -124,16 +134,43 @@
         if (diferencia < 0) {
             deltaCell.classList.add("delta-danger");
         }
+
+        const isIncomplete = delivered > 0 && (returned + used + notUsed) === 0;
+        row.classList.toggle("row-incomplete", isIncomplete);
+        const hint = row.querySelector("[data-incomplete-hint]");
+        if (hint) {
+            hint.hidden = !isIncomplete;
+        }
+        return { isIncomplete };
     }
 
     function bindLiquidacion() {
+        const form = document.querySelector("form[action^='/liquidar/']");
+        const globalError = document.querySelector("[data-client-error]");
         const rows = document.querySelectorAll("[data-liquidacion-row]");
+        const evaluateAllRows = () => {
+            let hasIncomplete = false;
+            rows.forEach((row) => {
+                const result = recalcRow(row);
+                if (result.isIncomplete) hasIncomplete = true;
+            });
+            if (globalError) globalError.hidden = !hasIncomplete;
+            return hasIncomplete;
+        };
+
         rows.forEach((row) => {
             const inputs = row.querySelectorAll("input[name^='qty_returned_'], input[name^='qty_used_'], input[name^='qty_not_used_'], select[data-mode]");
-            inputs.forEach((input) => input.addEventListener("input", () => recalcRow(row)));
-            inputs.forEach((input) => input.addEventListener("change", () => recalcRow(row)));
-            recalcRow(row);
+            inputs.forEach((input) => input.addEventListener("input", evaluateAllRows));
+            inputs.forEach((input) => input.addEventListener("change", evaluateAllRows));
         });
+        if (form) {
+            form.addEventListener("submit", (event) => {
+                if (evaluateAllRows()) {
+                    event.preventDefault();
+                }
+            });
+        }
+        evaluateAllRows();
     }
 
     bindLiquidacion();

@@ -11,6 +11,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-065` | `done` | Edicion posterior de `prokey_ref` para requisiciones liquidadas (admin o solicitante), sin reabrir ni modificar cantidades/alertas.
 - `REQ-066` | `done` | Liquidacion por item con modo `RETORNABLE/CONSUMIBLE`, campo UI `No usado` y alertas/diferencia recalculadas por modo (no bloqueantes).
 - `REQ-067` | `done` | Modal detalle de requisiciones liquidadas actualizado al modelo por modo: `Tipo/Usado/No usado/Regresa/Diferencia/Ingreso PK` y payload enriquecido.
+- `REQ-068` | `done` | Bloqueo de liquidacion para items sin definir (`entregado>0` y `usado+no_usado+regresa=0`), con validacion backend obligatoria + validacion frontend de apoyo y preservacion de datos digitados.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.

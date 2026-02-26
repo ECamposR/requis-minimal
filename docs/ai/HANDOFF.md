@@ -11,15 +11,16 @@
 - `REQ-065` completada: ya existe pantalla dedicada para completar `prokey_ref` en estado `liquidada`, con permisos para admin o solicitante y sin tocar cantidades de liquidacion.
 - `REQ-066` completada: captura de liquidacion por item ahora usa modo `RETORNABLE/CONSUMIBLE`, renombra `No usado` y calcula alertas por diferencia segun modo.
 - `REQ-067` completada: detalle (API + modal) de requisiciones liquidadas ya refleja columnas y calculos por modo, incluyendo `Ingreso PK` solo para retornables.
+- `REQ-068` completada: bloqueo de liquidacion si un item entregado queda "sin definir" (todo en cero), con re-render conservando datos, resaltado de filas incompletas y defensa doble en backend.
 
 ## En progreso
-- Stabilizar ejecucion de suite legacy basada en `TestClient` (en este entorno CLI algunas pruebas quedan colgadas).
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
+- Ejecutar smoke manual de liquidacion en UI para validar experiencia completa de bloqueo/edicion.
 
 ## Proximo paso exacto
-1. Diagnosticar y corregir hang de pruebas legacy con `TestClient` para volver a tener `pytest tests/` estable.
-2. Acordar alcance de reporte minimo (indicadores + export simple) sin agregar complejidad arquitectonica.
-3. Priorizar requerimientos y abrir siguiente REQ en `TASKS`.
+1. Validar en navegador REQ-068 con tres casos: item incompleto bloqueado, `entregado=0` permitido y item con un campo >0 permitido.
+2. Correr `pytest -q tests/test_liquidacion_integration.py -v` para confirmar que no hay regresiones entre unitarios e integracion.
+3. Definir siguiente REQ funcional (reporteria/export) en `TASKS`.
 
 ## Riesgos abiertos
 - Drift entre lo ya experimentado y lo que se va a rehacer en esta rama.

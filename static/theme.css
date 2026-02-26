@@ -273,6 +273,33 @@ table tbody tr:hover td {
     color: var(--ui-danger);
 }
 
+.liquidacion-inline-error {
+    margin-bottom: 0.7rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 10px;
+    border: 1px solid rgba(240, 186, 96, 0.45);
+    background: rgba(135, 101, 43, 0.18);
+    color: #ffd998;
+}
+
+.liquidacion-inline-error-client {
+    border-color: rgba(241, 121, 146, 0.45);
+    background: rgba(133, 45, 63, 0.2);
+    color: #ffc3cf;
+}
+
+.liquidacion-table tr.row-incomplete td {
+    background: rgba(133, 45, 63, 0.15);
+}
+
+.liquidacion-table .hint-incomplete {
+    display: block;
+    margin-top: 0.25rem;
+    color: #ffc3cf;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
 .liquidacion-summary {
     border: 1px solid var(--ui-border);
     border-left: 4px solid var(--ui-primary);

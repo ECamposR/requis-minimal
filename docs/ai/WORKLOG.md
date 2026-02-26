@@ -1217,3 +1217,32 @@
   - El detalle de liquidacion ahora representa correctamente la semantica operacional por tipo de item y evita lectura ambigua del ingreso Prokey.
 - Proximo paso:
   - Definir `REQ-068` para reporte operativo minimo (p. ej. lista de liquidaciones pendientes de referencia Prokey/export simple).
+
+## 2026-02-26 15:10 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-068` para bloquear liquidaciones ambiguas con items entregados sin definir.
+- Cambios:
+  - `app/main.py`
+  - `app/crud.py`
+  - `templates/liquidar.html`
+  - `static/theme.css`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Validacion backend obligatoria en `POST /liquidar/{id}`: si `entregado > 0` y `usado + no_usado + regresa == 0`, no se permite liquidar.
+  - Defensa adicional en `ejecutar_liquidacion(...)` para evitar bypass por capa API.
+  - Re-render de `liquidar.html` con mensaje claro, filas incompletas resaltadas y preservacion de datos ya digitados.
+  - Validacion UX en frontend: marca de fila incompleta en vivo y bloqueo de submit con mensaje global.
+- Tests agregados:
+  - `test_no_permite_liquidar_item_incompleto_entregado_gt_0`
+  - `test_si_permite_cuando_delivered_es_0`
+  - `test_permite_liquidar_si_al_menos_un_campo_es_mayor_0`
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall app templates static tests`
+  - `.venv/bin/pytest -q tests/test_liquidacion.py -v`
+- Resultado:
+  - Suite de liquidacion: `31 passed`.
+  - REQ-068 completada sin cambios de endpoints adicionales ni regresion en reglas de estado.
+- Proximo paso:
+  - Ejecutar smoke manual en UI para validar flujo visual en navegador (bloqueo, resaltado y preservacion de formulario).

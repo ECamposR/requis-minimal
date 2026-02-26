@@ -95,6 +95,8 @@ def db_session(test_engine):
 class DummyRequest:
     def __init__(self, data: dict[str, str]):
         self._data = data
+        self.url = type("URL", (), {"path": "/liquidar/test"})()
+        self.query_params: dict[str, str] = {}
 
     async def form(self):
         return self._data
@@ -389,6 +391,85 @@ async def test_liquidar_permite_prokey_ref_vacio(db_session: Session):
     db_session.refresh(req)
     assert req.estado == "liquidada"
     assert req.prokey_ref is None
+
+
+@pytest.mark.anyio
+async def test_no_permite_liquidar_item_incompleto_entregado_gt_0(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=4)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "0",
+                f"qty_used_{item.id}": "0",
+                f"qty_not_used_{item.id}": "0",
+                f"mode_{item.id}": "RETORNABLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 200
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+    assert req.liquidated_at is None
+
+
+@pytest.mark.anyio
+async def test_si_permite_cuando_delivered_es_0(db_session: Session):
+    req = create_req_entregada(db_session, delivery_result="parcial", cantidad=3, cantidad_entregada=0)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "0",
+                f"qty_used_{item.id}": "0",
+                f"qty_not_used_{item.id}": "0",
+                f"mode_{item.id}": "RETORNABLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "liquidada"
+
+
+@pytest.mark.anyio
+async def test_permite_liquidar_si_al_menos_un_campo_es_mayor_0(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=3)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "1",
+                f"qty_used_{item.id}": "0",
+                f"qty_not_used_{item.id}": "0",
+                f"mode_{item.id}": "RETORNABLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "liquidada"
 
 
 @pytest.mark.anyio

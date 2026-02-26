@@ -206,9 +206,16 @@ def ejecutar_liquidacion(
 
     for item in requisicion.items:
         data = items_data.get(item.id, {})
-        item.qty_returned_to_warehouse = int(data.get("qty_returned_to_warehouse", 0))
-        item.qty_used = int(data.get("qty_used", 0))
-        item.qty_left_at_client = int(data.get("qty_left_at_client", 0))
+        qty_returned = int(data.get("qty_returned_to_warehouse", 0))
+        qty_used = int(data.get("qty_used", 0))
+        qty_not_used = int(data.get("qty_left_at_client", 0))
+        delivered = item.cantidad_entregada or 0
+        if delivered > 0 and (qty_returned + qty_used + qty_not_used) == 0:
+            raise ValueError("Items incompletos")
+
+        item.qty_returned_to_warehouse = qty_returned
+        item.qty_used = qty_used
+        item.qty_left_at_client = qty_not_used
         mode = str(data.get("liquidation_mode", "RETORNABLE")).upper()
         if mode not in ("RETORNABLE", "CONSUMIBLE"):
             mode = "RETORNABLE"

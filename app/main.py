@@ -790,7 +790,18 @@ def liquidar_form(
     for item in req.items:
         item.default_mode = infer_liquidation_mode(item.descripcion)
 
-    return templates.TemplateResponse("liquidar.html", template_context(request, current_user, req=req))
+    return templates.TemplateResponse(
+        "liquidar.html",
+        template_context(
+            request,
+            current_user,
+            req=req,
+            error_message=None,
+            item_incompletos=[],
+            liquidacion_values={},
+            liquidacion_meta={"prokey_ref": "", "liquidation_comment": ""},
+        ),
+    )
 
 
 @app.post("/liquidar/{req_id}")
@@ -807,6 +818,7 @@ async def liquidar_guardar(
         db.query(Requisicion)
         .options(
             joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
         )
         .filter(Requisicion.id == req_id)
         .first()
@@ -821,8 +833,14 @@ async def liquidar_guardar(
     form_data = await request.form()
     prokey_ref = str(form_data.get("prokey_ref", "")).strip() or None
     liquidation_comment = str(form_data.get("liquidation_comment", "")).strip() or None
+    liquidacion_meta = {
+        "prokey_ref": str(form_data.get("prokey_ref", "")).strip(),
+        "liquidation_comment": str(form_data.get("liquidation_comment", "")).strip(),
+    }
 
     items_data: dict[int, dict[str, int | str | None]] = {}
+    liquidacion_values: dict[int, dict[str, str]] = {}
+    item_incompletos: list[int] = []
 
     def parse_non_negative_int(raw: str, field_label: str) -> int:
         try:
@@ -838,15 +856,55 @@ async def liquidar_guardar(
         qty_used_raw = str(form_data.get(f"qty_used_{item.id}", "0")).strip() or "0"
         qty_not_used_raw = str(form_data.get(f"qty_not_used_{item.id}", form_data.get(f"qty_left_{item.id}", "0"))).strip() or "0"
         mode_raw = str(form_data.get(f"mode_{item.id}", "RETORNABLE")).strip().upper() or "RETORNABLE"
-        note = str(form_data.get(f"note_{item.id}", "")).strip() or None
+        note_raw = str(form_data.get(f"note_{item.id}", "")).strip()
+        note = note_raw or None
+        liquidacion_values[item.id] = {
+            "qty_returned": qty_returned_raw,
+            "qty_used": qty_used_raw,
+            "qty_not_used": qty_not_used_raw,
+            "mode": mode_raw,
+            "note": note_raw,
+        }
         try:
             qty_returned = parse_non_negative_int(qty_returned_raw, "Regresa")
             qty_used = parse_non_negative_int(qty_used_raw, "Usado")
             qty_not_used = parse_non_negative_int(qty_not_used_raw, "No usado")
         except ValueError as exc:
-            return redirect_with_message(f"/liquidar/{req_id}", str(exc), "error")
+            for req_item in req.items:
+                req_item.default_mode = infer_liquidation_mode(req_item.descripcion)
+            return templates.TemplateResponse(
+                "liquidar.html",
+                template_context(
+                    request,
+                    current_user,
+                    req=req,
+                    error_message=str(exc),
+                    item_incompletos=[],
+                    liquidacion_values=liquidacion_values,
+                    liquidacion_meta=liquidacion_meta,
+                ),
+                status_code=200,
+            )
         if mode_raw not in ("RETORNABLE", "CONSUMIBLE"):
-            return redirect_with_message(f"/liquidar/{req_id}", "Modo de liquidacion invalido", "error")
+            for req_item in req.items:
+                req_item.default_mode = infer_liquidation_mode(req_item.descripcion)
+            return templates.TemplateResponse(
+                "liquidar.html",
+                template_context(
+                    request,
+                    current_user,
+                    req=req,
+                    error_message="Modo de liquidacion invalido",
+                    item_incompletos=[],
+                    liquidacion_values=liquidacion_values,
+                    liquidacion_meta=liquidacion_meta,
+                ),
+                status_code=200,
+            )
+
+        delivered = item.cantidad_entregada or 0
+        if delivered > 0 and (qty_returned + qty_used + qty_not_used) == 0:
+            item_incompletos.append(item.id)
 
         items_data[item.id] = {
             "qty_returned_to_warehouse": qty_returned,
@@ -855,6 +913,23 @@ async def liquidar_guardar(
             "liquidation_mode": mode_raw,
             "item_liquidation_note": note,
         }
+
+    if item_incompletos:
+        for item in req.items:
+            item.default_mode = infer_liquidation_mode(item.descripcion)
+        return templates.TemplateResponse(
+            "liquidar.html",
+            template_context(
+                request,
+                current_user,
+                req=req,
+                error_message="Hay items sin definir. Completa Usado/No usado/Regresa en cada item entregado.",
+                item_incompletos=item_incompletos,
+                liquidacion_values=liquidacion_values,
+                liquidacion_meta=liquidacion_meta,
+            ),
+            status_code=200,
+        )
 
     try:
         ejecutar_liquidacion(
