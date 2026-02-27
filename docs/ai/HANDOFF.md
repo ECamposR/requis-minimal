@@ -24,6 +24,12 @@
 - `REQ-079` completada: actualización visual global a tema Arctic Glass (Gradient Boost) aplicada solo con CSS (colores/tokens), sin cambios de estructura ni flujo funcional.
 - `REQ-079B` completada: hardening visual del tema Arctic Glass sobre estilos legacy (dark) con overrides de alta prioridad y tokens unificados para tablas, paneles, formularios, botones, badges y detalle.
 - `REQ-080` completada: home `/` renovado a dashboard limpio con seis KPIs, panel de indicadores y acciones rápidas, con estilos scopiados (`route-home`) para evitar impacto en otras vistas.
+- `REQ-080A` completada: corrección de fondo en bloque `Indicadores Rápidos` (header del panel) para eliminar tono oscuro heredado.
+- `REQ-080B` completada: mejora de legibilidad en campos de cliente de `Nueva Requisición` (fondo blanco + texto negro en negrita en edición/focus/autofill).
+- `REQ-080C` completada: modal de detalle alineado al tema Arctic Glass, eliminando superficie gris residual en contenedor principal y tarjetas internas.
+- `REQ-081` completada: nueva alerta de inventario `ALERTA_RETORNO_INCOMPLETO` para ítems `RETORNABLE` cuando `regresa < entregado`, visible en detalle con label/tooltip humano e incluida en conteos de conciliación.
+- `REQ-082` completada: corrección del bug donde `ALERTA_RETORNO_INCOMPLETO` no aparecía de forma consistente; backend ahora normaliza `delivered/returned/mode`, persiste `liquidation_alerts` siempre como array JSON y API entrega lista robusta para UI.
+- `REQ-083` completada: liquidación ahora exige cobertura real (`Usado + No usado == Entregado`) y consistencia de `Regresa` por modo antes de guardar; frontend resalta filas inválidas, muestra mensaje por fila y deshabilita `Liquidar` hasta corregir.
 
 ## En progreso
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
@@ -35,8 +41,8 @@
 - Revisar balance final de densidad visual para evitar sobrecarga en pantallas pequeñas.
 
 ## Proximo paso exacto
-1. Ejecutar smoke manual de REQ-073 en `/aprobar` y `/bodega` (liquidada/no liquidada) verificando fullscreen, chips DIF y timeline vertical.
-2. Confirmar en 1366x768 y móvil que el modal no genera scroll horizontal y mantiene legibilidad.
+1. Ejecutar smoke manual específico de REQ-083: validar que el formulario de liquidación deshabilita `Liquidar` cuando `Usado + No usado != Entregado` o cuando un `CONSUMIBLE` tiene `Regresa != No usado`.
+2. Confirmar caso permitido en `RETORNABLE` con cobertura correcta y `Regresa < Entregado`, verificando que guarda y luego muestra alerta “Retorno incompleto”.
 3. Definir siguiente REQ funcional (reporteria/export) en `TASKS`.
 
 ## Riesgos abiertos

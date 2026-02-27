@@ -292,12 +292,20 @@ table tbody tr:hover td {
     background: rgba(133, 45, 63, 0.15);
 }
 
+.liquidacion-table tr.row-return-invalid td {
+    background: rgba(217, 119, 6, 0.16);
+}
+
 .liquidacion-table .hint-incomplete {
     display: block;
     margin-top: 0.25rem;
     color: #ffc3cf;
     font-size: 0.72rem;
     font-weight: 600;
+}
+
+.liquidacion-table tr.row-return-invalid .hint-incomplete {
+    color: #8a4b00;
 }
 
 .liquidacion-summary {

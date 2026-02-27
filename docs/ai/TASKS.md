@@ -24,6 +24,12 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-079` | `done` | Aplicación global de paleta “Arctic Glass (Gradient Boost)” en toda la app mediante overrides de color en `theme.css`, sin cambios de layout/estructura ni lógica.
 - `REQ-079B` | `done` | Reparación de consistencia del tema Arctic Glass: neutralización de colores legacy dark y unificación por tokens/overrides scopiados (tablas, paneles, inputs, botones, badges y modal).
 - `REQ-080` | `done` | Rediseño visual de Inicio a dashboard limpio (header + botón, 6 KPI con “Ver detalle”, panel de indicadores y panel de acciones rápidas), sin cambios de lógica ni queries backend.
+- `REQ-080A` | `done` | Ajuste puntual Home: corrección de fondo/estilo del bloque `Indicadores Rápidos` (`home-panel-header`) para eliminar franja/tono oscuro residual.
+- `REQ-080B` | `done` | Ajuste puntual Nueva Requisición: campos `cliente_codigo`, `cliente_nombre`, `cliente_ruta_principal` mantienen fondo blanco y texto negro en negrita durante edición/focus/autofill.
+- `REQ-080C` | `done` | Ajuste puntual modal Detalle: unificación de fondo y superficies internas al tema Arctic Glass (blanco con degradado azulado, sin gris legacy).
+- `REQ-081` | `done` | Alerta adicional de inventario para ítems `RETORNABLE`: `ALERTA_RETORNO_INCOMPLETO` cuando `regresa < entregado`, con label/tooltip humano en modal y conteo automático en conciliación.
+- `REQ-082` | `done` | Fix robusto de `ALERTA_RETORNO_INCOMPLETO`: normalización de modo/cantidades en backend, persistencia de alertas siempre como array JSON, normalización API y validación con tests DB/API.
+- `REQ-083` | `done` | Validación fuerte de liquidación por cobertura: `Usado + No usado == Entregado` obligatorio y consistencia de `Regresa` por modo (`CONSUMIBLE` exacto, `RETORNABLE` no superior a cobertura), con bloqueo en backend/frontend y errores por fila.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.

@@ -128,11 +128,12 @@ def puede_liquidar(requisicion: Requisicion, usuario: Usuario) -> bool:
 def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
     """Calcula alertas para un ítem liquidado. No bloquea por diferencia != 0."""
     alertas: list[dict[str, Any]] = []
-    delivered = item.cantidad_entregada or 0
-    returned = item.qty_returned_to_warehouse or 0
-    used = item.qty_used or 0
-    not_used = item.qty_left_at_client or 0
-    mode = (item.liquidation_mode or "RETORNABLE").upper()
+    delivered = int(item.cantidad_entregada or 0)
+    returned = int(item.qty_returned_to_warehouse or 0)
+    used = int(item.qty_used or 0)
+    not_used = int(item.qty_left_at_client or 0)
+    raw_mode = getattr(item, "liquidation_mode", None) or getattr(item, "tipo", None) or "RETORNABLE"
+    mode = str(raw_mode).upper().strip()
     if mode not in ("RETORNABLE", "CONSUMIBLE"):
         mode = "RETORNABLE"
     expected_return = (used + not_used) if mode == "RETORNABLE" else not_used
@@ -172,6 +173,19 @@ def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
                 "data": {"returned": returned, "delivered": delivered},
             }
         )
+    if mode == "RETORNABLE" and delivered > 0 and returned < delivered:
+        alertas.append(
+            {
+                "type": "ALERTA_RETORNO_INCOMPLETO",
+                "severity": "warn",
+                "data": {
+                    "delivered": delivered,
+                    "returned": returned,
+                    "missing": delivered - returned,
+                    "delta": delivered - returned,
+                },
+            }
+        )
     total_out = used + not_used
     if total_out > delivered:
         alertas.append(
@@ -188,6 +202,35 @@ def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
         )
 
     return alertas
+
+
+def validar_liquidacion_item(
+    delivered: int,
+    used: int,
+    not_used: int,
+    returned: int,
+    mode: str,
+) -> str | None:
+    coverage_total = used + not_used
+    if coverage_total != delivered:
+        return (
+            "Debes distribuir la cantidad entregada entre Usado y No usado. "
+            f"Entregado={delivered}, Usado+No usado={coverage_total}"
+        )
+
+    if mode == "CONSUMIBLE" and returned != not_used:
+        return (
+            "En consumible, Regresa debe ser igual a No usado. "
+            f"Regresa={returned}, No usado={not_used}"
+        )
+
+    if mode == "RETORNABLE" and returned > coverage_total:
+        return (
+            "En retornable, Regresa no puede superar lo distribuido en Usado y No usado. "
+            f"Regresa={returned}, Cobertura={coverage_total}"
+        )
+
+    return None
 
 
 def ejecutar_liquidacion(
@@ -212,20 +255,21 @@ def ejecutar_liquidacion(
         qty_used = int(data.get("qty_used", 0))
         qty_not_used = int(data.get("qty_left_at_client", 0))
         delivered = item.cantidad_entregada or 0
-        if delivered > 0 and (qty_returned + qty_used + qty_not_used) == 0:
-            raise ValueError("Items incompletos")
+        mode = str(data.get("liquidation_mode", "RETORNABLE")).upper()
+        if mode not in ("RETORNABLE", "CONSUMIBLE"):
+            mode = "RETORNABLE"
+        validation_error = validar_liquidacion_item(delivered, qty_used, qty_not_used, qty_returned, mode)
+        if validation_error:
+            raise ValueError(validation_error)
 
         item.qty_returned_to_warehouse = qty_returned
         item.qty_used = qty_used
         item.qty_left_at_client = qty_not_used
-        mode = str(data.get("liquidation_mode", "RETORNABLE")).upper()
-        if mode not in ("RETORNABLE", "CONSUMIBLE"):
-            mode = "RETORNABLE"
         item.liquidation_mode = mode
         item.item_liquidation_note = data.get("item_liquidation_note") or None
 
         alertas = calcular_alertas_item(item)
-        item.liquidation_alerts = json.dumps(alertas) if alertas else None
+        item.liquidation_alerts = json.dumps(alertas)
 
     requisicion.estado = "liquidada"
     requisicion.prokey_ref = prokey_ref or None

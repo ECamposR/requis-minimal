@@ -1586,3 +1586,109 @@
   - `python -m compileall app templates static`
 - Resultado:
   - Inicio actualizado visualmente sin cambios en lógica de negocio ni queries backend.
+
+## 2026-02-27 14:22 UTC-06:00 | tool: Codex CLI
+- Objetivo: Cerrar trazabilidad de ajustes visuales post-`REQ-080` y mantener gobernanza sincronizada commit a commit.
+- Cambios:
+  - `static/theme.css`
+  - `templates/crear_requisicion.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - `REQ-080A` (`b16c813`): corrección de estilo en Home para `Indicadores Rápidos` (`home-panel-header`) y eliminación de tono oscuro residual.
+  - `REQ-080B` (`1290aa0`): campos de cliente en `Nueva Requisición` con clase dedicada (`req-client-field`) para fondo blanco y texto negro en negrita durante edición/focus/autofill.
+  - `REQ-080C` (`18855ec`): unificación del fondo del modal de detalle al tema Arctic Glass (contenedor principal y superficies internas) eliminando gris legacy.
+- Comandos ejecutados:
+  - `git log --oneline -n 8`
+  - `git status --short`
+  - `date '+%Y-%m-%d %H:%M %Z %z'`
+- Resultado:
+  - Bitácoras y handoff quedan alineados con los últimos cambios ya aplicados en `main`.
+  - No se tocaron endpoints, lógica de negocio ni esquema de base de datos en esta intervención documental.
+
+## 2026-02-27 14:41 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-081` agregando alerta de inventario “Retorno incompleto” para ítems `RETORNABLE` (`regresa < entregado`) sin cambiar la lógica de diferencia actual.
+- Cambios:
+  - `app/crud.py`
+  - `static/app.js`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Backend: `calcular_alertas_item` ahora genera `ALERTA_RETORNO_INCOMPLETO` (`severity=warn`) con `data={delivered, returned, missing}` cuando modo es `RETORNABLE` y retorno es menor al entregado.
+  - Frontend: mapping humano agregado (`Retorno incompleto`) y tooltip numérico: “Entregado X, regresó Y, faltan Z”.
+  - Tests: agregado `test_retornable_alerta_retorno_incompleto` para validar presencia de la nueva alerta.
+  - No se alteró el cálculo de `DIF`/conciliación existente ni reglas de transición de estado.
+- Comandos ejecutados:
+  - `python -m compileall app static tests`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v`
+- Resultado:
+  - Suite de liquidación OK: `33 passed`.
+  - Feature lista para validación visual en modal de detalle.
+
+## 2026-02-27 14:57 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-082` para corregir inconsistencia donde `ALERTA_RETORNO_INCOMPLETO` no se disparaba/visualizaba en todos los casos `RETORNABLE` con `regresa < entregado`.
+- Cambios:
+  - `app/crud.py`
+  - `app/main.py`
+  - `static/app.js`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Backend (fuente de verdad):
+    - Normalización estricta en `calcular_alertas_item`: `int()` para `delivered/returned/used/not_used`.
+    - Normalización robusta de modo: `liquidation_mode` (fallback `tipo`) con `upper().strip()`.
+    - `ALERTA_RETORNO_INCOMPLETO` mantiene coexistencia con otras alertas y ahora incluye `data.delta` además de `missing`.
+  - Persistencia:
+    - `item.liquidation_alerts` ahora se guarda siempre como JSON array (`json.dumps(alertas)`), incluso vacío.
+  - API detalle:
+    - Parseo de `liquidation_alerts` endurecido con `except (JSONDecodeError, TypeError, ValueError)` y fallback a `[]`.
+  - Frontend modal:
+    - Tooltip de “Retorno incompleto” tolera `missing` o `delta` para evitar huecos de visualización.
+  - Tests:
+    - Nuevo test `test_api_detalle_incluye_retorno_incompleto`.
+    - Ajuste de tests que esperaban `None` en DB, ahora esperan `[]` serializado.
+- Comandos ejecutados:
+  - `python -m compileall app static init_db.py tests`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v`
+- Resultado:
+  - Suite liquidación OK: `34 passed`.
+  - Fix aplicado sin cambios de layout/tema ni alteración de la lógica de conciliación existente.
+
+## 2026-02-27 15:18 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-083` para bloquear liquidaciones con cobertura artificial o retorno inconsistente respecto al modo.
+- Cambios:
+  - `app/crud.py`
+  - `app/main.py`
+  - `templates/liquidar.html`
+  - `static/theme.css`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Backend:
+    - Nueva función compartida `validar_liquidacion_item(...)`.
+    - Regla de cobertura obligatoria: `used + not_used == delivered`.
+    - Regla de consistencia:
+      - `CONSUMIBLE`: `returned == not_used`
+      - `RETORNABLE`: `returned <= used + not_used`
+    - `POST /liquidar/{id}` ahora re-renderiza el formulario con errores por fila si alguna validación falla.
+    - `ejecutar_liquidacion(...)` aplica la misma validación para evitar bypass.
+  - Frontend:
+    - Validación en vivo por fila con mensajes concretos.
+    - Resaltado visual separado para cobertura (`row-incomplete`) y retorno inconsistente (`row-return-invalid`).
+    - Botón `Liquidar` se deshabilita si cualquier fila no cumple.
+  - Tests:
+    - Se agregaron/ajustaron escenarios de cobertura y consistencia por modo.
+    - Se actualizaron fixtures de tests previos que antes dependían de liquidaciones con cobertura incompleta.
+- Comandos ejecutados:
+  - `python -m compileall app templates static tests`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v`
+- Resultado:
+  - Suite liquidación OK: `37 passed`.
+  - El flujo ya no permite “cuadrar” artificialmente con `Regresa` dejando parte de `Entregado` sin explicar.

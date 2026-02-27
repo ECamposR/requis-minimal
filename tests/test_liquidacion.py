@@ -186,7 +186,7 @@ async def test_liquidar_flujo_feliz_sin_alertas(db_session: Session):
         DummyRequest(
             {
                 f"qty_returned_{item.id}": "2",
-                f"qty_used_{item.id}": "5",
+                f"qty_used_{item.id}": "8",
                 f"qty_left_{item.id}": "2",
                 f"mode_{item.id}": "CONSUMIBLE",
                 f"note_{item.id}": "",
@@ -202,7 +202,7 @@ async def test_liquidar_flujo_feliz_sin_alertas(db_session: Session):
     db_session.refresh(item)
     assert req.estado == "liquidada"
     assert req.prokey_ref == "PK-001"
-    assert item.liquidation_alerts is None
+    assert json.loads(item.liquidation_alerts) == []
 
 
 @pytest.mark.anyio
@@ -214,9 +214,10 @@ async def test_liquidar_con_faltante(db_session: Session):
         req.id,
         DummyRequest(
             {
-                f"qty_returned_{item.id}": "0",
+                f"qty_returned_{item.id}": "1",
                 f"qty_used_{item.id}": "3",
-                f"qty_left_{item.id}": "0",
+                f"qty_left_{item.id}": "2",
+                f"mode_{item.id}": "RETORNABLE",
                 f"note_{item.id}": "",
                 "prokey_ref": "PK-002",
                 "liquidation_comment": "",
@@ -235,13 +236,14 @@ async def test_liquidar_con_retorno_extra(db_session: Session):
     req = create_req_entregada(db_session, cantidad=3)
     item = get_item(db_session, req)
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
-    await liquidar_guardar(
+    response = await liquidar_guardar(
         req.id,
         DummyRequest(
             {
                 f"qty_returned_{item.id}": "5",
                 f"qty_used_{item.id}": "0",
-                f"qty_left_{item.id}": "0",
+                f"qty_left_{item.id}": "3",
+                f"mode_{item.id}": "RETORNABLE",
                 f"note_{item.id}": "",
                 "prokey_ref": "PK-003",
                 "liquidation_comment": "",
@@ -250,12 +252,9 @@ async def test_liquidar_con_retorno_extra(db_session: Session):
         current_user=bodega,
         db=db_session,
     )
-    db_session.refresh(item)
-    alertas = json.loads(item.liquidation_alerts)
-    types = {a["type"] for a in alertas}
-    severities = {a["severity"] for a in alertas}
-    assert {"ALERTA_SOBRANTE", "ALERTA_RETORNO_EXTRA"}.issubset(types)
-    assert {"warn", "high"}.issubset(severities)
+    assert response.status_code == 200
+    db_session.refresh(req)
+    assert req.estado == "entregada"
 
 
 @pytest.mark.anyio
@@ -263,13 +262,14 @@ async def test_liquidar_salida_sin_soporte(db_session: Session):
     req = create_req_entregada(db_session, cantidad=2)
     item = get_item(db_session, req)
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
-    await liquidar_guardar(
+    response = await liquidar_guardar(
         req.id,
         DummyRequest(
             {
                 f"qty_returned_{item.id}": "0",
                 f"qty_used_{item.id}": "3",
                 f"qty_left_{item.id}": "0",
+                f"mode_{item.id}": "RETORNABLE",
                 f"note_{item.id}": "",
                 "prokey_ref": "PK-004",
                 "liquidation_comment": "",
@@ -278,12 +278,9 @@ async def test_liquidar_salida_sin_soporte(db_session: Session):
         current_user=bodega,
         db=db_session,
     )
-    db_session.refresh(item)
-    alertas = json.loads(item.liquidation_alerts)
-    types = {a["type"] for a in alertas}
-    severities = {a["severity"] for a in alertas}
-    assert {"ALERTA_FALTANTE", "ALERTA_SALIDA_SIN_SOPORTE"}.issubset(types)
-    assert {"warn", "high"}.issubset(severities)
+    assert response.status_code == 200
+    db_session.refresh(req)
+    assert req.estado == "entregada"
 
 
 def test_diferencia_retornable_cuadra(db_session: Session):
@@ -346,6 +343,17 @@ def test_salida_sin_soporte(db_session: Session):
     assert any(a["type"] == "ALERTA_SALIDA_SIN_SOPORTE" and a["severity"] == "high" for a in alertas)
 
 
+def test_retornable_alerta_retorno_incompleto(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=3)
+    item = get_item(db_session, req)
+    item.qty_used = 2
+    item.qty_left_at_client = 0
+    item.qty_returned_to_warehouse = 2
+    item.liquidation_mode = "RETORNABLE"
+    alertas = calcular_alertas_item(item)
+    assert any(a["type"] == "ALERTA_RETORNO_INCOMPLETO" and a["severity"] == "warn" for a in alertas)
+
+
 @pytest.mark.anyio
 async def test_liquidar_no_bloquea_por_delta(db_session: Session):
     req = create_req_entregada(db_session, cantidad=5)
@@ -356,8 +364,9 @@ async def test_liquidar_no_bloquea_por_delta(db_session: Session):
         DummyRequest(
             {
                 f"qty_returned_{item.id}": "0",
-                f"qty_used_{item.id}": "1",
+                f"qty_used_{item.id}": "5",
                 f"qty_left_{item.id}": "0",
+                f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "PK-005",
             }
         ),
@@ -380,7 +389,8 @@ async def test_liquidar_permite_prokey_ref_vacio(db_session: Session):
             {
                 f"qty_returned_{item.id}": "1",
                 f"qty_used_{item.id}": "1",
-                f"qty_left_{item.id}": "1",
+                f"qty_left_{item.id}": "9",
+                f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
             }
         ),
@@ -447,8 +457,8 @@ async def test_si_permite_cuando_delivered_es_0(db_session: Session):
 
 
 @pytest.mark.anyio
-async def test_permite_liquidar_si_al_menos_un_campo_es_mayor_0(db_session: Session):
-    req = create_req_entregada(db_session, cantidad=3)
+async def test_bloquea_si_no_cubre_entregado_retornable(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=5)
     item = get_item(db_session, req)
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
 
@@ -456,9 +466,87 @@ async def test_permite_liquidar_si_al_menos_un_campo_es_mayor_0(db_session: Sess
         req.id,
         DummyRequest(
             {
-                f"qty_returned_{item.id}": "1",
-                f"qty_used_{item.id}": "0",
+                f"qty_returned_{item.id}": "3",
+                f"qty_used_{item.id}": "3",
                 f"qty_not_used_{item.id}": "0",
+                f"mode_{item.id}": "RETORNABLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 200
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+
+
+@pytest.mark.anyio
+async def test_bloquea_si_no_cubre_entregado_consumible(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "0",
+                f"qty_used_{item.id}": "8",
+                f"qty_not_used_{item.id}": "0",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 200
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+
+
+@pytest.mark.anyio
+async def test_bloquea_consumible_si_regresa_distinto_de_no_usado(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "2",
+                f"qty_used_{item.id}": "7",
+                f"qty_not_used_{item.id}": "3",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 200
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+
+
+@pytest.mark.anyio
+async def test_permite_retornable_con_retorno_incompleto_pero_cobertura_ok(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=5)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "3",
+                f"qty_used_{item.id}": "3",
+                f"qty_not_used_{item.id}": "2",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
             }
@@ -469,7 +557,9 @@ async def test_permite_liquidar_si_al_menos_un_campo_es_mayor_0(db_session: Sess
 
     assert response.status_code == 303
     db_session.refresh(req)
+    db_session.refresh(item)
     assert req.estado == "liquidada"
+    assert any(a["type"] == "ALERTA_RETORNO_INCOMPLETO" for a in json.loads(item.liquidation_alerts))
 
 
 @pytest.mark.anyio
@@ -483,7 +573,8 @@ async def test_liquidar_inmutable_no_reliquidar(db_session: Session):
             {
                 f"qty_returned_{item.id}": "1",
                 f"qty_used_{item.id}": "1",
-                f"qty_left_{item.id}": "8",
+                f"qty_left_{item.id}": "9",
+                f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "PK-006",
             }
         ),
@@ -544,9 +635,10 @@ async def test_detalle_liquidada_incluye_campos(db_session: Session):
         req.id,
         DummyRequest(
             {
-                f"qty_returned_{item.id}": "6",
-                f"qty_used_{item.id}": "0",
-                f"qty_left_{item.id}": "0",
+                f"qty_returned_{item.id}": "4",
+                f"qty_used_{item.id}": "2",
+                f"qty_left_{item.id}": "3",
+                f"mode_{item.id}": "RETORNABLE",
                 f"note_{item.id}": "Retiro de equipo",
                 "prokey_ref": "PK-DET-01",
                 "liquidation_comment": "Cierre liquidacion",
@@ -580,7 +672,7 @@ async def test_api_detalle_alertas_null_se_convierte_a_lista_vacia(db_session: S
         DummyRequest(
             {
                 f"qty_returned_{item.id}": "2",
-                f"qty_used_{item.id}": "5",
+                f"qty_used_{item.id}": "8",
                 f"qty_not_used_{item.id}": "2",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "PK-DET-NULL-01",
@@ -590,12 +682,40 @@ async def test_api_detalle_alertas_null_se_convierte_a_lista_vacia(db_session: S
         db=db_session,
     )
     db_session.refresh(item)
-    assert item.liquidation_alerts is None
+    assert json.loads(item.liquidation_alerts) == []
 
     payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
     liq_item = payload["items"][0]
     assert isinstance(liq_item["liquidation_alerts"], list)
     assert liq_item["liquidation_alerts"] == []
+
+
+@pytest.mark.anyio
+async def test_api_detalle_incluye_retorno_incompleto(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=3)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "2",
+                f"qty_used_{item.id}": "2",
+                f"qty_not_used_{item.id}": "1",
+                f"mode_{item.id}": "RETORNABLE",
+                "prokey_ref": "PK-DET-INC-01",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    db_session.refresh(item)
+    db_alertas = json.loads(item.liquidation_alerts)
+    assert any(a["type"] == "ALERTA_RETORNO_INCOMPLETO" for a in db_alertas)
+
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+    liq_item = payload["items"][0]
+    assert any(a.get("type") == "ALERTA_RETORNO_INCOMPLETO" for a in liq_item["liquidation_alerts"])
 
 
 @pytest.mark.anyio
@@ -609,7 +729,8 @@ async def test_detalle_liquidada_campos_derivados(db_session: Session):
             {
                 f"qty_returned_{item.id}": "3",
                 f"qty_used_{item.id}": "4",
-                f"qty_left_{item.id}": "1",
+                f"qty_left_{item.id}": "6",
+                f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "PK-DET-02",
             }
         ),
@@ -618,9 +739,9 @@ async def test_detalle_liquidada_campos_derivados(db_session: Session):
     )
     payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
     liq_item = payload["items"][0]
-    assert liq_item["qty_ocupo"] == 5
+    assert liq_item["qty_ocupo"] == 10
     assert liq_item["pk_ingreso_qty"] == 3
-    assert liq_item["delta"] == 2
+    assert liq_item["delta"] == 7
 
 
 @pytest.mark.anyio
@@ -634,7 +755,8 @@ async def test_liquidada_es_solo_lectura(db_session: Session):
             {
                 f"qty_returned_{item.id}": "2",
                 f"qty_used_{item.id}": "3",
-                f"qty_left_{item.id}": "3",
+                f"qty_left_{item.id}": "5",
+                f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "PK-DET-03",
             }
         ),
@@ -688,7 +810,8 @@ async def test_update_prokey_ref_permite_admin(db_session: Session):
             {
                 f"qty_returned_{item.id}": "2",
                 f"qty_used_{item.id}": "2",
-                f"qty_left_{item.id}": "1",
+                f"qty_left_{item.id}": "3",
+                f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
             }
         ),
@@ -727,7 +850,8 @@ async def test_update_prokey_ref_permite_propietario(db_session: Session):
             {
                 f"qty_returned_{item.id}": "1",
                 f"qty_used_{item.id}": "2",
-                f"qty_left_{item.id}": "1",
+                f"qty_left_{item.id}": "2",
+                f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
             }
         ),
@@ -757,7 +881,8 @@ async def test_update_prokey_ref_bloquea_no_propietario(db_session: Session):
             {
                 f"qty_returned_{item.id}": "1",
                 f"qty_used_{item.id}": "1",
-                f"qty_left_{item.id}": "1",
+                f"qty_left_{item.id}": "2",
+                f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
             }
         ),
@@ -802,7 +927,8 @@ async def test_update_prokey_ref_no_permite_vacio(db_session: Session):
             {
                 f"qty_returned_{item.id}": "1",
                 f"qty_used_{item.id}": "1",
-                f"qty_left_{item.id}": "1",
+                f"qty_left_{item.id}": "2",
+                f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
             }
         ),
@@ -833,7 +959,8 @@ async def test_api_detalle_refleja_prokey_ref_actualizado(db_session: Session):
             {
                 f"qty_returned_{item.id}": "1",
                 f"qty_used_{item.id}": "1",
-                f"qty_left_{item.id}": "1",
+                f"qty_left_{item.id}": "2",
+                f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
             }
         ),

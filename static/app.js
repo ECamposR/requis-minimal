@@ -34,6 +34,7 @@ function alertLabel(type) {
         ALERTA_FALTANTE: "Faltante",
         ALERTA_SOBRANTE: "Sobrante",
         ALERTA_RETORNO_EXTRA: "Retorno extra",
+        ALERTA_RETORNO_INCOMPLETO: "Retorno incompleto",
         ALERTA_SALIDA_SIN_SOPORTE: "Inconsistencia",
     };
     return map[key] || String(type || "Alerta");
@@ -56,6 +57,13 @@ function alertMessage(alert) {
     if (type === "ALERTA_RETORNO_EXTRA") {
         if (data.delivered !== undefined && data.returned !== undefined) {
             return `Regresó ${fmtQty(data.returned)}, entregado ${fmtQty(data.delivered)}`;
+        }
+        return "";
+    }
+    if (type === "ALERTA_RETORNO_INCOMPLETO") {
+        const missing = data.missing !== undefined ? data.missing : data.delta;
+        if (data.delivered !== undefined && data.returned !== undefined && missing !== undefined) {
+            return `Entregado ${fmtQty(data.delivered)}, regresó ${fmtQty(data.returned)}, faltan ${fmtQty(missing)}`;
         }
         return "";
     }

@@ -25,6 +25,7 @@ from .crud import (
     puede_aprobar,
     puede_entregar,
     transicionar_requisicion,
+    validar_liquidacion_item,
 )
 from .database import get_db, run_migrations
 from .models import CatalogoItem, Requisicion, Usuario
@@ -848,6 +849,7 @@ async def liquidar_guardar(
     items_data: dict[int, dict[str, int | str | None]] = {}
     liquidacion_values: dict[int, dict[str, str]] = {}
     item_incompletos: list[int] = []
+    item_validation_errors: dict[int, str] = {}
 
     def parse_non_negative_int(raw: str, field_label: str) -> int:
         try:
@@ -909,9 +911,11 @@ async def liquidar_guardar(
                 status_code=200,
             )
 
-        delivered = item.cantidad_entregada or 0
-        if delivered > 0 and (qty_returned + qty_used + qty_not_used) == 0:
+        delivered = int(item.cantidad_entregada or 0)
+        validation_error = validar_liquidacion_item(delivered, qty_used, qty_not_used, qty_returned, mode_raw)
+        if validation_error:
             item_incompletos.append(item.id)
+            item_validation_errors[item.id] = validation_error
 
         items_data[item.id] = {
             "qty_returned_to_warehouse": qty_returned,
@@ -926,15 +930,16 @@ async def liquidar_guardar(
             item.default_mode = infer_liquidation_mode(item.descripcion)
         return templates.TemplateResponse(
             "liquidar.html",
-            template_context(
-                request,
-                current_user,
-                req=req,
-                error_message="Hay items sin definir. Completa Usado/No usado/Regresa en cada item entregado.",
-                item_incompletos=item_incompletos,
-                liquidacion_values=liquidacion_values,
-                liquidacion_meta=liquidacion_meta,
-            ),
+                template_context(
+                    request,
+                    current_user,
+                    req=req,
+                    error_message="Hay items con cobertura o retorno inconsistente. Revisa Usado, No usado y Regresa antes de liquidar.",
+                    item_incompletos=item_incompletos,
+                    item_validation_errors=item_validation_errors,
+                    liquidacion_values=liquidacion_values,
+                    liquidacion_meta=liquidacion_meta,
+                ),
             status_code=200,
         )
 
@@ -1509,7 +1514,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                     parsed = json.loads(item.liquidation_alerts)
                     if isinstance(parsed, list):
                         parsed_alerts = parsed
-                except json.JSONDecodeError:
+                except (json.JSONDecodeError, TypeError, ValueError):
                     parsed_alerts = []
 
             item_data.update(
