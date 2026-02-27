@@ -275,7 +275,7 @@ def ejecutar_liquidacion(
     requisicion.prokey_ref = prokey_ref or None
     requisicion.liquidation_comment = liquidation_comment or None
     requisicion.liquidated_by = usuario.id
-    requisicion.liquidated_at = datetime.utcnow()
+    requisicion.liquidated_at = datetime.now()
 
     db.commit()
 

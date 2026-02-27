@@ -47,7 +47,7 @@
         <td>{{ req.departamento }}</td>
         <td>{{ req.aprobador.nombre if req.aprobador else '-' }}</td>
         <td class="truncate" title="{{ req.justificacion }}">{{ req.justificacion }}</td>
-        <td>{{ req.approved_at }}</td>
+        <td>{{ req.approved_at | fmt_dt }}</td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td class="table-actions">
             <a href="/bodega/{{ req.id }}/gestionar" role="button" class="secondary">Gestionar</a>
@@ -99,7 +99,7 @@
             {% endif %}
         </td>
         <td>{{ req.delivered_to or '-' }}</td>
-        <td>{{ req.delivered_at }}</td>
+        <td>{{ req.delivered_at | fmt_dt }}</td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td class="table-actions">
             {% if req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}

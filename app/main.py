@@ -119,6 +119,18 @@ def template_context(request: Request, current_user: Usuario | None = None, **kw
     return {"request": request, "current_user": current_user, **kwargs}
 
 
+def format_datetime(value: datetime | str | None) -> str:
+    if not value:
+        return "-"
+    if isinstance(value, str):
+        cleaned = value.replace("T", " ").split(".")[0].strip()
+        return cleaned if cleaned else "-"
+    return value.strftime("%Y-%m-%d %H:%M:%S")
+
+
+templates.env.filters["fmt_dt"] = format_datetime
+
+
 def infer_liquidation_mode(descripcion: str) -> str:
     desc = (descripcion or "").upper()
     retornable_keys = ("MOPA", "ALFOMBRA", "HERRAMIENTA", "EQUIPO")

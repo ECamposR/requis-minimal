@@ -30,6 +30,7 @@
 - `REQ-081` completada: nueva alerta de inventario `ALERTA_RETORNO_INCOMPLETO` para ítems `RETORNABLE` cuando `regresa < entregado`, visible en detalle con label/tooltip humano e incluida en conteos de conciliación.
 - `REQ-082` completada: corrección del bug donde `ALERTA_RETORNO_INCOMPLETO` no aparecía de forma consistente; backend ahora normaliza `delivered/returned/mode`, persiste `liquidation_alerts` siempre como array JSON y API entrega lista robusta para UI.
 - `REQ-083` completada: liquidación ahora exige cobertura real (`Usado + No usado == Entregado`) y consistencia de `Regresa` por modo antes de guardar; frontend resalta filas inválidas, muestra mensaje por fila y deshabilita `Liquidar` hasta corregir.
+- `REQ-084` completada: fechas de tablas SSR unificadas sin microsegundos y `liquidated_at` ahora se guarda en hora local; `fmtDateTime` del modal evita conversiones de zona horaria al formatear strings del API.
 
 ## En progreso
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
@@ -41,9 +42,9 @@
 - Revisar balance final de densidad visual para evitar sobrecarga en pantallas pequeñas.
 
 ## Proximo paso exacto
-1. Ejecutar smoke manual específico de REQ-083: validar que el formulario de liquidación deshabilita `Liquidar` cuando `Usado + No usado != Entregado` o cuando un `CONSUMIBLE` tiene `Regresa != No usado`.
-2. Confirmar caso permitido en `RETORNABLE` con cobertura correcta y `Regresa < Entregado`, verificando que guarda y luego muestra alerta “Retorno incompleto”.
-3. Definir siguiente REQ funcional (reporteria/export) en `TASKS`.
+1. Ejecutar smoke manual de fechas: revisar `/aprobar`, `/bodega`, `/mis-requisiciones` y modal detalle para confirmar formato `HH:MM:SS` sin microsegundos.
+2. Validar una nueva liquidación y confirmar que el evento “Requisición liquidada” ya no aparece con +6h en el detalle.
+3. Si se requiere, definir una tarea separada de migración de datos para corregir `liquidated_at` histórico ya persistido en UTC.
 
 ## Riesgos abiertos
 - Drift entre lo ya experimentado y lo que se va a rehacer en esta rama.

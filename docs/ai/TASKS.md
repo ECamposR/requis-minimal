@@ -30,6 +30,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-081` | `done` | Alerta adicional de inventario para ítems `RETORNABLE`: `ALERTA_RETORNO_INCOMPLETO` cuando `regresa < entregado`, con label/tooltip humano en modal y conteo automático en conciliación.
 - `REQ-082` | `done` | Fix robusto de `ALERTA_RETORNO_INCOMPLETO`: normalización de modo/cantidades en backend, persistencia de alertas siempre como array JSON, normalización API y validación con tests DB/API.
 - `REQ-083` | `done` | Validación fuerte de liquidación por cobertura: `Usado + No usado == Entregado` obligatorio y consistencia de `Regresa` por modo (`CONSUMIBLE` exacto, `RETORNABLE` no superior a cobertura), con bloqueo en backend/frontend y errores por fila.
+- `REQ-084` | `done` | Unificación de fechas/horas: tablas SSR renderizan `YYYY-MM-DD HH:MM:SS` sin microsegundos y liquidación deja de guardar `liquidated_at` en UTC, evitando desfase de +6h en detalle futuro.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.

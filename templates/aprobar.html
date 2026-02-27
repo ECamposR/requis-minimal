@@ -60,7 +60,7 @@
         <td>{{ req.solicitante.nombre }}</td>
         <td>{{ req.departamento }}</td>
         <td class="truncate" title="{{ req.justificacion }}">{{ req.justificacion }}</td>
-        <td>{{ req.created_at }}</td>
+        <td>{{ req.created_at | fmt_dt }}</td>
         <td>
             {% if req.estado == 'aprobada' and req.aprobador %}
                 {{ req.aprobador.nombre }}

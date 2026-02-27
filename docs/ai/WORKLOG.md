@@ -1692,3 +1692,28 @@
 - Resultado:
   - Suite liquidación OK: `37 passed`.
   - El flujo ya no permite “cuadrar” artificialmente con `Regresa` dejando parte de `Entregado` sin explicar.
+
+## 2026-02-27 15:27 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir formato de fecha/hora en vistas SSR y desfase de +6h en `liquidated_at` del detalle.
+- Cambios:
+  - `app/main.py`
+  - `app/crud.py`
+  - `static/app.js`
+  - `templates/aprobar.html`
+  - `templates/bodega.html`
+  - `templates/mis_requisiciones.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Se agregó filtro Jinja `fmt_dt` para renderizar fechas SSR como `YYYY-MM-DD HH:MM:SS`, evitando microsegundos en tablas.
+  - Se aplicó `fmt_dt` en vistas con datetimes visibles: `/aprobar`, `/bodega`, `/mis-requisiciones`.
+  - `liquidated_at` ahora se persiste con `datetime.now()` en lugar de `datetime.utcnow()`, alineado con aprobación/entrega y hora local del servidor.
+  - `fmtDateTime()` en `static/app.js` dejó de depender primero de `new Date(...)`; ahora formatea strings `YYYY-MM-DD HH:MM:SS(.microseconds)` o ISO sin convertir zona horaria, evitando adelantos espurios en el modal.
+- Comandos ejecutados:
+  - `rg -n` sobre templates/app/static para localizar render de fechas
+  - `python -m compileall app static templates`
+- Resultado:
+  - Nuevos registros de liquidación quedan en hora local.
+  - Vistas SSR ya no muestran microsegundos.
+  - Queda pendiente solo una posible migración de datos si se desea corregir liquidaciones históricas ya guardadas con UTC.
