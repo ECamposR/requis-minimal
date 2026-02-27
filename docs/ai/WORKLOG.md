@@ -1760,3 +1760,46 @@
   - Compilación OK.
   - Smoke directo OK: receptor con PIN válido firma, técnico queda sin login, y la requisición persiste `recibido_por_id/recibido_at`.
   - Limitación del entorno: `TestClient` queda colgado incluso contra `/health`; por eso no se pudo cerrar una validación HTTP automatizada confiable en esta sesión.
+
+## 2026-02-27 16:39 UTC-06:00 | tool: Codex CLI
+- Objetivo: Ajustar REQ-085 para que usuarios `tecnico` no requieran contraseña al crearse/editarse; solo PIN operativo.
+- Cambios:
+  - `app/main.py`
+  - `templates/admin_usuario_form.html`
+  - `tests/test_admin_users.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Backend:
+    - Si el rol es `tecnico`, la contraseña deja de ser obligatoria al crear.
+    - Para `tecnico`, el PIN pasa a ser obligatorio.
+    - Como `Usuario.password` sigue siendo no nulo en modelo/DB, se genera internamente un hash aleatorio solo para satisfacer persistencia; no habilita login porque `puede_iniciar_sesion=False`.
+  - UI:
+    - El formulario de usuario ya no marca contraseña como `required`.
+    - Copy aclarado: roles con login requieren contraseña; `tecnico` usa solo PIN.
+  - Tests:
+    - Se ajustó el caso de alta técnica sin contraseña.
+    - Se agregó cobertura para rechazar técnico sin PIN.
+- Comandos ejecutados:
+  - `python -m compileall app templates tests`
+  - `DATABASE_URL=sqlite:///./req086_admin.db .venv/bin/python ...` (smoke directo de persistencia admin/técnico)
+- Resultado:
+  - Compilación OK.
+  - Smoke directo OK para técnico sin contraseña y con login deshabilitado.
+
+## 2026-02-27 16:46 UTC-06:00 | tool: Codex CLI
+- Objetivo: Registrar fix posterior del endpoint de creación de usuarios técnicos sin contraseña.
+- Cambios:
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Se dejó asentado el ajuste del commit `85ab2a2`.
+  - El problema real era de parsing HTTP: la ruta `POST /admin/usuarios` seguía declarando `password: Form(...)`, por lo que FastAPI rechazaba el request antes de llegar a la lógica por rol.
+  - El fix aplicado en código fue cambiar ese campo a `Form("")`, manteniendo la validación real en el handler:
+    - `tecnico`: sin contraseña, con PIN obligatorio
+    - otros roles: con contraseña obligatoria
+- Comandos ejecutados:
+  - Sin comandos de verificación adicionales; esta entrada documenta el fix ya empujado en `85ab2a2`.
+- Resultado:
+  - Gobernanza alineada con el estado real del código y del historial Git.
