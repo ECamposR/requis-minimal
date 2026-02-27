@@ -85,57 +85,76 @@ function getAccionSugerida(alertCounts) {
     return "";
 }
 
-function renderItemOptions() {
-    const catalogo = window.CATALOGO_ITEMS || [];
-    const options = ['<option value="">Seleccionar item...</option>'];
-    for (const item of catalogo) {
-        const safeItem = escapeHtml(item);
-        options.push(`<option value="${safeItem}">${safeItem}</option>`);
-    }
-    return options.join("");
-}
-
 function getCurrentSelectedValues() {
-    return Array.from(document.querySelectorAll("#items-container select[name*='[descripcion]']"))
-        .map((s) => s.value)
+    return Array.from(document.querySelectorAll("#items-container input[name*='[descripcion]']"))
+        .map((input) => input.value.trim())
         .filter((v) => v);
 }
 
-function handleItemSelectChange(select) {
-    const selectedValue = select.value;
-    if (!selectedValue) {
-        syncItemSelectors();
-        return;
-    }
-
-    const duplicate = Array.from(document.querySelectorAll("#items-container select[name*='[descripcion]']"))
-        .some((other) => other !== select && other.value === selectedValue);
-
-    if (duplicate) {
-        select.value = "";
-        select.setCustomValidity("Este item ya fue agregado en otra fila.");
-        select.reportValidity();
-        select.setCustomValidity("");
-    }
-    syncItemSelectors();
+function setItemError(message) {
+    const errorEl = document.getElementById("item-error");
+    if (!errorEl) return;
+    errorEl.textContent = message || "";
 }
 
-function syncItemSelectors() {
-    const selects = Array.from(document.querySelectorAll("#items-container select[name*='[descripcion]']"));
-    const selected = getCurrentSelectedValues();
-    for (const select of selects) {
-        const ownValue = select.value;
-        for (const option of select.options) {
-            if (!option.value) continue;
-            option.disabled = option.value !== ownValue && selected.includes(option.value);
+function validateCatalogItemInput(input, report = false) {
+    if (!input) return false;
+    const value = input.value.trim();
+    const catalogo = window.CATALOGO_ITEMS || [];
+    const existe = catalogo.includes(value);
+
+    if (!value) {
+        input.setCustomValidity("Selecciona un item válido del catálogo.");
+        if (report) input.reportValidity();
+        return false;
+    }
+    if (!existe) {
+        input.setCustomValidity("Selecciona un item válido del catálogo.");
+        if (report) input.reportValidity();
+        return false;
+    }
+
+    const duplicate = Array.from(document.querySelectorAll("#items-container input[name*='[descripcion]']"))
+        .some((other) => other !== input && other.value.trim() === value);
+    if (duplicate) {
+        input.setCustomValidity("Este item ya fue agregado en otra fila.");
+        if (report) input.reportValidity();
+        return false;
+    }
+
+    input.setCustomValidity("");
+    return true;
+}
+
+function handleItemInputChange(input) {
+    const ok = validateCatalogItemInput(input);
+    if (ok) {
+        setItemError("");
+    }
+    syncItemInputs();
+}
+
+function syncItemInputs() {
+    const inputs = Array.from(document.querySelectorAll("#items-container input[name*='[descripcion]']"));
+    if (inputs.length === 0) return;
+    let hasInvalid = false;
+    for (const input of inputs) {
+        const valid = validateCatalogItemInput(input, false);
+        if (!valid && input.value.trim()) {
+            hasInvalid = true;
         }
     }
+    if (hasInvalid) {
+        setItemError("Selecciona un item válido del catálogo.");
+        return;
+    }
+    setItemError("");
 }
 
 function eliminarItem(button) {
     const row = button.closest(".item-row");
     if (row) row.remove();
-    syncItemSelectors();
+    syncItemInputs();
 }
 
 function canAddItemRow(container) {
@@ -143,11 +162,11 @@ function canAddItemRow(container) {
     if (rows.length === 0) return true;
 
     const lastRow = rows[rows.length - 1];
-    const select = lastRow.querySelector("select[name*='[descripcion]']");
+    const itemInput = lastRow.querySelector("input[name*='[descripcion]']");
     const qtyInput = lastRow.querySelector("input[name*='[cantidad]']");
 
-    if (select && !select.value) {
-        select.reportValidity();
+    if (itemInput && !validateCatalogItemInput(itemInput, true)) {
+        setItemError(itemInput.validationMessage || "Selecciona un item válido del catálogo.");
         return false;
     }
     if (qtyInput) {
@@ -159,6 +178,7 @@ function canAddItemRow(container) {
             return false;
         }
     }
+    setItemError("");
     return true;
 }
 
@@ -169,28 +189,54 @@ function agregarItem() {
 
     const div = document.createElement("div");
     div.className = "item-row";
-    div.innerHTML = `
-        <select name="items[${itemCount}][descripcion]" required>
-            ${renderItemOptions()}
-        </select>
-        <input type="number" name="items[${itemCount}][cantidad]" placeholder="Cantidad" step="0.01" min="0.01" required>
-        <button type="button" onclick="eliminarItem(this)">X</button>
-    `;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.name = `items[${itemCount}][descripcion]`;
+    input.setAttribute("list", "catalogo-items");
+    input.placeholder = "Buscar item...";
+    input.autocomplete = "off";
+    input.required = true;
+    input.addEventListener("change", () => handleItemInputChange(input));
+    input.addEventListener("blur", () => handleItemInputChange(input));
+
+    const qty = document.createElement("input");
+    qty.type = "number";
+    qty.name = `items[${itemCount}][cantidad]`;
+    qty.placeholder = "Cantidad";
+    qty.step = "0.01";
+    qty.min = "0.01";
+    qty.required = true;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "X";
+    btn.addEventListener("click", () => eliminarItem(btn));
+
+    div.append(input, qty, btn);
     container.appendChild(div);
-    const select = div.querySelector("select");
-    if (select) {
-        select.addEventListener("change", () => handleItemSelectChange(select));
-    }
     itemCount++;
-    syncItemSelectors();
+    syncItemInputs();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const selects = document.querySelectorAll("#items-container select[name*='[descripcion]']");
-    for (const select of selects) {
-        select.addEventListener("change", () => handleItemSelectChange(select));
+    const itemInputs = document.querySelectorAll("#items-container input[name*='[descripcion]']");
+    for (const input of itemInputs) {
+        input.addEventListener("change", () => handleItemInputChange(input));
+        input.addEventListener("blur", () => handleItemInputChange(input));
     }
-    syncItemSelectors();
+    const crearForm = document.querySelector('form[action="/crear"]');
+    if (crearForm) {
+        crearForm.addEventListener("submit", (event) => {
+            const inputs = Array.from(document.querySelectorAll("#items-container input[name*='[descripcion]']"));
+            const invalidInput = inputs.find((input) => !validateCatalogItemInput(input, false));
+            if (invalidInput) {
+                event.preventDefault();
+                setItemError(invalidInput.validationMessage || "Selecciona un item válido del catálogo.");
+                invalidInput.reportValidity();
+            }
+        });
+    }
+    syncItemInputs();
 });
 
 function verDetalle(id) {

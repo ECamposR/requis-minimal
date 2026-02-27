@@ -1497,3 +1497,19 @@
   - Se intercambió el orden de bloques para mostrar `Importar catálogo` antes de `Buscar en catálogo`.
 - Resultado:
   - La búsqueda queda ubicada debajo del bloque de importación, manteniendo la funcionalidad intacta.
+
+## 2026-02-27 09:46 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-077` (autocompletar ítems en “Nueva Requisición” con `input + datalist` y validación UX).
+- Cambios:
+  - `templates/crear_requisicion.html`
+  - `static/app.js`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Se reemplazó el `<select>` de ítems por `<input list="catalogo-items">` y se agregó `datalist` global con catálogo activo.
+  - Se añadió mensaje UX (`#item-error`) para errores de item inválido/duplicado.
+  - JS actualizado para validar coincidencia exacta contra `window.CATALOGO_ITEMS`, bloquear duplicados y mantener validación antes de agregar fila o enviar formulario.
+  - Se mantuvo intacta la validación backend de catálogo para no confiar solo en frontend.
+- Resultado:
+  - UX de búsqueda de ítems más rápida en catálogos grandes, sin perder control de integridad.

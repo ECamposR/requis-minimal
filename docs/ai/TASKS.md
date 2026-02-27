@@ -20,6 +20,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-074` | `done` | Ajustes finos UX en dashboard del detalle: “Alta severidad”, acción sugerida por alertas, `Ingreso PK` como `—` en consumibles, centrado numérico y botón PDF habilitado solo en `liquidada`.
 - `REQ-075` | `done` | Corrección de hora de creación en detalle: `created_at` ya no depende de `func.now()` (UTC SQLite) y se persiste en hora local al crear requisición.
 - `REQ-076` | `done` | Buscador server-side en Catálogo Admin con query param `q` (case-insensitive), barra de búsqueda en UI con limpiar/conteo y test de filtro por nombre.
+- `REQ-077` | `done` | Nueva Requisición usa `input + datalist` para autocompletar ítems del catálogo activo, con validación UX de item válido/duplicado y respaldo de validación backend existente.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.

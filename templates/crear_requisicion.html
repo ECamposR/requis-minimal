@@ -39,15 +39,16 @@
         <fieldset id="items-container">
             <legend>Items</legend>
             <div class="item-row">
-                <select name="items[0][descripcion]" required>
-                    <option value="">Seleccionar item...</option>
-                    {% for item in catalogo_items %}
-                    <option value="{{ item }}">{{ item }}</option>
-                    {% endfor %}
-                </select>
+                <input type="text" name="items[0][descripcion]" list="catalogo-items" placeholder="Buscar item..." autocomplete="off" required>
                 <input type="number" step="0.01" min="0.01" name="items[0][cantidad]" placeholder="Cantidad" required>
             </div>
         </fieldset>
+        <datalist id="catalogo-items">
+            {% for item in catalogo_items %}
+            <option value="{{ item }}"></option>
+            {% endfor %}
+        </datalist>
+        <p id="item-error" class="page-subtitle" role="alert" aria-live="polite"></p>
 
         <div class="form-actions">
             <button type="button" class="secondary" onclick="agregarItem()">+ Agregar item</button>
