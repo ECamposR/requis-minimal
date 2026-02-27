@@ -1,9 +1,10 @@
 from datetime import datetime
+import json
 from typing import Any
 
 from sqlalchemy.orm import Session
 
-from .models import Item, Requisicion
+from .models import Item, Requisicion, Usuario
 
 UNIDAD_POR_DEFECTO = "unidad"
 
@@ -32,6 +33,8 @@ def crear_requisicion_db(
         cliente_ruta_principal=cliente_ruta_principal,
         estado="pendiente",
         justificacion=justificacion,
+        # Evita depender del server_default SQLite (UTC) para mantener hora local consistente.
+        created_at=datetime.now(),
     )
     db.add(req)
     db.commit()
@@ -111,6 +114,128 @@ def puede_entregar(requisicion: Requisicion, rol: str) -> bool:
     return requisicion.estado == "aprobada"
 
 
+def puede_liquidar(requisicion: Requisicion, usuario: Usuario) -> bool:
+    """Retorna True solo si la requisición es elegible para liquidación por este usuario."""
+    if requisicion.estado != "entregada":
+        return False
+    if requisicion.delivery_result not in ("completa", "parcial"):
+        return False
+    if usuario.rol not in ("admin", "bodega"):
+        return False
+    return True
+
+
+def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
+    """Calcula alertas para un ítem liquidado. No bloquea por diferencia != 0."""
+    alertas: list[dict[str, Any]] = []
+    delivered = item.cantidad_entregada or 0
+    returned = item.qty_returned_to_warehouse or 0
+    used = item.qty_used or 0
+    not_used = item.qty_left_at_client or 0
+    mode = (item.liquidation_mode or "RETORNABLE").upper()
+    if mode not in ("RETORNABLE", "CONSUMIBLE"):
+        mode = "RETORNABLE"
+    expected_return = (used + not_used) if mode == "RETORNABLE" else not_used
+    diferencia = expected_return - returned
+
+    if diferencia > 0:
+        alertas.append(
+            {
+                "type": "ALERTA_FALTANTE",
+                "severity": "warn",
+                "data": {
+                    "mode": mode,
+                    "expected_return": expected_return,
+                    "returned": returned,
+                    "diferencia": diferencia,
+                },
+            }
+        )
+    if diferencia < 0:
+        alertas.append(
+            {
+                "type": "ALERTA_SOBRANTE",
+                "severity": "warn",
+                "data": {
+                    "mode": mode,
+                    "expected_return": expected_return,
+                    "returned": returned,
+                    "diferencia": diferencia,
+                },
+            }
+        )
+    if returned > delivered:
+        alertas.append(
+            {
+                "type": "ALERTA_RETORNO_EXTRA",
+                "severity": "high",
+                "data": {"returned": returned, "delivered": delivered},
+            }
+        )
+    total_out = used + not_used
+    if total_out > delivered:
+        alertas.append(
+            {
+                "type": "ALERTA_SALIDA_SIN_SOPORTE",
+                "severity": "high",
+                "data": {
+                    "delivered": delivered,
+                    "used": used,
+                    "not_used": not_used,
+                    "total_out": total_out,
+                },
+            }
+        )
+
+    return alertas
+
+
+def ejecutar_liquidacion(
+    db: Session,
+    requisicion: Requisicion,
+    usuario: Usuario,
+    prokey_ref: str | None,
+    liquidation_comment: str | None,
+    items_data: dict[int, dict[str, Any]],
+) -> None:
+    """
+    Ejecuta la liquidación de una requisición.
+    items_data: {item_id: {qty_returned_to_warehouse, qty_used, qty_left_at_client, item_liquidation_note}}
+    Requisición debe estar en estado 'entregada'. NO se bloquea por delta != 0.
+    """
+    if requisicion.estado == "liquidada":
+        raise ValueError("Esta requisición ya fue liquidada")
+
+    for item in requisicion.items:
+        data = items_data.get(item.id, {})
+        qty_returned = int(data.get("qty_returned_to_warehouse", 0))
+        qty_used = int(data.get("qty_used", 0))
+        qty_not_used = int(data.get("qty_left_at_client", 0))
+        delivered = item.cantidad_entregada or 0
+        if delivered > 0 and (qty_returned + qty_used + qty_not_used) == 0:
+            raise ValueError("Items incompletos")
+
+        item.qty_returned_to_warehouse = qty_returned
+        item.qty_used = qty_used
+        item.qty_left_at_client = qty_not_used
+        mode = str(data.get("liquidation_mode", "RETORNABLE")).upper()
+        if mode not in ("RETORNABLE", "CONSUMIBLE"):
+            mode = "RETORNABLE"
+        item.liquidation_mode = mode
+        item.item_liquidation_note = data.get("item_liquidation_note") or None
+
+        alertas = calcular_alertas_item(item)
+        item.liquidation_alerts = json.dumps(alertas) if alertas else None
+
+    requisicion.estado = "liquidada"
+    requisicion.prokey_ref = prokey_ref or None
+    requisicion.liquidation_comment = liquidation_comment or None
+    requisicion.liquidated_by = usuario.id
+    requisicion.liquidated_at = datetime.utcnow()
+
+    db.commit()
+
+
 def transicionar_requisicion(
     db: Session,
     requisicion: Requisicion,
@@ -141,6 +266,8 @@ def transicionar_requisicion(
         requisicion.delivered_to = delivered_to
         requisicion.delivery_result = delivery_result or "completa"
         requisicion.delivery_comment = delivery_comment
+    elif nuevo_estado == "liquidada":
+        requisicion.estado = "liquidada"
     else:
         raise ValueError("Estado no soportado")
 

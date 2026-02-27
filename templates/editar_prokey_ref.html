@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+{% block title %}Editar Referencia Prokey{% endblock %}
+{% block content %}
+{{ ui.page_header("Completar Referencia Prokey", "Actualiza la referencia de comprobante sin modificar la liquidacion.") }}
+
+<section class="panel view-panel">
+    <p>
+        <strong>Folio:</strong> {{ req.folio }} |
+        <strong>Cliente:</strong> {{ req.cliente_nombre or '-' }} |
+        <strong>Codigo:</strong> {{ req.cliente_codigo or '-' }} |
+        <strong>Ruta:</strong> {{ req.cliente_ruta_principal or '-' }}
+    </p>
+    <p>
+        <strong>Solicitante:</strong> {{ req.solicitante.nombre if req.solicitante else '-' }} |
+        <strong>Estado:</strong> {{ req.estado }}
+    </p>
+</section>
+
+<section class="panel view-panel">
+    <form method="POST" action="/requisiciones/{{ req.id }}/prokey-ref">
+        <label>
+            Referencia de comprobante Prokey *
+            <input type="text" name="prokey_ref" value="{{ req.prokey_ref or '' }}" placeholder="FC-2026-0142" required>
+        </label>
+        <div class="form-actions">
+            <button type="submit">Guardar referencia</button>
+            <a href="{{ cancel_url }}" role="button" class="secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

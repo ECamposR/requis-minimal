@@ -889,3 +889,568 @@
   - Nota: `pytest` en este entorno CLI quedo bloqueado sin salida; validar en entorno local activo.
 - Resultado:
   - El detalle ahora muestra historial de cambios con fecha y hora incluyendo segundos (`HH:MM:SS`), mejorando trazabilidad operativa.
+
+## 2026-02-13 13:05 CST | tool: Codex CLI
+- Objetivo: Registrar reinicio de la linea de liquidacion desde baseline pre-liquidacion.
+- Cambios:
+  - Rama nueva creada desde `3d7702b`: `feat/liquidacion-rework-v2`.
+  - `docs/ai/HANDOFF.md`: reducido a handoff activo corto y ejecutable para reinicio.
+  - `docs/ai/TASKS.md`: reabiertos `REQ-060`, `REQ-061`, `REQ-062` en bloque de reinicio.
+  - `docs/ai/DECISIONS.md`: nuevo `ADR-003` formalizando el reinicio desde baseline.
+  - `docs/ai/WORKLOG.md`: registro de esta sesion.
+- Codigo de app:
+  - No se realizaron cambios en backend/frontend/logica; solo documentacion de gobernanza.
+- Resultado:
+  - Queda oficializado en gobernanza IA que la liquidacion se rehara desde este punto, evitando arrastrar implementaciones previas no satisfactorias.
+- Proximo paso:
+  - Implementar `REQ-060` minimo en esta rama y validar flujo base sin agregar complejidad adicional.
+
+## 2026-02-25 13:02 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-060` (modelo de datos + migracion + baseline de entrega) sin cambios de UI.
+- Cambios de codigo:
+  - `app/models.py`
+    - Estado `liquidada` agregado al `CheckConstraint` de `requisiciones`.
+    - Nuevos campos en `Requisicion`: `prokey_ref`, `liquidation_comment`, `liquidated_by`, `liquidated_at`.
+    - Nueva relacion: `liquidator`.
+    - Nuevos campos en `Item`: `qty_returned_to_warehouse`, `qty_used`, `qty_left_at_client`, `item_liquidation_note`, `liquidation_alerts` (todos nullable, sin default).
+  - `app/database.py`
+    - Migraciones incrementales para 9 columnas nuevas de liquidacion.
+    - Manejo de error especifico en ALTER TABLE:
+      - tolera solo "duplicate column/already exists",
+      - loguea y relanza cualquier error real.
+    - Backfill de `cantidad_entregada` para historicos con `estado='entregada'` y `delivery_result='completa'`.
+  - `app/main.py`
+    - Normalizacion baseline en entrega completa: antes de transicionar, si `cantidad_entregada` es `NULL` se setea a `cantidad`.
+    - Estados validos de filtros ampliados con `liquidada`.
+    - Acceso de rol bodega al detalle incluye estado `liquidada`.
+  - `app/crud.py`
+    - `transicionar_requisicion` ahora acepta `nuevo_estado='liquidada'`.
+  - `tests/test_liquidacion_model.py` (nuevo)
+    - 7 pruebas: estado `liquidada`, nullables de liquidacion, baseline completa, no sobreescritura parcial, migracion en DB nueva e idempotencia.
+- Cambios de gobernanza:
+  - `docs/ai/TASKS.md` (`REQ-060` -> `done`).
+  - `docs/ai/HANDOFF.md` actualizado con estado post-REQ-060 y siguiente paso `REQ-061`.
+  - `docs/ai/WORKLOG.md` (esta entrada).
+- Comandos ejecutados:
+  - `python -m compileall app init_db.py`
+  - `python -m compileall app init_db.py tests/test_liquidacion_model.py`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_model.py -v` -> **7 passed**
+  - `.venv/bin/python init_db.py` -> OK
+  - `timeout 8s .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8015` -> startup/shutdown OK (timeout esperado).
+- Resultado:
+  - REQ-060 queda base lista para construir UI/flujo de liquidacion sin romper el flujo operativo vigente.
+- Proximo paso:
+  - Iniciar `REQ-061` (captura de liquidacion en interfaz, validaciones y persistencia usando campos nuevos).
+
+## 2026-02-25 14:05 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-061` (endpoint + UI de liquidacion) con alertas no bloqueantes e inmutabilidad.
+- Cambios de codigo:
+  - `app/crud.py`
+    - Nuevas funciones:
+      - `puede_liquidar(requisicion, usuario)` (roles `admin`/`bodega`, estado `entregada`, resultado `completa|parcial`).
+      - `calcular_alertas_item(item)` con reglas:
+        - `ALERTA_FALTANTE` (`warn`) para `delta > 0`.
+        - `ALERTA_SOBRANTE` (`warn`) para `delta < 0`.
+        - `ALERTA_RETORNO_EXTRA` (`high`) para `returned > delivered`.
+        - `ALERTA_SALIDA_SIN_SOPORTE` (`high`) para `used+left > delivered`.
+      - `ejecutar_liquidacion(...)`:
+        - persiste cantidades/nota por item,
+        - persiste `liquidation_alerts` como JSON,
+        - transiciona a `liquidada`,
+        - guarda `prokey_ref`, `liquidation_comment`, `liquidated_by`, `liquidated_at`,
+        - impide reliquidar (`ValueError`).
+  - `app/main.py`
+    - Nuevas rutas:
+      - `GET /liquidar/{req_id}`: validacion de elegibilidad + inmutabilidad.
+      - `POST /liquidar/{req_id}`: parseo de formulario, validacion de enteros >=0, `prokey_ref` obligatorio, ejecucion de liquidacion.
+    - `bodega_view` ahora incluye historial de estados `entregada` y `liquidada`.
+  - `templates/liquidar.html` (nuevo)
+    - Tabla de captura: `Entregado`, `Regresa`, `Usado`, `Dejado en cliente`, `Ocupo`, `Delta`, `Nota`.
+    - JS en vivo: recalculo `ocupo` y `delta`, resaltado visual no bloqueante (`delta-warn`/`delta-danger`).
+    - Campos finales: `prokey_ref` obligatorio y `liquidation_comment` opcional.
+  - `templates/bodega.html`
+    - En historial se agrega columna `Liquidacion` con boton `Liquidar` solo para casos elegibles (`estado=entregada` y `delivery_result` en `completa|parcial`).
+    - Requisiciones ya `liquidada` muestran badge.
+  - `static/theme.css`
+    - Estilos de celdas de calculo y resaltado de delta.
+  - `tests/test_liquidacion.py` (nuevo)
+    - 12 pruebas cubriendo elegibilidad, guardado, alertas por tipo/severity, no bloqueo por delta, `prokey_ref` requerido, inmutabilidad, y restriccion por rol.
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-061` marcado `done`.
+  - `docs/ai/HANDOFF.md`: siguiente objetivo movido a `REQ-062`.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app init_db.py templates` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **12 passed**
+  - Intento smoke `tests/test_basic_flow.py` selectivo: en este entorno CLI quedo colgado (no concluyente).
+- Resultado:
+  - REQ-061 queda implementada end-to-end sin bloquear liquidacion por inconsistencias y manteniendo reglas de acceso/inmutabilidad.
+- Proximo paso:
+  - Iniciar `REQ-062` para trazabilidad y exposicion de datos de liquidacion en detalle/API.
+
+## 2026-02-25 15:05 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-062` (detalle solo lectura para requisiciones liquidadas).
+- Cambios de codigo:
+  - `app/main.py`
+    - `GET /api/requisiciones/{id}` ahora incluye para estado `liquidada`:
+      - campos de cabecera: `prokey_ref`, `liquidation_comment`, `liquidated_by_name`, `liquidated_at`.
+      - campos por item: `qty_returned_to_warehouse`, `qty_used`, `qty_left_at_client`, `item_liquidation_note`, `liquidation_alerts` (JSON deserializado).
+      - derivados por item: `qty_ocupo`, `pk_ingreso_qty`, `delta`.
+      - evento de timeline: `Requisicion liquidada`.
+    - `aprobar_view` incluye `joinedload(Requisicion.liquidator)` para tabla de gestionado por.
+  - `static/app.js`
+    - Modal detalle detecta `estado=liquidada` y renderiza tabla estilo papel:
+      - `Descripcion`, `Solicitado`, `Lleva`, `Regresa`, `Ocupo`, `Ingreso PK`, `Delta`, `Alertas`.
+    - Bloque nuevo `Resumen de Liquidacion` en cabecera del modal con:
+      - referencia Prokey, actor, fecha/hora, comentario y conteo global de alertas.
+    - Delta con resaltado visual (`delta-warn` / `delta-danger`).
+    - Alertas por item como badges por severidad (`warn`/`high`) y nota por item cuando aplica.
+  - `static/theme.css`
+    - Estilos para resumen de liquidacion, tabla papel, badges de alertas y estados de delta.
+  - `templates/aprobar.html`
+    - Filtro y badge para estado `liquidada`.
+    - Columna "Gestionado por" muestra `liquidator` para requisiciones liquidadas.
+  - `templates/mis_requisiciones.html`
+    - Badge explicito para estado `liquidada`.
+  - `templates/macros/ui.html`
+    - `status_badge` reconoce `liquidada` con estilo diferenciado.
+  - `tests/test_liquidacion.py`
+    - Nuevos tests:
+      - `test_detalle_liquidada_incluye_campos`
+      - `test_detalle_liquidada_campos_derivados`
+      - `test_liquidada_es_solo_lectura`
+      - `test_liquidar_get_redirige_si_ya_liquidada`
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-062` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado post-REQ-062 y siguiente bloque de trabajo.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app static templates tests/test_liquidacion.py` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **16 passed**
+- Resultado:
+  - Requisiciones liquidadas ahora se auditan en detalle con formato operativo completo, sin permitir cambios.
+- Proximo paso:
+  - Definir y priorizar siguiente REQ de reporteria minima manteniendo simplicidad v1.x.
+
+## 2026-02-25 16:05 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-063` (tests de integracion/smoke para flujo completo con liquidacion).
+- Cambios de codigo:
+  - `tests/test_liquidacion_integration.py` (nuevo)
+    - Cobertura de flujo completo de requisicion con liquidacion:
+      - escenario canónico sin alertas (2 items, deltas en 0),
+      - faltante (`ALERTA_FALTANTE`),
+      - retorno extra (`ALERTA_SOBRANTE` + `ALERTA_RETORNO_EXTRA`),
+      - salida sin soporte (`ALERTA_SOBRANTE` + `ALERTA_SALIDA_SIN_SOPORTE`),
+      - precondiciones (`prokey_ref` obligatorio, no liquidar si no entregada, no liquidar `no_entregada`),
+      - inmutabilidad de requisicion liquidada,
+      - timeline con evento de liquidacion,
+      - redireccion en `GET /liquidar/{id}` cuando ya esta liquidada.
+    - Fixtures aisladas con SQLite en memoria (`StaticPool`) para evitar lock de archivos temporales.
+    - Backend anyio fijado a `asyncio` para evitar parametrizacion `trio` no instalada.
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-063` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado actualizado y riesgo abierto de hang en pruebas legacy con `TestClient`.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -v` -> **10 passed**
+  - `timeout 900 .venv/bin/python -m pytest -q tests/ -v` -> en este entorno CLI quedo colgado en pruebas legacy (`TestClient`), no concluyente.
+- Resultado:
+  - Cobertura de regresion de liquidacion fortalecida con escenarios de negocio completos y verificaciones de detalle/timeline.
+- Proximo paso:
+  - Estabilizar ejecucion de `pytest tests/` completa en entorno CLI para recuperar smoke global automatizado.
+
+## 2026-02-25 15:08 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-064` para permitir liquidar sin `prokey_ref` y marcar Prokey pendiente en el detalle.
+- Cambios de codigo:
+  - `app/main.py`
+    - `POST /liquidar/{req_id}` ya no bloquea por referencia vacia.
+    - `prokey_ref` se normaliza a `None` cuando llega vacio (`strip()` + conversion a null).
+  - `app/crud.py`
+    - `ejecutar_liquidacion(...)` ahora acepta `prokey_ref` opcional y persiste `requisicion.prokey_ref = prokey_ref or None`.
+  - `templates/liquidar.html`
+    - Campo de referencia Prokey cambiado a opcional (sin `required`).
+    - Nuevo microcopy: se puede completar despues.
+  - `static/app.js`
+    - En resumen de liquidacion, si `prokey_ref` no existe muestra `Pendiente` + badge `Prokey pendiente`.
+  - `static/theme.css`
+    - Estilo para badge visual de Prokey pendiente.
+  - `tests/test_liquidacion.py`
+    - Reemplazo de prueba de obligatoriedad por `test_liquidar_permite_prokey_ref_vacio` (liquida y guarda `NULL`).
+  - `tests/test_liquidacion_integration.py`
+    - Reemplazo de precondicion antigua por `test_liquidar_sin_prokey_ref_guarda_null` (flujo integrado + detalle API con `prokey_ref=None`).
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-064` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado actual incluye cierre de REQ-064.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app static templates tests` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **16 passed**
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -v` -> **10 passed**
+- Resultado:
+  - Liquidacion ya no depende de referencia inmediata de Prokey.
+  - Se conserva trazabilidad de cierre y se explicita pendiente operativo en detalle.
+- Proximo paso:
+  - Definir si se agrega flujo posterior de "completar referencia Prokey" para requisiciones ya liquidadas.
+
+## 2026-02-25 15:17 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-065` para completar `prokey_ref` despues de liquidar sin reabrir cantidades.
+- Cambios de codigo:
+  - `app/main.py`
+    - Helper `puede_editar_prokey_ref(req, current_user)`: solo `estado=liquidada` y (`admin` o solicitante).
+    - Nueva ruta `GET /requisiciones/{id}/prokey-ref`: renderiza formulario de edicion y valida permisos/estado.
+    - Nueva ruta `POST /requisiciones/{id}/prokey-ref`: valida permisos/estado, exige referencia no vacia y actualiza solo `requisicion.prokey_ref`.
+  - `templates/editar_prokey_ref.html` (nuevo)
+    - Pantalla dedicada para completar referencia Prokey con contexto de requisicion y botones Guardar/Cancelar.
+  - `static/app.js`
+    - En detalle de requisiciones liquidadas con referencia pendiente, agrega link `Agregar referencia Prokey` hacia `/requisiciones/{id}/prokey-ref`.
+  - `static/theme.css`
+    - Estilo del link de accion en resumen de liquidacion (`.prokey-add-link`).
+  - `tests/test_liquidacion.py`
+    - Nuevos tests:
+      - `test_update_prokey_ref_permite_admin`
+      - `test_update_prokey_ref_permite_propietario`
+      - `test_update_prokey_ref_bloquea_no_propietario`
+      - `test_update_prokey_ref_requiere_estado_liquidada`
+      - `test_update_prokey_ref_no_permite_vacio`
+      - `test_api_detalle_refleja_prokey_ref_actualizado`
+      - `test_update_prokey_ref_get_form_permitido`
+    - Validacion explicita de inmutabilidad: actualizar referencia no toca cantidades ni `liquidation_alerts`.
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-065` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado actual incluye cierre de REQ-065.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app static templates tests` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py::test_update_prokey_ref_get_form_permitido -v` -> **1 passed**
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **23 passed**
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -v` -> **10 passed**
+- Resultado:
+  - `prokey_ref` ya puede completarse post-liquidacion por usuarios autorizados sin alterar la trazabilidad de liquidacion.
+- Proximo paso:
+  - Evaluar si se agrega filtro/lista de requisiciones liquidadas con `prokey_ref` pendiente para cierre operativo diario.
+
+## 2026-02-25 17:06 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-066` (modo por item RETORNABLE/CONSUMIBLE, campo `No usado` y nueva formula de diferencia/alertas).
+- Cambios de codigo:
+  - `app/models.py`
+    - Nuevo campo en `Item`: `liquidation_mode` (`String(20)`, nullable).
+  - `app/database.py`
+    - Migracion incremental agregada: `ALTER TABLE items ADD COLUMN liquidation_mode TEXT`.
+  - `app/main.py`
+    - Nueva heuristica `infer_liquidation_mode(descripcion)` para default de selector en UI:
+      - RETORNABLE: `MOPA`, `ALFOMBRA`, `HERRAMIENTA`, `EQUIPO`.
+      - CONSUMIBLE: `SPRAY`, `PILA`, `QUIM`, `DOSIS`.
+      - default conservador: `RETORNABLE`.
+    - `GET /liquidar/{id}` inyecta `default_mode` por item para render.
+    - `POST /liquidar/{id}` parsea `mode_{item_id}` y `qty_not_used_{item_id}` (mantiene fallback a `qty_left_{item_id}` por compatibilidad de pruebas).
+    - Validacion de modo: solo `RETORNABLE` o `CONSUMIBLE`.
+  - `app/crud.py`
+    - `ejecutar_liquidacion(...)` persiste `item.liquidation_mode`.
+    - `calcular_alertas_item(item)` refactor:
+      - `not_used = qty_left_at_client` (reinterpretado como "No usado"),
+      - `expected_return` por modo:
+        - RETORNABLE: `used + not_used`,
+        - CONSUMIBLE: `not_used`,
+      - `diferencia = expected_return - returned`,
+      - alertas `ALERTA_FALTANTE/ALERTA_SOBRANTE` segun signo de `diferencia`,
+      - mantiene alertas high: `ALERTA_SALIDA_SIN_SOPORTE` y `ALERTA_RETORNO_EXTRA`.
+  - `templates/liquidar.html`
+    - Columna nueva `Tipo` (selector por item).
+    - Etiqueta `Dejado en cliente` renombrada a `No usado`.
+    - `Delta` renombrado a `Diferencia`.
+    - JS en vivo actualizado para calcular diferencia por modo y mostrar `Esperado regrese: X`.
+  - `tests/test_liquidacion.py`
+    - Ajustes a expectativas con nueva semantica.
+    - Nuevos tests agregados:
+      - `test_diferencia_retornable_cuadra`
+      - `test_diferencia_retornable_retorno_extra`
+      - `test_diferencia_consumible_cuadra`
+      - `test_diferencia_consumible_faltante`
+      - `test_salida_sin_soporte`
+  - `tests/test_liquidacion_integration.py`
+    - Ajuste de helper para enviar `mode_{item_id}`.
+    - Ajuste de escenario sin alertas y expectativa de `salida_sin_soporte`.
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-066` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado actual incluye cierre de REQ-066.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app templates static tests` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **28 passed**
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -v` -> **10 passed**
+- Resultado:
+  - La captura de liquidacion deja de generar falsos positivos por una formula unica; ahora cada item se interpreta por modo operativo y mantiene comportamiento no bloqueante.
+- Proximo paso:
+  - `REQ-067`: reflejar en modal detalle el nuevo significado (`No usado`, `liquidation_mode`) y la diferencia por modo para auditoria consistente.
+
+## 2026-02-26 14:12 CST | tool: Codex CLI
+- Objetivo: Implementar `REQ-067` para alinear detalle de requisiciones liquidadas con el modelo por modo de liquidacion.
+- Cambios de codigo:
+  - `app/main.py` (`GET /api/requisiciones/{id}`)
+    - Payload de item liquidado enriquecido con:
+      - `mode`, `used`, `not_used`, `returned`, `delivered`,
+      - `expected_return`,
+      - `difference` (nuevo nombre operativo),
+      - `pk_ingreso_qty` (solo retornables; consumible = 0).
+    - Se mantiene `delta` como alias compatible apuntando a `difference`.
+    - Payload de cabecera agrega `prokey_pending`.
+  - `static/app.js`
+    - Tabla papel de liquidada rediseñada a columnas:
+      - `Descripcion`, `Entregado`, `Tipo`, `Usado`, `No usado`, `Regresa`, `Diferencia`, `Ingreso PK`, `Alertas`.
+    - `Ingreso PK` muestra tooltip: "Pendiente de ingresar en Prokey por bodega (solo retornables)".
+    - En modo consumible muestra `Ingreso PK = 0`.
+    - Resaltado visual de `Diferencia` mantiene clases `delta-warn` / `delta-danger`.
+  - `tests/test_liquidacion_integration.py`
+    - Nuevos escenarios:
+      - mezcla retornable/consumible validando `mode`, `difference` y `pk_ingreso_qty`.
+      - retorno extra retornable con diferencia negativa y alertas esperadas.
+    - Ajustes en escenarios existentes para declarar `mode` y expectativas de `difference`.
+- Gobernanza actualizada:
+  - `docs/ai/TASKS.md`: `REQ-067` marcado `done`.
+  - `docs/ai/HANDOFF.md`: estado actual incluye cierre de REQ-067.
+  - `docs/ai/WORKLOG.md`: entrada de sesion.
+- Comandos ejecutados:
+  - `python -m compileall app static tests` -> OK
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -v` -> **12 passed**
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v` -> **28 passed**
+- Resultado:
+  - El detalle de liquidacion ahora representa correctamente la semantica operacional por tipo de item y evita lectura ambigua del ingreso Prokey.
+- Proximo paso:
+  - Definir `REQ-068` para reporte operativo minimo (p. ej. lista de liquidaciones pendientes de referencia Prokey/export simple).
+
+## 2026-02-26 15:10 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-068` para bloquear liquidaciones ambiguas con items entregados sin definir.
+- Cambios:
+  - `app/main.py`
+  - `app/crud.py`
+  - `templates/liquidar.html`
+  - `static/theme.css`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Validacion backend obligatoria en `POST /liquidar/{id}`: si `entregado > 0` y `usado + no_usado + regresa == 0`, no se permite liquidar.
+  - Defensa adicional en `ejecutar_liquidacion(...)` para evitar bypass por capa API.
+  - Re-render de `liquidar.html` con mensaje claro, filas incompletas resaltadas y preservacion de datos ya digitados.
+  - Validacion UX en frontend: marca de fila incompleta en vivo y bloqueo de submit con mensaje global.
+- Tests agregados:
+  - `test_no_permite_liquidar_item_incompleto_entregado_gt_0`
+  - `test_si_permite_cuando_delivered_es_0`
+  - `test_permite_liquidar_si_al_menos_un_campo_es_mayor_0`
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall app templates static tests`
+  - `.venv/bin/pytest -q tests/test_liquidacion.py -v`
+- Resultado:
+  - Suite de liquidacion: `31 passed`.
+  - REQ-068 completada sin cambios de endpoints adicionales ni regresion en reglas de estado.
+- Proximo paso:
+  - Ejecutar smoke manual en UI para validar flujo visual en navegador (bloqueo, resaltado y preservacion de formulario).
+
+## 2026-02-26 15:21 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-069` para volver humanas las alertas de liquidacion en el modal de detalle, sin cambiar logica backend.
+- Cambios:
+  - `static/app.js`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Se mantienen codigos internos `ALERTA_*` para trazabilidad.
+  - Se agregan etiquetas legibles para usuario: `Faltante`, `Sobrante`, `Retorno extra`, `Inconsistencia`.
+  - Tooltips ahora incluyen detalle numerico cuando hay data y el codigo interno de respaldo.
+  - Si no hay alertas en item liquidado, UI mantiene `Sin alertas` y payload robusto como lista vacia.
+- Test agregado:
+  - `test_api_detalle_alertas_null_se_convierte_a_lista_vacia`
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall app static`
+  - `.venv/bin/pytest -q tests/test_liquidacion.py -v`
+- Resultado:
+  - Suite de liquidacion: `32 passed`.
+  - REQ-069 completada sin cambios de endpoints ni esquema de DB.
+- Proximo paso:
+  - Ejecutar smoke manual de modal en navegador para validar copy/tooltips con alertas de severidad `warn` y `high`.
+
+## 2026-02-26 15:32 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-070` para mostrar comentario general y notas por item en modal de detalle de requisiciones liquidadas.
+- Cambios:
+  - `app/main.py`
+  - `static/app.js`
+  - `static/theme.css`
+  - `tests/test_liquidacion_integration.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Payload JSON normalizado para `liquidation_comment` e `item_liquidation_note` con convención `null` cuando está vacío.
+  - Modal liquidada muestra siempre bloque de comentario (`—` cuando no existe).
+  - Nota por item visible debajo de la descripción en tabla de items liquidados.
+- Test agregado/ajustado:
+  - `test_detalle_liquidada_incluye_comentario_y_nota_item` en integración.
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall app static tests`
+  - `.venv/bin/pytest -q tests/test_liquidacion_integration.py -v`
+- Resultado:
+  - Integración de liquidación: `13 passed`.
+  - REQ-070 completada sin cambios de rutas ni DB.
+- Proximo paso:
+  - Validar visualmente en navegador el modal con comentarios multilinea y filas con/sin nota.
+
+## 2026-02-26 15:59 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-071` (rediseño visual del modal detalle a vista dashboard + mejoras UX de conciliación).
+- Cambios:
+  - `static/app.js`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Sin cambios en backend ni endpoints.
+  - Se renombra copy operativo a `Alertas de conciliación` y se mantienen labels humanos de alertas.
+  - DIF con semántica visual por signo (`dif--pos`, `dif--neg`, `dif--zero`).
+  - Notas por item resaltadas cuando el item tiene alertas.
+  - Comentarios secundarios movidos a bloque colapsable para reducir scroll.
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall app static templates`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v`
+- Resultado:
+  - Suite de liquidación: `32 passed`.
+  - REQ-071 completada en capa UI con no-regresión funcional.
+- Proximo paso:
+  - Smoke manual del nuevo modal en navegador para validar comportamiento responsive y legibilidad.
+
+## 2026-02-26 16:05 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-072` (refinamiento visual del modal dashboard sin tocar lógica).
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Estilos scopiados bajo `#modal-detalle` para evitar regresiones en otras páginas.
+  - Mejora de legibilidad en badges por severidad y DIF por signo.
+  - Ajuste de densidad en tabla de ítems y énfasis visual de notas con alertas.
+  - Colapsables con hover/active más claros.
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall static`
+- Resultado:
+  - REQ-072 completada en capa CSS/UX, sin cambios en backend ni JS.
+- Proximo paso:
+  - Smoke manual del modal en liquidadas/no liquidadas para confirmar percepción visual final.
+
+## 2026-02-26 16:12 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-073` (polish visual del modal dashboard para acercarlo a propuesta objetivo).
+- Cambios:
+  - `static/app.js`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Reglas aplicadas:
+  - Sin cambios de backend ni lógica de liquidación.
+  - Estructura del modal migrada a patrón `detail-dashboard` con cards compactas y key/value.
+  - Timeline convertido a flujo vertical con nodos (`dd-timeline`).
+  - DIF renderizado como chip con signo (`+/-/0`) y clases semánticas.
+  - Modal en modo casi fullscreen solo cuando aplica clase `modal--detail-dashboard`.
+- Comandos ejecutados:
+  - `.venv/bin/python -m compileall static app`
+- Resultado:
+  - REQ-073 completada en capa UI/UX, manteniendo compatibilidad de datos y rutas existentes.
+- Proximo paso:
+  - Smoke manual en navegador para validar percepción visual final y responsive.
+
+## 2026-02-26 16:14 UTC-06:00 | tool: Codex CLI
+- Objetivo: Ajuste rápido de usabilidad visual en modal dashboard (detalle de requisición).
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/WORKLOG.md`
+- Regla aplicada:
+  - Se incrementa anchura del modal solo en modo `modal--detail-dashboard` para evitar vista apretada.
+- Detalle técnico:
+  - `width: min(1400px, 96vw)` -> `width: min(1650px, 99vw)`
+- Resultado:
+  - Más espacio horizontal para acomodar cards y tabla en desktop.
+- Proximo paso:
+  - Validación visual manual en navegador para confirmar distribución de objetos.
+
+## 2026-02-26 16:16 UTC-06:00 | tool: Codex CLI
+- Objetivo: Segundo ajuste de ancho modal dashboard para eliminar sensación de vista apretada.
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/WORKLOG.md`
+- Detalle técnico:
+  - Modal dashboard: `width` ahora `99.6vw` y `height` `95vh`.
+  - Contenido interno: padding reducido para ganar espacio útil horizontal.
+- Resultado:
+  - Mayor aprovechamiento de pantalla y más aire para cards + tabla.
+
+## 2026-02-26 16:23 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir modal de detalle aun "apretado" tras ajustes de ancho.
+- Hallazgo:
+  - Regla legacy en `static/style.css` fijaba `#modal-detalle article` a `max-width: 1380px`, afectando cards del dashboard.
+- Cambios:
+  - `static/style.css`
+  - `docs/ai/WORKLOG.md`
+- Fix aplicado:
+  - Regla legacy ahora solo aplica fuera del modo dashboard:
+    - `#modal-detalle:not(.modal--detail-dashboard) article { ... }`
+- Resultado esperado:
+  - El detalle de requisición/liquidación aprovecha realmente el ancho casi fullscreen definido en `theme.css`.
+
+## 2026-02-26 16:25 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir contracción del modal dashboard tras desacoplar regla legacy.
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/WORKLOG.md`
+- Fix aplicado:
+  - Forzado explícito del contenedor interno del modal dashboard:
+    - `#modal-detalle.modal--detail-dashboard article { width: 100%; max-width: none; ... }`
+  - Ajuste de padding del dialog para aprovechar mejor el viewport.
+- Resultado esperado:
+  - El detalle de requisición/liquidación ocupa casi todo el ancho disponible sin encogerse.
+
+## 2026-02-26 16:30 UTC-06:00 | tool: Codex CLI
+- Objetivo: Ajuste puntual de orden visual en modal dashboard.
+- Cambios:
+  - `static/app.js`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Se intercambió la posición de los cajones `Justificación` y `Comentario de liquidación` en `detalle-bottom-grid`.
+- Resultado:
+  - El cajón de comentario ocupa ahora la posición previa de justificación, y viceversa.
+
+## 2026-02-26 16:44 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-074` (ajustes finos UX en vista dashboard del detalle, sin tocar backend).
+- Cambios:
+  - `static/app.js`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Label de card actualizado de `Severidad alta` a `Alta severidad`.
+  - Nueva línea dinámica `Acción sugerida` en `Alertas de conciliación`, según prioridad de tipos detectados.
+  - Columna `Ingreso PK` muestra `—` para ítems `CONSUMIBLE` (manteniendo valor numérico en `RETORNABLE`).
+  - Celdas numéricas marcadas con clases `td-num`/`td-center` y estilos scoped para centrado consistente.
+  - Botón `Ver PDF` habilitado solo cuando la requisición está `liquidada`; en otros estados queda deshabilitado con tooltip `Disponible al liquidar`.
+- Comandos ejecutados:
+  - `python -m compileall static`
+- Resultado:
+  - Ajustes UX aplicados sin cambiar lógica de negocio ni payload backend.
+
+## 2026-02-26 16:54 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir desfase de hora en creación mostrado en detalle (`created_at` +6h).
+- Causa raíz:
+  - `created_at` dependía de `server_default=func.now()` en SQLite, que guarda en UTC.
+  - Otros hitos (`approved_at`, `rejected_at`, `delivered_at`) se guardan con `datetime.now()` local, por eso solo creación quedaba adelantada.
+- Cambios:
+  - `app/crud.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Fix aplicado:
+  - En `crear_requisicion_db(...)`, se persiste `created_at=datetime.now()` explícitamente (hora local).
+- Comandos ejecutados:
+  - `python -m compileall app`
+- Resultado:
+  - Nuevas requisiciones quedan con hora de creación consistente con el resto de eventos del timeline/modal.

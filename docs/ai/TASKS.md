@@ -2,6 +2,24 @@
 
 Estados: `todo` | `in_progress` | `done` | `blocked`
 
+## Reinicio Liquidacion (desde `3d7702b`)
+- `REQ-060` | `done` | Base de liquidacion implementada: estado `liquidada`, campos base en `requisiciones/items`, migracion robusta e idempotente + baseline de entrega (`cantidad_entregada`) normalizado.
+- `REQ-061` | `done` | Endpoint y UI de captura de liquidacion (`GET/POST /liquidar/{id}`), alertas no bloqueantes persistidas por item e inmutabilidad post-liquidacion.
+- `REQ-062` | `done` | Modal detalle de requisiciones liquidadas en solo lectura: tabla estilo papel, resumen de liquidacion en cabecera, alertas por item y evento de timeline.
+- `REQ-063` | `done` | Suite de integracion de flujo completo con liquidacion y escenarios canónicos (sin alertas, faltante, retorno extra, salida sin soporte) + precondiciones/inmutabilidad/timeline.
+- `REQ-064` | `done` | Liquidacion permite `prokey_ref` vacio: guarda `NULL`, no bloquea cierre, y detalle muestra "Pendiente" con badge "Prokey pendiente".
+- `REQ-065` | `done` | Edicion posterior de `prokey_ref` para requisiciones liquidadas (admin o solicitante), sin reabrir ni modificar cantidades/alertas.
+- `REQ-066` | `done` | Liquidacion por item con modo `RETORNABLE/CONSUMIBLE`, campo UI `No usado` y alertas/diferencia recalculadas por modo (no bloqueantes).
+- `REQ-067` | `done` | Modal detalle de requisiciones liquidadas actualizado al modelo por modo: `Tipo/Usado/No usado/Regresa/Diferencia/Ingreso PK` y payload enriquecido.
+- `REQ-068` | `done` | Bloqueo de liquidacion para items sin definir (`entregado>0` y `usado+no_usado+regresa=0`), con validacion backend obligatoria + validacion frontend de apoyo y preservacion de datos digitados.
+- `REQ-069` | `done` | Alertas de liquidacion en modal con etiquetas humanas (`Faltante/Sobrante/Retorno extra/Inconsistencia`), tooltip con detalle numerico y codigo interno, mas robustez de payload `liquidation_alerts=[]`.
+- `REQ-070` | `done` | Modal detalle liquidada muestra comentario general de liquidacion (con `—` si vacio) y nota por item bajo descripcion; payload JSON normalizado para `liquidation_comment` e `item_liquidation_note`.
+- `REQ-071` | `done` | Rediseño del modal detalle a vista dashboard: cards superiores + timeline lateral + tabla central, “Alertas de conciliación”, DIF por signo, notas de ítem destacadas y comentarios secundarios colapsables.
+- `REQ-072` | `done` | Refinamiento visual de la vista dashboard del modal: badges/severidades más legibles, DIF con mayor contraste, densidad de tabla ajustada y estilos scoped para no afectar otras vistas.
+- `REQ-073` | `done` | UI polish del dashboard en modal: cards más compactas con patrón label/valor, timeline vertical con nodos, DIF como chip con signo, modal casi fullscreen y notas por ítem con mayor énfasis contextual.
+- `REQ-074` | `done` | Ajustes finos UX en dashboard del detalle: “Alta severidad”, acción sugerida por alertas, `Ingreso PK` como `—` en consumibles, centrado numérico y botón PDF habilitado solo en `liquidada`.
+- `REQ-075` | `done` | Corrección de hora de creación en detalle: `created_at` ya no depende de `func.now()` (UTC SQLite) y se persiste en hora local al crear requisición.
+
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.
 - `REQ-002` | `done` | Corregir inconsistencias criticas en `tech_specs.md`.

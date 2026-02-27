@@ -78,6 +78,7 @@
         <th>Recibio</th>
         <th class="col-fecha">Entregada en</th>
         <th class="col-detalle">Detalle</th>
+        <th class="col-acciones">Liquidacion</th>
     </tr>
     </thead>
     <tbody>
@@ -100,6 +101,15 @@
         <td>{{ req.delivered_to or '-' }}</td>
         <td>{{ req.delivered_at }}</td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
+        <td class="table-actions">
+            {% if req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
+            <a href="/liquidar/{{ req.id }}" role="button" class="secondary">Liquidar</a>
+            {% elif req.estado == 'liquidada' %}
+            {{ ui.status_badge('liquidada') }}
+            {% else %}
+            -
+            {% endif %}
+        </td>
     </tr>
     {% endfor %}
     </tbody>

@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from io import BytesIO
 import csv
 from datetime import datetime, timedelta
@@ -17,6 +18,8 @@ from urllib.parse import quote_plus
 from .auth import authenticate_user, get_current_user, login_user, logout_user
 from .crud import (
     agregar_item_db,
+    ejecutar_liquidacion,
+    puede_liquidar,
     crear_requisicion_db,
     parse_items_from_form,
     puede_aprobar,
@@ -115,11 +118,33 @@ def template_context(request: Request, current_user: Usuario | None = None, **kw
     return {"request": request, "current_user": current_user, **kwargs}
 
 
+def infer_liquidation_mode(descripcion: str) -> str:
+    desc = (descripcion or "").upper()
+    retornable_keys = ("MOPA", "ALFOMBRA", "HERRAMIENTA", "EQUIPO")
+    consumible_keys = ("SPRAY", "PILA", "QUIM", "DOSIS")
+    if any(token in desc for token in consumible_keys):
+        return "CONSUMIBLE"
+    if any(token in desc for token in retornable_keys):
+        return "RETORNABLE"
+    return "RETORNABLE"
+
+
+def normalize_optional_text(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return cleaned or None
+
+
 def redirect_with_message(url: str, message: str, level: str = "success") -> RedirectResponse:
     safe_msg = quote_plus(message)
     safe_level = quote_plus(level)
     sep = "&" if "?" in url else "?"
     return RedirectResponse(url=f"{url}{sep}msg={safe_msg}&type={safe_level}", status_code=303)
+
+
+def puede_editar_prokey_ref(req: Requisicion, current_user: Usuario) -> bool:
+    return req.estado == "liquidada" and (current_user.rol == "admin" or req.solicitante_id == current_user.id)
 
 
 def ensure_admin(current_user: Usuario) -> None:
@@ -359,7 +384,7 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
         "pendiente_entregar": "aprobada",
     }
     estado_real = alias_estado.get(estado, estado)
-    estados_validos = {"pendiente", "aprobada", "rechazada", "entregada"}
+    estados_validos = {"pendiente", "aprobada", "rechazada", "entregada", "liquidada"}
     query = (
         db.query(Requisicion)
         .options(
@@ -367,8 +392,9 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.rechazador),
             joinedload(Requisicion.entregador),
+            joinedload(Requisicion.liquidator),
         )
-        .filter(Requisicion.estado.in_(["pendiente", "aprobada", "rechazada", "entregada"]))
+        .filter(Requisicion.estado.in_(["pendiente", "aprobada", "rechazada", "entregada", "liquidada"]))
     )
     if estado_real in estados_validos:
         query = query.filter(Requisicion.estado == estado_real)
@@ -527,7 +553,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.entregador),
         )
-        .filter(Requisicion.estado == "entregada")
+        .filter(Requisicion.estado.in_(["entregada", "liquidada"]))
     )
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(Requisicion.delivered_by == current_user.id)
@@ -629,6 +655,11 @@ def entregar(
             "error",
         )
 
+    if resultado == "completa":
+        for item in req.items:
+            if item.cantidad_entregada is None:
+                item.cantidad_entregada = item.cantidad
+
     transicionar_requisicion(
         db,
         req,
@@ -638,10 +669,6 @@ def entregar(
         delivery_result=resultado,
         delivery_comment=comentario_limpio or None,
     )
-    if resultado == "completa":
-        for item in req.items:
-            item.cantidad_entregada = item.cantidad
-        db.commit()
     if resultado == "no_entregada":
         for item in req.items:
             item.cantidad_entregada = 0
@@ -739,6 +766,247 @@ async def entrega_parcial_guardar(
         delivery_comment=comentario_limpio,
     )
     return redirect_with_message("/bodega", "Requisicion marcada como entrega parcial", "warning")
+
+
+@app.get("/liquidar/{req_id}")
+def liquidar_form(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.rol not in ("admin", "bodega"):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    req = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
+        )
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if req.estado == "liquidada":
+        return redirect_with_message("/bodega", "Esta requisicion ya fue liquidada", "warning")
+    if not puede_liquidar(req, current_user):
+        return redirect_with_message("/bodega", "Requisicion no elegible para liquidacion", "error")
+
+    for item in req.items:
+        item.default_mode = infer_liquidation_mode(item.descripcion)
+
+    return templates.TemplateResponse(
+        "liquidar.html",
+        template_context(
+            request,
+            current_user,
+            req=req,
+            error_message=None,
+            item_incompletos=[],
+            liquidacion_values={},
+            liquidacion_meta={"prokey_ref": "", "liquidation_comment": ""},
+        ),
+    )
+
+
+@app.post("/liquidar/{req_id}")
+async def liquidar_guardar(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.rol not in ("admin", "bodega"):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    req = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
+        )
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if req.estado == "liquidada":
+        return redirect_with_message("/bodega", "Ya fue liquidada", "warning")
+    if not puede_liquidar(req, current_user):
+        return redirect_with_message("/bodega", "Requisicion no elegible para liquidacion", "error")
+
+    form_data = await request.form()
+    prokey_ref = str(form_data.get("prokey_ref", "")).strip() or None
+    liquidation_comment = str(form_data.get("liquidation_comment", "")).strip() or None
+    liquidacion_meta = {
+        "prokey_ref": str(form_data.get("prokey_ref", "")).strip(),
+        "liquidation_comment": str(form_data.get("liquidation_comment", "")).strip(),
+    }
+
+    items_data: dict[int, dict[str, int | str | None]] = {}
+    liquidacion_values: dict[int, dict[str, str]] = {}
+    item_incompletos: list[int] = []
+
+    def parse_non_negative_int(raw: str, field_label: str) -> int:
+        try:
+            value = int(raw)
+        except ValueError as exc:
+            raise ValueError(f"{field_label} invalido") from exc
+        if value < 0:
+            raise ValueError(f"{field_label} no puede ser negativo")
+        return value
+
+    for item in req.items:
+        qty_returned_raw = str(form_data.get(f"qty_returned_{item.id}", "0")).strip() or "0"
+        qty_used_raw = str(form_data.get(f"qty_used_{item.id}", "0")).strip() or "0"
+        qty_not_used_raw = str(form_data.get(f"qty_not_used_{item.id}", form_data.get(f"qty_left_{item.id}", "0"))).strip() or "0"
+        mode_raw = str(form_data.get(f"mode_{item.id}", "RETORNABLE")).strip().upper() or "RETORNABLE"
+        note_raw = str(form_data.get(f"note_{item.id}", "")).strip()
+        note = note_raw or None
+        liquidacion_values[item.id] = {
+            "qty_returned": qty_returned_raw,
+            "qty_used": qty_used_raw,
+            "qty_not_used": qty_not_used_raw,
+            "mode": mode_raw,
+            "note": note_raw,
+        }
+        try:
+            qty_returned = parse_non_negative_int(qty_returned_raw, "Regresa")
+            qty_used = parse_non_negative_int(qty_used_raw, "Usado")
+            qty_not_used = parse_non_negative_int(qty_not_used_raw, "No usado")
+        except ValueError as exc:
+            for req_item in req.items:
+                req_item.default_mode = infer_liquidation_mode(req_item.descripcion)
+            return templates.TemplateResponse(
+                "liquidar.html",
+                template_context(
+                    request,
+                    current_user,
+                    req=req,
+                    error_message=str(exc),
+                    item_incompletos=[],
+                    liquidacion_values=liquidacion_values,
+                    liquidacion_meta=liquidacion_meta,
+                ),
+                status_code=200,
+            )
+        if mode_raw not in ("RETORNABLE", "CONSUMIBLE"):
+            for req_item in req.items:
+                req_item.default_mode = infer_liquidation_mode(req_item.descripcion)
+            return templates.TemplateResponse(
+                "liquidar.html",
+                template_context(
+                    request,
+                    current_user,
+                    req=req,
+                    error_message="Modo de liquidacion invalido",
+                    item_incompletos=[],
+                    liquidacion_values=liquidacion_values,
+                    liquidacion_meta=liquidacion_meta,
+                ),
+                status_code=200,
+            )
+
+        delivered = item.cantidad_entregada or 0
+        if delivered > 0 and (qty_returned + qty_used + qty_not_used) == 0:
+            item_incompletos.append(item.id)
+
+        items_data[item.id] = {
+            "qty_returned_to_warehouse": qty_returned,
+            "qty_used": qty_used,
+            "qty_left_at_client": qty_not_used,
+            "liquidation_mode": mode_raw,
+            "item_liquidation_note": note,
+        }
+
+    if item_incompletos:
+        for item in req.items:
+            item.default_mode = infer_liquidation_mode(item.descripcion)
+        return templates.TemplateResponse(
+            "liquidar.html",
+            template_context(
+                request,
+                current_user,
+                req=req,
+                error_message="Hay items sin definir. Completa Usado/No usado/Regresa en cada item entregado.",
+                item_incompletos=item_incompletos,
+                liquidacion_values=liquidacion_values,
+                liquidacion_meta=liquidacion_meta,
+            ),
+            status_code=200,
+        )
+
+    try:
+        ejecutar_liquidacion(
+            db=db,
+            requisicion=req,
+            usuario=current_user,
+            prokey_ref=prokey_ref,
+            liquidation_comment=liquidation_comment,
+            items_data=items_data,
+        )
+    except ValueError as exc:
+        return redirect_with_message("/bodega", str(exc), "warning")
+
+    return redirect_with_message("/bodega", "Liquidacion registrada", "success")
+
+
+@app.get("/requisiciones/{req_id}/prokey-ref")
+def editar_prokey_ref_form(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.solicitante))
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+
+    if req.estado != "liquidada":
+        return redirect_with_message("/mis-requisiciones", "Solo se puede completar referencia en requisiciones liquidadas", "error")
+    if not puede_editar_prokey_ref(req, current_user):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    cancel_url = "/bodega" if current_user.rol == "admin" else "/mis-requisiciones"
+    return templates.TemplateResponse(
+        "editar_prokey_ref.html",
+        template_context(request, current_user, req=req, cancel_url=cancel_url),
+    )
+
+
+@app.post("/requisiciones/{req_id}/prokey-ref")
+async def editar_prokey_ref_guardar(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    req = db.query(Requisicion).options(joinedload(Requisicion.items)).filter(Requisicion.id == req_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+
+    if req.estado != "liquidada":
+        return redirect_with_message("/mis-requisiciones", "Solo se puede completar referencia en requisiciones liquidadas", "error")
+    if not puede_editar_prokey_ref(req, current_user):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    form_data = await request.form()
+    prokey_ref = str(form_data.get("prokey_ref", "")).strip()
+    if not prokey_ref:
+        return redirect_with_message(f"/requisiciones/{req_id}/prokey-ref", "La referencia Prokey es obligatoria", "error")
+
+    req.prokey_ref = prokey_ref
+    db.commit()
+
+    target = "/bodega" if current_user.rol == "admin" else "/mis-requisiciones"
+    return redirect_with_message(target, "Referencia Prokey actualizada", "success")
 
 
 @app.get("/admin/usuarios")
@@ -1142,6 +1410,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.rechazador),
             joinedload(Requisicion.entregador),
+            joinedload(Requisicion.liquidator),
         )
         .filter(Requisicion.id == req_id)
         .first()
@@ -1153,7 +1422,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         current_user.rol == "admin"
         or current_user.id == req.solicitante_id
         or current_user.rol == "aprobador"
-        or (current_user.rol == "bodega" and req.estado in ["aprobada", "entregada"])
+        or (current_user.rol == "bodega" and req.estado in ["aprobada", "entregada", "liquidada"])
     )
     if not can_view:
         raise HTTPException(status_code=403, detail="No autorizado")
@@ -1199,6 +1468,64 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                     "fecha_hora": req.delivered_at,
                 }
             )
+    if req.liquidated_at:
+        timeline.append(
+            {
+                "evento": "Requisicion liquidada",
+                "actor": req.liquidator.nombre if req.liquidator else None,
+                "fecha_hora": req.liquidated_at,
+            }
+        )
+
+    items_payload: list[dict[str, object]] = []
+    for item in req.items:
+        item_data: dict[str, object] = {
+            "descripcion": item.descripcion,
+            "cantidad": item.cantidad,
+            "cantidad_entregada": item.cantidad_entregada,
+            "unidad": item.unidad,
+        }
+        if req.estado == "liquidada":
+            mode = (item.liquidation_mode or "RETORNABLE").upper()
+            if mode not in ("RETORNABLE", "CONSUMIBLE"):
+                mode = "RETORNABLE"
+            qty_returned = item.qty_returned_to_warehouse or 0
+            qty_used = item.qty_used or 0
+            qty_not_used = item.qty_left_at_client or 0
+            delivered = item.cantidad_entregada or 0
+            expected_return = (qty_used + qty_not_used) if mode == "RETORNABLE" else qty_not_used
+            difference = expected_return - qty_returned
+            pk_ingreso_qty = qty_returned if mode == "RETORNABLE" else 0
+
+            parsed_alerts: list[dict[str, object]] = []
+            if item.liquidation_alerts:
+                try:
+                    parsed = json.loads(item.liquidation_alerts)
+                    if isinstance(parsed, list):
+                        parsed_alerts = parsed
+                except json.JSONDecodeError:
+                    parsed_alerts = []
+
+            item_data.update(
+                {
+                    "mode": mode,
+                    "used": qty_used,
+                    "not_used": qty_not_used,
+                    "returned": qty_returned,
+                    "delivered": delivered,
+                    "expected_return": expected_return,
+                    "difference": difference,
+                    "qty_returned_to_warehouse": qty_returned,
+                    "qty_used": qty_used,
+                    "qty_left_at_client": qty_not_used,
+                    "item_liquidation_note": normalize_optional_text(item.item_liquidation_note),
+                    "liquidation_alerts": parsed_alerts,
+                    "qty_ocupo": qty_used + qty_not_used,
+                    "pk_ingreso_qty": pk_ingreso_qty,
+                    "delta": difference,
+                }
+            )
+        items_payload.append(item_data)
 
     return {
         "id": req.id,
@@ -1223,14 +1550,11 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "approved_at": req.approved_at,
         "rejected_at": req.rejected_at,
         "delivered_at": req.delivered_at,
+        "prokey_ref": req.prokey_ref,
+        "prokey_pending": not bool(req.prokey_ref),
+        "liquidation_comment": normalize_optional_text(req.liquidation_comment),
+        "liquidated_by_name": req.liquidator.nombre if req.liquidator else None,
+        "liquidated_at": req.liquidated_at,
         "timeline": timeline,
-        "items": [
-            {
-                "descripcion": item.descripcion,
-                "cantidad": item.cantidad,
-                "cantidad_entregada": item.cantidad_entregada,
-                "unidad": item.unidad,
-            }
-            for item in req.items
-        ],
+        "items": items_payload,
     }

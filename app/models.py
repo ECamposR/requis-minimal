@@ -59,6 +59,10 @@ class Requisicion(Base):
     delivered_to: Mapped[str | None] = mapped_column(String(120), nullable=True)
     delivery_result: Mapped[str | None] = mapped_column(String(20), nullable=True)
     delivery_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prokey_ref: Mapped[str | None] = mapped_column(String, nullable=True)
+    liquidation_comment: Mapped[str | None] = mapped_column(String, nullable=True)
+    liquidated_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    liquidated_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     rejected_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     rejected_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -84,6 +88,10 @@ class Requisicion(Base):
         foreign_keys=[delivered_by],
         back_populates="entregas_realizadas",
     )
+    liquidator: Mapped["Usuario | None"] = relationship(
+        "Usuario",
+        foreign_keys=[liquidated_by],
+    )
     items: Mapped[list["Item"]] = relationship(
         "Item",
         back_populates="requisicion",
@@ -92,7 +100,7 @@ class Requisicion(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "estado in ('pendiente', 'aprobada', 'rechazada', 'entregada')",
+            "estado in ('pendiente', 'aprobada', 'rechazada', 'entregada', 'liquidada')",
             name="ck_requisiciones_estado",
         ),
     )
@@ -109,6 +117,12 @@ class Item(Base):
     descripcion: Mapped[str] = mapped_column(Text, nullable=False)
     cantidad: Mapped[float] = mapped_column(Float, nullable=False)
     cantidad_entregada: Mapped[float | None] = mapped_column(Float, nullable=True)
+    qty_returned_to_warehouse: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    qty_used: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    qty_left_at_client: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    liquidation_mode: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    item_liquidation_note: Mapped[str | None] = mapped_column(String, nullable=True)
+    liquidation_alerts: Mapped[str | None] = mapped_column(String, nullable=True)
     unidad: Mapped[str] = mapped_column(String(40), nullable=False)
 
     requisicion: Mapped["Requisicion"] = relationship("Requisicion", back_populates="items")

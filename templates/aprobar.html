@@ -11,6 +11,7 @@
         <option value="pendiente_entregar" {% if filtro_estado == 'pendiente_entregar' or filtro_estado == 'aprobada' %}selected{% endif %}>Pendiente de entregar</option>
         <option value="rechazada" {% if filtro_estado == 'rechazada' %}selected{% endif %}>Rechazada</option>
         <option value="entregada" {% if filtro_estado == 'entregada' %}selected{% endif %}>Entregada</option>
+        <option value="liquidada" {% if filtro_estado == 'liquidada' %}selected{% endif %}>Liquidada</option>
     </select>
     <select name="departamento">
         <option value="todos" {% if filtro_departamento == 'todos' %}selected{% endif %}>Todos los departamentos</option>
@@ -50,6 +51,8 @@
                 {{ ui.status_badge('rechazada') }}
             {% elif req.estado == 'entregada' %}
                 {{ ui.status_badge('entregada') }}
+            {% elif req.estado == 'liquidada' %}
+                {{ ui.status_badge('liquidada') }}
             {% else %}
                 {{ ui.status_badge(req.estado) }}
             {% endif %}
@@ -65,6 +68,8 @@
                 {{ req.rechazador.nombre }}
             {% elif req.estado == 'entregada' and req.entregador %}
                 {{ req.entregador.nombre }}
+            {% elif req.estado == 'liquidada' and req.liquidator %}
+                {{ req.liquidator.nombre }}
             {% else %}
                 -
             {% endif %}

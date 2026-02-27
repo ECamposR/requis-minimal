@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+{% block title %}Liquidar Requisicion{% endblock %}
+{% block content %}
+{{ ui.page_header("Liquidar Requisicion #" ~ req.id, "Registra cantidades finales por item para cerrar el despacho.") }}
+
+<section class="panel view-panel">
+    <p>
+        <strong>Folio:</strong> {{ req.folio }} |
+        <strong>Cliente:</strong> {{ req.cliente_nombre or '-' }} |
+        <strong>Codigo:</strong> {{ req.cliente_codigo or '-' }} |
+        <strong>Ruta:</strong> {{ req.cliente_ruta_principal or '-' }}
+    </p>
+    <p>
+        <strong>Resultado de entrega:</strong> {{ req.delivery_result or '-' }} |
+        <strong>Solicitante:</strong> {{ req.solicitante.nombre if req.solicitante else '-' }}
+    </p>
+</section>
+
+<section class="panel view-panel">
+    {% if error_message %}
+    <article class="liquidacion-inline-error" role="alert">
+        {{ error_message }}
+    </article>
+    {% endif %}
+    <article class="liquidacion-inline-error liquidacion-inline-error-client" role="alert" data-client-error hidden>
+        Hay items sin definir. Completa Usado/No usado/Regresa.
+    </article>
+    <form method="POST" action="/liquidar/{{ req.id }}">
+        <div class="table-wrap">
+            <table class="table-compact liquidacion-table">
+                <thead>
+                    <tr>
+                        <th>Descripcion</th>
+                        <th>Tipo</th>
+                        <th>Entregado</th>
+                        <th>Regresa</th>
+                        <th>Usado</th>
+                        <th>No usado</th>
+                        <th>Ocupo</th>
+                        <th>Diferencia</th>
+                        <th>Nota</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in req.items %}
+                    {% set values = liquidacion_values.get(item.id, {}) if liquidacion_values else {} %}
+                    <tr data-liquidacion-row {% if item.id in item_incompletos %}class="row-incomplete"{% endif %}>
+                        <td>{{ item.descripcion }}</td>
+                        <td>
+                            <select name="mode_{{ item.id }}" data-mode>
+                                <option value="RETORNABLE" {% if values.get('mode', item.default_mode) == 'RETORNABLE' %}selected{% endif %}>RETORNABLE</option>
+                                <option value="CONSUMIBLE" {% if values.get('mode', item.default_mode) == 'CONSUMIBLE' %}selected{% endif %}>CONSUMIBLE</option>
+                            </select>
+                        </td>
+                        <td data-delivered="{{ item.cantidad_entregada }}">{{ item.cantidad_entregada }}</td>
+                        <td>
+                            <input type="number" min="0" step="1" name="qty_returned_{{ item.id }}" value="{{ values.get('qty_returned', '0') }}" required>
+                        </td>
+                        <td>
+                            <input type="number" min="0" step="1" name="qty_used_{{ item.id }}" value="{{ values.get('qty_used', '0') }}" required>
+                        </td>
+                        <td>
+                            <input type="number" min="0" step="1" name="qty_not_used_{{ item.id }}" value="{{ values.get('qty_not_used', '0') }}" required>
+                        </td>
+                        <td data-ocupo>0</td>
+                        <td>
+                            <span data-delta>0</span>
+                            <small data-expected-return class="status-muted">Esperado regrese: 0</small>
+                            <small class="hint-incomplete" data-incomplete-hint {% if item.id not in item_incompletos %}hidden{% endif %}>Completar este item</small>
+                        </td>
+                        <td>
+                            <input type="text" name="note_{{ item.id }}" placeholder="Opcional" value="{{ values.get('note', '') }}">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="form-grid-3">
+            <label>
+                Referencia comprobante Prokey (opcional, se completa despues)
+                <input type="text" name="prokey_ref" value="{{ liquidacion_meta.get('prokey_ref', '') if liquidacion_meta else '' }}">
+                <small>Se usa para enlazar con el comprobante en Prokey una vez se cree.</small>
+            </label>
+        </div>
+
+        <label>
+            Comentario de liquidacion (opcional)
+            <textarea name="liquidation_comment" rows="3" placeholder="Observaciones de cierre">{{ liquidacion_meta.get('liquidation_comment', '') if liquidacion_meta else '' }}</textarea>
+        </label>
+
+        <div class="form-actions">
+            <button type="submit">Liquidar</button>
+            <a href="/bodega" role="button" class="secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+
+<script>
+    function parseNum(value) {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : 0;
+    }
+
+    function formatNum(value) {
+        if (Number.isInteger(value)) return String(value);
+        return value.toFixed(2);
+    }
+
+    function recalcRow(row) {
+        const deliveredCell = row.querySelector("[data-delivered]");
+        const delivered = parseNum(deliveredCell.dataset.delivered);
+        const returned = parseNum(row.querySelector("input[name^='qty_returned_']").value);
+        const used = parseNum(row.querySelector("input[name^='qty_used_']").value);
+        const notUsed = parseNum(row.querySelector("input[name^='qty_not_used_']").value);
+        const mode = (row.querySelector("[data-mode]")?.value || "RETORNABLE").toUpperCase();
+        const expectedReturn = mode === "CONSUMIBLE" ? notUsed : used + notUsed;
+        const ocupo = used + notUsed;
+        const diferencia = expectedReturn - returned;
+
+        const ocupoCell = row.querySelector("[data-ocupo]");
+        const deltaCell = row.querySelector("[data-delta]");
+        const expectedCell = row.querySelector("[data-expected-return]");
+        ocupoCell.textContent = formatNum(ocupo);
+        deltaCell.textContent = formatNum(diferencia);
+        expectedCell.textContent = `Esperado regrese: ${formatNum(expectedReturn)}`;
+
+        deltaCell.classList.remove("delta-warn", "delta-danger");
+        if (diferencia !== 0) {
+            deltaCell.classList.add("delta-warn");
+        }
+        if (diferencia < 0) {
+            deltaCell.classList.add("delta-danger");
+        }
+
+        const isIncomplete = delivered > 0 && (returned + used + notUsed) === 0;
+        row.classList.toggle("row-incomplete", isIncomplete);
+        const hint = row.querySelector("[data-incomplete-hint]");
+        if (hint) {
+            hint.hidden = !isIncomplete;
+        }
+        return { isIncomplete };
+    }
+
+    function bindLiquidacion() {
+        const form = document.querySelector("form[action^='/liquidar/']");
+        const globalError = document.querySelector("[data-client-error]");
+        const rows = document.querySelectorAll("[data-liquidacion-row]");
+        const evaluateAllRows = () => {
+            let hasIncomplete = false;
+            rows.forEach((row) => {
+                const result = recalcRow(row);
+                if (result.isIncomplete) hasIncomplete = true;
+            });
+            if (globalError) globalError.hidden = !hasIncomplete;
+            return hasIncomplete;
+        };
+
+        rows.forEach((row) => {
+            const inputs = row.querySelectorAll("input[name^='qty_returned_'], input[name^='qty_used_'], input[name^='qty_not_used_'], select[data-mode]");
+            inputs.forEach((input) => input.addEventListener("input", evaluateAllRows));
+            inputs.forEach((input) => input.addEventListener("change", evaluateAllRows));
+        });
+        if (form) {
+            form.addEventListener("submit", (event) => {
+                if (evaluateAllRows()) {
+                    event.preventDefault();
+                }
+            });
+        }
+        evaluateAllRows();
+    }
+
+    bindLiquidacion();
+</script>
+{% endblock %}

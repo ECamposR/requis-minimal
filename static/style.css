@@ -757,7 +757,7 @@ table td {
     overflow-x: auto;
 }
 
-#modal-detalle article {
+#modal-detalle:not(.modal--detail-dashboard) article {
     width: min(99vw, 1380px);
     max-width: 1380px;
     background: #0c172c;
