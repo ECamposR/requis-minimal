@@ -15,7 +15,14 @@ from sqlalchemy.orm import Session, joinedload
 from starlette.middleware.sessions import SessionMiddleware
 from urllib.parse import quote_plus
 
-from .auth import authenticate_user, get_current_user, login_user, logout_user
+from .auth import (
+    authenticate_user,
+    get_current_user,
+    hash_password,
+    login_user,
+    logout_user,
+    verify_password,
+)
 from .crud import (
     agregar_item_db,
     ejecutar_liquidacion,
@@ -41,6 +48,7 @@ templates = Jinja2Templates(directory="templates")
 
 DEPARTAMENTOS_VALIDOS = ["Cuentas", "Ventas", "Bodega", "Admon", "Logistica"]
 CATALOGO_HEADERS = {"nombre", "item", "producto", "descripcion"}
+ROLES_VALIDOS = ["user", "aprobador", "bodega", "admin", "tecnico"]
 
 
 @app.on_event("startup")
@@ -165,6 +173,42 @@ def ensure_admin(current_user: Usuario) -> None:
         raise HTTPException(status_code=403, detail="No autorizado")
 
 
+def get_active_receptores(db: Session) -> list[Usuario]:
+    return db.query(Usuario).filter(Usuario.activo.is_(True)).order_by(Usuario.nombre.asc()).all()
+
+
+def validar_receptor_firma(
+    db: Session,
+    recibido_por_id_raw: str,
+    pin_receptor: str,
+    required: bool,
+) -> tuple[Usuario | None, str | None]:
+    recibido_por_id_limpio = str(recibido_por_id_raw or "").strip()
+    pin_limpio = pin_receptor.strip()
+
+    if not recibido_por_id_limpio and not pin_limpio:
+        if required:
+            return None, "Debes seleccionar receptor y escribir su PIN"
+        return None, None
+
+    if not recibido_por_id_limpio or not pin_limpio:
+        return None, "Debes completar receptor y PIN"
+
+    try:
+        receptor_id = int(recibido_por_id_limpio)
+    except ValueError:
+        return None, "Receptor invalido"
+
+    receptor = db.query(Usuario).filter(Usuario.id == receptor_id, Usuario.activo.is_(True)).first()
+    if not receptor:
+        return None, "El receptor seleccionado no existe o esta inactivo"
+    if not receptor.pin_hash:
+        return None, "El receptor seleccionado no tiene PIN configurado"
+    if not verify_password(pin_limpio, receptor.pin_hash):
+        return None, "PIN del receptor incorrecto"
+    return receptor, None
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -186,9 +230,19 @@ def login(
 ):
     user = authenticate_user(db, username=username, password=password)
     if not user:
+        disabled_login_user = (
+            db.query(Usuario)
+            .filter(Usuario.username == username.strip(), Usuario.activo.is_(True), Usuario.puede_iniciar_sesion.is_(False))
+            .first()
+        )
+        error_message = (
+            "Este usuario no tiene permiso para iniciar sesion"
+            if disabled_login_user
+            else "Credenciales incorrectas"
+        )
         return templates.TemplateResponse(
             "login.html",
-            template_context(request, error="Credenciales incorrectas"),
+            template_context(request, error=error_message),
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
     login_user(request, user)
@@ -627,20 +681,34 @@ def bodega_gestionar(
 
     return templates.TemplateResponse(
         "bodega_gestionar.html",
-        template_context(request, current_user, req=req),
+        template_context(
+            request,
+            current_user,
+            req=req,
+            receptores=get_active_receptores(db),
+            error_message=None,
+            form_data={},
+        ),
     )
 
 
 @app.post("/entregar/{req_id}")
 def entregar(
     req_id: int,
-    delivered_to: str = Form(""),
+    request: Request,
     resultado: str = Form("completa"),
     comentario: str = Form(""),
+    recibido_por_id: str = Form(""),
+    pin_receptor: str = Form(""),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    req = db.query(Requisicion).filter(Requisicion.id == req_id).first()
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.items), joinedload(Requisicion.solicitante), joinedload(Requisicion.aprobador))
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
     if not req:
         raise HTTPException(status_code=404, detail="Requisicion no encontrada")
     if not puede_entregar(req, current_user.rol):
@@ -653,19 +721,36 @@ def entregar(
     if resultado == "parcial":
         return RedirectResponse(url=f"/entregar/{req_id}/parcial", status_code=303)
 
-    delivered_to_limpio = delivered_to.strip()
     comentario_limpio = comentario.strip()
-    if resultado in {"completa", "parcial"} and len(delivered_to_limpio) < 3:
-        return redirect_with_message(
-            "/bodega",
-            "Debes indicar quien recibe (minimo 3 caracteres)",
-            "error",
-        )
     if resultado in {"parcial", "no_entregada"} and len(comentario_limpio) < 5:
         return redirect_with_message(
             "/bodega",
             "Para entrega parcial o no entregada, agrega comentario (minimo 5 caracteres)",
             "error",
+        )
+
+    receptor, firma_error = validar_receptor_firma(
+        db,
+        recibido_por_id,
+        pin_receptor,
+        required=resultado in {"completa", "parcial"},
+    )
+    if firma_error:
+        return templates.TemplateResponse(
+            "bodega_gestionar.html",
+            template_context(
+                request,
+                current_user,
+                req=req,
+                receptores=get_active_receptores(db),
+                error_message=firma_error,
+                form_data={
+                    "resultado": resultado,
+                    "comentario": comentario,
+                    "recibido_por_id": recibido_por_id,
+                },
+            ),
+            status_code=400,
         )
 
     if resultado == "completa":
@@ -678,9 +763,11 @@ def entregar(
         req,
         nuevo_estado="entregada",
         actor_id=current_user.id,
-        delivered_to=delivered_to_limpio or None,
+        delivered_to=receptor.nombre if receptor else None,
         delivery_result=resultado,
         delivery_comment=comentario_limpio or None,
+        recibido_por_id=receptor.id if receptor else None,
+        recibido_at=datetime.now() if receptor else None,
     )
     if resultado == "no_entregada":
         for item in req.items:
@@ -715,7 +802,15 @@ def entrega_parcial_form(
 
     return templates.TemplateResponse(
         "bodega_entrega_parcial.html",
-        template_context(request, current_user, req=req),
+        template_context(
+            request,
+            current_user,
+            req=req,
+            receptores=get_active_receptores(db),
+            error_message=None,
+            form_data={},
+            item_errors={},
+        ),
     )
 
 
@@ -723,8 +818,9 @@ def entrega_parcial_form(
 async def entrega_parcial_guardar(
     req_id: int,
     request: Request,
-    delivered_to: str = Form(...),
     comentario: str = Form(...),
+    recibido_por_id: str = Form(...),
+    pin_receptor: str = Form(...),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -739,12 +835,28 @@ async def entrega_parcial_guardar(
     if not puede_entregar(req, current_user.rol):
         raise HTTPException(status_code=403, detail="No autorizado")
 
-    delivered_to_limpio = delivered_to.strip()
     comentario_limpio = comentario.strip()
-    if len(delivered_to_limpio) < 3:
-        raise HTTPException(status_code=400, detail="El nombre de quien recibe debe tener al menos 3 caracteres")
     if len(comentario_limpio) < 5:
         raise HTTPException(status_code=400, detail="Comentario minimo de 5 caracteres para entrega parcial")
+
+    receptor, firma_error = validar_receptor_firma(db, recibido_por_id, pin_receptor, required=True)
+    if firma_error:
+        return templates.TemplateResponse(
+            "bodega_entrega_parcial.html",
+            template_context(
+                request,
+                current_user,
+                req=req,
+                receptores=get_active_receptores(db),
+                error_message=firma_error,
+                form_data={
+                    "comentario": comentario,
+                    "recibido_por_id": recibido_por_id,
+                },
+                item_errors={},
+            ),
+            status_code=400,
+        )
 
     form_data = await request.form()
     total_entregado = 0.0
@@ -774,9 +886,11 @@ async def entrega_parcial_guardar(
         req,
         nuevo_estado="entregada",
         actor_id=current_user.id,
-        delivered_to=delivered_to_limpio,
+        delivered_to=receptor.nombre,
         delivery_result="parcial",
         delivery_comment=comentario_limpio,
+        recibido_por_id=receptor.id,
+        recibido_at=datetime.now(),
     )
     return redirect_with_message("/bodega", "Requisicion marcada como entrega parcial", "warning")
 
@@ -1052,7 +1166,7 @@ def admin_usuario_nuevo(request: Request, current_user: Usuario = Depends(get_cu
             current_user,
             modo="crear",
             usuario=None,
-            roles=["user", "aprobador", "bodega", "admin"],
+            roles=ROLES_VALIDOS,
             departamentos=DEPARTAMENTOS_VALIDOS,
         ),
     )
@@ -1066,16 +1180,17 @@ def admin_usuario_crear(
     rol: str = Form(...),
     departamento: str = Form(...),
     password: str = Form(...),
+    pin: str = Form(""),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     ensure_admin(current_user)
-    roles_validos = ["user", "aprobador", "bodega", "admin"]
     username_limpio = username.strip()
     nombre_limpio = nombre.strip()
     depto_limpio = departamento.strip()
+    pin_limpio = pin.strip()
 
-    if rol not in roles_validos:
+    if rol not in ROLES_VALIDOS:
         raise HTTPException(status_code=400, detail="Rol invalido")
     if depto_limpio not in DEPARTAMENTOS_VALIDOS:
         raise HTTPException(status_code=400, detail="Departamento invalido")
@@ -1088,8 +1203,6 @@ def admin_usuario_crear(
     if existe:
         return redirect_with_message("/admin/usuarios", "Username ya existe", "error")
 
-    from .auth import hash_password
-
     nuevo = Usuario(
         username=username_limpio,
         nombre=nombre_limpio,
@@ -1097,6 +1210,8 @@ def admin_usuario_crear(
         departamento=depto_limpio,
         activo=True,
         password=hash_password(password),
+        pin_hash=hash_password(pin_limpio) if pin_limpio else None,
+        puede_iniciar_sesion=rol != "tecnico",
     )
     db.add(nuevo)
     db.commit()
@@ -1121,7 +1236,7 @@ def admin_usuario_editar_form(
             current_user,
             modo="editar",
             usuario=usuario,
-            roles=["user", "aprobador", "bodega", "admin"],
+            roles=ROLES_VALIDOS,
             departamentos=DEPARTAMENTOS_VALIDOS,
         ),
     )
@@ -1135,6 +1250,7 @@ def admin_usuario_editar(
     rol: str = Form(...),
     departamento: str = Form(...),
     password: str = Form(""),
+    pin: str = Form(""),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -1143,11 +1259,11 @@ def admin_usuario_editar(
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    roles_validos = ["user", "aprobador", "bodega", "admin"]
     username_limpio = username.strip()
     nombre_limpio = nombre.strip()
     depto_limpio = departamento.strip()
-    if rol not in roles_validos:
+    pin_limpio = pin.strip()
+    if rol not in ROLES_VALIDOS:
         raise HTTPException(status_code=400, detail="Rol invalido")
     if depto_limpio not in DEPARTAMENTOS_VALIDOS:
         raise HTTPException(status_code=400, detail="Departamento invalido")
@@ -1162,13 +1278,14 @@ def admin_usuario_editar(
     usuario.nombre = nombre_limpio
     usuario.rol = rol
     usuario.departamento = depto_limpio
+    usuario.puede_iniciar_sesion = rol != "tecnico"
 
     if password.strip():
         if len(password.strip()) < 6:
             raise HTTPException(status_code=400, detail="La contrasena debe tener al menos 6 caracteres")
-        from .auth import hash_password
-
         usuario.password = hash_password(password.strip())
+    if pin_limpio:
+        usuario.pin_hash = hash_password(pin_limpio)
 
     db.commit()
     return redirect_with_message("/admin/usuarios", "Usuario actualizado", "success")
@@ -1433,6 +1550,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.rechazador),
             joinedload(Requisicion.entregador),
+            joinedload(Requisicion.recibido_por),
             joinedload(Requisicion.liquidator),
         )
         .filter(Requisicion.id == req_id)
@@ -1483,7 +1601,15 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                 "fecha_hora": req.delivered_at,
             }
         )
-        if req.delivered_to:
+        if req.recibido_por and req.recibido_at:
+            timeline.append(
+                {
+                    "evento": "Recibido con firma",
+                    "actor": req.recibido_por.nombre,
+                    "fecha_hora": req.recibido_at,
+                }
+            )
+        elif req.delivered_to:
             timeline.append(
                 {
                     "evento": "Recibido",
@@ -1567,6 +1693,8 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "rejection_comment": req.rejection_comment,
         "delivered_by": req.entregador.nombre if req.entregador else None,
         "delivered_to": req.delivered_to,
+        "recibido_por": req.recibido_por.nombre if req.recibido_por else None,
+        "recibido_at": req.recibido_at,
         "delivery_result": req.delivery_result,
         "delivery_comment": req.delivery_comment,
         "rejection_reason": req.rejection_reason,

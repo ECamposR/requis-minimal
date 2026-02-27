@@ -28,6 +28,7 @@ def db_session():
                 Usuario(
                     username="user.ops",
                     password=hash_password("pass123"),
+                    pin_hash=hash_password("1234"),
                     nombre="Usuario Ops",
                     rol="user",
                     departamento="Operaciones",
@@ -35,6 +36,7 @@ def db_session():
                 Usuario(
                     username="aprob.ops",
                     password=hash_password("pass123"),
+                    pin_hash=hash_password("1234"),
                     nombre="Aprobador Ops",
                     rol="aprobador",
                     departamento="Operaciones",
@@ -42,9 +44,19 @@ def db_session():
                 Usuario(
                     username="bodega.1",
                     password=hash_password("pass123"),
+                    pin_hash=hash_password("1234"),
                     nombre="Bodega Uno",
                     rol="bodega",
                     departamento="Bodega",
+                ),
+                Usuario(
+                    username="tecnico.1",
+                    password=hash_password("pass123"),
+                    pin_hash=hash_password("4321"),
+                    nombre="Tecnico Uno",
+                    rol="tecnico",
+                    departamento="Logistica",
+                    puede_iniciar_sesion=False,
                 ),
             ]
         )
@@ -524,7 +536,8 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
         f"/entregar/{req.id}",
         data={
             "resultado": "completa",
-            "delivered_to": "Juan Perez",
+            "recibido_por_id": str(user.id),
+            "pin_receptor": "1234",
             "comentario": "Entregado completo y verificado",
         },
         follow_redirects=False,
@@ -535,7 +548,9 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
     assert req.estado == "entregada"
     assert req.delivered_by == bodega.id
     assert req.delivery_result == "completa"
-    assert req.delivered_to == "Juan Perez"
+    assert req.delivered_to == user.nombre
+    assert req.recibido_por_id == user.id
+    assert req.recibido_at is not None
     assert req.delivered_at is not None
     assert req.delivery_comment == "Entregado completo y verificado"
 
@@ -595,7 +610,8 @@ def test_bodega_puede_marcar_entrega_parcial(client: TestClient, db_session: Ses
         f"/entregar/{req.id}/parcial",
         data={
             f"entregado_{item.id}": "0.5",
-            "delivered_to": "Juan Perez",
+            "recibido_por_id": str(user.id),
+            "pin_receptor": "1234",
             "comentario": "Falto 1 item por quiebre de stock",
         },
         follow_redirects=False,
@@ -606,6 +622,7 @@ def test_bodega_puede_marcar_entrega_parcial(client: TestClient, db_session: Ses
     assert req.estado == "entregada"
     assert req.delivered_by == bodega.id
     assert req.delivery_result == "parcial"
+    assert req.recibido_por_id == user.id
     assert req.delivery_comment == "Falto 1 item por quiebre de stock"
     assert req.items[0].cantidad_entregada == 0.5
 
@@ -692,16 +709,83 @@ def test_bodega_entrega_completa_requiere_recibe(client: TestClient, db_session:
     login(client, "bodega.1", "pass123")
     response = client.post(
         f"/entregar/{req.id}",
-        data={"resultado": "completa", "delivered_to": "", "comentario": ""},
+        data={"resultado": "completa", "recibido_por_id": "", "pin_receptor": "", "comentario": ""},
         follow_redirects=False,
     )
 
-    assert response.status_code == 303
-    assert "/bodega?msg=Debes+indicar+quien+recibe+%28minimo+3+caracteres%29&type=error" in response.headers[
-        "location"
-    ]
+    assert response.status_code == 400
     db_session.refresh(req)
     assert req.estado == "aprobada"
+
+
+def test_entrega_con_pin_incorrecto_no_procesa(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req = Requisicion(
+        folio="REQ-0015",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="PIN incorrecto",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "bodega.1", "pass123")
+    response = client.post(
+        f"/entregar/{req.id}",
+        data={
+            "resultado": "completa",
+            "recibido_por_id": str(user.id),
+            "pin_receptor": "9999",
+            "comentario": "",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 400
+    db_session.refresh(req)
+    assert req.estado == "aprobada"
+    assert req.recibido_por_id is None
+
+
+def test_entrega_con_receptor_inexistente_no_procesa(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req = Requisicion(
+        folio="REQ-0016",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="Receptor inexistente",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "bodega.1", "pass123")
+    response = client.post(
+        f"/entregar/{req.id}",
+        data={
+            "resultado": "completa",
+            "recibido_por_id": "999999",
+            "pin_receptor": "1234",
+            "comentario": "",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 400
+    db_session.refresh(req)
+    assert req.estado == "aprobada"
+    assert req.recibido_por_id is None
 
 
 def test_detalle_requisicion_devuelve_timeline_con_hitos(client: TestClient, db_session: Session):

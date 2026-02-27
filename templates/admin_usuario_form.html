@@ -45,6 +45,18 @@
         >
     </label>
 
+    <label>
+        PIN de firma (opcional)
+        <input
+            type="password"
+            name="pin"
+            inputmode="numeric"
+            placeholder="{% if modo == 'editar' %}Dejar vacio para conservar{% else %}Ej: 1234{% endif %}"
+        >
+    </label>
+
+    <p class="page-subtitle">Los usuarios con rol <strong>tecnico</strong> quedan creados sin acceso de login, pero pueden firmar recibido con su PIN.</p>
+
     <div class="form-actions">
         <button type="submit">{% if modo == 'crear' %}Crear{% else %}Guardar cambios{% endif %}</button>
         <a href="/admin/usuarios" role="button" class="secondary">Cancelar</a>

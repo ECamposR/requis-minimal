@@ -14,6 +14,8 @@ class Usuario(Base):
     rol: Mapped[str] = mapped_column(String(20), nullable=False)
     departamento: Mapped[str] = mapped_column(String(80), nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    pin_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    puede_iniciar_sesion: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     requisiciones: Mapped[list["Requisicion"]] = relationship(
         "Requisicion",
@@ -56,7 +58,9 @@ class Requisicion(Base):
     approval_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     delivered_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     delivered_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    recibido_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     delivered_to: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    recibido_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     delivery_result: Mapped[str | None] = mapped_column(String(20), nullable=True)
     delivery_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     prokey_ref: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -87,6 +91,10 @@ class Requisicion(Base):
         "Usuario",
         foreign_keys=[delivered_by],
         back_populates="entregas_realizadas",
+    )
+    recibido_por: Mapped["Usuario | None"] = relationship(
+        "Usuario",
+        foreign_keys=[recibido_por_id],
     )
     liquidator: Mapped["Usuario | None"] = relationship(
         "Usuario",

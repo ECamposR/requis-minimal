@@ -291,6 +291,8 @@ def transicionar_requisicion(
     delivered_to: str | None = None,
     delivery_result: str | None = None,
     delivery_comment: str | None = None,
+    recibido_por_id: int | None = None,
+    recibido_at: datetime | None = None,
 ) -> Requisicion:
     if nuevo_estado == "aprobada":
         requisicion.estado = "aprobada"
@@ -308,6 +310,8 @@ def transicionar_requisicion(
         requisicion.delivered_at = datetime.now()
         requisicion.delivered_by = actor_id
         requisicion.delivered_to = delivered_to
+        requisicion.recibido_por_id = recibido_por_id
+        requisicion.recibido_at = recibido_at
         requisicion.delivery_result = delivery_result or "completa"
         requisicion.delivery_comment = delivery_comment
     elif nuevo_estado == "liquidada":

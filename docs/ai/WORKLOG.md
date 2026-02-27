@@ -1717,3 +1717,46 @@
   - Nuevos registros de liquidación quedan en hora local.
   - Vistas SSR ya no muestran microsegundos.
   - Queda pendiente solo una posible migración de datos si se desea corregir liquidaciones históricas ya guardadas con UTC.
+
+## 2026-02-27 16:25 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-085` para firma de recibido con PIN por receptor en entrega de bodega, sin romper liquidación.
+- Cambios:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/auth.py`
+  - `app/crud.py`
+  - `app/main.py`
+  - `templates/admin_usuario_form.html`
+  - `templates/bodega_gestionar.html`
+  - `templates/bodega_entrega_parcial.html`
+  - `static/app.js`
+  - `tests/test_basic_flow.py`
+  - `tests/test_admin_users.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Usuarios:
+    - Se agregaron `pin_hash` y `puede_iniciar_sesion`.
+    - Nuevo rol operativo `tecnico`.
+    - En admin, crear/editar usuario ahora permite PIN opcional.
+    - Los técnicos quedan con `puede_iniciar_sesion=False` y por tanto no pueden usar login, pero sí pueden firmar recibido con PIN.
+  - Entrega en bodega:
+    - Se agregaron `recibido_por_id` y `recibido_at` a requisiciones.
+    - Entrega completa y parcial validan receptor activo + PIN bcrypt antes de procesar.
+    - `no_entregada` mantiene receptor opcional, pero si se captura firma también se valida.
+    - Al aprobar la firma se guarda el nombre en `delivered_to` por compatibilidad y además la trazabilidad real en `recibido_por_id/recibido_at`.
+  - Detalle/API:
+    - `GET /api/requisiciones/{id}` ahora expone `recibido_por` y `recibido_at`.
+    - Timeline agrega evento `Recibido con firma` cuando existe.
+    - Modal muestra `Recibido por` y `Hora firma`.
+  - Migraciones:
+    - `run_migrations()` ahora agrega columnas de REQ-085 con verificación previa por `PRAGMA table_info`.
+    - Se corrigió un defecto previo: migraciones de liquidación ya no intentan `ALTER TABLE` sobre tablas inexistentes en DB nueva.
+- Comandos ejecutados:
+  - `python -m compileall app templates static tests`
+  - `DATABASE_URL=sqlite:///./req085_sanity.db .venv/bin/python ...` (smoke directo de auth + firma + transición `entregada`)
+- Resultado:
+  - Compilación OK.
+  - Smoke directo OK: receptor con PIN válido firma, técnico queda sin login, y la requisición persiste `recibido_por_id/recibido_at`.
+  - Limitación del entorno: `TestClient` queda colgado incluso contra `/health`; por eso no se pudo cerrar una validación HTTP automatizada confiable en esta sesión.

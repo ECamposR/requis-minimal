@@ -31,10 +31,11 @@
 - `REQ-082` completada: corrección del bug donde `ALERTA_RETORNO_INCOMPLETO` no aparecía de forma consistente; backend ahora normaliza `delivered/returned/mode`, persiste `liquidation_alerts` siempre como array JSON y API entrega lista robusta para UI.
 - `REQ-083` completada: liquidación ahora exige cobertura real (`Usado + No usado == Entregado`) y consistencia de `Regresa` por modo antes de guardar; frontend resalta filas inválidas, muestra mensaje por fila y deshabilita `Liquidar` hasta corregir.
 - `REQ-084` completada: fechas de tablas SSR unificadas sin microsegundos y `liquidated_at` ahora se guarda en hora local; `fmtDateTime` del modal evita conversiones de zona horaria al formatear strings del API.
+- `REQ-085` completada: firma de recibido con PIN por receptor en flujo de bodega, soporte de usuarios `tecnico` sin login, y nueva trazabilidad `recibido_por_id/recibido_at` visible en API y timeline.
 
 ## En progreso
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
-- Ejecutar smoke manual de liquidacion en UI para validar experiencia completa de bloqueo/edicion.
+- Ejecutar smoke manual de entrega con firma y de liquidacion para validar experiencia completa de bloqueo/edicion.
 - Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
 - Validar UX del comentario y notas en modal (saltos de linea y legibilidad en resoluciones medias).
 - Validar UX del layout dashboard (desktop/laptop) para evitar overflow y scroll excesivo.
@@ -42,14 +43,15 @@
 - Revisar balance final de densidad visual para evitar sobrecarga en pantallas pequeñas.
 
 ## Proximo paso exacto
-1. Ejecutar smoke manual de fechas: revisar `/aprobar`, `/bodega`, `/mis-requisiciones` y modal detalle para confirmar formato `HH:MM:SS` sin microsegundos.
-2. Validar una nueva liquidación y confirmar que el evento “Requisición liquidada” ya no aparece con +6h en el detalle.
-3. Si se requiere, definir una tarea separada de migración de datos para corregir `liquidated_at` histórico ya persistido en UTC.
+1. Ejecutar smoke manual del nuevo flujo de entrega: `/bodega/{id}/gestionar` y `/entregar/{id}/parcial` con receptor válido, PIN incorrecto y receptor técnico.
+2. Verificar en modal detalle que `Recibido por` y el evento `Recibido con firma` aparecen con hora local correcta.
+3. Si se requiere automatización completa de esta parte, aislar el problema de `TestClient` colgado en este entorno antes de ampliar la suite HTTP.
 
 ## Riesgos abiertos
 - Drift entre lo ya experimentado y lo que se va a rehacer en esta rama.
 - Repetir complejidad innecesaria en liquidacion (evitar sobre-UX antes de validar flujo minimo).
 - Mantener governance docs sincronizados en cada commit.
+- El entorno actual deja `TestClient` colgado incluso contra `/health`; para validar REQ-085 se usó compilación y smoke directo de modelo/auth/CRUD con DB temporal, pero falta smoke HTTP/manual real.
 
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  

@@ -40,26 +40,40 @@
 
     <article class="gestion-card panel">
         <h3>Registrar resultado de entrega</h3>
+        {% if error_message %}
+        <p class="form-error">{{ error_message }}</p>
+        {% endif %}
         <form method="POST" action="/entregar/{{ req.id }}" class="gestion-form">
             <label>
                 Resultado
                 <select name="resultado" aria-label="Resultado entrega">
-                    <option value="completa">Completa</option>
-                    <option value="parcial">Parcial</option>
-                    <option value="no_entregada">No entregada</option>
+                    <option value="completa" {% if form_data.get('resultado') == 'completa' %}selected{% endif %}>Completa</option>
+                    <option value="parcial" {% if form_data.get('resultado') == 'parcial' %}selected{% endif %}>Parcial</option>
+                    <option value="no_entregada" {% if form_data.get('resultado') == 'no_entregada' %}selected{% endif %}>No entregada</option>
                 </select>
             </label>
             <label>
-                Recibe (requerido en completa/parcial)
-                <input type="text" name="delivered_to" minlength="3" placeholder="Nombre de quien recibe">
+                Receptor
+                <select name="recibido_por_id" aria-label="Receptor">
+                    <option value="">Seleccionar...</option>
+                    {% for receptor in receptores %}
+                    <option value="{{ receptor.id }}" {% if form_data.get('recibido_por_id', '')|string == receptor.id|string %}selected{% endif %}>
+                        {{ receptor.nombre }} ({{ receptor.rol }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                PIN del receptor
+                <input type="password" name="pin_receptor" placeholder="PIN para firma de recibido">
             </label>
             <label>
                 Comentario
-                <input type="text" name="comentario" placeholder="Ej: faltante por inventario">
+                <input type="text" name="comentario" value="{{ form_data.get('comentario', '') }}" placeholder="Ej: faltante por inventario">
             </label>
             <button type="submit">Guardar resultado</button>
         </form>
-        <p class="page-subtitle">Si seleccionas parcial, se abrira la pantalla para ajustar cantidades entregadas por item.</p>
+        <p class="page-subtitle">Completa y parcial requieren firma por receptor. Si seleccionas parcial, se abrira la pantalla para ajustar cantidades entregadas por item.</p>
         <p class="gestion-actions">
             <a href="/bodega" role="button" class="secondary outline">Volver a bodega</a>
         </p>

@@ -82,23 +82,6 @@ function alertMessage(alert) {
     return "";
 }
 
-function getAccionSugerida(alertCounts) {
-    const count = (label) => Number(alertCounts?.[label] || 0);
-    if (count("Retorno extra") > 0) {
-        return "Acción sugerida: Revisar retorno extra del cliente y preparar ingreso en Prokey.";
-    }
-    if (count("Faltante") > 0) {
-        return "Acción sugerida: Conciliar faltante con técnico/cliente antes de cerrar en Prokey.";
-    }
-    if (count("Inconsistencia") > 0) {
-        return "Acción sugerida: Revisar cantidades ingresadas (posible error de captura).";
-    }
-    if (count("Sobrante") > 0) {
-        return "Acción sugerida: Validar sobrante y documentar motivo.";
-    }
-    return "";
-}
-
 function getCurrentSelectedValues() {
     return Array.from(document.querySelectorAll("#items-container input[name*='[descripcion]']"))
         .map((input) => input.value.trim())
@@ -356,7 +339,6 @@ function verDetalle(id) {
             const topAlertTypes = topAlertEntries.length
                 ? topAlertEntries.map(([label, count]) => `${escapeHtml(label)} (${count})`).join(", ")
                 : "Ninguno";
-            const accionSugerida = getAccionSugerida(alertCounts);
             const alertCardClass = highAlerts > 0 ? "dd-card--alert dd-card--alert-high" : allAlerts.length > 0 ? "dd-card--alert" : "";
             const prokeyRefHtml = data.prokey_ref
                 ? escapeHtml(data.prokey_ref)
@@ -455,6 +437,8 @@ function verDetalle(id) {
                         <div class="dd-kv"><div class="dd-kv-label">Estado</div><div class="dd-kv-value">${escapeHtml(data.estado || "-")}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Resultado entrega</div><div class="dd-kv-value">${resultHtml}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Por</div><div class="dd-kv-value">${escapeHtml(data.liquidated_by_name || data.delivered_by || "-")}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Recibido por</div><div class="dd-kv-value">${escapeHtml(data.recibido_por || data.delivered_to || "-")}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Hora firma</div><div class="dd-kv-value">${fmtDateTime(data.recibido_at || data.delivered_at)}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Ref Prokey</div><div class="dd-kv-value">${prokeyRefHtml}</div></div>
                     </article>
                     <article class="detalle-block dashboard-card dd-card ${alertCardClass}">
@@ -462,7 +446,6 @@ function verDetalle(id) {
                         <div class="dd-kv"><div class="dd-kv-label">Total</div><div class="dd-kv-value">${allAlerts.length} detectadas</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Alta severidad</div><div class="dd-kv-value">${highAlerts}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Tipos frecuentes</div><div class="dd-kv-value">${topAlertTypes}</div></div>
-                        ${accionSugerida ? `<div class="dd-kv"><div class="dd-kv-label">Acción sugerida</div><div class="dd-kv-value dd-kv-muted">${escapeHtml(accionSugerida)}</div></div>` : ""}
                     </article>
                     <article class="detalle-block dashboard-card dd-card dashboard-timeline">
                         <h4 class="dd-card-title">Línea de tiempo del flujo</h4>

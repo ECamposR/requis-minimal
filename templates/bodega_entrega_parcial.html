@@ -8,6 +8,9 @@
 <p><strong>Solicitante:</strong> {{ req.solicitante.nombre if req.solicitante else '-' }}</p>
 <p><strong>Aprobado por:</strong> {{ req.aprobador.nombre if req.aprobador else '-' }}</p>
 <p><strong>Justificacion:</strong> {{ req.justificacion }}</p>
+{% if error_message %}
+<p class="form-error">{{ error_message }}</p>
+{% endif %}
 
 <form method="POST" action="/entregar/{{ req.id }}/parcial">
     <div class="table-wrap">
@@ -31,7 +34,7 @@
                     min="0"
                     max="{{ item.cantidad }}"
                     name="entregado_{{ item.id }}"
-                    value="{{ item.cantidad_entregada if item.cantidad_entregada is not none else 0 }}"
+                    value="{{ form_data.get('entregado_' ~ item.id, item.cantidad_entregada if item.cantidad_entregada is not none else 0) }}"
                     required
                 >
             </td>
@@ -42,12 +45,23 @@
     </div>
 
     <label>
-        Recibe
-        <input type="text" name="delivered_to" minlength="3" required>
+        Receptor
+        <select name="recibido_por_id" required>
+            <option value="">Seleccionar...</option>
+            {% for receptor in receptores %}
+            <option value="{{ receptor.id }}" {% if form_data.get('recibido_por_id', '')|string == receptor.id|string %}selected{% endif %}>
+                {{ receptor.nombre }} ({{ receptor.rol }})
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+    <label>
+        PIN del receptor
+        <input type="password" name="pin_receptor" required placeholder="PIN para firma de recibido">
     </label>
     <label>
         Comentario de entrega parcial
-        <input type="text" name="comentario" minlength="5" required placeholder="Ej: faltante por quiebre de stock">
+        <input type="text" name="comentario" minlength="5" required value="{{ form_data.get('comentario', '') }}" placeholder="Ej: faltante por quiebre de stock">
     </label>
     <div class="form-actions">
         <button type="submit">Confirmar entrega parcial</button>

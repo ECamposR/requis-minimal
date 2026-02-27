@@ -33,6 +33,7 @@ def _build_client():
                 Usuario(
                     username="admin",
                     password=hash_password("admin123"),
+                    pin_hash=hash_password("1234"),
                     nombre="Administrador",
                     rol="admin",
                     departamento="Admon",
@@ -40,6 +41,7 @@ def _build_client():
                 Usuario(
                     username="user.ops",
                     password=hash_password("pass123"),
+                    pin_hash=hash_password("1234"),
                     nombre="Usuario Ops",
                     rol="user",
                     departamento="Logistica",
@@ -75,6 +77,7 @@ def test_admin_user_crud_flow():
                 "rol": "aprobador",
                 "departamento": "Ventas",
                 "password": "nuevo123",
+                "pin": "4567",
             },
             follow_redirects=False,
         )
@@ -83,22 +86,26 @@ def test_admin_user_crud_flow():
         nuevo = db.query(Usuario).filter(Usuario.username == "nuevo.user").first()
         assert nuevo is not None
         assert nuevo.rol == "aprobador"
+        assert nuevo.pin_hash is not None
+        assert nuevo.puede_iniciar_sesion is True
 
         edit_resp = client.post(
             f"/admin/usuarios/{nuevo.id}/editar",
             data={
                 "username": "nuevo.user",
                 "nombre": "Nuevo Editado",
-                "rol": "bodega",
+                "rol": "tecnico",
                 "departamento": "Bodega",
                 "password": "",
+                "pin": "6789",
             },
             follow_redirects=False,
         )
         assert edit_resp.status_code == 303
         db.refresh(nuevo)
         assert nuevo.nombre == "Nuevo Editado"
-        assert nuevo.rol == "bodega"
+        assert nuevo.rol == "tecnico"
+        assert nuevo.puede_iniciar_sesion is False
 
         delete_resp = client.post(
             f"/admin/usuarios/{nuevo.id}/eliminar",
@@ -226,6 +233,42 @@ def test_usuario_inactivo_no_puede_login():
             follow_redirects=False,
         )
         assert response.status_code == 401
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()
+
+
+def test_tecnico_no_puede_login_pero_conserva_pin():
+    client, db, engine = _build_client()
+    try:
+        _login(client, "admin", "admin123")
+        response = client.post(
+            "/admin/usuarios",
+            data={
+                "username": "tecnico.nuevo",
+                "nombre": "Tecnico Nuevo",
+                "rol": "tecnico",
+                "departamento": "Logistica",
+                "password": "pass123",
+                "pin": "4321",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+
+        tecnico = db.query(Usuario).filter(Usuario.username == "tecnico.nuevo").first()
+        assert tecnico is not None
+        assert tecnico.puede_iniciar_sesion is False
+        assert tecnico.pin_hash is not None
+
+        login_resp = client.post(
+            "/login",
+            data={"username": "tecnico.nuevo", "password": "pass123"},
+            follow_redirects=False,
+        )
+        assert login_resp.status_code == 401
     finally:
         client.close()
         db.close()
