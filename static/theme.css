@@ -1250,6 +1250,24 @@ table tbody tr:hover td,
     color: #0b3b8e !important;
 }
 
+/* Ajuste visual modal detalle: igualar con fondo blanco/azulado del tema Arctic */
+#modal-detalle.modal--detail-dashboard #modal-content {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(236, 247, 255, 0.94) 100%) !important;
+}
+
+#modal-detalle.modal--detail-dashboard .detail-dashboard {
+    background: transparent !important;
+}
+
+#modal-detalle.modal--detail-dashboard .dashboard-card,
+#modal-detalle.modal--detail-dashboard .detalle-items-section,
+#modal-detalle.modal--detail-dashboard .detalle-items-wrap,
+#modal-detalle.modal--detail-dashboard .detalle-collapsible,
+#modal-detalle.modal--detail-dashboard .liquidacion-paper-wrap {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: var(--border) !important;
+}
+
 /* REQ-080 - Home dashboard limpio (scope exclusivo de /) */
 .route-home .app-shell {
     background: transparent !important;
