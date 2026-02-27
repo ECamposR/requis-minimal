@@ -19,6 +19,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-073` | `done` | UI polish del dashboard en modal: cards más compactas con patrón label/valor, timeline vertical con nodos, DIF como chip con signo, modal casi fullscreen y notas por ítem con mayor énfasis contextual.
 - `REQ-074` | `done` | Ajustes finos UX en dashboard del detalle: “Alta severidad”, acción sugerida por alertas, `Ingreso PK` como `—` en consumibles, centrado numérico y botón PDF habilitado solo en `liquidada`.
 - `REQ-075` | `done` | Corrección de hora de creación en detalle: `created_at` ya no depende de `func.now()` (UTC SQLite) y se persiste en hora local al crear requisición.
+- `REQ-076` | `done` | Buscador server-side en Catálogo Admin con query param `q` (case-insensitive), barra de búsqueda en UI con limpiar/conteo y test de filtro por nombre.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.

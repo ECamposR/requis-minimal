@@ -141,3 +141,43 @@ def test_admin_import_catalog_csv_crea_y_reactiva_items():
         db.close()
         Base.metadata.drop_all(bind=engine)
         app.dependency_overrides.clear()
+
+
+def test_admin_catalog_busqueda_por_q_case_insensitive():
+    client, db, engine = _build_client()
+    try:
+        db.add_all(
+            [
+                CatalogoItem(nombre="MOPA MOD 24", activo=True),
+                CatalogoItem(nombre="ALFOMBRA 2X3", activo=True),
+                CatalogoItem(nombre="SPRAY CITRUS", activo=True),
+            ]
+        )
+        db.commit()
+
+        _login(client, "admin", "admin123")
+
+        all_resp = client.get("/admin/catalogo-items")
+        assert all_resp.status_code == 200
+        html = all_resp.text
+        assert "MOPA MOD 24" in html
+        assert "ALFOMBRA 2X3" in html
+        assert "SPRAY CITRUS" in html
+
+        mopa_resp = client.get("/admin/catalogo-items?q=mopa")
+        assert mopa_resp.status_code == 200
+        assert 'value="mopa"' in mopa_resp.text
+        assert "MOPA MOD 24" in mopa_resp.text
+        assert "ALFOMBRA 2X3" not in mopa_resp.text
+        assert "SPRAY CITRUS" not in mopa_resp.text
+
+        spray_resp = client.get("/admin/catalogo-items?q=sPrAy")
+        assert spray_resp.status_code == 200
+        assert "SPRAY CITRUS" in spray_resp.text
+        assert "MOPA MOD 24" not in spray_resp.text
+        assert "ALFOMBRA 2X3" not in spray_resp.text
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()

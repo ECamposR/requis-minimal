@@ -1465,3 +1465,35 @@
   - Se deja release note versionada en repo para referencia operativa y trazabilidad.
 - Resultado:
   - Documento de release creado con alcance, highlights funcionales y estado de validación (`32 passed`).
+
+## 2026-02-27 09:26 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-076` (buscador en Catálogo Admin por `q` con filtro server-side e UI simple).
+- Cambios:
+  - `app/main.py`
+  - `templates/admin_catalogo_items.html`
+  - `tests/test_admin_catalog_items.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Ruta `GET /admin/catalogo-items` ahora recibe `q`, aplica filtro case-insensitive sobre `CatalogoItem.nombre` con `func.lower(...).like(...)`, mantiene orden alfabético.
+  - Se envía `q` al template para persistir valor buscado.
+  - Se agregó barra de búsqueda (GET), botón `Buscar`, link `Limpiar` y conteo `Mostrando N items` con contexto de búsqueda.
+  - Se agregó test `test_admin_catalog_busqueda_por_q_case_insensitive` con casos `mopa/spray` y validación de filtro.
+- Comandos ejecutados:
+  - `python -m compileall app templates tests`
+  - `.venv/bin/python -m pytest -q tests/test_admin_catalog_items.py -v` (colgado en entorno actual)
+  - `timeout 25s .venv/bin/python -m pytest -q tests/test_admin_catalog_items.py -v` (`EXIT:124`)
+- Resultado:
+  - Implementación completada; compilación correcta.
+  - Ejecución de pytest de catálogo queda bloqueada en este entorno y requiere revisión puntual de runtime de tests.
+
+## 2026-02-27 09:34 UTC-06:00 | tool: Codex CLI
+- Objetivo: Ajuste de orden visual en vista de catálogo admin tras feedback.
+- Cambios:
+  - `templates/admin_catalogo_items.html`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Se intercambió el orden de bloques para mostrar `Importar catálogo` antes de `Buscar en catálogo`.
+- Resultado:
+  - La búsqueda queda ubicada debajo del bloque de importación, manteniendo la funcionalidad intacta.

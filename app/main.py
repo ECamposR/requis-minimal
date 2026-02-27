@@ -10,7 +10,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Upload
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 from starlette.middleware.sessions import SessionMiddleware
 from urllib.parse import quote_plus
@@ -1240,14 +1240,20 @@ def admin_usuario_reactivar(
 @app.get("/admin/catalogo-items")
 def admin_catalogo_items(
     request: Request,
+    q: str = "",
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     ensure_admin(current_user)
-    items = db.query(CatalogoItem).order_by(CatalogoItem.nombre.asc()).all()
+    q_limpio = q.strip()
+    query = db.query(CatalogoItem)
+    if q_limpio:
+        q_norm = q_limpio.lower()
+        query = query.filter(func.lower(CatalogoItem.nombre).like(f"%{q_norm}%"))
+    items = query.order_by(CatalogoItem.nombre.asc()).all()
     return templates.TemplateResponse(
         "admin_catalogo_items.html",
-        template_context(request, current_user, items=items),
+        template_context(request, current_user, items=items, q=q_limpio),
     )
 
 

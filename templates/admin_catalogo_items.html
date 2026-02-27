@@ -23,6 +23,23 @@
     </p>
 </article>
 
+<article class="gestion-card panel view-panel">
+    <h3>Buscar en catalogo</h3>
+    <form method="get" action="/admin/catalogo-items" class="gestion-form">
+        <label>
+            Nombre de item
+            <input type="text" name="q" value="{{ q or '' }}" placeholder="Buscar item...">
+        </label>
+        <div class="form-actions">
+            <button type="submit">Buscar</button>
+            <a href="/admin/catalogo-items" role="button" class="secondary">Limpiar</a>
+        </div>
+    </form>
+    <p class="page-subtitle">
+        Mostrando {{ items|length }} item{% if items|length != 1 %}s{% endif %}{% if q %} para "{{ q }}"{% endif %}.
+    </p>
+</article>
+
 {% if items %}
 <section class="panel view-panel table-wrap">
 <table>
