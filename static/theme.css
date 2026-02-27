@@ -1484,6 +1484,30 @@ table tbody tr:hover td,
     margin-bottom: 0.7rem;
 }
 
+/* Nueva requisicion: mantener campos de cliente legibles al escribir/focus/autofill */
+input.req-client-field,
+input.req-client-field:focus,
+input.req-client-field:active {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+
+input.req-client-field::placeholder {
+    color: #64748b !important;
+    font-weight: 500;
+}
+
+input.req-client-field:-webkit-autofill,
+input.req-client-field:-webkit-autofill:hover,
+input.req-client-field:-webkit-autofill:focus,
+input.req-client-field:-webkit-autofill:active {
+    -webkit-text-fill-color: #0f172a !important;
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+    box-shadow: 0 0 0 1000px #ffffff inset !important;
+    font-weight: 700 !important;
+}
+
 .route-home .quick-action-item {
     display: grid;
     grid-template-columns: auto 1fr auto;
