@@ -23,6 +23,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-077` | `done` | Nueva Requisición usa `input + datalist` para autocompletar ítems del catálogo activo, con validación UX de item válido/duplicado y respaldo de validación backend existente.
 - `REQ-079` | `done` | Aplicación global de paleta “Arctic Glass (Gradient Boost)” en toda la app mediante overrides de color en `theme.css`, sin cambios de layout/estructura ni lógica.
 - `REQ-079B` | `done` | Reparación de consistencia del tema Arctic Glass: neutralización de colores legacy dark y unificación por tokens/overrides scopiados (tablas, paneles, inputs, botones, badges y modal).
+- `REQ-080` | `done` | Rediseño visual de Inicio a dashboard limpio (header + botón, 6 KPI con “Ver detalle”, panel de indicadores y panel de acciones rápidas), sin cambios de lógica ni queries backend.
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.

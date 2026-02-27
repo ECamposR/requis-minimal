@@ -1249,3 +1249,309 @@ table tbody tr:hover td,
 #modal-detalle article > header h3 {
     color: #0b3b8e !important;
 }
+
+/* REQ-080 - Home dashboard limpio (scope exclusivo de /) */
+.route-home .app-shell {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding-top: 0.4rem;
+}
+
+.route-home .home-clean {
+    max-width: 1240px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1rem;
+}
+
+.route-home .home-header-clean {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.route-home .home-header-clean h1 {
+    margin: 0;
+    color: #0b3b8e;
+    font-size: clamp(1.5rem, 2.8vw, 2.05rem);
+}
+
+.route-home .home-header-clean p {
+    margin: 0.35rem 0 0;
+    color: #51627c;
+    max-width: 48ch;
+}
+
+.route-home .home-new-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.7rem 1rem;
+    border-radius: 0.8rem;
+    font-weight: 700;
+    box-shadow: 0 10px 20px rgba(29, 123, 232, 0.28);
+}
+
+.route-home .home-new-btn svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.route-home .home-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.route-home .home-kpi-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(83, 119, 166, 0.34);
+    border-radius: 0.95rem;
+    box-shadow: 0 10px 24px rgba(29, 73, 129, 0.12);
+    padding: 0.9rem 0.95rem 0.95rem;
+    min-height: 9rem;
+}
+
+.route-home .kpi-icon {
+    width: 2.05rem;
+    height: 2.05rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(29, 123, 232, 0.14);
+    color: #1d7be8;
+}
+
+.route-home .kpi-icon svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.route-home .kpi-label {
+    display: block;
+    margin-top: 0.55rem;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: #5b6f8f;
+    font-weight: 700;
+}
+
+.route-home .kpi-value {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: clamp(1.75rem, 2.6vw, 2.2rem);
+    color: #10223d;
+    line-height: 1.05;
+}
+
+.route-home .kpi-detail-link {
+    position: absolute;
+    right: 0.75rem;
+    top: 0.7rem;
+    font-size: 0.74rem;
+    color: #1d7be8;
+    text-decoration: none;
+    padding: 0.18rem 0.45rem;
+    border-radius: 999px;
+    background: rgba(29, 123, 232, 0.12);
+}
+
+.route-home .kpi-detail-link.is-disabled {
+    color: #70829d;
+    background: rgba(111, 145, 189, 0.15);
+    pointer-events: none;
+}
+
+.route-home .home-bottom-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+    gap: 0.9rem;
+}
+
+.route-home .home-panel {
+    border-radius: 0.95rem;
+    border: 1px solid rgba(83, 119, 166, 0.3);
+    box-shadow: 0 10px 24px rgba(29, 73, 129, 0.12);
+    padding: 0.9rem;
+}
+
+.route-home .indicators-panel {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(238, 247, 255, 0.9) 100%) !important;
+    border-color: rgba(122, 161, 210, 0.34);
+}
+
+.route-home .home-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin-bottom: 0.65rem;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent !important;
+}
+
+.route-home .home-panel > .home-panel-header {
+    margin: 0 0 0.65rem;
+    border-bottom: 0;
+}
+
+.route-home .home-panel h3 {
+    margin: 0;
+    color: #0b3b8e;
+}
+
+.route-home .home-panel p {
+    margin: 0.25rem 0 0;
+    color: #5b6f8f;
+    font-size: 0.9rem;
+}
+
+.route-home .period-tabs {
+    display: inline-flex;
+    gap: 0.3rem;
+    background: rgba(187, 211, 242, 0.45);
+    border: 1px solid rgba(111, 145, 189, 0.32);
+    border-radius: 999px;
+    padding: 0.2rem;
+}
+
+.route-home .period-tab {
+    border: none;
+    background: transparent;
+    color: #456083;
+    padding: 0.2rem 0.6rem;
+    min-height: auto;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.route-home .period-tab.is-active {
+    background: #1d7be8;
+    color: #fff;
+}
+
+.route-home .mini-chart-clean {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.route-home .mini-chart-track {
+    display: grid;
+    grid-template-columns: 8.8rem 1fr auto;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.route-home .chart-label {
+    font-size: 0.82rem;
+    color: #4f6789;
+}
+
+.route-home .chart-bar {
+    display: block;
+    height: 0.66rem;
+    border-radius: 999px;
+    background: #8ebcff;
+    min-width: 0.4rem;
+}
+
+.route-home .chart-bar-1 { background: #4f93ef; }
+.route-home .chart-bar-2 { background: #e39b2f; }
+.route-home .chart-bar-3 { background: #28a37d; }
+.route-home .chart-bar-4 { background: #d95f5f; }
+.route-home .chart-bar-5 { background: #2b7dd0; }
+
+.route-home .mini-chart-track strong {
+    color: #133b6a;
+    font-size: 0.9rem;
+}
+
+.route-home .quick-actions-panel {
+    background: linear-gradient(165deg, #173964 0%, #0c2647 100%);
+    border-color: rgba(26, 70, 121, 0.75);
+}
+
+.route-home .quick-actions-panel h3 {
+    color: #eaf4ff;
+    margin-bottom: 0.7rem;
+}
+
+.route-home .quick-action-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+    color: #e6f1ff;
+    background: rgba(9, 29, 56, 0.7);
+    border: 1px solid rgba(80, 126, 183, 0.42);
+    border-radius: 0.7rem;
+    padding: 0.65rem 0.7rem;
+    margin-bottom: 0.55rem;
+}
+
+.route-home .quick-action-item:last-child {
+    margin-bottom: 0;
+}
+
+.route-home .quick-action-item:hover {
+    background: rgba(15, 45, 82, 0.9);
+}
+
+.route-home .qa-icon {
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(45, 118, 207, 0.28);
+}
+
+.route-home .qa-icon svg {
+    width: 0.95rem;
+    height: 0.95rem;
+}
+
+.route-home .qa-text {
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.route-home .qa-arrow {
+    color: #9fcaff;
+    font-weight: 700;
+}
+
+@media (max-width: 980px) {
+    .route-home .home-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .route-home .home-bottom-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .route-home .home-header-clean {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .route-home .home-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .route-home .mini-chart-track {
+        grid-template-columns: 6.8rem 1fr auto;
+    }
+}

@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/theme.css">
 </head>
-<body>
+<body class="{% if request.url.path == '/' %}route-home{% endif %}">
 {% if request.url.path != '/login' %}
 <header class="app-header">
     {% include "partials/navbar.html" %}

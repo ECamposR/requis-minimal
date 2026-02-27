@@ -1567,3 +1567,22 @@
   - Título del header (`h3`) forzado a color azul del tema para legibilidad.
 - Resultado:
   - Vista de detalle alineada con el resto del tema, sin título negro ni fondo gris fuera de paleta.
+
+## 2026-02-27 11:31 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-080` (rediseño de Inicio `/` a dashboard limpio según mock, sin tocar lógica).
+- Cambios:
+  - `templates/base.html`
+  - `templates/home.html`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Se agregó clase condicional `route-home` en `<body>` solo para la ruta `/` para scoping de estilos.
+  - Se reescribió `home.html` con estructura SSR: header limpio + botón `Nueva Requisición`, 6 KPI cards con link `Ver detalle`, panel `Indicadores Rápidos` y panel oscuro `Acciones Rápidas`.
+  - Se respetaron permisos por rol en enlaces rápidos (`/aprobar`, `/bodega`, `/mis-requisiciones`) y visibilidad de acción de aprobación masiva.
+  - Se añadió bloque CSS scopiado a `.route-home .home-clean` en `theme.css` para evitar regresiones en otras pantallas.
+- Comandos ejecutados:
+  - `python -m compileall app templates static`
+- Resultado:
+  - Inicio actualizado visualmente sin cambios en lógica de negocio ni queries backend.
