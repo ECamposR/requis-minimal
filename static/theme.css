@@ -720,3 +720,532 @@ table tbody tr:hover td {
         grid-template-columns: 1fr;
     }
 }
+
+/* REQ-079 - Arctic Glass (Gradient Boost): color-only global overrides */
+:root,
+[data-theme="dark"] {
+    --ui-bg-0: #c7ddff;
+    --ui-bg-1: #9ec5ff;
+    --ui-surface: rgba(255, 255, 255, 0.68);
+    --ui-surface-2: rgba(240, 248, 255, 0.86);
+    --ui-border: rgba(83, 119, 166, 0.32);
+    --ui-text: #0f172a;
+    --ui-muted: #475569;
+    --ui-primary: #1d7be8;
+    --ui-primary-hover: #2a8efb;
+    --ui-success: #16a34a;
+    --ui-warning: #d97706;
+    --ui-danger: #dc2626;
+    --ui-info: #0284c7;
+}
+
+body {
+    background: linear-gradient(136deg, #e8f3ff 0%, #cde2ff 34%, #9ac3ff 72%, #7fb0fa 100%);
+    color: var(--ui-text);
+}
+
+.panel,
+.app-shell,
+.page-hero,
+.view-panel,
+.gestion-card,
+.filters-bar,
+.topbar.main-nav,
+.menu-links {
+    background: var(--ui-surface) !important;
+    border-color: var(--ui-border) !important;
+    box-shadow: 0 10px 28px rgba(29, 73, 129, 0.15) !important;
+    backdrop-filter: blur(8px);
+}
+
+.brand-title,
+.brand-subtitle,
+.nav-item,
+.logout-user,
+.avatar-chip,
+.logout-btn,
+.page-header h1,
+h1,
+h2,
+h3,
+h4,
+label,
+legend,
+p,
+li,
+td,
+th {
+    color: var(--ui-text);
+}
+
+.page-header h1,
+h1,
+h2,
+h3,
+h4 {
+    color: #0b3b8e;
+}
+
+.page-header p,
+.page-subtitle,
+.brand-subtitle,
+.logout-user,
+.status-muted {
+    color: var(--ui-muted) !important;
+}
+
+.nav-item:hover {
+    background: rgba(29, 123, 232, 0.16) !important;
+}
+
+.nav-item.is-active {
+    background: var(--ui-primary) !important;
+    border-color: var(--ui-primary) !important;
+    color: #ffffff !important;
+}
+
+.avatar-chip,
+.logout-btn,
+button.secondary,
+a[role="button"].secondary {
+    background: rgba(255, 255, 255, 0.74) !important;
+    border-color: var(--ui-border) !important;
+}
+
+button,
+a[role="button"] {
+    background: var(--ui-primary);
+    border-color: var(--ui-primary);
+    color: #ffffff;
+}
+
+button:hover,
+a[role="button"]:hover {
+    background: var(--ui-primary-hover);
+    border-color: var(--ui-primary-hover);
+    color: #ffffff;
+}
+
+button.danger,
+a[role="button"].danger {
+    background: rgba(220, 38, 38, 0.9) !important;
+    border-color: rgba(185, 28, 28, 0.8) !important;
+}
+
+button.danger:hover,
+a[role="button"].danger:hover {
+    background: #b91c1c !important;
+    border-color: #991b1b !important;
+}
+
+input,
+select,
+textarea {
+    background: rgba(255, 255, 255, 0.82) !important;
+    border-color: var(--ui-border) !important;
+    color: var(--ui-text) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #64748b;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus,
+a[role="button"]:focus {
+    box-shadow: 0 0 0 0.2rem rgba(29, 123, 232, 0.22) !important;
+    border-color: rgba(29, 123, 232, 0.55) !important;
+}
+
+table thead th {
+    background: rgba(220, 234, 255, 0.88) !important;
+    color: #15345f !important;
+}
+
+table tbody td {
+    color: var(--ui-text);
+    border-color: rgba(111, 145, 189, 0.22);
+}
+
+table tbody tr:hover td {
+    background: rgba(183, 212, 249, 0.32) !important;
+}
+
+.badge {
+    border-color: transparent;
+}
+
+.badge.success {
+    background: rgba(22, 163, 74, 0.16) !important;
+    color: #166534 !important;
+    border: 1px solid rgba(22, 163, 74, 0.3) !important;
+}
+
+.badge.warning {
+    background: rgba(217, 119, 6, 0.16) !important;
+    color: #92400e !important;
+    border: 1px solid rgba(217, 119, 6, 0.3) !important;
+}
+
+.badge.danger {
+    background: rgba(220, 38, 38, 0.14) !important;
+    color: #991b1b !important;
+    border: 1px solid rgba(220, 38, 38, 0.3) !important;
+}
+
+.badge.info {
+    background: rgba(2, 132, 199, 0.14) !important;
+    color: #0c4a6e !important;
+    border: 1px solid rgba(2, 132, 199, 0.28) !important;
+}
+
+#modal-detalle .dashboard-card,
+#modal-detalle .liquidacion-paper-wrap,
+#modal-detalle details.dd-collapse,
+#modal-detalle .detalle-collapsible,
+#modal-detalle .items-table-container,
+#modal-detalle .detalle-panel,
+#modal-detalle .comentarios-section,
+#modal-detalle .timeline-container,
+#modal-detalle .prokey-summary {
+    background: rgba(255, 255, 255, 0.74) !important;
+    border-color: var(--ui-border) !important;
+    box-shadow: 0 8px 22px rgba(29, 73, 129, 0.14) !important;
+}
+
+#modal-detalle .dd-kv-label,
+#modal-detalle .dd-timeline__meta,
+#modal-detalle .liq-alert-empty,
+#modal-detalle .item-note,
+#modal-detalle .liquidation-comment {
+    color: #4b5e79 !important;
+}
+
+#modal-detalle .dd-kv-value,
+#modal-detalle .dd-card-title,
+#modal-detalle .dd-timeline__title {
+    color: var(--ui-text) !important;
+}
+
+#modal-detalle .liquidacion-paper-table thead th {
+    background: rgba(219, 234, 254, 0.9) !important;
+    color: #1e3a5f !important;
+}
+
+#modal-detalle .alert-badge--warn,
+#modal-detalle .liq-alert-badge.warn {
+    background: rgba(217, 119, 6, 0.16) !important;
+    border-color: rgba(217, 119, 6, 0.3) !important;
+    color: #92400e !important;
+}
+
+#modal-detalle .alert-badge--high,
+#modal-detalle .liq-alert-badge.high {
+    background: rgba(220, 38, 38, 0.14) !important;
+    border-color: rgba(220, 38, 38, 0.3) !important;
+    color: #991b1b !important;
+}
+
+#modal-detalle .dif--pos {
+    background: rgba(217, 119, 6, 0.14) !important;
+    border-color: rgba(217, 119, 6, 0.3) !important;
+    color: #92400e !important;
+}
+
+#modal-detalle .dif--neg {
+    background: rgba(220, 38, 38, 0.12) !important;
+    border-color: rgba(220, 38, 38, 0.28) !important;
+    color: #991b1b !important;
+}
+
+#modal-detalle .dif--zero {
+    background: rgba(22, 163, 74, 0.12) !important;
+    border-color: rgba(22, 163, 74, 0.28) !important;
+    color: #166534 !important;
+}
+
+/* REQ-079B - Consistencia Arctic Glass sobre estilos legacy */
+:root,
+[data-theme="dark"] {
+    --accent: #1d7be8;
+    --bg: #e8f3ff;
+    --surface: rgba(255, 255, 255, 0.72);
+    --surface-2: rgba(240, 248, 255, 0.9);
+    --border: rgba(83, 119, 166, 0.34);
+    --text: #0f172a;
+    --muted: #475569;
+    --info: #0284c7;
+    --success: #16a34a;
+    --warn: #d97706;
+    --danger: #dc2626;
+    --shadow: 0 10px 28px rgba(29, 73, 129, 0.15);
+    --shadow-2: 0 14px 36px rgba(29, 73, 129, 0.18);
+    --radius: 10px;
+    --radius-lg: 16px;
+    --table-header-bg: rgba(220, 234, 255, 0.88);
+    --table-row-bg: rgba(255, 255, 255, 0.78);
+    --table-row-alt-bg: rgba(232, 243, 255, 0.66);
+    --table-border: rgba(111, 145, 189, 0.22);
+    --input-bg: rgba(255, 255, 255, 0.84);
+    --input-border: rgba(83, 119, 166, 0.34);
+    --input-focus: rgba(29, 123, 232, 0.24);
+    --button-bg: #1d7be8;
+    --button-text: #ffffff;
+    --dark-bg-0: #dcecff;
+    --dark-bg-1: #c4ddff;
+    --dark-bg-2: #9fc9ff;
+    --dark-surface: var(--surface);
+    --dark-surface-soft: var(--surface-2);
+    --dark-border: var(--border);
+    --dark-text: var(--text);
+    --dark-muted: var(--muted);
+    --pico-color: var(--text);
+    --pico-primary: var(--accent);
+    --pico-primary-hover: #2a8efb;
+    --pico-primary-focus: var(--input-focus);
+    --pico-secondary: rgba(255, 255, 255, 0.74);
+    --pico-secondary-hover: rgba(240, 248, 255, 0.92);
+}
+
+html,
+body {
+    min-height: 100%;
+    background: linear-gradient(136deg, #e8f3ff 0%, #cde2ff 34%, #9ac3ff 72%, #7fb0fa 100%) !important;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+    color: var(--text) !important;
+}
+
+main.container,
+.app-shell,
+.panel,
+.view-panel,
+.gestion-card,
+.chart-card,
+.page-hero,
+article,
+table,
+.main-nav,
+.menu-links,
+.login-card,
+.detalle-block,
+#modal-detalle:not(.modal--detail-dashboard) article,
+#modal-detalle .dashboard-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow) !important;
+    color: var(--text) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+.page-header h1,
+.brand-title,
+.detalle-items-section h4,
+.detalle-block h4,
+.meta-line strong,
+.dd-card-title,
+.dd-kv-value {
+    color: #0b3b8e !important;
+}
+
+p,
+small,
+.page-subtitle,
+.brand-subtitle,
+.logout-user,
+.meta-label.label-muted,
+.dd-kv-label,
+.dd-timeline__meta,
+.detalle-justificacion p,
+.accion-text,
+.detalle-list dd,
+.flujo-value {
+    color: var(--muted) !important;
+}
+
+input,
+select,
+textarea,
+.login-form input,
+.filters-bar input,
+.filters-bar select,
+.compact-form input,
+.compact-form select {
+    background: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+    color: var(--text) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #64748b !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus,
+a[role="button"]:focus {
+    box-shadow: 0 0 0 0.2rem var(--input-focus) !important;
+    border-color: rgba(29, 123, 232, 0.56) !important;
+}
+
+button,
+[role="button"],
+a[role="button"] {
+    background: var(--button-bg) !important;
+    border-color: var(--button-bg) !important;
+    color: var(--button-text) !important;
+}
+
+button:hover,
+[role="button"]:hover,
+a[role="button"]:hover {
+    background: var(--pico-primary-hover) !important;
+    border-color: var(--pico-primary-hover) !important;
+}
+
+button.secondary,
+a[role="button"].secondary,
+.logout-btn {
+    background: var(--surface-2) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+button.danger,
+a[role="button"].danger {
+    background: rgba(220, 38, 38, 0.9) !important;
+    border-color: rgba(185, 28, 28, 0.8) !important;
+    color: #fff !important;
+}
+
+table,
+.detalle-items-table,
+.liquidacion-paper-table {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border-color: var(--table-border) !important;
+}
+
+table thead th,
+.detalle-items-table th,
+.liquidacion-paper-table thead th {
+    background: var(--table-header-bg) !important;
+    color: #15345f !important;
+    border-color: var(--table-border) !important;
+}
+
+table tbody tr td,
+.detalle-items-table td,
+.liquidacion-paper-table td {
+    background: var(--table-row-bg);
+    color: var(--text) !important;
+    border-color: var(--table-border) !important;
+}
+
+table tbody tr:nth-child(even) td,
+.detalle-items-table tbody tr:nth-child(even) td,
+.liquidacion-paper-table tbody tr:nth-child(even) td {
+    background: var(--table-row-alt-bg) !important;
+}
+
+table tbody tr:hover td,
+.detalle-items-table tbody tr:hover td,
+.liquidacion-paper-table tbody tr:hover td {
+    background: rgba(183, 212, 249, 0.32) !important;
+}
+
+.badge,
+.badge-warning,
+.badge-success,
+.badge-error,
+.badge-info,
+.badge-muted,
+.resultado-chip {
+    border-color: transparent !important;
+}
+
+.badge-success,
+.badge.success {
+    background: rgba(22, 163, 74, 0.16) !important;
+    color: #166534 !important;
+    border: 1px solid rgba(22, 163, 74, 0.3) !important;
+}
+
+.badge-warning,
+.badge.warning {
+    background: rgba(217, 119, 6, 0.16) !important;
+    color: #92400e !important;
+    border: 1px solid rgba(217, 119, 6, 0.3) !important;
+}
+
+.badge-error,
+.badge.danger {
+    background: rgba(220, 38, 38, 0.14) !important;
+    color: #991b1b !important;
+    border: 1px solid rgba(220, 38, 38, 0.3) !important;
+}
+
+.badge-info,
+.badge.info {
+    background: rgba(2, 132, 199, 0.14) !important;
+    color: #0c4a6e !important;
+    border: 1px solid rgba(2, 132, 199, 0.28) !important;
+}
+
+.metric-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+.metric-title {
+    color: var(--muted) !important;
+}
+
+.metric-value {
+    color: var(--text) !important;
+}
+
+.alert-success {
+    background: rgba(22, 163, 74, 0.15) !important;
+    border-color: rgba(22, 163, 74, 0.28) !important;
+    color: #166534 !important;
+}
+
+.alert-warning {
+    background: rgba(217, 119, 6, 0.15) !important;
+    border-color: rgba(217, 119, 6, 0.28) !important;
+    color: #92400e !important;
+}
+
+.alert-error {
+    background: rgba(220, 38, 38, 0.13) !important;
+    border-color: rgba(220, 38, 38, 0.28) !important;
+    color: #991b1b !important;
+}
+
+/* Ajuste puntual modal detalle (REQ-079B follow-up): titulo y fondo coherentes */
+#modal-detalle article,
+#modal-detalle #modal-content {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+}
+
+#modal-detalle article > header {
+    background: var(--surface-2) !important;
+    border-bottom: 1px solid var(--border) !important;
+    color: var(--text) !important;
+}
+
+#modal-detalle article > header h3 {
+    color: #0b3b8e !important;
+}

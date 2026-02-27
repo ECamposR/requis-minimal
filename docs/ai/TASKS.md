@@ -21,6 +21,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-075` | `done` | Corrección de hora de creación en detalle: `created_at` ya no depende de `func.now()` (UTC SQLite) y se persiste en hora local al crear requisición.
 - `REQ-076` | `done` | Buscador server-side en Catálogo Admin con query param `q` (case-insensitive), barra de búsqueda en UI con limpiar/conteo y test de filtro por nombre.
 - `REQ-077` | `done` | Nueva Requisición usa `input + datalist` para autocompletar ítems del catálogo activo, con validación UX de item válido/duplicado y respaldo de validación backend existente.
+- `REQ-079` | `done` | Aplicación global de paleta “Arctic Glass (Gradient Boost)” en toda la app mediante overrides de color en `theme.css`, sin cambios de layout/estructura ni lógica.
+- `REQ-079B` | `done` | Reparación de consistencia del tema Arctic Glass: neutralización de colores legacy dark y unificación por tokens/overrides scopiados (tablas, paneles, inputs, botones, badges y modal).
 
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.

@@ -1513,3 +1513,57 @@
   - Se mantuvo intacta la validación backend de catálogo para no confiar solo en frontend.
 - Resultado:
   - UX de búsqueda de ítems más rápida en catálogos grandes, sin perder control de integridad.
+
+## 2026-02-27 10:39 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-079` (tema visual Arctic Glass / Gradient Boost en toda la app, solo color).
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Se aplicó bloque global de overrides de color al final de `theme.css` para fondo degradado azul, superficies glass, acento azul, tablas claras y badges/chips por severidad.
+  - Se preservó layout/estructura/tamaños/espaciados; no se tocaron templates ni lógica.
+  - Revisión de repo: no se encontró un bloque explícito nombrado “Propuesta 1.6” fuera de `theme.css`; los tokens se consolidaron en este archivo como fuente activa del tema.
+- Comandos ejecutados:
+  - `python -m compileall static app templates`
+- Resultado:
+  - Cambio visual global aplicado en capa CSS sin impacto funcional.
+
+## 2026-02-27 10:58 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-079B` para corregir mezcla de paletas (Arctic Glass vs legacy dark) sin tocar layout/HTML.
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Detalle:
+  - Se validó orden de carga en `templates/base.html`: `style.css` seguido por `theme.css` (correcto para overrides finales).
+  - Se añadió bloque final de tokens unificados Arctic Glass (`--accent`, `--bg`, `--surface`, `--border`, `--text`, `--muted`, estados y tokens de tabla/input/botón), además de mapeo de `--dark-*` para neutralizar reglas legacy de `style.css`.
+  - Se aplicaron overrides de color de alta prioridad para tablas, paneles, cards métricas, inputs, botones, badges/chips, alerts y modal detalle, sin alterar estructura ni spacing.
+  - Se eliminó la percepción de tablas/paneles oscuros heredados manteniendo la jerarquía visual existente.
+- Comandos ejecutados:
+  - `python -m compileall static app templates`
+- Resultado:
+  - Tema Arctic Glass consistente en toda la app con enfoque color-only.
+
+## 2026-02-27 11:07 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir franja negra inferior detectada en vista de inicio tras cambio de tema.
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/WORKLOG.md`
+- Fix aplicado:
+  - Fondo Arctic Glass aplicado a `html, body` con cobertura completa (`min-height: 100%`, `background-size: cover`, `background-attachment: fixed`, `no-repeat`).
+- Resultado:
+  - Se elimina la zona de fondo negro residual al final de la pantalla.
+
+## 2026-02-27 11:14 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir inconsistencia visual en modal de detalle (título oscuro y fondo gris residual).
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/WORKLOG.md`
+- Fix aplicado:
+  - Override de `#modal-detalle` para unificar `article`, `#modal-content` y `header` con tokens Arctic Glass.
+  - Título del header (`h3`) forzado a color azul del tema para legibilidad.
+- Resultado:
+  - Vista de detalle alineada con el resto del tema, sin título negro ni fondo gris fuera de paleta.
