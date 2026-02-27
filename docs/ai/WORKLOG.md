@@ -1454,3 +1454,14 @@
   - `python -m compileall app`
 - Resultado:
   - Nuevas requisiciones quedan con hora de creación consistente con el resto de eventos del timeline/modal.
+
+## 2026-02-27 09:08 UTC-06:00 | tool: Codex CLI
+- Objetivo: Publicar release notes cortas para baseline `v1.4.0` en repositorio.
+- Cambios:
+  - `docs/releases/v1.4.0.md`
+  - `docs/ai/WORKLOG.md`
+- Observaciones:
+  - Se verificó disponibilidad de GitHub CLI (`gh`) y no está instalado en el entorno actual.
+  - Se deja release note versionada en repo para referencia operativa y trazabilidad.
+- Resultado:
+  - Documento de release creado con alcance, highlights funcionales y estado de validación (`32 passed`).
