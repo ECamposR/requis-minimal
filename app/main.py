@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import secrets
 from io import BytesIO
 import csv
 from datetime import datetime, timedelta
@@ -1179,7 +1180,7 @@ def admin_usuario_crear(
     nombre: str = Form(...),
     rol: str = Form(...),
     departamento: str = Form(...),
-    password: str = Form(...),
+    password: str = Form(""),
     pin: str = Form(""),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -1196,7 +1197,10 @@ def admin_usuario_crear(
         raise HTTPException(status_code=400, detail="Departamento invalido")
     if len(username_limpio) < 3 or len(nombre_limpio) < 3 or len(depto_limpio) < 2:
         raise HTTPException(status_code=400, detail="Datos incompletos o invalidos")
-    if len(password) < 6:
+    if rol == "tecnico":
+        if not pin_limpio:
+            raise HTTPException(status_code=400, detail="El PIN es obligatorio para usuarios tecnicos")
+    elif len(password.strip()) < 6:
         raise HTTPException(status_code=400, detail="La contrasena debe tener al menos 6 caracteres")
 
     existe = db.query(Usuario).filter(Usuario.username == username_limpio).first()
@@ -1209,7 +1213,7 @@ def admin_usuario_crear(
         rol=rol,
         departamento=depto_limpio,
         activo=True,
-        password=hash_password(password),
+        password=hash_password(password.strip()) if password.strip() else hash_password(secrets.token_urlsafe(24)),
         pin_hash=hash_password(pin_limpio) if pin_limpio else None,
         puede_iniciar_sesion=rol != "tecnico",
     )
@@ -1269,6 +1273,8 @@ def admin_usuario_editar(
         raise HTTPException(status_code=400, detail="Departamento invalido")
     if len(username_limpio) < 3 or len(nombre_limpio) < 3 or len(depto_limpio) < 2:
         raise HTTPException(status_code=400, detail="Datos incompletos o invalidos")
+    if rol == "tecnico" and not (pin_limpio or usuario.pin_hash):
+        raise HTTPException(status_code=400, detail="El PIN es obligatorio para usuarios tecnicos")
 
     duplicado = db.query(Usuario).filter(Usuario.username == username_limpio, Usuario.id != user_id).first()
     if duplicado:
