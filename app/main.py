@@ -1297,6 +1297,22 @@ def admin_usuario_editar(
     return redirect_with_message("/admin/usuarios", "Usuario actualizado", "success")
 
 
+@app.post("/admin/requisiciones/{req_id}/eliminar")
+def admin_requisicion_eliminar(
+    req_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    req = db.query(Requisicion).filter(Requisicion.id == req_id).first()
+    if not req:
+        return redirect_with_message("/aprobar", "Requisicion no encontrada", "error")
+    folio = req.folio
+    db.delete(req)
+    db.commit()
+    return redirect_with_message("/aprobar", f"Requisicion {folio} eliminada", "warning")
+
+
 @app.post("/admin/usuarios/{user_id}/eliminar")
 def admin_usuario_eliminar(
     user_id: int,

@@ -83,6 +83,14 @@
             {% else %}
             <small class="status-muted">Sin acciones</small>
             {% endif %}
+            {% if current_user.rol == 'admin' %}
+            <form method="POST" action="/admin/requisiciones/{{ req.id }}/eliminar" style="display:inline">
+                <button type="submit" class="btn-danger-sm"
+                    onclick="return confirm('¿Eliminar {{ req.folio }}? Esta acción no se puede deshacer.')">
+                    Eliminar
+                </button>
+            </form>
+            {% endif %}
         </td>
     </tr>
     {% endfor %}
