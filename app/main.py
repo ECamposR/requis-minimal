@@ -49,7 +49,7 @@ templates = Jinja2Templates(directory="templates")
 
 DEPARTAMENTOS_VALIDOS = ["Cuentas", "Ventas", "Bodega", "Admon", "Logistica"]
 CATALOGO_HEADERS = {"nombre", "item", "producto", "descripcion"}
-ROLES_VALIDOS = ["user", "aprobador", "bodega", "admin", "tecnico"]
+ROLES_VALIDOS = ["user", "aprobador", "bodega", "jefe_bodega", "admin", "tecnico"]
 
 
 @app.on_event("startup")
@@ -273,22 +273,22 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
         Requisicion.estado == "entregada", Requisicion.delivered_at >= hace_30_dias
     ).count()
     pendientes_aprobar = 0
-    if current_user.rol in ["aprobador", "admin"]:
+    if current_user.rol in ["aprobador", "admin", "jefe_bodega"]:
         pendientes_aprobar = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
-    pendientes_aprobar_panel = pendientes_aprobar if current_user.rol in ["aprobador", "admin"] else mis_pendientes
+    pendientes_aprobar_panel = pendientes_aprobar if current_user.rol in ["aprobador", "admin", "jefe_bodega"] else mis_pendientes
     mis_aprobadas_historicas = mis_requisiciones_query.filter(Requisicion.approved_by.isnot(None)).count()
     aprobadas_panel = (
         db.query(Requisicion).filter(Requisicion.approved_by.isnot(None)).count()
-        if current_user.rol in ["admin", "aprobador", "bodega"]
+        if current_user.rol in ["admin", "aprobador", "bodega", "jefe_bodega"]
         else mis_aprobadas_historicas
     )
     pendientes_bodega = 0
-    if current_user.rol in ["bodega", "admin"]:
+    if current_user.rol in ["bodega", "admin", "jefe_bodega"]:
         pendientes_bodega = db.query(Requisicion).filter(Requisicion.estado == "aprobada").count()
-    pendientes_entregar_panel = pendientes_bodega if current_user.rol in ["bodega", "admin"] else aprobadas_panel
+    pendientes_entregar_panel = pendientes_bodega if current_user.rol in ["bodega", "admin", "jefe_bodega"] else aprobadas_panel
     rechazadas_panel = (
         db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
-        if current_user.rol in ["admin", "aprobador", "bodega"]
+        if current_user.rol in ["admin", "aprobador", "bodega", "jefe_bodega"]
         else mis_rechazadas
     )
     escala_metricas_home = max(
@@ -440,7 +440,7 @@ def eliminar_mi_requisicion(
 
 @app.get("/aprobar")
 def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.rol not in ["aprobador", "admin"]:
+    if current_user.rol not in ["aprobador", "admin", "jefe_bodega"]:
         raise HTTPException(status_code=403, detail="No autorizado")
 
     q = request.query_params.get("q", "").strip()
@@ -508,7 +508,7 @@ def aprobar_gestionar(
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if current_user.rol not in ["aprobador", "admin"]:
+    if current_user.rol not in ["aprobador", "admin", "jefe_bodega"]:
         raise HTTPException(status_code=403, detail="No autorizado")
 
     req = (
@@ -584,7 +584,7 @@ def rechazar(
 
 @app.get("/bodega")
 def bodega_view(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.rol not in ["bodega", "admin"]:
+    if current_user.rol not in ["bodega", "admin", "jefe_bodega"]:
         raise HTTPException(status_code=403, detail="No autorizado")
 
     q = request.query_params.get("q", "").strip()
@@ -625,6 +625,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
     )
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(Requisicion.delivered_by == current_user.id)
+    # jefe_bodega ve el historial completo (sin filtro por usuario)
     if resultado in {"completa", "parcial", "no_entregada"}:
         historial_query = historial_query.filter(Requisicion.delivery_result == resultado)
     if q:
@@ -664,7 +665,7 @@ def bodega_gestionar(
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if current_user.rol not in ["bodega", "admin"]:
+    if current_user.rol not in ["bodega", "admin", "jefe_bodega"]:
         raise HTTPException(status_code=403, detail="No autorizado")
 
     req = (
@@ -903,7 +904,7 @@ def liquidar_form(
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if current_user.rol not in ("admin", "bodega"):
+    if current_user.rol not in ("admin", "bodega", "jefe_bodega"):
         raise HTTPException(status_code=403, detail="No autorizado")
 
     req = (
@@ -946,7 +947,7 @@ async def liquidar_guardar(
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if current_user.rol not in ("admin", "bodega"):
+    if current_user.rol not in ("admin", "bodega", "jefe_bodega"):
         raise HTTPException(status_code=403, detail="No autorizado")
 
     req = (
@@ -1106,7 +1107,7 @@ def editar_prokey_ref_form(
     if not puede_editar_prokey_ref(req, current_user):
         raise HTTPException(status_code=403, detail="No autorizado")
 
-    cancel_url = "/bodega" if current_user.rol == "admin" else "/mis-requisiciones"
+    cancel_url = "/bodega" if current_user.rol in ["admin", "jefe_bodega"] else "/mis-requisiciones"
     return templates.TemplateResponse(
         "editar_prokey_ref.html",
         template_context(request, current_user, req=req, cancel_url=cancel_url),
@@ -1137,7 +1138,7 @@ async def editar_prokey_ref_guardar(
     req.prokey_ref = prokey_ref
     db.commit()
 
-    target = "/bodega" if current_user.rol == "admin" else "/mis-requisiciones"
+    target = "/bodega" if current_user.rol in ["admin", "jefe_bodega"] else "/mis-requisiciones"
     return redirect_with_message(target, "Referencia Prokey actualizada", "success")
 
 
@@ -1584,7 +1585,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
     can_view = (
         current_user.rol == "admin"
         or current_user.id == req.solicitante_id
-        or current_user.rol == "aprobador"
+        or current_user.rol in ["aprobador", "jefe_bodega"]
         or (current_user.rol == "bodega" and req.estado in ["aprobada", "entregada", "liquidada"])
     )
     if not can_view:
