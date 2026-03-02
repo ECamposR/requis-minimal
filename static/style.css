@@ -73,7 +73,8 @@ main.container {
 
 .brand-logo {
     display: block;
-    height: 45px;
+    height: 47px;
+    margin-left: 0.5rem;
     width: auto;
     background: #f7fbff;
     border-radius: 0.3rem;
