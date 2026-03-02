@@ -251,7 +251,7 @@ def test_tecnico_no_puede_login_pero_conserva_pin():
                 "nombre": "Tecnico Nuevo",
                 "rol": "tecnico",
                 "departamento": "Logistica",
-                "password": "pass123",
+                "password": "",
                 "pin": "4321",
             },
             follow_redirects=False,
@@ -269,6 +269,31 @@ def test_tecnico_no_puede_login_pero_conserva_pin():
             follow_redirects=False,
         )
         assert login_resp.status_code == 401
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()
+
+
+def test_tecnico_requiere_pin_aunque_no_requiera_contrasena():
+    client, db, engine = _build_client()
+    try:
+        _login(client, "admin", "admin123")
+        response = client.post(
+            "/admin/usuarios",
+            data={
+                "username": "tecnico.sinpin",
+                "nombre": "Tecnico Sin Pin",
+                "rol": "tecnico",
+                "departamento": "Logistica",
+                "password": "",
+                "pin": "",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"] == "El PIN es obligatorio para usuarios tecnicos"
     finally:
         client.close()
         db.close()

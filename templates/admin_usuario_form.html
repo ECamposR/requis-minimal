@@ -40,7 +40,7 @@
         <input
             type="password"
             name="password"
-            {% if modo == 'crear' %}required minlength="6"{% endif %}
+            minlength="6"
             {% if modo == 'editar' %}placeholder="Sin cambio"{% endif %}
         >
     </label>
@@ -55,7 +55,7 @@
         >
     </label>
 
-    <p class="page-subtitle">Los usuarios con rol <strong>tecnico</strong> quedan creados sin acceso de login, pero pueden firmar recibido con su PIN.</p>
+    <p class="page-subtitle">Para roles con login, la contrasena sigue siendo obligatoria al crear. El rol <strong>tecnico</strong> no inicia sesion: usa solo PIN para firmar recibido.</p>
 
     <div class="form-actions">
         <button type="submit">{% if modo == 'crear' %}Crear{% else %}Guardar cambios{% endif %}</button>
