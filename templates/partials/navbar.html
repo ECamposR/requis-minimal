@@ -3,7 +3,7 @@
 {% set avatar_text = ((name_parts[0][0] if name_parts else current_user.nombre[0]) ~ (name_parts[1][0] if name_parts|length > 1 else current_user.nombre[1:2]))|upper %}
 <nav class="container main-nav topbar">
     <a href="/" class="brand">
-        <span class="brand-title">ProHygiene</span>
+        <img src="/static/branding/logo-prohygiene-es.png" alt="ProHygiene" class="brand-logo">
         <small class="brand-subtitle">SISTEMA DE REQUISICIONES</small>
     </a>
     <ul class="menu-links nav-pill">

@@ -71,11 +71,13 @@ main.container {
     display: grid;
 }
 
-.brand-title {
-    color: #f1f7ff;
-    font-size: 1.02rem;
-    font-weight: 800;
-    letter-spacing: 0.01em;
+.brand-logo {
+    display: block;
+    height: 28px;
+    width: auto;
+    background: #f7fbff;
+    border-radius: 0.35rem;
+    padding: 0.12rem 0.45rem;
 }
 
 .brand-subtitle {
