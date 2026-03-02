@@ -73,11 +73,11 @@ main.container {
 
 .brand-logo {
     display: block;
-    height: 28px;
+    height: 18px;
     width: auto;
     background: #f7fbff;
-    border-radius: 0.35rem;
-    padding: 0.12rem 0.45rem;
+    border-radius: 0.25rem;
+    padding: 0.08rem 0.35rem;
 }
 
 .brand-subtitle {
