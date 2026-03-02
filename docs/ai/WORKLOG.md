@@ -1837,3 +1837,16 @@
   - Admin puede borrar cualquier requisición desde `/aprobar` sin importar su estado.
   - Los ítems se eliminan en cascada (configuración ya existente en el modelo).
   - Usuarios no-admin no ven el botón; la ruta también valida el rol en backend.
+
+## 2026-03-02 | tool: Claude Code (claude-sonnet-4-6)
+- Objetivo: Agregar rol `jefe_bodega` que combina `aprobador` + `bodega`.
+- Tareas: `REQ-090`.
+- Cambios:
+  - `app/main.py`: `jefe_bodega` agregado a `ROLES_VALIDOS` y a todos los guards de rutas de aprobar, bodega y liquidación; historial de bodega sin filtro por usuario (ve todo); redirects prokey-ref apuntan a /bodega igual que admin.
+  - `templates/partials/navbar.html`: `jefe_bodega` incluido en ambos ítems de nav (Aprobar y Bodega).
+  - `docs/ai/TASKS.md`: REQ-090 agregado y completado.
+- Resultado:
+  - `jefe_bodega` puede aprobar/rechazar, gestionar entregas y liquidar desde un solo rol.
+  - Ve el historial completo de entregas (bodega plain solo ve las propias).
+  - API de detalle: acceso sin restricción de estado (equivalente a aprobador).
+  - Aparece en el formulario de creación/edición de usuarios del admin.

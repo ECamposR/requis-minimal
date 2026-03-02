@@ -36,6 +36,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 
 ## Post-MVP
 - `REQ-089` | `done` | Admin puede eliminar cualquier requisición sin restricción de estado desde `/aprobar`, con confirmación JS y cascade delete de ítems.
+- `REQ-090` | `done` | Nuevo rol `jefe_bodega` que combina `aprobador` + `bodega`: acceso completo a aprobar, bodega y liquidación; ve historial completo de entregas; ambos ítems de nav visibles.
 
 ## Despliegue Producción
 - `REQ-086` | `done` | Agregar Dockerfile, docker-compose.yml de la app y configuración de Caddy (`deploy/caddy/`) para despliegue LAN con reverse proxy. Red Docker externa `proxy` desacopla Caddy de cada servicio.
