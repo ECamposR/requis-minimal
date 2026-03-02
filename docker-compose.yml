@@ -1,0 +1,14 @@
+services:
+  requisiciones:
+    build: .
+    container_name: requisiciones
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    env_file: .env
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

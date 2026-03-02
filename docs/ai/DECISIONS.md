@@ -23,6 +23,29 @@
 - Impacto:
   - Overhead minimo de documentacion, alto retorno en continuidad.
 
+## ADR-004 | 2026-03-02 | Despliegue con Docker + Caddy como reverse proxy
+- Contexto:
+  - La app entra a producción dentro de la LAN de la empresa.
+  - El servidor Proxmox ya corre ~5 contenedores Docker; este es el primero de cara al usuario.
+  - No existía reverse proxy en el servidor.
+- Decisión:
+  - Desplegar la app como contenedor Docker (`Dockerfile` + `docker-compose.yml` en raíz del repo).
+  - Usar Caddy 2 como reverse proxy en contenedor separado (`deploy/caddy/`).
+  - Compartir red Docker externa llamada `proxy` entre Caddy y la app.
+  - Persistir SQLite en volumen local `./data/requisiciones.db` (fuera del container).
+- Motivo:
+  - Uniformidad con infraestructura Docker existente.
+  - Caddy es la opción más simple para "configurar y olvidar" en LAN (sin base de datos, config mínima).
+  - Red externa desacopla Caddy de cada servicio: agregar futuro servicio = nuevo compose + bloque en Caddyfile.
+- Alternativas descartadas:
+  - LXC en Proxmox: válido en aislamiento, pero rompe uniformidad con el resto de la infra Docker.
+  - Nginx Proxy Manager: GUI útil, pero requiere base de datos MariaDB y mayor complejidad operacional.
+  - Systemd en el host Docker: sin aislamiento, riesgo de conflictos con otros servicios del VM.
+- Impacto:
+  - `DATABASE_URL` cambia de `sqlite:///./requisiciones.db` a `sqlite:////app/data/requisiciones.db`.
+  - La app no expone puertos directamente; todo el tráfico entra por Caddy en puerto 80.
+  - Contenedores existentes en el servidor no requieren ningún cambio.
+
 ## ADR-003 | 2026-02-13 | Reinicio de liquidacion desde baseline pre-feature
 - Contexto:
   - La primera implementacion de liquidacion resulto insatisfactoria a nivel funcional/UX.

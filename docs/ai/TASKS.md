@@ -34,6 +34,11 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-085` | `done` | Firma de recibido con PIN por receptor: usuarios con `pin_hash`/`puede_iniciar_sesion`, rol `tecnico`, entrega completa/parcial con receptor + validación PIN, trazabilidad `recibido_por_id/recibido_at` en detalle y timeline.
 - `REQ-085A` | `done` | Ajuste de usuarios técnicos: ya no requieren contraseña al crear/editar; usan PIN obligatorio para firma y mantienen login deshabilitado.
 
+## Despliegue Producción
+- `REQ-086` | `done` | Agregar Dockerfile, docker-compose.yml de la app y configuración de Caddy (`deploy/caddy/`) para despliegue LAN con reverse proxy. Red Docker externa `proxy` desacopla Caddy de cada servicio.
+- `REQ-087` | `todo` | Smoke test de despliegue en servidor Proxmox: crear red `proxy`, levantar Caddy, levantar app, validar acceso desde LAN.
+- `REQ-088` | `todo` | Migrar DB existente al volumen Docker (`./data/requisiciones.db`) antes del primer arranque en producción.
+
 ## Prioridad Alta
 - `REQ-001` | `done` | Crear contrato de colaboracion AI y alcance MVP congelado.
 - `REQ-002` | `done` | Corregir inconsistencias criticas en `tech_specs.md`.

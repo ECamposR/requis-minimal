@@ -1803,3 +1803,24 @@
   - Sin comandos de verificación adicionales; esta entrada documenta el fix ya empujado en `85ab2a2`.
 - Resultado:
   - Gobernanza alineada con el estado real del código y del historial Git.
+
+## 2026-03-02 | tool: Claude Code (claude-sonnet-4-6)
+- Objetivo: Configurar stack de despliegue Docker + Caddy para producción LAN.
+- Tareas: `REQ-086`.
+- Cambios:
+  - `Dockerfile` (nuevo): imagen Python 3.11-slim, directorio /app/data para volumen SQLite.
+  - `docker-compose.yml` (nuevo): app sin puertos expuestos directamente, se une a red `proxy` externa.
+  - `deploy/caddy/docker-compose.yml` (nuevo): Caddy 2-alpine, puertos 80/443, volúmenes para datos/config.
+  - `deploy/caddy/Caddyfile` (nuevo): reverse proxy :80 → requisiciones:8000, comentarios para futuros servicios.
+  - `.env.example` (actualizado): DATABASE_URL apunta a /app/data/requisiciones.db para Docker.
+  - `.gitignore` (actualizado): ignorar directorio data/ (DB de producción).
+  - `docs/ai/DECISIONS.md` (ADR-004: decisión de despliegue Docker + Caddy).
+  - `docs/ai/TASKS.md` (REQ-086 done, REQ-087 y REQ-088 agregados).
+  - `docs/ai/HANDOFF.md` (estado actualizado con tareas de despliegue).
+- Resultado:
+  - Stack de despliegue listo para copiar al servidor. Red Docker `proxy` externa desacopla Caddy de la app.
+  - DATABASE_URL usa ruta absoluta (4 slashes) para que el volumen ./data sea persistente fuera del container.
+  - Contenedores existentes en el servidor no requieren cambios.
+- Próximo paso:
+  - REQ-087: ejecutar en el servidor (crear red proxy, levantar Caddy, levantar app, validar acceso LAN).
+  - REQ-088: copiar DB existente al path ./data/requisiciones.db antes del primer arranque en producción.

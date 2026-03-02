@@ -35,6 +35,11 @@
 - `REQ-085A` completada: alta/edicion de usuarios `tecnico` ya no exige contraseña; el PIN pasa a ser el dato obligatorio operativo para firma, manteniendo `puede_iniciar_sesion=False`.
 - Fix posterior aplicado sobre `REQ-085A`: `POST /admin/usuarios` ya no declara `password` como `Form(...)`; ahora acepta valor vacio y la validacion real queda gobernada por rol (tecnico sin contraseña, otros roles con contraseña).
 
+## Despliegue en producción (nuevo frente)
+- Stack Docker + Caddy configurado y listo en el repo (`Dockerfile`, `docker-compose.yml`, `deploy/caddy/`).
+- Pendiente ejecutar en servidor real: `REQ-087` (smoke test) y `REQ-088` (migrar DB existente).
+- Ver `docs/ai/DECISIONS.md` ADR-004 para la justificación completa.
+
 ## En progreso
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - Ejecutar smoke manual de entrega con firma y de liquidacion para validar experiencia completa de bloqueo/edicion.
@@ -45,9 +50,17 @@
 - Revisar balance final de densidad visual para evitar sobrecarga en pantallas pequeñas.
 
 ## Proximo paso exacto
-1. Ejecutar smoke manual del nuevo flujo de entrega: `/bodega/{id}/gestionar` y `/entregar/{id}/parcial` con receptor válido, PIN incorrecto y receptor técnico.
+### Frente despliegue (REQ-087 / REQ-088):
+1. En el servidor Docker: `docker network create proxy`
+2. `cd deploy/caddy && docker compose up -d`
+3. Copiar DB existente: `mkdir -p data && cp /ruta/actual/requisiciones.db data/requisiciones.db`
+4. Crear `.env` desde `.env.example` con `SECRET_KEY` real y `DATABASE_URL=sqlite:////app/data/requisiciones.db`
+5. `docker compose up -d` (desde raíz del repo)
+6. Validar acceso LAN: `http://<IP-servidor>/`
+
+### Frente funcional (pendiente anterior):
+1. Ejecutar smoke manual del flujo de entrega con firma: `/bodega/{id}/gestionar` y `/entregar/{id}/parcial` con receptor válido, PIN incorrecto y receptor técnico.
 2. Verificar en modal detalle que `Recibido por` y el evento `Recibido con firma` aparecen con hora local correcta.
-3. Si se requiere automatización completa de esta parte, aislar el problema de `TestClient` colgado en este entorno antes de ampliar la suite HTTP.
 
 ## Riesgos abiertos
 - Drift entre lo ya experimentado y lo que se va a rehacer en esta rama.

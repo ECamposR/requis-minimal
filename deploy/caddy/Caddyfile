@@ -1,0 +1,19 @@
+# Reverse proxy LAN - Sistema de Requisiciones
+#
+# Acceso por IP directa (sin DNS configurado):
+#   http://<IP-del-servidor>/
+#
+# Si configuras hostname en DNS local o /etc/hosts de cada equipo,
+# reemplaza ":80" por el hostname, por ejemplo:
+#   requisiciones.lan { ... }
+
+:80 {
+    reverse_proxy requisiciones:8000
+}
+
+# --- Para agregar futuros servicios ---
+# Requiere DNS local o /etc/hosts apuntando al mismo servidor.
+#
+# otro-servicio.lan {
+#     reverse_proxy otro-servicio:XXXX
+# }
