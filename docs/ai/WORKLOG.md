@@ -1824,3 +1824,16 @@
 - Próximo paso:
   - REQ-087: ejecutar en el servidor (crear red proxy, levantar Caddy, levantar app, validar acceso LAN).
   - REQ-088: copiar DB existente al path ./data/requisiciones.db antes del primer arranque en producción.
+
+## 2026-03-02 | tool: Claude Code (claude-sonnet-4-6)
+- Objetivo: Permitir al admin eliminar cualquier requisición sin restricción de estado.
+- Tareas: `REQ-089`.
+- Cambios:
+  - `app/main.py`: nuevo endpoint `POST /admin/requisiciones/{req_id}/eliminar` (requiere admin, cascade delete de ítems).
+  - `templates/aprobar.html`: botón "Eliminar" visible solo para admin, con `confirm()` JS antes de ejecutar.
+  - `static/style.css`: clase `.btn-danger-sm` para el botón de eliminar.
+  - `docs/ai/TASKS.md`: REQ-089 agregado y completado.
+- Resultado:
+  - Admin puede borrar cualquier requisición desde `/aprobar` sin importar su estado.
+  - Los ítems se eliminan en cascada (configuración ya existente en el modelo).
+  - Usuarios no-admin no ven el botón; la ruta también valida el rol en backend.

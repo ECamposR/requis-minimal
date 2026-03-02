@@ -34,6 +34,9 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-085` | `done` | Firma de recibido con PIN por receptor: usuarios con `pin_hash`/`puede_iniciar_sesion`, rol `tecnico`, entrega completa/parcial con receptor + validación PIN, trazabilidad `recibido_por_id/recibido_at` en detalle y timeline.
 - `REQ-085A` | `done` | Ajuste de usuarios técnicos: ya no requieren contraseña al crear/editar; usan PIN obligatorio para firma y mantienen login deshabilitado.
 
+## Post-MVP
+- `REQ-089` | `done` | Admin puede eliminar cualquier requisición sin restricción de estado desde `/aprobar`, con confirmación JS y cascade delete de ítems.
+
 ## Despliegue Producción
 - `REQ-086` | `done` | Agregar Dockerfile, docker-compose.yml de la app y configuración de Caddy (`deploy/caddy/`) para despliegue LAN con reverse proxy. Red Docker externa `proxy` desacopla Caddy de cada servicio.
 - `REQ-087` | `todo` | Smoke test de despliegue en servidor Proxmox: crear red `proxy`, levantar Caddy, levantar app, validar acceso desde LAN.
