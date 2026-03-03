@@ -980,9 +980,9 @@ async def liquidar_guardar(
     item_incompletos: list[int] = []
     item_validation_errors: dict[int, str] = {}
 
-    def parse_non_negative_int(raw: str, field_label: str) -> int:
+    def parse_non_negative_float(raw: str, field_label: str) -> float:
         try:
-            value = int(raw)
+            value = round(float(raw), 4)
         except ValueError as exc:
             raise ValueError(f"{field_label} invalido") from exc
         if value < 0:
@@ -1004,9 +1004,9 @@ async def liquidar_guardar(
             "note": note_raw,
         }
         try:
-            qty_returned = parse_non_negative_int(qty_returned_raw, "Regresa")
-            qty_used = parse_non_negative_int(qty_used_raw, "Usado")
-            qty_not_used = parse_non_negative_int(qty_not_used_raw, "No usado")
+            qty_returned = parse_non_negative_float(qty_returned_raw, "Regresa")
+            qty_used = parse_non_negative_float(qty_used_raw, "Usado")
+            qty_not_used = parse_non_negative_float(qty_not_used_raw, "No usado")
         except ValueError as exc:
             for req_item in req.items:
                 req_item.default_mode = infer_liquidation_mode(req_item.descripcion)
