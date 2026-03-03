@@ -605,11 +605,12 @@ table tbody tr:hover td {
 
 #modal-detalle .dif {
     display: inline-block;
-    min-width: 40px;
+    min-width: 78px;
     text-align: center;
     padding: 6px 10px;
     border-radius: 10px;
     font-weight: 650;
+    white-space: nowrap;
 }
 
 #modal-detalle .dif--pos {

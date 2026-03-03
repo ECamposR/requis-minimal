@@ -1,5 +1,23 @@
 # Worklog (append-only)
 
+## 2026-03-03 14:32 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la semántica visual de `DIF` en el detalle liquidado para que un faltante no se lea como sobrante por el signo `+`.
+- Tareas: `REQ-093B`
+- Cambios:
+  - `static/app.js`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall static`
+- Resultado:
+  - La columna `DIF` ahora muestra `Falta X`, `Extra X` u `OK` en vez de `+/-`.
+  - Se agregó tooltip con el esperado/regresado para mantener trazabilidad sin ambigüedad.
+  - El chip se ensanchó para soportar el nuevo copy sin verse apretado.
+- Proximo paso:
+  - Validar manualmente un caso con faltante y otro con retorno extra para confirmar que la lectura operativa sea inmediata.
+
 ## 2026-03-03 14:05 UTC-6 | tool: Codex CLI
 - Objetivo: alinear la liquidación con el catálogo como fuente de verdad, quitando edición manual de `Tipo` cuando el ítem ya está clasificado.
 - Tareas: `REQ-093A`

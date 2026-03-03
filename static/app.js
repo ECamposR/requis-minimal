@@ -318,7 +318,11 @@ function verDetalle(id) {
                         ? `<div class="liq-type-main">${escapeHtml(mode)}</div><div class="liq-type-context muted">${escapeHtml(contexto)}</div>`
                         : escapeHtml(mode);
                     const ingresoPk = mode === "RETORNABLE" ? fmtQty(i.pk_ingreso_qty) : '<span class="muted">—</span>';
-                    const differenceText = difference > 0 ? `+${fmtQty(difference)}` : fmtQty(difference);
+                    const differenceText = difference > 0
+                        ? `Falta ${fmtQty(difference)}`
+                        : difference < 0
+                            ? `Extra ${fmtQty(Math.abs(difference))}`
+                            : "OK";
                     return `<tr>
                         <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${noteHtml}</td>
                         <td class="qty-col td-num">${fmtQty(i.cantidad_entregada)}</td>
@@ -326,7 +330,7 @@ function verDetalle(id) {
                         <td class="qty-col td-num">${fmtQty(i.used ?? i.qty_used)}</td>
                         <td class="qty-col td-num">${fmtQty(i.not_used ?? i.qty_left_at_client)}</td>
                         <td class="qty-col td-num">${fmtQty(i.returned ?? i.qty_returned_to_warehouse)}</td>
-                        <td class="qty-col td-num"><span class="${differenceCls}">${differenceText}</span></td>
+                        <td class="qty-col td-num"><span class="${differenceCls}" title="Diferencia de retorno: esperado ${fmtQty(i.expected_return ?? 0)}, regresó ${fmtQty(i.returned ?? i.qty_returned_to_warehouse ?? 0)}">${differenceText}</span></td>
                         <td class="qty-col td-num">
                             <span class="pk-help" title="Pendiente de ingresar en Prokey por bodega (solo retornables)">${ingresoPk}</span>
                         </td>
@@ -385,7 +389,7 @@ function verDetalle(id) {
                                 <th class="qty-col">Usado</th>
                                 <th class="qty-col">No usado</th>
                                 <th class="qty-col">Regresa</th>
-                                <th class="qty-col" title="Diferencia (Esperado - Regresa)">DIF</th>
+                                <th class="qty-col" title="Diferencia de retorno: si falta equipo por regresar muestra 'Falta'; si regresó de más muestra 'Extra'">DIF</th>
                                 <th class="qty-col" title="Pendiente de ingresar en Prokey por bodega (solo retornables)">Ingreso PK</th>
                                 <th>Alertas</th>
                             </tr></thead>

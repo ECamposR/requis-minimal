@@ -45,6 +45,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-092B` | `done` | Fix técnico de `REQ-092`: extracción de la clasificación de catálogo a módulo independiente para eliminar import circular entre `database.py` y `crud.py`.
 - `REQ-093` | `done` | Se agrega `Item.contexto_operacion` (`reposicion` / `instalacion_inicial`) por línea de requisición; `ALERTA_RETORNO_INCOMPLETO` deja de dispararse en instalaciones iniciales y el detalle muestra el contexto junto al tipo para trazabilidad.
 - `REQ-093A` | `done` | En liquidación, `Tipo` deja de ser editable cuando el catálogo ya lo clasifica; solo se mantiene como selector en ítems sin `tipo_item`, y backend fuerza el valor de catálogo para evitar overrides manuales.
+- `REQ-093B` | `done` | Ajuste de UX en detalle liquidado: la columna `DIF` ya no muestra signos ambiguos (`+/-`) y ahora comunica `Falta`, `Extra` u `OK` según el sentido operativo del retorno.
 - `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
 
 ## Despliegue Producción
