@@ -1,6 +1,15 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import json
 from typing import Any
+
+# El Salvador es UTC-6 y no observa DST. Offset fijo para independizar
+# la app de la configuración de zona horaria del servidor/contenedor.
+_TZ_SV = timezone(timedelta(hours=-6))
+
+
+def now_sv() -> datetime:
+    """Retorna la hora actual de El Salvador (UTC-6) como datetime naive."""
+    return datetime.now(_TZ_SV).replace(tzinfo=None)
 
 from sqlalchemy.orm import Session
 
@@ -34,7 +43,7 @@ def crear_requisicion_db(
         estado="pendiente",
         justificacion=justificacion,
         # Evita depender del server_default SQLite (UTC) para mantener hora local consistente.
-        created_at=datetime.now(),
+        created_at=now_sv(),
     )
     db.add(req)
     db.commit()
@@ -275,7 +284,7 @@ def ejecutar_liquidacion(
     requisicion.prokey_ref = prokey_ref or None
     requisicion.liquidation_comment = liquidation_comment or None
     requisicion.liquidated_by = usuario.id
-    requisicion.liquidated_at = datetime.now()
+    requisicion.liquidated_at = now_sv()
 
     db.commit()
 
@@ -296,18 +305,18 @@ def transicionar_requisicion(
 ) -> Requisicion:
     if nuevo_estado == "aprobada":
         requisicion.estado = "aprobada"
-        requisicion.approved_at = datetime.now()
+        requisicion.approved_at = now_sv()
         requisicion.approved_by = actor_id
         requisicion.approval_comment = approval_comment
     elif nuevo_estado == "rechazada":
         requisicion.estado = "rechazada"
-        requisicion.rejected_at = datetime.now()
+        requisicion.rejected_at = now_sv()
         requisicion.rejected_by = actor_id
         requisicion.rejection_reason = rejection_reason
         requisicion.rejection_comment = rejection_comment
     elif nuevo_estado == "entregada":
         requisicion.estado = "entregada"
-        requisicion.delivered_at = datetime.now()
+        requisicion.delivered_at = now_sv()
         requisicion.delivered_by = actor_id
         requisicion.delivered_to = delivered_to
         requisicion.recibido_por_id = recibido_por_id

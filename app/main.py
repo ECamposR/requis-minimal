@@ -5,6 +5,7 @@ import secrets
 from io import BytesIO
 import csv
 from datetime import datetime, timedelta
+from .crud import now_sv
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, status
@@ -259,7 +260,7 @@ def logout(request: Request):
 @app.get("/")
 def home(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     mis_requisiciones_query = db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id)
-    ahora = datetime.now()
+    ahora = now_sv()
     inicio_mes = datetime(ahora.year, ahora.month, 1)
     hace_30_dias = ahora - timedelta(days=30)
 
@@ -769,7 +770,7 @@ def entregar(
         delivery_result=resultado,
         delivery_comment=comentario_limpio or None,
         recibido_por_id=receptor.id if receptor else None,
-        recibido_at=datetime.now() if receptor else None,
+        recibido_at=now_sv() if receptor else None,
     )
     if resultado == "no_entregada":
         for item in req.items:
@@ -892,7 +893,7 @@ async def entrega_parcial_guardar(
         delivery_result="parcial",
         delivery_comment=comentario_limpio,
         recibido_por_id=receptor.id,
-        recibido_at=datetime.now(),
+        recibido_at=now_sv(),
     )
     return redirect_with_message("/bodega", "Requisicion marcada como entrega parcial", "warning")
 
