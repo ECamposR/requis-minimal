@@ -137,10 +137,10 @@ def puede_liquidar(requisicion: Requisicion, usuario: Usuario) -> bool:
 def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
     """Calcula alertas para un ítem liquidado. No bloquea por diferencia != 0."""
     alertas: list[dict[str, Any]] = []
-    delivered = int(item.cantidad_entregada or 0)
-    returned = int(item.qty_returned_to_warehouse or 0)
-    used = int(item.qty_used or 0)
-    not_used = int(item.qty_left_at_client or 0)
+    delivered = round(float(item.cantidad_entregada or 0), 4)
+    returned = round(float(item.qty_returned_to_warehouse or 0), 4)
+    used = round(float(item.qty_used or 0), 4)
+    not_used = round(float(item.qty_left_at_client or 0), 4)
     raw_mode = getattr(item, "liquidation_mode", None) or getattr(item, "tipo", None) or "RETORNABLE"
     mode = str(raw_mode).upper().strip()
     if mode not in ("RETORNABLE", "CONSUMIBLE"):
@@ -214,10 +214,10 @@ def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
 
 
 def validar_liquidacion_item(
-    delivered: int,
-    used: int,
-    not_used: int,
-    returned: int,
+    delivered: float,
+    used: float,
+    not_used: float,
+    returned: float,
     mode: str,
 ) -> str | None:
     coverage_total = used + not_used
@@ -260,9 +260,9 @@ def ejecutar_liquidacion(
 
     for item in requisicion.items:
         data = items_data.get(item.id, {})
-        qty_returned = int(data.get("qty_returned_to_warehouse", 0))
-        qty_used = int(data.get("qty_used", 0))
-        qty_not_used = int(data.get("qty_left_at_client", 0))
+        qty_returned = round(float(data.get("qty_returned_to_warehouse", 0)), 4)
+        qty_used = round(float(data.get("qty_used", 0)), 4)
+        qty_not_used = round(float(data.get("qty_left_at_client", 0)), 4)
         delivered = item.cantidad_entregada or 0
         mode = str(data.get("liquidation_mode", "RETORNABLE")).upper()
         if mode not in ("RETORNABLE", "CONSUMIBLE"):

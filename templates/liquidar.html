@@ -55,13 +55,13 @@
                         </td>
                         <td data-delivered="{{ item.cantidad_entregada }}">{{ item.cantidad_entregada }}</td>
                         <td>
-                            <input type="number" min="0" step="1" name="qty_returned_{{ item.id }}" value="{{ values.get('qty_returned', '0') }}" required>
+                            <input type="number" min="0" step="any" name="qty_returned_{{ item.id }}" value="{{ values.get('qty_returned', '0') }}" required>
                         </td>
                         <td>
-                            <input type="number" min="0" step="1" name="qty_used_{{ item.id }}" value="{{ values.get('qty_used', '0') }}" required>
+                            <input type="number" min="0" step="any" name="qty_used_{{ item.id }}" value="{{ values.get('qty_used', '0') }}" required>
                         </td>
                         <td>
-                            <input type="number" min="0" step="1" name="qty_not_used_{{ item.id }}" value="{{ values.get('qty_not_used', '0') }}" required>
+                            <input type="number" min="0" step="any" name="qty_not_used_{{ item.id }}" value="{{ values.get('qty_not_used', '0') }}" required>
                         </td>
                         <td data-ocupo>0</td>
                         <td>
