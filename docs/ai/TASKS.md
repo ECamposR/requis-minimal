@@ -40,6 +40,9 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-090A` | `done` | Corrección de permisos/visibilidad de `jefe_bodega`: aprobación operativa habilitada también en backend (`puede_aprobar`) y enlaces del Home alineados con su rol mixto.
 - `REQ-091` | `done` | Admin puede borrar todo el catálogo de items con doble verificación (checkbox + texto exacto), manteniendo la acción exclusiva al rol admin.
 - `REQ-091A` | `done` | Ajuste de layout en catálogo admin: importar y borrar todo comparten fila superior; búsqueda baja a una fila independiente para mejorar jerarquía visual.
+- `REQ-092` | `done` | El catálogo pasa a ser fuente de verdad para default de liquidación: `CatalogoItem.tipo_item` persistido y calculado automáticamente; liquidación usa ese valor por nombre normalizado y deja opción explícita cuando el tipo es `null`.
+- `REQ-092A` | `done` | Fix de adopción de `tipo_item`: backfill automático para catálogo existente y fallback visual en liquidación cuando aún hay registros sin clasificar persistidos.
+- `REQ-092B` | `done` | Fix técnico de `REQ-092`: extracción de la clasificación de catálogo a módulo independiente para eliminar import circular entre `database.py` y `crud.py`.
 - `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
 
 ## Despliegue Producción

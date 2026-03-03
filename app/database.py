@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
+from .catalog_types import classify_catalog_item_type
+
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./requisiciones.db")
@@ -154,3 +156,22 @@ def run_migrations() -> None:
                 )
             except Exception as e:
                 logger.warning("Backfill cantidad_entregada: %s", e)
+
+        if "catalogo_items" in tables:
+            catalog_columns = {
+                row[1]
+                for row in conn.execute(text("PRAGMA table_info(catalogo_items)")).fetchall()
+            }
+            if "tipo_item" not in catalog_columns:
+                conn.execute(text("ALTER TABLE catalogo_items ADD COLUMN tipo_item VARCHAR(20)"))
+            catalog_rows = conn.execute(text("SELECT id, nombre, tipo_item FROM catalogo_items")).fetchall()
+            for item_id, nombre, tipo_item in catalog_rows:
+                if tipo_item is not None:
+                    continue
+                computed = classify_catalog_item_type(nombre or "")
+                if computed is None:
+                    continue
+                conn.execute(
+                    text("UPDATE catalogo_items SET tipo_item = :tipo_item WHERE id = :item_id"),
+                    {"tipo_item": computed, "item_id": item_id},
+                )

@@ -25,6 +25,7 @@ from .auth import (
     logout_user,
     verify_password,
 )
+from .catalog_types import classify_catalog_item_type
 from .crud import (
     agregar_item_db,
     ejecutar_liquidacion,
@@ -141,15 +142,13 @@ def format_datetime(value: datetime | str | None) -> str:
 templates.env.filters["fmt_dt"] = format_datetime
 
 
-def infer_liquidation_mode(descripcion: str) -> str:
-    desc = (descripcion or "").upper()
-    retornable_keys = ("MOPA", "ALFOMBRA", "HERRAMIENTA", "EQUIPO")
-    consumible_keys = ("SPRAY", "PILA", "QUIM", "DOSIS")
-    if any(token in desc for token in consumible_keys):
-        return "CONSUMIBLE"
-    if any(token in desc for token in retornable_keys):
-        return "RETORNABLE"
-    return "RETORNABLE"
+def attach_catalog_item_defaults(items: list, db: Session) -> None:
+    catalog_map = {
+        normalize_catalog_name(catalog_item.nombre): (catalog_item.tipo_item or classify_catalog_item_type(catalog_item.nombre))
+        for catalog_item in db.query(CatalogoItem).all()
+    }
+    for item in items:
+        item.default_mode = catalog_map.get(normalize_catalog_name(item.descripcion))
 
 
 def normalize_optional_text(value: str | None) -> str | None:
@@ -924,8 +923,7 @@ def liquidar_form(
     if not puede_liquidar(req, current_user):
         return redirect_with_message("/bodega", "Requisicion no elegible para liquidacion", "error")
 
-    for item in req.items:
-        item.default_mode = infer_liquidation_mode(item.descripcion)
+    attach_catalog_item_defaults(req.items, db)
 
     return templates.TemplateResponse(
         "liquidar.html",
@@ -1008,8 +1006,7 @@ async def liquidar_guardar(
             qty_used = parse_non_negative_float(qty_used_raw, "Usado")
             qty_not_used = parse_non_negative_float(qty_not_used_raw, "No usado")
         except ValueError as exc:
-            for req_item in req.items:
-                req_item.default_mode = infer_liquidation_mode(req_item.descripcion)
+            attach_catalog_item_defaults(req.items, db)
             return templates.TemplateResponse(
                 "liquidar.html",
                 template_context(
@@ -1024,8 +1021,7 @@ async def liquidar_guardar(
                 status_code=200,
             )
         if mode_raw not in ("RETORNABLE", "CONSUMIBLE"):
-            for req_item in req.items:
-                req_item.default_mode = infer_liquidation_mode(req_item.descripcion)
+            attach_catalog_item_defaults(req.items, db)
             return templates.TemplateResponse(
                 "liquidar.html",
                 template_context(
@@ -1055,8 +1051,7 @@ async def liquidar_guardar(
         }
 
     if item_incompletos:
-        for item in req.items:
-            item.default_mode = infer_liquidation_mode(item.descripcion)
+        attach_catalog_item_defaults(req.items, db)
         return templates.TemplateResponse(
             "liquidar.html",
                 template_context(
@@ -1491,14 +1486,21 @@ async def admin_catalogo_item_importar(
     for nombre in nombres:
         key = normalize_catalog_name(nombre)
         existente = existentes.get(key)
+        tipo_item = classify_catalog_item_type(nombre)
         if existente:
+            hubo_cambio = False
             if existente.activo != activar:
                 existente.activo = activar
+                hubo_cambio = True
+            if existente.tipo_item != tipo_item:
+                existente.tipo_item = tipo_item
+                hubo_cambio = True
+            if hubo_cambio:
                 actualizados += 1
             else:
                 sin_cambios += 1
             continue
-        db.add(CatalogoItem(nombre=nombre, activo=activar))
+        db.add(CatalogoItem(nombre=nombre, activo=activar, tipo_item=tipo_item))
         creados += 1
 
     db.commit()
@@ -1531,7 +1533,11 @@ def admin_catalogo_item_crear(
     if existe:
         return redirect_with_message("/admin/catalogo-items", "El item ya existe", "error")
 
-    nuevo = CatalogoItem(nombre=nombre_limpio, activo=(activo == "on"))
+    nuevo = CatalogoItem(
+        nombre=nombre_limpio,
+        activo=(activo == "on"),
+        tipo_item=classify_catalog_item_type(nombre_limpio),
+    )
     db.add(nuevo)
     db.commit()
     return redirect_with_message("/admin/catalogo-items", "Item creado", "success")
@@ -1581,6 +1587,7 @@ def admin_catalogo_item_editar(
 
     item.nombre = nombre_limpio
     item.activo = activo == "on"
+    item.tipo_item = classify_catalog_item_type(nombre_limpio)
     db.commit()
     return redirect_with_message("/admin/catalogo-items", "Item actualizado", "success")
 

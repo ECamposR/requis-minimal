@@ -1,5 +1,67 @@
 # Worklog (append-only)
 
+## 2026-03-03 11:37 UTC-6 | tool: Codex CLI
+- Objetivo: mover la clasificación retornable/consumible al catálogo como fuente de verdad sin introducir FK nueva en `Item`.
+- Tareas: `REQ-092`
+- Cambios:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/main.py`
+  - `templates/liquidar.html`
+  - `tests/test_admin_catalog_items.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app templates tests`
+  - `.venv/bin/python -m pytest -q tests/test_admin_catalog_items.py -v`
+- Resultado:
+  - `CatalogoItem` ahora persiste `tipo_item`.
+  - La clasificación automática usa la primera palabra normalizada del nombre, con listas explícitas de prefijos.
+  - Crear, editar e importar catálogo recalculan `tipo_item`.
+  - Liquidación ya no infiere por heurística local; usa el valor de catálogo por nombre normalizado y permite `Seleccionar...` cuando no hay match.
+- Proximo paso:
+  - Validar manualmente un flujo de liquidación con un ítem retornable, uno consumible y uno sin clasificación para confirmar el default real en UI.
+
+## 2026-03-03 12:36 UTC-6 | tool: Codex CLI
+- Objetivo: corregir el caso donde el select de liquidación seguía mostrando `Seleccionar...` para ítems ya clasificables, debido a catálogo histórico con `tipo_item = null`.
+- Tareas: `REQ-092A`
+- Cambios:
+  - `app/crud.py`
+  - `app/main.py`
+  - `app/database.py`
+  - `tests/test_admin_catalog_items.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - La lógica de clasificación quedó centralizada en `app/crud.py`.
+  - `run_migrations()` ahora hace backfill de `catalogo_items.tipo_item` para registros previos.
+  - La pantalla de liquidación usa fallback de clasificación por nombre mientras termina de converger el catálogo persistido.
+- Proximo paso:
+  - Abrir una liquidación con ítems históricos ya existentes y confirmar que el tipo aparezca preseleccionado sin necesidad de editar el catálogo uno por uno.
+
+## 2026-03-03 12:42 UTC-6 | tool: Codex CLI
+- Objetivo: corregir el error de arranque provocado por import circular entre `database.py` y `crud.py` después de mover la clasificación al catálogo.
+- Tareas: `REQ-092B`
+- Cambios:
+  - `app/catalog_types.py`
+  - `app/crud.py`
+  - `app/main.py`
+  - `app/database.py`
+  - `tests/test_admin_catalog_items.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app tests`
+  - `.venv/bin/python - <<'PY' ... from app.main import app ... PY`
+- Resultado:
+  - La clasificación quedó aislada en un módulo sin dependencias ORM.
+  - `app.main` vuelve a importar correctamente y `uvicorn` ya puede arrancar sin `ImportError` circular.
+- Proximo paso:
+  - Levantar la app y validar visualmente una liquidación real para confirmar que el fix técnico también deja visible el default correcto en el select `Tipo`.
+
 ## 2026-03-03 11:21 UTC-6 | tool: Codex CLI
 - Objetivo: agregar una acción exclusiva de admin para borrar por completo el catálogo de items con doble verificación, manteniendo el cambio acotado al módulo de catálogo.
 - Tareas: `REQ-091`

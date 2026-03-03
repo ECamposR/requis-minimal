@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.auth import hash_password
+from app.catalog_types import classify_catalog_item_type
 from app.database import get_db
 from app.main import app
 from app.models import Base, CatalogoItem, Usuario
@@ -75,6 +76,7 @@ def test_admin_catalog_item_crud_flow():
         item = db.query(CatalogoItem).filter(CatalogoItem.nombre == "Canaleta PVC").first()
         assert item is not None
         assert item.activo is True
+        assert item.tipo_item is None
 
         edit_resp = client.post(
             f"/admin/catalogo-items/{item.id}/editar",
@@ -85,6 +87,7 @@ def test_admin_catalog_item_crud_flow():
         db.refresh(item)
         assert item.nombre == "Canaleta PVC 20x12"
         assert item.activo is False
+        assert item.tipo_item is None
 
         delete_resp = client.post(
             f"/admin/catalogo-items/{item.id}/eliminar",
@@ -136,6 +139,8 @@ def test_admin_import_catalog_csv_crea_y_reactiva_items():
         assert cable.activo is True
         assert conector is not None
         assert conector.activo is True
+        assert cable.tipo_item is None
+        assert conector.tipo_item is None
     finally:
         client.close()
         db.close()
@@ -181,6 +186,19 @@ def test_admin_catalog_busqueda_por_q_case_insensitive():
         db.close()
         Base.metadata.drop_all(bind=engine)
         app.dependency_overrides.clear()
+
+
+def test_catalogo_tipo_item_se_clasifica_automaticamente():
+    assert classify_catalog_item_type("ALFOMBRA 2X3") == "RETORNABLE"
+    assert classify_catalog_item_type("SPRAY CITRUS") == "CONSUMIBLE"
+    assert classify_catalog_item_type("CORAZÓN AZUL") == "RETORNABLE"
+    assert classify_catalog_item_type("Cable UTP Cat6") is None
+
+
+def test_attach_catalog_item_defaults_fallback_usa_clasificacion_si_tipo_item_es_null():
+    item = CatalogoItem(nombre="ALFOMBRA 2X3", activo=True, tipo_item=None)
+    assert item.tipo_item is None
+    assert classify_catalog_item_type(item.nombre) == "RETORNABLE"
 
 
 def test_admin_puede_borrar_todo_el_catalogo_con_doble_confirmacion():

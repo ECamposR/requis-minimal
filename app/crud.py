@@ -13,6 +13,7 @@ def now_sv() -> datetime:
 
 from sqlalchemy.orm import Session
 
+from .catalog_types import classify_catalog_item_type
 from .models import Item, Requisicion, Usuario
 
 UNIDAD_POR_DEFECTO = "unidad"
