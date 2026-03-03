@@ -35,6 +35,9 @@
 - `REQ-085A` completada: alta/edicion de usuarios `tecnico` ya no exige contraseña; el PIN pasa a ser el dato obligatorio operativo para firma, manteniendo `puede_iniciar_sesion=False`.
 - Fix posterior aplicado sobre `REQ-085A`: `POST /admin/usuarios` ya no declara `password` como `Form(...)`; ahora acepta valor vacio y la validacion real queda gobernada por rol (tecnico sin contraseña, otros roles con contraseña).
 - `REQ-090A` completada: `jefe_bodega` ya aprueba requisiciones de forma efectiva en backend (no solo por UI/nav), el Home ahora le muestra también los accesos/acciones de aprobar y bodega, y `/aprobar` vuelve a exponer el botón `Gestionar` para ese rol.
+- `REQ-091` completada: admin ya puede borrar todo el catálogo desde una acción dedicada con doble verificación real (checkbox + texto `BORRAR CATALOGO`), sin abrir permisos a otros roles.
+- `REQ-091A` completada: el layout del catálogo admin se reordenó para mostrar `Importar` y `Borrar todo` lado a lado, dejando `Buscar` debajo.
+- `REQ-091B` completada: se corrigió el faltante de CSS (`form-grid-2`) que impedía ver el nuevo layout del catálogo; ahora el orden visual sí se aplica.
 
 ## Despliegue en producción (nuevo frente)
 - Stack Docker + Caddy configurado y listo en el repo (`Dockerfile`, `docker-compose.yml`, `deploy/caddy/`).
@@ -60,8 +63,8 @@
 6. Validar acceso LAN: `http://<IP-servidor>/`
 
 ### Frente funcional (pendiente anterior):
-1. Ejecutar smoke manual con usuario `jefe_bodega`: aprobar una requisición pendiente desde `/aprobar`, confirmar que aparece `Gestionar`, y luego gestionarla en `/bodega`.
-2. Verificar en Home de `jefe_bodega` que se muestran los links operativos de aprobar y bodega sin caer en vistas parciales.
+1. Ejecutar smoke manual en `/admin/catalogo-items`: validar el nuevo orden visual (Importar + Borrar arriba, Buscar abajo) ahora con la grilla CSS ya activa.
+2. Ejecutar smoke manual con usuario `jefe_bodega`: aprobar una requisición pendiente desde `/aprobar`, confirmar que aparece `Gestionar`, y luego gestionarla en `/bodega`.
 
 ## Riesgos abiertos
 - Drift entre lo ya experimentado y lo que se va a rehacer en esta rama.

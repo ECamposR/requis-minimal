@@ -1415,6 +1415,42 @@ def admin_catalogo_items(
     )
 
 
+@app.post("/admin/catalogo-items/eliminar-todos")
+def admin_catalogo_items_eliminar_todos(
+    confirmacion_texto: str = Form(""),
+    confirmacion_check: str | None = Form(None),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+
+    if confirmacion_check != "on":
+        return redirect_with_message(
+            "/admin/catalogo-items",
+            "Debes confirmar explicitamente que deseas borrar todo el catalogo",
+            "error",
+        )
+
+    if confirmacion_texto.strip().upper() != "BORRAR CATALOGO":
+        return redirect_with_message(
+            "/admin/catalogo-items",
+            "Escribe exactamente BORRAR CATALOGO para confirmar",
+            "error",
+        )
+
+    total = db.query(CatalogoItem).count()
+    if total == 0:
+        return redirect_with_message("/admin/catalogo-items", "El catalogo ya esta vacio", "warning")
+
+    db.query(CatalogoItem).delete()
+    db.commit()
+    return redirect_with_message(
+        "/admin/catalogo-items",
+        f"Catalogo eliminado por completo ({total} items)",
+        "warning",
+    )
+
+
 @app.post("/admin/catalogo-items/importar")
 async def admin_catalogo_item_importar(
     archivo: UploadFile = File(...),

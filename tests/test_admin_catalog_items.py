@@ -181,3 +181,52 @@ def test_admin_catalog_busqueda_por_q_case_insensitive():
         db.close()
         Base.metadata.drop_all(bind=engine)
         app.dependency_overrides.clear()
+
+
+def test_admin_puede_borrar_todo_el_catalogo_con_doble_confirmacion():
+    client, db, engine = _build_client()
+    try:
+        db.add_all(
+            [
+                CatalogoItem(nombre="MOPA MOD 24", activo=True),
+                CatalogoItem(nombre="SPRAY CITRUS", activo=True),
+            ]
+        )
+        db.commit()
+
+        _login(client, "admin", "admin123")
+        response = client.post(
+            "/admin/catalogo-items/eliminar-todos",
+            data={"confirmacion_texto": "BORRAR CATALOGO", "confirmacion_check": "on"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 303
+        assert db.query(CatalogoItem).count() == 0
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()
+
+
+def test_admin_no_puede_borrar_todo_el_catalogo_sin_doble_confirmacion():
+    client, db, engine = _build_client()
+    try:
+        db.add(CatalogoItem(nombre="ALFOMBRA 2X3", activo=True))
+        db.commit()
+
+        _login(client, "admin", "admin123")
+        response = client.post(
+            "/admin/catalogo-items/eliminar-todos",
+            data={"confirmacion_texto": "BORRAR", "confirmacion_check": "on"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 303
+        assert db.query(CatalogoItem).count() > 0
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()

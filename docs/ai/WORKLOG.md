@@ -1,5 +1,53 @@
 # Worklog (append-only)
 
+## 2026-03-03 11:21 UTC-6 | tool: Codex CLI
+- Objetivo: agregar una acción exclusiva de admin para borrar por completo el catálogo de items con doble verificación, manteniendo el cambio acotado al módulo de catálogo.
+- Tareas: `REQ-091`
+- Cambios:
+  - `app/main.py`
+  - `templates/admin_catalogo_items.html`
+  - `tests/test_admin_catalog_items.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app templates tests`
+  - `.venv/bin/python -m pytest -q tests/test_admin_catalog_items.py -v`
+- Resultado:
+  - El catálogo ahora tiene una acción destructiva dedicada solo para admin.
+  - La eliminación total exige dos verificaciones: checkbox de confirmación y texto exacto `BORRAR CATALOGO`.
+  - Quedaron agregados tests de éxito y rechazo por confirmación incompleta/incorrecta.
+- Proximo paso:
+  - Ejecutar smoke manual en `/admin/catalogo-items` para validar el flujo visual completo antes de usarlo sobre datos reales.
+
+## 2026-03-03 11:28 UTC-6 | tool: Codex CLI
+- Objetivo: reordenar el layout de tarjetas en catálogo admin sin tocar la lógica del CRUD.
+- Tareas: `REQ-091A`
+- Cambios:
+  - `templates/admin_catalogo_items.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `Importar catalogo` y `Borrar todo el catalogo` ahora comparten la fila superior.
+  - `Buscar en catalogo` queda debajo, separado, con una jerarquía visual más clara.
+- Proximo paso:
+  - Validar manualmente el comportamiento responsive para confirmar que las dos tarjetas superiores colapsan bien en pantallas angostas.
+
+## 2026-03-03 11:32 UTC-6 | tool: Codex CLI
+- Objetivo: corregir el fallo de implementación del nuevo layout de catálogo, donde el template sí cambió pero faltaba la clase CSS que hacía efectiva la grilla.
+- Tareas: `REQ-091B`
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agregó `form-grid-2` al tema y su comportamiento responsive.
+  - El layout de `Importar + Borrar arriba / Buscar abajo` ahora sí tiene soporte visual real.
+- Proximo paso:
+  - Refrescar `/admin/catalogo-items` y validar manualmente desktop + móvil para confirmar que el cambio ya se ve aplicado.
+
 ## 2026-03-03 10:24 UTC-6 | tool: Codex CLI
 - Objetivo: corregir el rol mixto `jefe_bodega` para que combine aprobación + bodega de forma real, empezando por revisar gobernanza y luego cerrar el desfase de permisos.
 - Tareas: `REQ-090A`

@@ -38,6 +38,9 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-089` | `done` | Admin puede eliminar cualquier requisición sin restricción de estado desde `/aprobar`, con confirmación JS y cascade delete de ítems.
 - `REQ-090` | `done` | Nuevo rol `jefe_bodega` que combina `aprobador` + `bodega`: acceso completo a aprobar, bodega y liquidación; ve historial completo de entregas; ambos ítems de nav visibles.
 - `REQ-090A` | `done` | Corrección de permisos/visibilidad de `jefe_bodega`: aprobación operativa habilitada también en backend (`puede_aprobar`) y enlaces del Home alineados con su rol mixto.
+- `REQ-091` | `done` | Admin puede borrar todo el catálogo de items con doble verificación (checkbox + texto exacto), manteniendo la acción exclusiva al rol admin.
+- `REQ-091A` | `done` | Ajuste de layout en catálogo admin: importar y borrar todo comparten fila superior; búsqueda baja a una fila independiente para mejorar jerarquía visual.
+- `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
 
 ## Despliegue Producción
 - `REQ-086` | `done` | Agregar Dockerfile, docker-compose.yml de la app y configuración de Caddy (`deploy/caddy/`) para despliegue LAN con reverse proxy. Red Docker externa `proxy` desacopla Caddy de cada servicio.

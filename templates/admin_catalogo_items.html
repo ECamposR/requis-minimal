@@ -5,23 +5,45 @@
 {{ ui.page_header("Catalogo de Items", "Administra y carga masiva de productos para requisiciones.") }}
 <p class="form-actions"><a href="/admin/catalogo-items/nuevo" role="button">Nuevo item</a></p>
 
-<article class="gestion-card panel view-panel">
-    <h3>Importar catalogo</h3>
-    <form method="POST" action="/admin/catalogo-items/importar" enctype="multipart/form-data" class="gestion-form">
-        <label>
-            Archivo CSV o XLSX
-            <input type="file" name="archivo" accept=".csv,.xlsx" required>
-        </label>
-        <label>
-            <input type="checkbox" name="activar_importados" checked>
-            Marcar items importados como activos
-        </label>
-        <button type="submit">Importar archivo</button>
-    </form>
-    <p class="page-subtitle">
-        Usa una columna con encabezado <code>nombre</code> (o deja el nombre en la primera columna).
-    </p>
-</article>
+<section class="form-grid-2">
+    <article class="gestion-card panel view-panel">
+        <h3>Importar catalogo</h3>
+        <form method="POST" action="/admin/catalogo-items/importar" enctype="multipart/form-data" class="gestion-form">
+            <label>
+                Archivo CSV o XLSX
+                <input type="file" name="archivo" accept=".csv,.xlsx" required>
+            </label>
+            <label>
+                <input type="checkbox" name="activar_importados" checked>
+                Marcar items importados como activos
+            </label>
+            <button type="submit">Importar archivo</button>
+        </form>
+        <p class="page-subtitle">
+            Usa una columna con encabezado <code>nombre</code> (o deja el nombre en la primera columna).
+        </p>
+    </article>
+
+    <article class="gestion-card panel view-panel">
+        <h3>Borrar todo el catalogo</h3>
+        <form method="POST" action="/admin/catalogo-items/eliminar-todos" class="gestion-form">
+            <label>
+                Escribe <code>BORRAR CATALOGO</code> para confirmar
+                <input type="text" name="confirmacion_texto" placeholder="BORRAR CATALOGO" autocomplete="off" required>
+            </label>
+            <label>
+                <input type="checkbox" name="confirmacion_check" required>
+                Confirmo que deseo eliminar todos los items del catalogo
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="danger" onclick="return confirm('¿Eliminar todo el catalogo? Esta accion no se puede deshacer.')">Borrar todo</button>
+            </div>
+        </form>
+        <p class="page-subtitle">
+            Accion exclusiva de administrador. Elimina todos los items del catalogo actual y no se puede deshacer.
+        </p>
+    </article>
+</section>
 
 <article class="gestion-card panel view-panel">
     <h3>Buscar en catalogo</h3>
