@@ -118,7 +118,7 @@ def puede_aprobar(requisicion: Requisicion, rol: str) -> bool:
 
 
 def puede_entregar(requisicion: Requisicion, rol: str) -> bool:
-    if rol not in ["bodega", "admin"]:
+    if rol not in ["bodega", "admin", "jefe_bodega"]:
         return False
     return requisicion.estado == "aprobada"
 
@@ -129,7 +129,7 @@ def puede_liquidar(requisicion: Requisicion, usuario: Usuario) -> bool:
         return False
     if requisicion.delivery_result not in ("completa", "parcial"):
         return False
-    if usuario.rol not in ("admin", "bodega"):
+    if usuario.rol not in ("admin", "bodega", "jefe_bodega"):
         return False
     return True
 
