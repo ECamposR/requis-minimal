@@ -199,11 +199,42 @@ a[role="button"].danger:hover {
     margin-bottom: 0.85rem;
 }
 
+.item-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(110px, 0.8fr) minmax(190px, 1fr) auto;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
 .form-actions {
     display: flex;
     gap: 0.55rem;
     flex-wrap: wrap;
     margin-top: 0.7rem;
+}
+
+.liq-type-main {
+    font-weight: 700;
+}
+
+.liq-type-context {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.82rem;
+}
+
+.liquidacion-type-lock {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.1rem;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid rgba(71, 136, 230, 0.26);
+    border-radius: 999px;
+    background: rgba(71, 136, 230, 0.1);
+    color: #12365f;
+    font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
 table {

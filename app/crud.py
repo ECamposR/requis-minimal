@@ -13,7 +13,6 @@ def now_sv() -> datetime:
 
 from sqlalchemy.orm import Session
 
-from .catalog_types import classify_catalog_item_type
 from .models import Item, Requisicion, Usuario
 
 UNIDAD_POR_DEFECTO = "unidad"
@@ -58,12 +57,14 @@ def agregar_item_db(
     descripcion: str,
     cantidad: float,
     unidad: str = UNIDAD_POR_DEFECTO,
+    contexto_operacion: str | None = None,
 ) -> Item:
     item = Item(
         requisicion_id=requisicion_id,
         descripcion=descripcion,
         cantidad=float(cantidad),
         unidad=unidad,
+        contexto_operacion=contexto_operacion,
     )
     db.add(item)
     db.commit()
@@ -102,11 +103,16 @@ def parse_items_from_form(form_data: Any) -> list[dict[str, Any]]:
             raise ValueError("Cantidad de item debe ser mayor que cero")
 
         unidad = str(row.get("unidad", UNIDAD_POR_DEFECTO)).strip() or UNIDAD_POR_DEFECTO
+        contexto_operacion_raw = str(row.get("contexto_operacion", "")).strip().lower()
+        if contexto_operacion_raw not in ("", "reposicion", "instalacion_inicial"):
+            raise ValueError("Contexto de operacion invalido")
+        contexto_operacion = contexto_operacion_raw or None
         items.append(
             {
                 "descripcion": descripcion,
                 "cantidad": cantidad,
                 "unidad": unidad,
+                "contexto_operacion": contexto_operacion,
             }
         )
     return items
@@ -146,6 +152,7 @@ def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
     mode = str(raw_mode).upper().strip()
     if mode not in ("RETORNABLE", "CONSUMIBLE"):
         mode = "RETORNABLE"
+    contexto_operacion = str(getattr(item, "contexto_operacion", None) or "").strip().lower() or "reposicion"
     expected_return = (used + not_used) if mode == "RETORNABLE" else not_used
     diferencia = expected_return - returned
 
@@ -183,7 +190,12 @@ def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
                 "data": {"returned": returned, "delivered": delivered},
             }
         )
-    if mode == "RETORNABLE" and delivered > 0 and returned < delivered:
+    if (
+        mode == "RETORNABLE"
+        and contexto_operacion != "instalacion_inicial"
+        and delivered > 0
+        and returned < delivered
+    ):
         alertas.append(
             {
                 "type": "ALERTA_RETORNO_INCOMPLETO",
@@ -193,6 +205,7 @@ def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
                     "returned": returned,
                     "missing": delivered - returned,
                     "delta": delivered - returned,
+                    "contexto_operacion": contexto_operacion,
                 },
             }
         )

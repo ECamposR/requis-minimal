@@ -59,3 +59,23 @@
 - Impacto:
   - No cambia la base funcional previa (`REQ-001` a `REQ-059`).
   - A partir de este punto, liquidacion se rediseña incrementalmente y cada paso debe quedar registrado en `TASKS` + `WORKLOG` + `HANDOFF`.
+
+## ADR-005 | 2026-03-03 | Separar tipo fisico del item y contexto operativo
+- Contexto:
+  - `CatalogoItem.tipo_item` ya clasifica el item como `RETORNABLE` o `CONSUMIBLE`.
+  - Esa clasificacion no alcanza para decidir si un retorno debe esperarse en todos los casos.
+  - En instalacion inicial de un item retornable, `regresa = 0` es un caso valido y generaba falsos positivos en `ALERTA_RETORNO_INCOMPLETO`.
+- Decision:
+  - Agregar `Item.contexto_operacion` por linea de requisicion con valores `instalacion_inicial` o `reposicion`.
+  - Mantener `tipo_item`/`liquidation_mode` como definicion fisica del item.
+  - Usar `contexto_operacion` para modular solo la alerta de retorno incompleto, sin alterar el resto de validaciones y flujo.
+- Motivo:
+  - Separar el contexto operativo del comportamiento fisico evita sobrecargar `RETORNABLE` con semantica de negocio que no siempre aplica.
+  - Reduce falsos positivos sin degradar trazabilidad.
+- Alternativas descartadas:
+  - Reinterpretar `RETORNABLE` para que no implique expectativa de retorno.
+  - Resolver el caso manualmente via comentarios o excepciones operativas.
+- Impacto:
+  - Nueva columna en `items`.
+  - El formulario de creacion captura el contexto por linea.
+  - El detalle de liquidacion puede mostrar `RETORNABLE / Instalacion inicial` para auditoria.

@@ -48,11 +48,17 @@
                     <tr data-liquidacion-row {% if item.id in item_incompletos %}class="row-incomplete"{% endif %}>
                         <td>{{ item.descripcion }}</td>
                         <td>
+                            {% set resolved_mode = item.default_mode if item.default_mode in ['RETORNABLE', 'CONSUMIBLE'] else values.get('mode', item.default_mode) %}
+                            {% if item.default_mode in ['RETORNABLE', 'CONSUMIBLE'] %}
+                            <input type="hidden" name="mode_{{ item.id }}" value="{{ item.default_mode }}" data-mode>
+                            <span class="liquidacion-type-lock">{{ item.default_mode }}</span>
+                            {% else %}
                             <select name="mode_{{ item.id }}" data-mode>
-                                <option value="" {% if not values.get('mode', item.default_mode) %}selected{% endif %}>Seleccionar...</option>
-                                <option value="RETORNABLE" {% if values.get('mode', item.default_mode) == 'RETORNABLE' %}selected{% endif %}>RETORNABLE</option>
-                                <option value="CONSUMIBLE" {% if values.get('mode', item.default_mode) == 'CONSUMIBLE' %}selected{% endif %}>CONSUMIBLE</option>
+                                <option value="" {% if not resolved_mode %}selected{% endif %}>Seleccionar...</option>
+                                <option value="RETORNABLE" {% if resolved_mode == 'RETORNABLE' %}selected{% endif %}>RETORNABLE</option>
+                                <option value="CONSUMIBLE" {% if resolved_mode == 'CONSUMIBLE' %}selected{% endif %}>CONSUMIBLE</option>
                             </select>
+                            {% endif %}
                         </td>
                         <td data-delivered="{{ item.cantidad_entregada }}">{{ item.cantidad_entregada }}</td>
                         <td>

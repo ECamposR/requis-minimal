@@ -1,5 +1,53 @@
 # Worklog (append-only)
 
+## 2026-03-03 14:05 UTC-6 | tool: Codex CLI
+- Objetivo: alinear la liquidación con el catálogo como fuente de verdad, quitando edición manual de `Tipo` cuando el ítem ya está clasificado.
+- Tareas: `REQ-093A`
+- Cambios:
+  - `app/main.py`
+  - `templates/liquidar.html`
+  - `static/theme.css`
+  - `static/style.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app templates static`
+- Resultado:
+  - La pantalla de liquidación muestra `Tipo` como valor bloqueado cuando `CatalogoItem.tipo_item` existe.
+  - El selector solo sigue disponible para ítems sin clasificación.
+  - Backend fuerza el tipo proveniente de catálogo y evita override manual por POST.
+- Proximo paso:
+  - Validar manualmente una liquidación mixta con un item clasificado y otro sin clasificación para confirmar que solo el segundo conserva el select.
+
+## 2026-03-03 13:35 UTC-6 | tool: Codex CLI
+- Objetivo: modelar `contexto_operacion` por línea de ítem para distinguir instalación inicial de reposición sin alterar el tipo físico del ítem.
+- Tareas: `REQ-093`
+- Cambios:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/crud.py`
+  - `app/main.py`
+  - `templates/crear_requisicion.html`
+  - `static/app.js`
+  - `static/theme.css`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/DECISIONS.md`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app templates static tests`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k "contexto_operacion or retorno_incompleto or detalle_liquidada_incluye_campos" -v`
+- Resultado:
+  - `Item.contexto_operacion` quedó persistido con migración incremental.
+  - La creación de requisición ya captura `Reposicion` / `Instalacion inicial` por línea.
+  - `ALERTA_RETORNO_INCOMPLETO` solo aplica a ítems `RETORNABLE` que no sean `instalacion_inicial`.
+  - El detalle de requisición liquidada muestra el contexto junto al tipo para trazabilidad.
+  - Validación ejecutada: `6 passed`.
+- Proximo paso:
+  - Hacer smoke manual end-to-end con un retornable en `Instalación inicial` y validar que `Regresa = 0` no dispare retorno incompleto.
+
 ## 2026-03-03 11:37 UTC-6 | tool: Codex CLI
 - Objetivo: mover la clasificación retornable/consumible al catálogo como fuente de verdad sin introducir FK nueva en `Item`.
 - Tareas: `REQ-092`

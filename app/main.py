@@ -158,6 +158,16 @@ def normalize_optional_text(value: str | None) -> str | None:
     return cleaned or None
 
 
+def normalize_contexto_operacion(value: str | None) -> str | None:
+    cleaned = normalize_optional_text(value)
+    if cleaned is None:
+        return None
+    lowered = cleaned.lower()
+    if lowered not in ("reposicion", "instalacion_inicial"):
+        return None
+    return lowered
+
+
 def redirect_with_message(url: str, message: str, level: str = "success") -> RedirectResponse:
     safe_msg = quote_plus(message)
     safe_level = quote_plus(level)
@@ -965,6 +975,7 @@ async def liquidar_guardar(
     if not puede_liquidar(req, current_user):
         return redirect_with_message("/bodega", "Requisicion no elegible para liquidacion", "error")
 
+    attach_catalog_item_defaults(req.items, db)
     form_data = await request.form()
     prokey_ref = str(form_data.get("prokey_ref", "")).strip() or None
     liquidation_comment = str(form_data.get("liquidation_comment", "")).strip() or None
@@ -991,7 +1002,11 @@ async def liquidar_guardar(
         qty_returned_raw = str(form_data.get(f"qty_returned_{item.id}", "0")).strip() or "0"
         qty_used_raw = str(form_data.get(f"qty_used_{item.id}", "0")).strip() or "0"
         qty_not_used_raw = str(form_data.get(f"qty_not_used_{item.id}", form_data.get(f"qty_left_{item.id}", "0"))).strip() or "0"
-        mode_raw = str(form_data.get(f"mode_{item.id}", "RETORNABLE")).strip().upper() or "RETORNABLE"
+        locked_mode = str(getattr(item, "default_mode", "") or "").strip().upper()
+        if locked_mode in ("RETORNABLE", "CONSUMIBLE"):
+            mode_raw = locked_mode
+        else:
+            mode_raw = str(form_data.get(f"mode_{item.id}", "")).strip().upper()
         note_raw = str(form_data.get(f"note_{item.id}", "")).strip()
         note = note_raw or None
         liquidacion_values[item.id] = {
@@ -1700,6 +1715,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             "cantidad": item.cantidad,
             "cantidad_entregada": item.cantidad_entregada,
             "unidad": item.unidad,
+            "contexto_operacion": normalize_contexto_operacion(item.contexto_operacion),
         }
         if req.estado == "liquidada":
             mode = (item.liquidation_mode or "RETORNABLE").upper()
@@ -1739,6 +1755,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                     "qty_ocupo": qty_used + qty_not_used,
                     "pk_ingreso_qty": pk_ingreso_qty,
                     "delta": difference,
+                    "contexto_operacion": normalize_contexto_operacion(item.contexto_operacion),
                 }
             )
         items_payload.append(item_data)

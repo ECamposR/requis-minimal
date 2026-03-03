@@ -82,6 +82,13 @@ function alertMessage(alert) {
     return "";
 }
 
+function contextoOperacionLabel(value) {
+    const key = String(value || "").toLowerCase();
+    if (key === "instalacion_inicial") return "Instalación inicial";
+    if (key === "reposicion") return "Reposición";
+    return "";
+}
+
 function getCurrentSelectedValues() {
     return Array.from(document.querySelectorAll("#items-container input[name*='[descripcion]']"))
         .map((input) => input.value.trim())
@@ -204,12 +211,27 @@ function agregarItem() {
     qty.min = "0.01";
     qty.required = true;
 
+    const contexto = document.createElement("select");
+    contexto.name = `items[${itemCount}][contexto_operacion]`;
+    contexto.setAttribute("aria-label", "Contexto operativo del item");
+
+    const reposicion = document.createElement("option");
+    reposicion.value = "reposicion";
+    reposicion.textContent = "Reposicion";
+    reposicion.selected = true;
+
+    const instalacion = document.createElement("option");
+    instalacion.value = "instalacion_inicial";
+    instalacion.textContent = "Instalacion inicial";
+
+    contexto.append(reposicion, instalacion);
+
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = "X";
     btn.addEventListener("click", () => eliminarItem(btn));
 
-    div.append(input, qty, btn);
+    div.append(input, qty, contexto, btn);
     container.appendChild(div);
     itemCount++;
     syncItemInputs();
@@ -291,12 +313,16 @@ function verDetalle(id) {
                         ? `<div class="liq-item-note item-note ${noteAttentionClass}">${escapeHtml(i.item_liquidation_note)}</div>`
                         : "";
                     const mode = (i.mode || "RETORNABLE").toUpperCase();
+                    const contexto = contextoOperacionLabel(i.contexto_operacion);
+                    const tipoContexto = contexto
+                        ? `<div class="liq-type-main">${escapeHtml(mode)}</div><div class="liq-type-context muted">${escapeHtml(contexto)}</div>`
+                        : escapeHtml(mode);
                     const ingresoPk = mode === "RETORNABLE" ? fmtQty(i.pk_ingreso_qty) : '<span class="muted">—</span>';
                     const differenceText = difference > 0 ? `+${fmtQty(difference)}` : fmtQty(difference);
                     return `<tr>
                         <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${noteHtml}</td>
                         <td class="qty-col td-num">${fmtQty(i.cantidad_entregada)}</td>
-                        <td class="qty-col td-center">${escapeHtml(mode)}</td>
+                        <td class="qty-col td-center">${tipoContexto}</td>
                         <td class="qty-col td-num">${fmtQty(i.used ?? i.qty_used)}</td>
                         <td class="qty-col td-num">${fmtQty(i.not_used ?? i.qty_left_at_client)}</td>
                         <td class="qty-col td-num">${fmtQty(i.returned ?? i.qty_returned_to_warehouse)}</td>

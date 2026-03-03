@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.auth import hash_password
-from app.crud import calcular_alertas_item, puede_liquidar
+from app.crud import agregar_item_db, calcular_alertas_item, puede_liquidar
 from app.main import (
     detalle_requisicion,
     editar_prokey_ref_form,
@@ -174,6 +174,31 @@ def test_puede_liquidar_rechaza_rol_user(db_session: Session):
     req = create_req_entregada(db_session, delivery_result="completa")
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     assert puede_liquidar(req, user) is False
+
+
+def test_agregar_item_db_persiste_contexto_operacion(db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    req = Requisicion(
+        folio=f"REQ-CTX-{datetime.now().timestamp()}",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="Test contexto",
+        created_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    item = agregar_item_db(
+        db_session,
+        req.id,
+        descripcion="MOPA AZUL",
+        cantidad=2,
+        contexto_operacion="instalacion_inicial",
+    )
+
+    assert item.contexto_operacion == "instalacion_inicial"
 
 
 @pytest.mark.anyio
@@ -352,6 +377,18 @@ def test_retornable_alerta_retorno_incompleto(db_session: Session):
     item.liquidation_mode = "RETORNABLE"
     alertas = calcular_alertas_item(item)
     assert any(a["type"] == "ALERTA_RETORNO_INCOMPLETO" and a["severity"] == "warn" for a in alertas)
+
+
+def test_retorno_incompleto_no_aplica_en_instalacion_inicial(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=3)
+    item = get_item(db_session, req)
+    item.qty_used = 3
+    item.qty_left_at_client = 0
+    item.qty_returned_to_warehouse = 0
+    item.liquidation_mode = "RETORNABLE"
+    item.contexto_operacion = "instalacion_inicial"
+    alertas = calcular_alertas_item(item)
+    assert not any(a["type"] == "ALERTA_RETORNO_INCOMPLETO" for a in alertas)
 
 
 @pytest.mark.anyio
@@ -630,6 +667,8 @@ async def test_liquidar_rechaza_rol_no_permitido(db_session: Session):
 async def test_detalle_liquidada_incluye_campos(db_session: Session):
     req = create_req_entregada(db_session, cantidad=5)
     item = get_item(db_session, req)
+    item.contexto_operacion = "instalacion_inicial"
+    db_session.commit()
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     await liquidar_guardar(
         req.id,
@@ -660,6 +699,7 @@ async def test_detalle_liquidada_incluye_campos(db_session: Session):
     assert "qty_left_at_client" in liq_item
     assert "item_liquidation_note" in liq_item
     assert "liquidation_alerts" in liq_item
+    assert liq_item["contexto_operacion"] == "instalacion_inicial"
 
 
 @pytest.mark.anyio

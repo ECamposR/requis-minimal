@@ -40,6 +40,8 @@
 - `REQ-092` completada: `CatalogoItem.tipo_item` ya persiste el default `RETORNABLE/CONSUMIBLE/null`, calculado automáticamente por primera palabra; la pantalla de liquidación toma ese valor desde catálogo (por nombre normalizado) y deja selección explícita cuando no hay match.
 - `REQ-092A` completada: se corrigió el caso de catálogo histórico sin `tipo_item`; `run_migrations()` ahora hace backfill y liquidación tiene fallback para no mostrar `Seleccionar...` cuando el nombre sí clasifica.
 - `REQ-092B` completada: se eliminó la import circular creada por el backfill de catálogo; la clasificación ahora vive en `app/catalog_types.py`, reutilizable tanto por migraciones como por runtime.
+- `REQ-093` completada: cada `Item` ahora persiste `contexto_operacion` (`reposicion` / `instalacion_inicial`) desde la creación de la requisición; el detalle de liquidación lo muestra junto al tipo y `ALERTA_RETORNO_INCOMPLETO` ya no se genera para instalaciones iniciales.
+- `REQ-093A` completada: en liquidación el `Tipo` ya no se puede cambiar si el catálogo lo definió; UI lo muestra como chip de solo lectura y backend ignora overrides manuales, manteniendo selector solo para ítems sin clasificación.
 - `REQ-091B` completada: se corrigió el faltante de CSS (`form-grid-2`) que impedía ver el nuevo layout del catálogo; ahora el orden visual sí se aplica.
 
 ## Despliegue en producción (nuevo frente)
@@ -66,8 +68,8 @@
 6. Validar acceso LAN: `http://<IP-servidor>/`
 
 ### Frente funcional (pendiente anterior):
-1. Levantar la app y abrir una liquidación con ítems históricos para confirmar que el select `Tipo` ya sale preseleccionado y que el servidor arranca sin error de importación.
-2. Confirmar en liquidación que solo los ítems realmente sin match quedan en `Seleccionar...`.
+1. Crear una requisición con un item retornable marcado como `Instalación inicial`, entregarla y liquidarla con `Regresa = 0` para confirmar que no aparece `Retorno incompleto`.
+2. Abrir el detalle de esa requisición y verificar que la columna `Tipo` muestre el contexto operativo junto al modo (`RETORNABLE / Instalación inicial`).
 
 ## Riesgos abiertos
 - Drift entre lo ya experimentado y lo que se va a rehacer en esta rama.
