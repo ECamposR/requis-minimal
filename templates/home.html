@@ -33,7 +33,7 @@
         </article>
 
         <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'aprobador'] %}
+            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
             <a href="/aprobar?estado=aprobada" class="kpi-detail-link">Ver detalle &gt;</a>
             {% else %}
             <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
@@ -46,7 +46,7 @@
         </article>
 
         <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'aprobador'] %}
+            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
             <a href="/aprobar?estado=rechazada" class="kpi-detail-link">Ver detalle &gt;</a>
             {% else %}
             <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
@@ -59,7 +59,7 @@
         </article>
 
         <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'bodega'] %}
+            {% if current_user.rol in ['admin', 'bodega', 'jefe_bodega'] %}
             <a href="/bodega?vista=historial" class="kpi-detail-link">Ver detalle &gt;</a>
             {% else %}
             <a href="/mis-requisiciones" class="kpi-detail-link">Ver detalle &gt;</a>
@@ -72,7 +72,7 @@
         </article>
 
         <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'aprobador'] %}
+            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
             <a href="/aprobar?estado=pendiente_aprobar" class="kpi-detail-link">Ver detalle &gt;</a>
             {% else %}
             <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
@@ -128,9 +128,9 @@
 
         <article class="home-panel quick-actions-panel">
             <h3>Acciones Rápidas</h3>
-            {% if current_user.rol in ['admin', 'aprobador'] %}
+            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
             {% set buscar_href = '/aprobar' %}
-            {% elif current_user.rol in ['bodega'] %}
+            {% elif current_user.rol in ['bodega', 'jefe_bodega'] %}
             {% set buscar_href = '/bodega' %}
             {% else %}
             {% set buscar_href = '/mis-requisiciones' %}
@@ -144,7 +144,7 @@
                 <span class="qa-arrow" aria-hidden="true">&gt;</span>
             </a>
 
-            {% if current_user.rol in ['admin', 'aprobador'] %}
+            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
             <a href="/aprobar?estado=pendiente_aprobar" class="quick-action-item">
                 <span class="qa-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>

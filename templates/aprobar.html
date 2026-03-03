@@ -76,7 +76,7 @@
         </td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td class="table-actions">
-            {% if req.estado == 'pendiente' and current_user.rol in ['admin', 'aprobador'] %}
+            {% if req.estado == 'pendiente' and current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
             <a href="/aprobar/{{ req.id }}/gestionar" role="button" class="secondary">Gestionar</a>
             {% elif req.estado == 'pendiente' %}
             <small class="status-muted">Sin permiso para gestionar</small>

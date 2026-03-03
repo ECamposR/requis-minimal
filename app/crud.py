@@ -114,7 +114,7 @@ def parse_items_from_form(form_data: Any) -> list[dict[str, Any]]:
 def puede_aprobar(requisicion: Requisicion, rol: str) -> bool:
     if requisicion.estado != "pendiente":
         return False
-    return rol in ["admin", "aprobador"]
+    return rol in ["admin", "aprobador", "jefe_bodega"]
 
 
 def puede_entregar(requisicion: Requisicion, rol: str) -> bool:

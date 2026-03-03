@@ -1,5 +1,25 @@
 # Worklog (append-only)
 
+## 2026-03-03 10:24 UTC-6 | tool: Codex CLI
+- Objetivo: corregir el rol mixto `jefe_bodega` para que combine aprobación + bodega de forma real, empezando por revisar gobernanza y luego cerrar el desfase de permisos.
+- Tareas: `REQ-090A`
+- Cambios:
+  - `app/crud.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `pytest -q tests/test_basic_flow.py -k jefe_bodega -v`
+- Resultado:
+  - `jefe_bodega` ya puede aprobar requisiciones en backend porque `puede_aprobar()` lo reconoce como rol válido.
+  - Home quedó alineado con el rol mixto: muestra accesos y acciones tanto de aprobar como de bodega.
+  - `/aprobar` volvió a mostrar `Gestionar` para requisiciones pendientes cuando el usuario es `jefe_bodega`.
+  - Se agregaron pruebas específicas para aprobación real, visibilidad operativa en Home y disponibilidad de gestión en `/aprobar`.
+- Proximo paso:
+  - Ejecutar smoke manual con `jefe_bodega` en `/aprobar` y `/bodega` para validar la experiencia integrada end-to-end.
+
 ## 2026-02-10 14:52 UTC-6 | tool: Codex CLI
 - Objetivo: Ejecutar fase de inicio para colaboracion multi-IA.
 - Tareas: `REQ-001`, `REQ-002`, `REQ-003`, `REQ-004`.

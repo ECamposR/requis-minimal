@@ -305,6 +305,65 @@ def test_aprobador_puede_aprobar_otra_area(client: TestClient, db_session: Sessi
     assert req.approved_by == aprobador.id
 
 
+def test_jefe_bodega_puede_aprobar_requisicion(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    jefe_bodega = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
+
+    req = Requisicion(
+        folio="REQ-0099",
+        solicitante_id=user.id,
+        departamento="Ventas",
+        estado="pendiente",
+        justificacion="Requisicion para validar rol mixto jefe_bodega",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "jefe.bodega", "pass123")
+    response = client.post(
+        f"/aprobar/{req.id}",
+        data={"comentario": "Aprobada desde rol combinado"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "aprobada"
+    assert req.approved_by == jefe_bodega.id
+
+
+def test_aprobar_view_muestra_gestion_para_jefe_bodega(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    req = Requisicion(
+        folio="REQ-0100",
+        solicitante_id=user.id,
+        departamento="Ventas",
+        estado="pendiente",
+        justificacion="Pendiente visible para jefe_bodega",
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "jefe.bodega", "pass123")
+    response = client.get("/aprobar")
+
+    assert response.status_code == 200
+    assert f"/aprobar/{req.id}/gestionar" in response.text
+
+
+def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
+    login(client, "jefe.bodega", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert '/aprobar?estado=aprobada' in html
+    assert '/aprobar?estado=rechazada' in html
+    assert '/aprobar?estado=pendiente_aprobar' in html
+    assert '/bodega?vista=historial' in html
+
+
 def test_aprobador_puede_abrir_vista_gestion_aprobacion(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     req = Requisicion(
