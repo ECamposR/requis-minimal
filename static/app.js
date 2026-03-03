@@ -390,7 +390,7 @@ function verDetalle(id) {
                                 <th class="qty-col">No usado</th>
                                 <th class="qty-col">Regresa</th>
                                 <th class="qty-col" title="Diferencia de retorno: si falta equipo por regresar muestra 'Falta'; si regresó de más muestra 'Extra'">DIF</th>
-                                <th class="qty-col" title="Pendiente de ingresar en Prokey por bodega (solo retornables)">Ingreso PK</th>
+                                <th class="qty-col" title="Pendiente de ingresar en Prokey por bodega (solo retornables)">Ingreso PK (Bodega)</th>
                                 <th>Alertas</th>
                             </tr></thead>
                             <tbody>

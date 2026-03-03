@@ -1,5 +1,20 @@
 # Worklog (append-only)
 
+## 2026-03-03 14:41 UTC-6 | tool: Codex CLI
+- Objetivo: aclarar el encabezado de `Ingreso PK` en el detalle liquidado para explicitar que corresponde a la operación de bodega.
+- Tareas: `REQ-093C`
+- Cambios:
+  - `static/app.js`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall static`
+- Resultado:
+  - El encabezado del detalle liquidado ahora dice `Ingreso PK (Bodega)`.
+- Proximo paso:
+  - Validar visualmente que el copy no rompa el ancho de la tabla en resoluciones medias.
+
 ## 2026-03-03 14:32 UTC-6 | tool: Codex CLI
 - Objetivo: corregir la semántica visual de `DIF` en el detalle liquidado para que un faltante no se lea como sobrante por el signo `+`.
 - Tareas: `REQ-093B`
