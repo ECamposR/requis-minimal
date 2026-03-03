@@ -1040,7 +1040,7 @@ async def liquidar_guardar(
                 status_code=200,
             )
 
-        delivered = int(item.cantidad_entregada or 0)
+        delivered = round(float(item.cantidad_entregada or 0), 4)
         validation_error = validar_liquidacion_item(delivered, qty_used, qty_not_used, qty_returned, mode_raw)
         if validation_error:
             item_incompletos.append(item.id)
