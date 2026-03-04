@@ -16,6 +16,7 @@ Uso:
 
 import io
 import json
+import os
 from collections import Counter
 from datetime import datetime
 
@@ -33,6 +34,7 @@ MB  = 12 * mm
 UW  = PW - ML - MR       # ≈ 533 pt
 
 GAP = 5 * mm             # separación vertical entre secciones
+LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "static", "branding", "logo-prohygiene-es.png")
 
 # ─── Paleta (Arctic Glass, fiel a la app) ────────────────────────────────────
 C_PAGE_BG   = colors.HexColor("#e8f0fe")   # fondo página
@@ -236,12 +238,27 @@ def _header(cv, req, folio, top):
     _box(cv, ML, top, UW, H, fill=C_HDR_BG, r=5)
 
     # Empresa (izquierda)
-    _str(cv, ML + 6, top - 3,  "ProHygiene",
-         font="Helvetica-Bold", size=13, color=C_WHITE)
-    _str(cv, ML + 6, top - 3 - 13 - 2, "ENMANUEL, S.A. DE C.V.",
+    logo_x = ML + 6
+    logo_top = top - 2
+    logo_w = 34 * mm
+    logo_h = 11 * mm
+    try:
+        cv.drawImage(
+            LOGO_PATH,
+            logo_x,
+            logo_top - logo_h,
+            width=logo_w,
+            height=logo_h,
+            preserveAspectRatio=True,
+            mask="auto",
+        )
+    except Exception:
+        _str(cv, logo_x, top - 3, "ProHygiene",
+             font="Helvetica-Bold", size=13, color=C_WHITE)
+    _str(cv, ML + 14, top - 29, "ENMANUEL, S.A. DE C.V.",
          font="Helvetica", size=6.5,
          color=colors.HexColor("#93c5fd"))
-    _str(cv, ML + 6, top - 3 - 13 - 2 - 6.5 - 2,
+    _str(cv, ML + 14, top - 36,
          "Sistema interno de requisiciones",
          font="Helvetica", size=5.5,
          color=colors.HexColor("#bfdbfe"))
