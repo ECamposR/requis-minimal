@@ -62,9 +62,6 @@ C_RED_BD    = colors.HexColor("#fca5a5")
 ALERT_MAP = {
     "ALERTA_FALTANTE":           "Faltante",
     "ALERTA_EXCEDENTE":          "Excedente",
-    "ALERTA_SOBRANTE":          "Sobrante",
-    "ALERTA_RETORNO_EXTRA":     "Retorno extra",
-    "ALERTA_SALIDA_SIN_SOPORTE":"Inconsistencia",
     "ALERTA_CONSUMO_CERO":       "Consumo cero",
     "ALERTA_RETORNO_INCOMPLETO": "Retorno incompleto",
     "ALERTA_SIN_PROKEY":         "Sin ProKey",
@@ -149,12 +146,6 @@ def _parse_alerts(raw):
         return json.loads(raw)
     except Exception:
         return []
-
-
-def _alert_type(alert):
-    if isinstance(alert, dict):
-        return str(alert.get("type") or "")
-    return str(alert or "")
 
 
 def _fmt(val, *, date_only=False):
@@ -280,7 +271,7 @@ def _header(cv, req, folio, top):
 # Altura fija de la card.  Calculamos: franja(3mm) + título(5mm) + sep(2mm) + 4filas×(5.5+2+8.5+4)mm
 # Cada fila label+valor: lsize=5.5 gap=2 vsize=8 padding_bajo=4 → 19.5pt ≈ 7mm
 # 4 filas = 28mm  +  título 5mm  +  franja 3mm  +  padding top 3mm = 39mm → redondeamos a 44mm
-CARD_H      = 44 * mm
+CARD_H      = 57 * mm
 CARD_FRANJA = 3 * mm    # franja de color top
 CARD_PAD    = 4 * mm    # padding horizontal interior
 
@@ -383,7 +374,8 @@ def _card_alertas(cv, req, x, top, w):
     all_al = []
     for it in items:
         all_al.extend(_parse_alerts(it.get("liquidation_alerts")))
-    high = sum(1 for a in all_al if str(getattr(a, "get", lambda *_: None)("severity") or "") == "high")
+    high  = sum(1 for a in all_al
+                if any(k in a for k in ("FALTANTE", "INCOMPLETO", "EXCEDENTE")))
     total = len(all_al)
 
     ROW_GAP = 5
@@ -400,8 +392,8 @@ def _card_alertas(cv, req, x, top, w):
          font="Helvetica", size=5.5, color=C_GRAY2)
     cur -= 5.5 + 1.5
     if all_al:
-        cnt = Counter(_alert_type(alert) for alert in all_al if _alert_type(alert))
-        top_k = cnt.most_common(1)[0][0] if cnt else ""
+        cnt    = Counter(all_al)
+        top_k  = cnt.most_common(1)[0][0]
         top_lb = ALERT_MAP.get(top_k, top_k)
         _str(cv, x, cur, top_lb, font="Helvetica-Bold",
              size=8, color=C_RED, max_ch=24)
@@ -426,9 +418,25 @@ _COLS = [
     ("Alertas",      0.135, "center"),
 ]
 
-HDR_H  = 8  * mm    # altura cabecera tabla
-ROW_H  = 11 * mm    # altura fila normal
+HDR_H  = 8   * mm   # altura cabecera tabla
+ROW_H  = 11  * mm   # altura base por fila (1 línea de descripción)
 NOTE_H = 4.5 * mm   # altura extra si tiene nota
+DESC_LINE_H = 7      # pt adicionales por línea extra en descripción
+# Chars aprox que caben en 1 línea de la col Descripción (ancho ≈ 0.255 × UW)
+_DESC_CHARS = 26
+
+
+def _desc_lines(text):
+    """Divide la descripción en líneas que caben en la columna."""
+    return _wrap(str(text), max_ch=_DESC_CHARS)
+
+
+def _row_height(item):
+    """Calcula la altura real de la fila según líneas de descripción y nota."""
+    desc_l  = len(_desc_lines(item.get("descripcion", "")))
+    extra_l = max(0, desc_l - 1) * DESC_LINE_H   # líneas extra más allá de la 1ª
+    nota_h  = NOTE_H if item.get("nota_liquidacion") else 0
+    return ROW_H + extra_l + nota_h
 
 
 def _items_table(cv, req, top):
@@ -436,8 +444,7 @@ def _items_table(cv, req, top):
     widths  = [UW * f for _, f, _ in _COLS]
     x0      = ML
 
-    rows_h  = [ROW_H + (NOTE_H if it.get("nota_liquidacion") else 0)
-               for it in items]
+    rows_h  = [_row_height(it) for it in items]
     T_H     = HDR_H + sum(rows_h)
 
     # Fondo blanco de toda la tabla
@@ -446,13 +453,11 @@ def _items_table(cv, req, top):
 
     # ── Cabecera ──
     _box(cv, x0, top, UW, HDR_H, fill=C_HDR_BG, r=4)
-    # Tapar esquinas redondeadas en la parte inferior de la cabecera
     _box(cv, x0, top - HDR_H / 2, UW, HDR_H / 2, fill=C_HDR_BG, r=0)
 
     cx = x0
     for (lbl, _, align), w in zip(_COLS, widths):
         tx = cx + w / 2 if align == "center" else cx + 3
-        # Centrar verticalmente el texto en la cabecera
         _str(cv, tx, top - (HDR_H - 7) / 2,
              lbl, font="Helvetica-Bold", size=6.5,
              color=C_WHITE, align=align)
@@ -463,8 +468,8 @@ def _items_table(cv, req, top):
     # ── Filas de datos ──
     for i, item in enumerate(items):
         rh     = rows_h[i]
-        alerts = _parse_alerts(item.get("liquidation_alerts"))
         nota   = item.get("nota_liquidacion")
+        alerts = _parse_alerts(item.get("liquidation_alerts"))
 
         # Fondo alternado
         if i % 2 == 0:
@@ -473,16 +478,16 @@ def _items_table(cv, req, top):
         # Separador inferior
         _hline(cv, x0, cur_top - rh, UW, color=C_SEP, lw=0.3)
 
-        # Centro vertical de la fila (sólo ROW_H, no la nota)
-        row_mid = cur_top - ROW_H / 2
+        # Altura de la zona de datos (sin nota)
+        data_h  = rh - (NOTE_H if nota else 0)
+        row_mid = cur_top - data_h / 2   # centro vertical de la zona de datos
 
         dif_lbl, dif_fc, dif_bg, dif_bd = _dif_chip(item)
         mode_s  = (item.get("liquidation_mode") or "—").capitalize()
         ctx_s   = (item.get("contexto_operacion") or "—").replace("_", " ").title()
-        pk_val = item.get("prokey_ref") or "—"
-        first_alert_type = _alert_type(alerts[0]) if alerts else ""
-        al_txt  = (ALERT_MAP.get(first_alert_type, first_alert_type)
-                   if first_alert_type else "Sin alertas")
+        pk_val  = item.get("prokey_ref") or "—"
+        al_txt  = (ALERT_MAP.get(alerts[0], alerts[0])
+                   if alerts else "Sin alertas")
         al_col  = C_RED if alerts else C_GRAY2
 
         row_vals = [
@@ -492,7 +497,7 @@ def _items_table(cv, req, top):
             str(item.get("cantidad_usada")    or 0),
             str(item.get("cantidad_no_usada") or 0),
             str(item.get("cantidad_retorna")  or 0),
-            dif_lbl,   # chip especial
+            dif_lbl,
             pk_val,
             al_txt,
         ]
@@ -501,7 +506,17 @@ def _items_table(cv, req, top):
         for j, ((_, _, align), w, val) in enumerate(zip(_COLS, widths, row_vals)):
             mid_x = cx + w / 2
 
-            if j == 7:   # DIF chip
+            if j == 0:   # Descripción — wrap a múltiples líneas
+                d_lines = _desc_lines(str(val))
+                # Centrar el bloque verticalmente en la zona de datos
+                block_h = len(d_lines) * (7.5 + 2) - 2
+                line_top = row_mid + block_h / 2
+                for dl in d_lines:
+                    _str(cv, cx + 3, line_top, dl,
+                         font="Helvetica-Bold", size=7.5, color=C_BLACK)
+                    line_top -= 7.5 + 2   # size + interlineado
+
+            elif j == 7: # DIF chip
                 cw, ch = w - 6, 5 * mm
                 _box(cv, cx + 3, row_mid + ch / 2, cw, ch,
                      fill=dif_bg, stroke=dif_bd, lw=0.5, r=2)
@@ -514,12 +529,7 @@ def _items_table(cv, req, top):
                      al_txt, font="Helvetica", size=6,
                      color=al_col, align="center", max_ch=20)
 
-            elif j == 0: # Descripción
-                _str(cv, cx + 3, row_mid + 4,
-                     str(val), font="Helvetica-Bold",
-                     size=7.5, color=C_BLACK, max_ch=32)
-
-            elif j == 3: # Contexto — gris, más pequeño
+            elif j == 3: # Contexto
                 _str(cv, mid_x, row_mid + 3,
                      str(val), font="Helvetica", size=6,
                      color=C_GRAY2, align="center", max_ch=14)
@@ -538,8 +548,8 @@ def _items_table(cv, req, top):
 
         # Nota del ítem
         if nota:
-            note_top = cur_top - ROW_H
-            _str(cv, x0 + 5, note_top - 1,
+            note_top = cur_top - data_h - 1
+            _str(cv, x0 + 5, note_top,
                  f"↳ {str(nota)[:110]}",
                  font="Helvetica-Oblique", size=5.5, color=C_GRAY2)
 
@@ -558,25 +568,34 @@ def _items_table(cv, req, top):
 
 # ─── 4. JUSTIFICACIÓN + COMENTARIO ──────────────────────────────────────────
 
-JUST_H     = 22 * mm
-JUST_HDR_H = 8  * mm    # franja con el título dentro del panel
+JUST_HDR_H = 8  * mm
 JUST_PAD   = 4  * mm
-LINE_H_TXT = 5.5         # interlineado del texto de contenido
+JUST_LINE_H = 12.5   # pt por línea de texto (size 7 + interlineado)
+JUST_MIN_H  = 18 * mm
+JUST_MAX_LINES = 6
+
+
+def _just_height(text):
+    """Altura dinámica del panel según cantidad de líneas de contenido."""
+    lines = _wrap(str(text), max_ch=50)
+    n = min(len(lines), JUST_MAX_LINES) if lines else 1
+    return JUST_HDR_H + JUST_PAD + n * JUST_LINE_H + JUST_PAD
 
 
 def _just_com(cv, req, top):
     HALF = (UW - 3 * mm) / 2
 
-    for label, text, rx in [
-        ("Justificación",
-         req.get("justificacion") or "—",
-         ML),
-        ("Comentario de liquidación",
-         req.get("comentario_liquidacion") or "—",
-         ML + HALF + 3 * mm),
-    ]:
+    texts = [
+        ("Justificación",             req.get("justificacion") or "—"),
+        ("Comentario de liquidación", req.get("comentario_liquidacion") or "—"),
+    ]
+    # Altura = máximo entre los dos paneles para que queden iguales
+    h = max(_just_height(t) for _, t in texts)
+    h = max(h, JUST_MIN_H)
+
+    for (label, text), rx in zip(texts, [ML, ML + HALF + 3 * mm]):
         # Card blanca
-        _box(cv, rx, top, HALF, JUST_H,
+        _box(cv, rx, top, HALF, h,
              fill=C_WHITE, stroke=C_PRI_BORDER, lw=0.7, r=4)
 
         # Franja título
@@ -588,17 +607,18 @@ def _just_com(cv, req, top):
         _hline(cv, rx + JUST_PAD, top - JUST_HDR_H,
                HALF - JUST_PAD * 2, color=C_PRI_BORDER, lw=0.5)
 
-        # Texto envuelto
+        # Texto con wrap dinámico
         is_empty = str(text).strip() in ("", "—")
         lines    = _wrap(str(text), max_ch=50)
         cv.setFont("Helvetica", 7)
         cv.setFillColor(C_GRAY2 if is_empty else C_GRAY1)
-        ty = top - JUST_HDR_H - JUST_PAD   # baseline primera línea
-        for line in lines[:3]:
-            cv.drawString(rx + JUST_PAD, ty - 7, line)
-            ty -= LINE_H_TXT + 7
+        # Primera línea arranca bajo la franja + padding
+        line_top = top - JUST_HDR_H - JUST_PAD
+        for line in lines[:JUST_MAX_LINES]:
+            cv.drawString(rx + JUST_PAD, line_top - 7, line)
+            line_top -= JUST_LINE_H
 
-    return top - JUST_H
+    return top - h
 
 
 # ─── 5. TIMELINE ────────────────────────────────────────────────────────────

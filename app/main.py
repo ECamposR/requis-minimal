@@ -39,7 +39,6 @@ from .crud import (
 )
 from .database import get_db, run_migrations
 from .models import CatalogoItem, Requisicion, Usuario
-from .pdf_generator import generate_requisicion_pdf
 
 load_dotenv()
 
@@ -176,56 +175,6 @@ def normalize_contexto_operacion(value: str | None) -> str | None:
     if lowered not in ("reposicion", "instalacion_inicial"):
         return None
     return lowered
-
-
-def build_requisicion_pdf_payload(req: Requisicion) -> dict[str, object]:
-    items_payload: list[dict[str, object]] = []
-    for item in req.items:
-        parsed_alerts: list[dict[str, object]] = []
-        if item.liquidation_alerts:
-            try:
-                parsed = json.loads(item.liquidation_alerts)
-                if isinstance(parsed, list):
-                    parsed_alerts = parsed
-            except (json.JSONDecodeError, TypeError, ValueError):
-                parsed_alerts = []
-
-        items_payload.append(
-            {
-                "descripcion": item.descripcion,
-                "cantidad_entregada": item.cantidad_entregada,
-                "cantidad_usada": item.qty_used,
-                "cantidad_no_usada": item.qty_left_at_client,
-                "cantidad_retorna": item.qty_returned_to_warehouse,
-                "liquidation_mode": item.liquidation_mode,
-                "contexto_operacion": normalize_contexto_operacion(item.contexto_operacion),
-                "prokey_ref": req.prokey_ref,
-                "liquidation_alerts": parsed_alerts,
-                "nota_liquidacion": normalize_optional_text(item.item_liquidation_note),
-            }
-        )
-
-    return {
-        "id": req.id,
-        "folio": req.folio,
-        "estado": req.estado,
-        "created_at": req.created_at,
-        "approved_at": req.approved_at,
-        "delivered_at": req.delivered_at,
-        "recibido_at": req.recibido_at,
-        "liquidated_at": req.liquidated_at,
-        "cliente": req.cliente_nombre,
-        "codigo_cliente": req.cliente_codigo,
-        "ruta": req.cliente_ruta_principal,
-        "solicitante_nombre": req.solicitante.nombre if req.solicitante else None,
-        "aprobador_nombre": req.aprobador.nombre if req.aprobador else None,
-        "jefe_bodega_nombre": req.entregador.nombre if req.entregador else None,
-        "recibido_por_nombre": req.recibido_por.nombre if req.recibido_por else None,
-        "prokey_ref": req.prokey_ref,
-        "justificacion": req.justificacion,
-        "comentario_liquidacion": normalize_optional_text(req.liquidation_comment),
-        "items": items_payload,
-    }
 
 
 def redirect_with_message(url: str, message: str, level: str = "success") -> RedirectResponse:
@@ -1851,7 +1800,9 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
 
 
 @app.get("/requisiciones/{req_id}/pdf")
-def requisicion_pdf(req_id: int, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
+    from app.pdf_generator import generate_requisicion_pdf
+
     req = (
         db.query(Requisicion)
         .options(
@@ -1866,17 +1817,70 @@ def requisicion_pdf(req_id: int, current_user: Usuario = Depends(get_current_use
         .first()
     )
     if not req:
-        raise HTTPException(status_code=404, detail="No existe")
+        raise HTTPException(status_code=404, detail="Requisición no encontrada")
     if not can_view_requisicion(req, current_user):
         raise HTTPException(status_code=403, detail="No autorizado")
     if req.estado != "liquidada":
-        raise HTTPException(status_code=403, detail="Solo se puede generar PDF de requisiciones liquidadas")
+        raise HTTPException(status_code=403, detail="PDF solo disponible para requisiciones liquidadas")
 
-    payload = build_requisicion_pdf_payload(req)
-    pdf_bytes = generate_requisicion_pdf(payload)
-    safe_folio = re.sub(r"[^A-Za-z0-9_-]+", "_", req.folio or f"requisicion_{req.id}")
+    items_data = []
+    for item in req.items:
+        alerts = item.liquidation_alerts
+        if isinstance(alerts, str):
+            try:
+                alerts = json.loads(alerts)
+            except Exception:
+                alerts = []
+        alert_types = []
+        if isinstance(alerts, list):
+            for alert in alerts:
+                if isinstance(alert, dict):
+                    alert_type = str(alert.get("type") or "").strip()
+                    if alert_type:
+                        alert_types.append(alert_type)
+                elif alert:
+                    alert_types.append(str(alert))
+        items_data.append(
+            {
+                "descripcion": item.descripcion,
+                "cantidad_entregada": item.cantidad_entregada,
+                "cantidad_usada": item.qty_used,
+                "cantidad_no_usada": item.qty_left_at_client,
+                "cantidad_retorna": item.qty_returned_to_warehouse,
+                "liquidation_mode": item.liquidation_mode,
+                "contexto_operacion": item.contexto_operacion,
+                "prokey_ref": req.prokey_ref,
+                "liquidation_alerts": alert_types,
+                "nota_liquidacion": item.item_liquidation_note,
+            }
+        )
+
+    req_data = {
+        "id": req.id,
+        "folio": req.folio or f"REQ-{req.id:04d}",
+        "estado": req.estado,
+        "created_at": str(req.created_at) if req.created_at else None,
+        "approved_at": str(req.approved_at) if req.approved_at else None,
+        "delivered_at": str(req.delivered_at) if req.delivered_at else None,
+        "recibido_at": str(req.recibido_at) if req.recibido_at else None,
+        "liquidated_at": str(req.liquidated_at) if req.liquidated_at else None,
+        "cliente": req.cliente_nombre,
+        "codigo_cliente": req.cliente_codigo,
+        "ruta": req.cliente_ruta_principal,
+        "solicitante_nombre": req.solicitante.nombre if req.solicitante else None,
+        "aprobador_nombre": req.aprobador.nombre if req.aprobador else None,
+        "jefe_bodega_nombre": req.entregador.nombre if req.entregador else None,
+        "recibido_por_nombre": req.recibido_por.nombre if req.recibido_por else None,
+        "prokey_ref": req.prokey_ref,
+        "justificacion": req.justificacion,
+        "comentario_liquidacion": req.liquidation_comment,
+        "items": items_data,
+    }
+
+    pdf_bytes = generate_requisicion_pdf(req_data)
+    folio = req.folio or f"REQ-{req.id:04d}"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'inline; filename="requisicion_{safe_folio}.pdf"'},
+        headers={"Content-Disposition": f'inline; filename="requisicion_{folio}.pdf"'},
     )
