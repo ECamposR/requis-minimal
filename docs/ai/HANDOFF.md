@@ -45,6 +45,8 @@
 - `REQ-093B` completada: la columna `DIF` en el detalle liquidado ya no usa `+/-` ambiguos; ahora renderiza `Falta`, `Extra` u `OK` con tooltip explicativo según el retorno esperado vs regresado.
 - `REQ-093C` completada: el detalle liquidado ahora muestra `Ingreso PK (Bodega)` en el encabezado de la columna para reforzar que ese valor corresponde al registro operativo de bodega.
 - `REQ-093D` completada: el detalle de requisición ya muestra `Reposición` / `Instalación inicial` también fuera de la etapa de liquidación, debajo de la descripción de cada ítem solicitado, manteniendo trazabilidad del contexto operativo durante todo el flujo.
+- `REQ-093E` completada: la diferencia y las alertas de faltante ahora respetan `contexto_operacion`; para `RETORNABLE + instalacion_inicial` el retorno esperado ya no es `Usado + No usado`, sino solo `No usado`, evitando falsos faltantes en instalaciones iniciales.
+- `REQ-093F` completada: el PDF de liquidación quedó alineado con la lógica anterior; su `DIF` ya no calcula faltante en `RETORNABLE + instalacion_inicial` cuando `Regresa=0` y `No usado=0`.
 - `REQ-095` completada: la vista `Bodega` para rol `bodega` ahora expone todas las requisiciones operativas pendientes (`aprobada` y `entregada` lista para liquidar`) en una sola sección, pero el historial personal queda filtrado a las requisiciones que ese usuario preparó o liquidó.
 - `REQ-094` completada: el generador `app/pdf_generator.py` quedó integrado al backend real; `GET /requisiciones/{id}/pdf` produce PDF solo para requisiciones `liquidada`, el detalle API expone `pdf_url` y el botón `Ver PDF` del modal apunta al endpoint inline.
 - `REQ-094A` completada: el PDF ya no toma `Ingreso PK` desde una referencia textual; ahora usa la cantidad operativa por ítem y la columna `DIF` muestra `Falta/Extra` con número, igual que el detalle web.
@@ -75,8 +77,8 @@
 6. Validar acceso LAN: `http://<IP-servidor>/`
 
 ### Frente funcional (pendiente anterior):
-1. Crear una requisición con un item retornable marcado como `Instalación inicial`, entregarla y liquidarla con `Regresa = 0` para confirmar que no aparece `Retorno incompleto`.
-2. Abrir el detalle de esa requisición y verificar que la columna `Tipo` muestre el contexto operativo junto al modo (`RETORNABLE / Instalación inicial`).
+1. Validar manualmente en UI el caso mixto: una requisición con dos ítems retornables, uno en `Instalación inicial` y otro en `Reposición`, para confirmar que la tabla de liquidación refleja diferencias distintas por fila según contexto.
+2. Abrir el detalle de esa requisición y verificar que la columna `Tipo` muestre el contexto operativo junto al modo (`RETORNABLE / Instalación inicial`) y que el ítem de instalación inicial no marque `Falta`.
 3. Abrir una requisición `liquidada`, pulsar `Ver PDF` y validar que el documento carga inline con datos reales, alertas y timeline sin errores de Unicode.
 4. Validar un caso con `Regresa` menor al esperado para confirmar que el PDF muestra `Falta X` y que `Ingreso PK (Bodega)` coincide con el detalle web.
 5. Validar visualmente el encabezado del PDF para confirmar que el logo se ve bien escalado y no invade el bloque del folio.

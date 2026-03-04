@@ -28,6 +28,7 @@ from .auth import (
 from .catalog_types import classify_catalog_item_type
 from .crud import (
     agregar_item_db,
+    calcular_retorno_esperado,
     ejecutar_liquidacion,
     puede_liquidar,
     crear_requisicion_db,
@@ -1750,7 +1751,8 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             qty_used = item.qty_used or 0
             qty_not_used = item.qty_left_at_client or 0
             delivered = item.cantidad_entregada or 0
-            expected_return = (qty_used + qty_not_used) if mode == "RETORNABLE" else qty_not_used
+            contexto_operacion = normalize_contexto_operacion(item.contexto_operacion)
+            expected_return = calcular_retorno_esperado(mode, qty_used, qty_not_used, contexto_operacion)
             difference = expected_return - qty_returned
             pk_ingreso_qty = qty_returned if mode == "RETORNABLE" else 0
 
@@ -1780,7 +1782,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                     "qty_ocupo": qty_used + qty_not_used,
                     "pk_ingreso_qty": pk_ingreso_qty,
                     "delta": difference,
-                    "contexto_operacion": normalize_contexto_operacion(item.contexto_operacion),
+                    "contexto_operacion": contexto_operacion,
                 }
             )
         items_payload.append(item_data)

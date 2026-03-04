@@ -389,6 +389,38 @@ def test_retorno_incompleto_no_aplica_en_instalacion_inicial(db_session: Session
     item.contexto_operacion = "instalacion_inicial"
     alertas = calcular_alertas_item(item)
     assert not any(a["type"] == "ALERTA_RETORNO_INCOMPLETO" for a in alertas)
+    assert not any(a["type"] == "ALERTA_FALTANTE" for a in alertas)
+
+
+@pytest.mark.anyio
+async def test_detalle_liquidada_instalacion_inicial_retornable_no_marca_diferencia(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=2)
+    item = get_item(db_session, req)
+    item.contexto_operacion = "instalacion_inicial"
+    db_session.commit()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "0",
+                f"qty_used_{item.id}": "2",
+                f"qty_not_used_{item.id}": "0",
+                f"mode_{item.id}": "RETORNABLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+    liq_item = payload["items"][0]
+    assert liq_item["contexto_operacion"] == "instalacion_inicial"
+    assert liq_item["expected_return"] == 0
+    assert liq_item["difference"] == 0
+    assert not any(alert["type"] == "ALERTA_FALTANTE" for alert in liq_item["liquidation_alerts"])
 
 
 @pytest.mark.anyio

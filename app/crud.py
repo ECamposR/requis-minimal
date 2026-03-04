@@ -18,6 +18,25 @@ from .models import Item, Requisicion, Usuario
 UNIDAD_POR_DEFECTO = "unidad"
 
 
+def calcular_retorno_esperado(
+    mode: str | None,
+    used: float,
+    not_used: float,
+    contexto_operacion: str | None = None,
+) -> float:
+    normalized_mode = str(mode or "RETORNABLE").upper().strip()
+    if normalized_mode not in ("RETORNABLE", "CONSUMIBLE"):
+        normalized_mode = "RETORNABLE"
+    normalized_contexto = str(contexto_operacion or "").strip().lower() or "reposicion"
+
+    # En instalacion inicial, aunque el item sea retornable, solo se espera
+    # retorno de lo no usado. Lo instalado por primera vez no debe generar
+    # faltante operativo.
+    if normalized_mode == "CONSUMIBLE" or normalized_contexto == "instalacion_inicial":
+        return not_used
+    return used + not_used
+
+
 def generar_folio(db: Session) -> str:
     ultimo = db.query(Requisicion).order_by(Requisicion.id.desc()).first()
     numero = (ultimo.id + 1) if ultimo else 1
@@ -153,7 +172,7 @@ def calcular_alertas_item(item: Item) -> list[dict[str, Any]]:
     if mode not in ("RETORNABLE", "CONSUMIBLE"):
         mode = "RETORNABLE"
     contexto_operacion = str(getattr(item, "contexto_operacion", None) or "").strip().lower() or "reposicion"
-    expected_return = (used + not_used) if mode == "RETORNABLE" else not_used
+    expected_return = calcular_retorno_esperado(mode, used, not_used, contexto_operacion)
     diferencia = expected_return - returned
 
     if diferencia > 0:

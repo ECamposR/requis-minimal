@@ -177,11 +177,19 @@ def _estado_style(estado):
 def _dif_chip(item):
     """(label, fg, bg, border)"""
     mode = (item.get("liquidation_mode") or "").upper()
+    contexto = str(item.get("contexto_operacion") or "").strip().lower()
     ent  = item.get("cantidad_entregada") or 0
     ret  = item.get("cantidad_retorna")   or 0
     usd  = item.get("cantidad_usada")     or 0
     nou  = item.get("cantidad_no_usada")  or 0
-    expected_return = (usd + nou) if mode == "RETORNABLE" else nou
+    # Alineado con la lógica web:
+    # - CONSUMIBLE: esperado = no usado
+    # - RETORNABLE + instalacion_inicial: esperado = no usado
+    # - RETORNABLE + reposicion: esperado = usado + no usado
+    if mode == "CONSUMIBLE" or contexto == "instalacion_inicial":
+        expected_return = nou
+    else:
+        expected_return = usd + nou
     d = expected_return - ret
     if d == 0:
         return "OK", C_GREEN, C_GREEN_BG, C_GREEN_BD

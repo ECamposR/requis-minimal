@@ -45,7 +45,7 @@
                 <tbody>
                     {% for item in req.items %}
                     {% set values = liquidacion_values.get(item.id, {}) if liquidacion_values else {} %}
-                    <tr data-liquidacion-row {% if item.id in item_incompletos %}class="row-incomplete"{% endif %}>
+                    <tr data-liquidacion-row data-contexto-operacion="{{ item.contexto_operacion or '' }}" {% if item.id in item_incompletos %}class="row-incomplete"{% endif %}>
                         <td>{{ item.descripcion }}</td>
                         <td>
                             {% set resolved_mode = item.default_mode if item.default_mode in ['RETORNABLE', 'CONSUMIBLE'] else values.get('mode', item.default_mode) %}
@@ -123,7 +123,10 @@
         const used = parseNum(row.querySelector("input[name^='qty_used_']").value);
         const notUsed = parseNum(row.querySelector("input[name^='qty_not_used_']").value);
         const mode = (row.querySelector("[data-mode]")?.value || "RETORNABLE").toUpperCase();
-        const expectedReturn = mode === "CONSUMIBLE" ? notUsed : used + notUsed;
+        const contextoOperacion = (row.dataset.contextoOperacion || "").toLowerCase() || "reposicion";
+        const expectedReturn = (mode === "CONSUMIBLE" || contextoOperacion === "instalacion_inicial")
+            ? notUsed
+            : used + notUsed;
         const ocupo = used + notUsed;
         const diferencia = expectedReturn - returned;
         const coverageOk = ocupo === delivered;

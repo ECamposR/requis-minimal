@@ -2127,3 +2127,27 @@
 - Resultado:
   - Un usuario `bodega` ya puede ver todas las requisiciones pendientes de preparar y todas las entregadas pendientes de liquidar.
   - Su historial deja de ser global y conserva únicamente movimientos propios de preparación o liquidación.
+
+## 2026-03-04 17:34 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir la falsa diferencia en liquidación para ítems `RETORNABLE` en `instalacion_inicial`.
+- Tareas: `REQ-093E`.
+- Cambios:
+  - `app/crud.py`: se centralizó el cálculo de retorno esperado; para `RETORNABLE + instalacion_inicial` ahora el esperado es solo `No usado`, no `Usado + No usado`.
+  - `app/main.py`: el detalle API usa la misma regla para `expected_return` y `difference`.
+  - `templates/liquidar.html`: la tabla de liquidación ahora calcula `Diferencia` por fila usando también `contexto_operacion`, evitando falsos `Falta` antes de guardar.
+  - `tests/test_liquidacion.py`: se agregó cobertura explícita para confirmar que una instalación inicial retornable con `Regresa=0, Usado=Entregado, No usado=0` queda con `difference=0` y sin `ALERTA_FALTANTE`.
+- Comandos ejecutados:
+  - `python -m compileall app templates tests`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k "instalacion_inicial or retorno_incompleto_no_aplica" -v`
+- Resultado:
+  - La UI de liquidación, las alertas backend y el detalle de requisición quedaron alineados en el caso operativo de instalación inicial.
+
+## 2026-03-04 17:46 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir la diferencia inconsistente en PDF para `instalacion_inicial`.
+- Tareas: `REQ-093F`.
+- Cambios:
+  - `app/pdf_generator.py`: ajuste de `_dif_chip` para que use `contexto_operacion` igual que la app; en `RETORNABLE + instalacion_inicial` el retorno esperado ahora es `No usado`, no `Usado + No usado`.
+- Comandos ejecutados:
+  - `python -m compileall app/pdf_generator.py`
+- Resultado:
+  - El PDF ya no muestra `Falta` en casos de instalación inicial donde el retorno cero es válido operativamente.
