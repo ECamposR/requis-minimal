@@ -130,6 +130,7 @@ class Item(Base):
     qty_left_at_client: Mapped[float | None] = mapped_column(Float, nullable=True)
     liquidation_mode: Mapped[str | None] = mapped_column(String(20), nullable=True)
     contexto_operacion: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    es_demo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
     item_liquidation_note: Mapped[str | None] = mapped_column(String, nullable=True)
     liquidation_alerts: Mapped[str | None] = mapped_column(String, nullable=True)
     unidad: Mapped[str] = mapped_column(String(40), nullable=False)

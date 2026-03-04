@@ -42,10 +42,16 @@
             <div class="item-row">
                 <input type="text" name="items[0][descripcion]" list="catalogo-items" placeholder="Buscar item..." autocomplete="off" required>
                 <input type="number" step="0.01" min="0.01" name="items[0][cantidad]" placeholder="Cantidad" required>
-                <select name="items[0][contexto_operacion]" aria-label="Contexto operativo del item">
-                    <option value="reposicion" selected>Reposicion</option>
-                    <option value="instalacion_inicial">Instalacion inicial</option>
-                </select>
+                <div class="item-context-block">
+                    <select name="items[0][contexto_operacion]" aria-label="Contexto operativo del item">
+                        <option value="reposicion" selected>Reposicion</option>
+                        <option value="instalacion_inicial">Instalacion inicial</option>
+                    </select>
+                    <label class="item-demo-check">
+                        <input type="checkbox" name="es_demo_0">
+                        Para Demo
+                    </label>
+                </div>
             </div>
         </fieldset>
         <datalist id="catalogo-items">

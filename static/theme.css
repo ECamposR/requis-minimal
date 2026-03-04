@@ -206,6 +206,27 @@ a[role="button"].danger:hover {
     margin-bottom: 0.5rem;
 }
 
+.item-context-block {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.item-demo-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    color: var(--ui-muted);
+}
+
+.item-demo-check input[type="checkbox"] {
+    margin: 0;
+}
+
+.item-demo-badge {
+    margin-left: 0.45rem;
+}
+
 .form-actions {
     display: flex;
     gap: 0.55rem;

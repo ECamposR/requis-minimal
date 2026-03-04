@@ -77,6 +77,7 @@ def agregar_item_db(
     cantidad: float,
     unidad: str = UNIDAD_POR_DEFECTO,
     contexto_operacion: str | None = None,
+    es_demo: bool = False,
 ) -> Item:
     item = Item(
         requisicion_id=requisicion_id,
@@ -84,6 +85,7 @@ def agregar_item_db(
         cantidad=float(cantidad),
         unidad=unidad,
         contexto_operacion=contexto_operacion,
+        es_demo=es_demo,
     )
     db.add(item)
     db.commit()
@@ -126,12 +128,15 @@ def parse_items_from_form(form_data: Any) -> list[dict[str, Any]]:
         if contexto_operacion_raw not in ("", "reposicion", "instalacion_inicial"):
             raise ValueError("Contexto de operacion invalido")
         contexto_operacion = contexto_operacion_raw or None
+        es_demo_raw = str(form_data.get(f"es_demo_{idx}", "")).strip().lower()
+        es_demo = es_demo_raw in ("on", "1", "true", "yes")
         items.append(
             {
                 "descripcion": descripcion,
                 "cantidad": cantidad,
                 "unidad": unidad,
                 "contexto_operacion": contexto_operacion,
+                "es_demo": es_demo,
             }
         )
     return items

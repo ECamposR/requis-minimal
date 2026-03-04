@@ -1751,6 +1751,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             "cantidad_entregada": item.cantidad_entregada,
             "unidad": item.unidad,
             "contexto_operacion": normalize_contexto_operacion(item.contexto_operacion),
+            "es_demo": bool(item.es_demo),
         }
         if req.estado == "liquidada":
             mode = (item.liquidation_mode or "RETORNABLE").upper()
@@ -1882,6 +1883,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
                 "cantidad_retorna": item.qty_returned_to_warehouse,
                 "liquidation_mode": item.liquidation_mode,
                 "contexto_operacion": item.contexto_operacion,
+                "es_demo": bool(item.es_demo),
                 "prokey_ref": req.prokey_ref,
                 "pk_ingreso_qty": (
                     item.qty_returned_to_warehouse

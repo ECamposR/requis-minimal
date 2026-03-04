@@ -520,7 +520,7 @@ def _items_table(cv, req, top):
         al_col  = C_RED if alerts else C_GRAY2
 
         row_vals = [
-            item.get("descripcion", "—"),
+            f"{item.get('descripcion', '—')}{' [Para Demo]' if item.get('es_demo') else ''}",
             str(item.get("cantidad_entregada") or 0),
             mode_s, ctx_s,
             str(item.get("cantidad_usada")    or 0),

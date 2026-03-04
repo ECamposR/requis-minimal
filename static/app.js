@@ -226,12 +226,24 @@ function agregarItem() {
 
     contexto.append(reposicion, instalacion);
 
+    const contextoWrap = document.createElement("div");
+    contextoWrap.className = "item-context-block";
+    contextoWrap.appendChild(contexto);
+
+    const demoLabel = document.createElement("label");
+    demoLabel.className = "item-demo-check";
+    const demoCheck = document.createElement("input");
+    demoCheck.type = "checkbox";
+    demoCheck.name = `es_demo_${itemCount}`;
+    demoLabel.append(demoCheck, document.createTextNode(" Para Demo"));
+    contextoWrap.appendChild(demoLabel);
+
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = "X";
     btn.addEventListener("click", () => eliminarItem(btn));
 
-    div.append(input, qty, contexto, btn);
+    div.append(input, qty, contextoWrap, btn);
     container.appendChild(div);
     itemCount++;
     syncItemInputs();
@@ -281,11 +293,14 @@ function verDetalle(id) {
                     const hasQe = qe !== null && qe !== undefined;
                     const isZero = hasQe && Number(qe) === 0;
                     const contexto = contextoOperacionLabel(i.contexto_operacion);
+                    const demoBadge = i.es_demo
+                        ? '<span class="badge warning item-demo-badge">Para Demo</span>'
+                        : "";
                     const despCls = isZero
                         ? "qty-col qty-despachada qty-zero"
                         : "qty-col qty-despachada";
                     return `<tr>
-                    <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${contexto ? `<div class="liq-type-context muted">${escapeHtml(contexto)}</div>` : ""}</td>
+                    <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${demoBadge}${contexto ? `<div class="liq-type-context muted">${escapeHtml(contexto)}</div>` : ""}</td>
                     <td class="qty-col qty-solicitada">${fmtQty(i.cantidad)}</td>
                     ${showDelivered ? `<td class="${despCls}">${fmtQty(qe)}</td>` : ""}
                 </tr>`;
@@ -313,6 +328,9 @@ function verDetalle(id) {
                     const noteHtml = i.item_liquidation_note
                         ? `<div class="liq-item-note item-note ${noteAttentionClass}">${escapeHtml(i.item_liquidation_note)}</div>`
                         : "";
+                    const demoBadge = i.es_demo
+                        ? '<span class="badge warning item-demo-badge">Para Demo</span>'
+                        : "";
                     const mode = (i.mode || "RETORNABLE").toUpperCase();
                     const contexto = contextoOperacionLabel(i.contexto_operacion);
                     const tipoContexto = contexto
@@ -325,7 +343,7 @@ function verDetalle(id) {
                             ? `Extra ${fmtQty(Math.abs(difference))}`
                             : "OK";
                     return `<tr>
-                        <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${noteHtml}</td>
+                        <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${demoBadge}${noteHtml}</td>
                         <td class="qty-col td-num">${fmtQty(i.cantidad_entregada)}</td>
                         <td class="qty-col td-center">${tipoContexto}</td>
                         <td class="qty-col td-num">${fmtQty(i.used ?? i.qty_used)}</td>

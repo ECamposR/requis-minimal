@@ -25,7 +25,12 @@
         <tbody>
         {% for item in req.items %}
         <tr>
-            <td>{{ item.descripcion }}</td>
+            <td>
+                {{ item.descripcion }}
+                {% if item.es_demo %}
+                <span class="badge warning item-demo-badge">Para Demo</span>
+                {% endif %}
+            </td>
             <td>{{ item.cantidad }}</td>
             <td>
                 <input

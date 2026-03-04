@@ -2185,3 +2185,24 @@
   - Edición directa de código/documentación (sin test suite completa en esta iteración).
 - Resultado:
   - Al entrar sin sesión por IP/puerto, la app redirige al login en lugar de mostrar alerta `No autenticado`.
+
+## 2026-03-04 18:48 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar `REQ-098` (etiqueta `Para Demo` por línea de ítem) sin tocar lógica de liquidación.
+- Tareas: `REQ-098`.
+- Cambios:
+  - `app/models.py`: nuevo campo `Item.es_demo` (boolean, default false, server_default `0`).
+  - `app/database.py`: migración incremental idempotente `items.es_demo`.
+  - `app/crud.py`: parseo y persistencia de `es_demo_{index}` solo en creación de requisición.
+  - `templates/crear_requisicion.html` + `static/app.js`: checkbox `Para Demo` por fila dinámica de ítems.
+  - `templates/bodega_gestionar.html` y `templates/bodega_entrega_parcial.html`: badge `Para Demo` junto al ítem.
+  - `app/main.py` (`GET /api/requisiciones/{id}` y payload PDF): inclusión de `es_demo` por ítem.
+  - `app/pdf_generator.py`: etiqueta `[Para Demo]` junto a la descripción de ítem en PDF.
+  - `static/theme.css`: estilos mínimos para bloque contexto+demo y badge.
+- Comandos ejecutados:
+  - `python -m compileall app templates static tests`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v`
+  - `.venv/bin/python -m pytest -q tests/test_admin_catalog_items.py -v`
+- Resultado:
+  - `es_demo` quedó disponible y visible en el ciclo completo, sin cambios en `calcular_alertas_item`, `ejecutar_liquidacion`, ni fórmulas de `expected_return/diferencia`.
+  - `tests/test_liquidacion.py` pasó completo (40/40).
+  - `tests/test_admin_catalog_items.py` quedó colgado en este entorno (comportamiento intermitente ya visto con `TestClient`), por lo que se dejó constancia y se requiere validación en entorno estable.

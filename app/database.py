@@ -125,6 +125,7 @@ def run_migrations() -> None:
                 "qty_left_at_client": "ALTER TABLE items ADD COLUMN qty_left_at_client INTEGER",
                 "liquidation_mode": "ALTER TABLE items ADD COLUMN liquidation_mode TEXT",
                 "contexto_operacion": "ALTER TABLE items ADD COLUMN contexto_operacion TEXT",
+                "es_demo": "ALTER TABLE items ADD COLUMN es_demo INTEGER NOT NULL DEFAULT 0",
                 "item_liquidation_note": "ALTER TABLE items ADD COLUMN item_liquidation_note TEXT",
                 "liquidation_alerts": "ALTER TABLE items ADD COLUMN liquidation_alerts TEXT",
             }
