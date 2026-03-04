@@ -384,7 +384,7 @@ def _card_estado(cv, req, x, top, w):
 
     ROW_GAP = 5
     for lbl, val, col in [
-        ("Por",          req.get("aprobador_nombre") or "—",            C_BLACK),
+        ("Por",          req.get("liquidado_por_nombre") or "—",        C_BLACK),
         ("Recibido por", (req.get("recibido_por_nombre")
                           or req.get("tecnico_nombre") or "—"),         C_BLACK),
         ("Hora firma",   _fmt(req.get("recibido_at")
@@ -664,7 +664,7 @@ def _timeline(cv, req, top):
         ("Req. aprobada",  "aprobador_nombre",   "approved_at"),
         ("Prep. bodega",   "jefe_bodega_nombre", "delivered_at"),
         ("Recibido firma", "recibido_por_nombre","recibido_at"),
-        ("Liquidada",      "aprobador_nombre",   "liquidated_at"),
+        ("Liquidada",      "liquidado_por_nombre","liquidated_at"),
     ]:
         ts = (req.get(ts_key)
               or (req.get("delivered_at") if ts_key == "recibido_at" else None))

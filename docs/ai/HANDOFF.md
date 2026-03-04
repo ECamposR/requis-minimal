@@ -51,6 +51,7 @@
 - `REQ-094` completada: el generador `app/pdf_generator.py` quedó integrado al backend real; `GET /requisiciones/{id}/pdf` produce PDF solo para requisiciones `liquidada`, el detalle API expone `pdf_url` y el botón `Ver PDF` del modal apunta al endpoint inline.
 - `REQ-094A` completada: el PDF ya no toma `Ingreso PK` desde una referencia textual; ahora usa la cantidad operativa por ítem y la columna `DIF` muestra `Falta/Extra` con número, igual que el detalle web.
 - `REQ-094B` completada: el PDF reemplaza el texto `ProHygiene` del header por el logo real usado en la app (`static/branding/logo-prohygiene-es.png`), manteniendo fallback textual si el recurso no carga.
+- `REQ-094C` completada: se corrigió la atribución de actor en PDF; el evento `Liquidada` y la card de estado usan `liquidado_por_nombre` (liquidador real), no el aprobador.
 - `REQ-091B` completada: se corrigió el faltante de CSS (`form-grid-2`) que impedía ver el nuevo layout del catálogo; ahora el orden visual sí se aplica.
 
 ## Despliegue en producción (nuevo frente)

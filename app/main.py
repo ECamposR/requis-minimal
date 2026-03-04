@@ -1899,6 +1899,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         "solicitante_nombre": req.solicitante.nombre if req.solicitante else None,
         "aprobador_nombre": req.aprobador.nombre if req.aprobador else None,
         "jefe_bodega_nombre": req.entregador.nombre if req.entregador else None,
+        "liquidado_por_nombre": req.liquidator.nombre if req.liquidator else None,
         "recibido_por_nombre": req.recibido_por.nombre if req.recibido_por else None,
         "prokey_ref": req.prokey_ref,
         "justificacion": req.justificacion,

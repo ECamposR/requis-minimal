@@ -2151,3 +2151,14 @@
   - `python -m compileall app/pdf_generator.py`
 - Resultado:
   - El PDF ya no muestra `Falta` en casos de instalación inicial donde el retorno cero es válido operativamente.
+
+## 2026-03-04 18:02 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir actor incorrecto en la línea de tiempo del PDF para el evento de liquidación.
+- Tareas: `REQ-094C`.
+- Cambios:
+  - `app/main.py`: el payload del PDF ahora incluye `liquidado_por_nombre` desde `req.liquidator`.
+  - `app/pdf_generator.py`: la card `Estado liquidación` y el hito `Liquidada` de la timeline toman ese nuevo campo en lugar de `aprobador_nombre`.
+- Comandos ejecutados:
+  - `python -m compileall app/main.py app/pdf_generator.py`
+- Resultado:
+  - El PDF ya no atribuye la liquidación al aprobador; muestra al liquidador correcto, consistente con la app.
