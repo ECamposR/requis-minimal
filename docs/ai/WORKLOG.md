@@ -2091,3 +2091,26 @@
 - Resultado:
   - El PDF ya no pierde filas en `Ingreso PK (Bodega)` por usar el campo equivocado.
   - `DIF` deja de mostrar solo el estado textual y ahora incluye la magnitud numérica, consistente con el detalle de la app.
+
+## 2026-03-04 16:22 UTC-06:00 | tool: Codex CLI
+- Objetivo: Reemplazar la marca textual del header PDF por el logo real de la app.
+- Tareas: `REQ-094B`.
+- Cambios:
+  - `app/pdf_generator.py`: el bloque superior izquierdo del header ahora intenta dibujar `static/branding/logo-prohygiene-es.png`; si no puede cargar el recurso, conserva el texto `ProHygiene` como fallback.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: actualizadas para reflejar el ajuste visual del PDF.
+- Comandos ejecutados:
+  - `python -m compileall app`
+  - smoke directo con `generate_requisicion_pdf(...)`
+- Resultado:
+  - El PDF mantiene el layout del header, pero ahora usa la identidad visual real de la empresa en lugar del texto plano.
+
+## 2026-03-04 16:40 UTC-06:00 | tool: Codex CLI
+- Objetivo: Hacer visible `contexto_operacion` en el detalle de requisición durante todo el ciclo, no solo en liquidación.
+- Tareas: `REQ-093D`.
+- Cambios:
+  - `static/app.js`: en la tabla `Items Solicitados`, cada ítem ahora muestra debajo de la descripción el contexto operativo (`Reposición` / `Instalación inicial`) cuando existe.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: actualizadas para reflejar la mejora de trazabilidad visual.
+- Comandos ejecutados:
+  - Sin comandos adicionales de backend; el payload ya incluía `contexto_operacion` y el cambio fue solo de render frontend.
+- Resultado:
+  - El usuario puede ver el contexto operativo del ítem desde pendiente/aprobada/entregada/liquidada sin esperar a la tabla específica de liquidación.

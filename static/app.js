@@ -280,11 +280,12 @@ function verDetalle(id) {
                     const qe = i.cantidad_entregada;
                     const hasQe = qe !== null && qe !== undefined;
                     const isZero = hasQe && Number(qe) === 0;
+                    const contexto = contextoOperacionLabel(i.contexto_operacion);
                     const despCls = isZero
                         ? "qty-col qty-despachada qty-zero"
                         : "qty-col qty-despachada";
                     return `<tr>
-                    <td>${escapeHtml(i.descripcion || "-")}</td>
+                    <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${contexto ? `<div class="liq-type-context muted">${escapeHtml(contexto)}</div>` : ""}</td>
                     <td class="qty-col qty-solicitada">${fmtQty(i.cantidad)}</td>
                     ${showDelivered ? `<td class="${despCls}">${fmtQty(qe)}</td>` : ""}
                 </tr>`;
