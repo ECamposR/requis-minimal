@@ -2173,3 +2173,15 @@
   - Edición directa de Markdown (sin comandos de build/test por no haber cambios de código ejecutable).
 - Resultado:
   - La documentación principal del repositorio ya no describe un MVP básico; ahora refleja el alcance operativo actual.
+
+## 2026-03-04 18:29 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir entrada por IP/puerto para usuarios no autenticados en vistas web.
+- Tareas: `REQ-097`.
+- Cambios:
+  - `app/main.py`: se agregó `@app.exception_handler(HTTPException)` para transformar `401` en redirección a `/login` en rutas SSR.
+  - Se mantiene `401` JSON para rutas `/api/*` para no romper consumo programático.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: actualizadas con el ajuste de autenticación web.
+- Comandos ejecutados:
+  - Edición directa de código/documentación (sin test suite completa en esta iteración).
+- Resultado:
+  - Al entrar sin sesión por IP/puerto, la app redirige al login en lugar de mostrar alerta `No autenticado`.
