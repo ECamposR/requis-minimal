@@ -2162,3 +2162,14 @@
   - `python -m compileall app/main.py app/pdf_generator.py`
 - Resultado:
   - El PDF ya no atribuye la liquidación al aprobador; muestra al liquidador correcto, consistente con la app.
+
+## 2026-03-04 18:16 UTC-06:00 | tool: Codex CLI
+- Objetivo: Actualizar `README.md` para reflejar el estado real del proyecto.
+- Tareas: `REQ-096`.
+- Cambios:
+  - `README.md`: reescritura de contenido para estado `v1.x` (stack, roles, flujo de estados, firma con PIN, liquidación, PDF y despliegue local/Docker+Caddy).
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: sincronización de gobernanza con la actualización documental.
+- Comandos ejecutados:
+  - Edición directa de Markdown (sin comandos de build/test por no haber cambios de código ejecutable).
+- Resultado:
+  - La documentación principal del repositorio ya no describe un MVP básico; ahora refleja el alcance operativo actual.

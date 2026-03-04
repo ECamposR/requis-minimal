@@ -55,6 +55,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-093E` | `done` | Ajuste de lógica de retorno esperado: en `RETORNABLE + instalacion_inicial`, la diferencia y alertas de faltante ya no tratan lo instalado por primera vez como equipo que debía regresar; el retorno esperado pasa a ser solo `No usado`.
 - `REQ-093F` | `done` | Corrección de paridad PDF vs app para `instalacion_inicial`: la columna `DIF` del PDF ahora respeta `contexto_operacion` y deja de mostrar falsos faltantes en ítems retornables de primera instalación.
 - `REQ-095` | `done` | Ajuste operativo de vista `Bodega`: usuarios `bodega` ahora ven todas las requisiciones pendientes de preparar o liquidar (`aprobada` + `entregada` elegible), mientras que su historial queda restringido a las que ellos prepararon o liquidaron.
+- `REQ-096` | `done` | Actualización integral de `README.md` al estado real v1.x (roles, flujo completo, firma con PIN, liquidación, PDF y opciones de despliegue).
 - `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
 
 ## Despliegue Producción
