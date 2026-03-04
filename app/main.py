@@ -615,8 +615,21 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         .options(
             joinedload(Requisicion.solicitante),
             joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.entregador),
+            joinedload(Requisicion.liquidator),
         )
-        .filter(Requisicion.estado == "aprobada")
+        .filter(
+            or_(
+                Requisicion.estado == "aprobada",
+                Requisicion.estado == "entregada",
+            )
+        )
+    )
+    pendientes_query = pendientes_query.filter(
+        or_(
+            Requisicion.estado == "aprobada",
+            Requisicion.delivery_result.in_(["completa", "parcial"]),
+        )
     )
     if q:
         patron = f"%{q}%"
@@ -631,7 +644,11 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             )
         )
 
-    pendientes_entrega = pendientes_query.order_by(Requisicion.approved_at.asc(), Requisicion.created_at.asc()).all()
+    pendientes_entrega = pendientes_query.order_by(
+        Requisicion.approved_at.asc(),
+        Requisicion.delivered_at.asc(),
+        Requisicion.created_at.asc(),
+    ).all()
 
     historial_query = (
         db.query(Requisicion)
@@ -643,7 +660,12 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         .filter(Requisicion.estado.in_(["entregada", "liquidada"]))
     )
     if current_user.rol == "bodega":
-        historial_query = historial_query.filter(Requisicion.delivered_by == current_user.id)
+        historial_query = historial_query.filter(
+            or_(
+                Requisicion.delivered_by == current_user.id,
+                Requisicion.liquidated_by == current_user.id,
+            )
+        )
     # jefe_bodega ve el historial completo (sin filtro por usuario)
     if resultado in {"completa", "parcial", "no_entregada"}:
         historial_query = historial_query.filter(Requisicion.delivery_result == resultado)

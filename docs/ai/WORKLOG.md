@@ -2114,3 +2114,16 @@
   - Sin comandos adicionales de backend; el payload ya incluía `contexto_operacion` y el cambio fue solo de render frontend.
 - Resultado:
   - El usuario puede ver el contexto operativo del ítem desde pendiente/aprobada/entregada/liquidada sin esperar a la tabla específica de liquidación.
+
+## 2026-03-04 17:05 UTC-06:00 | tool: Codex CLI
+- Objetivo: Ajustar visibilidad operativa de la vista `Bodega` para rol `bodega`.
+- Tareas: `REQ-095`.
+- Cambios:
+  - `app/main.py`: la consulta de pendientes en `/bodega` ahora incluye requisiciones `aprobada` y también `entregada` con `delivery_result` en `completa|parcial`, visibles para todos los usuarios de bodega. El historial del rol `bodega` se restringe a requisiciones donde el usuario fue `delivered_by` o `liquidated_by`.
+  - `templates/bodega.html`: la tabla superior pasa a ser `Pendientes de bodega`, agrega columna `Estado`, cambia `Fecha clave` según fase y muestra acción `Gestionar` o `Liquidar` según corresponda.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: actualizadas para reflejar el nuevo criterio operativo.
+- Comandos ejecutados:
+  - Sin tests automáticos; el ajuste fue de consulta SSR + template.
+- Resultado:
+  - Un usuario `bodega` ya puede ver todas las requisiciones pendientes de preparar y todas las entregadas pendientes de liquidar.
+  - Su historial deja de ser global y conserva únicamente movimientos propios de preparación o liquidación.

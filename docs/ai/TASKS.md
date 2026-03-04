@@ -51,6 +51,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-094A` | `done` | Ajuste de consistencia PDF vs detalle liquidado: `Ingreso PK (Bodega)` por ítem usa la cantidad operativa real y `DIF` muestra `Falta/Extra` con magnitud numérica, alineado con la app.
 - `REQ-094B` | `done` | Ajuste de branding en PDF: el header superior izquierdo ahora usa el logo real de ProHygiene tomado de `static/branding/logo-prohygiene-es.png` en lugar del texto plano.
 - `REQ-093D` | `done` | El detalle de requisición ahora muestra `contexto_operacion` también antes de la liquidación, debajo de la descripción del ítem, para dar visibilidad completa del caso (`Reposición` / `Instalación inicial`) en todo el ciclo.
+- `REQ-095` | `done` | Ajuste operativo de vista `Bodega`: usuarios `bodega` ahora ven todas las requisiciones pendientes de preparar o liquidar (`aprobada` + `entregada` elegible), mientras que su historial queda restringido a las que ellos prepararon o liquidaron.
 - `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
 
 ## Despliegue Producción

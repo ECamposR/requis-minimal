@@ -23,34 +23,54 @@
 <p class="page-subtitle">Filtro aplicado en historial por resultado de entrega.</p>
 {% endif %}
 {% if filtro_vista != 'historial' %}
-<h3>Pendientes por entregar</h3>
+<h3>Pendientes de bodega</h3>
 {% if pendientes_entrega %}
 <section class="panel view-panel table-wrap">
 <table class="table-compact">
     <thead>
     <tr>
         <th class="col-folio">Folio</th>
+        <th>Estado</th>
         <th>Solicitante</th>
         <th>Departamento</th>
         <th>Aprobado por</th>
         <th>Justificacion</th>
-        <th class="col-fecha">Aprobada en</th>
+        <th class="col-fecha">Fecha clave</th>
         <th class="col-detalle">Detalle</th>
-        <th class="col-acciones">Entrega</th>
+        <th class="col-acciones">Accion</th>
     </tr>
     </thead>
     <tbody>
     {% for req in pendientes_entrega %}
     <tr>
         <td>{{ req.folio }}</td>
+        <td>
+            {% if req.estado == 'aprobada' %}
+            {{ ui.status_badge('aprobada') }}
+            {% else %}
+            {{ ui.status_badge('entregada') }}
+            {% endif %}
+        </td>
         <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
         <td>{{ req.departamento }}</td>
         <td>{{ req.aprobador.nombre if req.aprobador else '-' }}</td>
         <td class="truncate" title="{{ req.justificacion }}">{{ req.justificacion }}</td>
-        <td>{{ req.approved_at | fmt_dt }}</td>
+        <td>
+            {% if req.estado == 'aprobada' %}
+            {{ req.approved_at | fmt_dt }}
+            {% else %}
+            {{ req.delivered_at | fmt_dt }}
+            {% endif %}
+        </td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td class="table-actions">
+            {% if req.estado == 'aprobada' %}
             <a href="/bodega/{{ req.id }}/gestionar" role="button" class="secondary">Gestionar</a>
+            {% elif req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
+            <a href="/liquidar/{{ req.id }}" role="button" class="secondary">Liquidar</a>
+            {% else %}
+            -
+            {% endif %}
         </td>
     </tr>
     {% endfor %}
@@ -58,12 +78,12 @@
 </table>
 </section>
 {% else %}
-<p>No hay requisiciones aprobadas pendientes de entrega.</p>
+<p>No hay requisiciones pendientes de preparar o liquidar.</p>
 {% endif %}
 {% endif %}
 
 {% if filtro_vista != 'pendientes' %}
-<h3>Historial de bodega</h3>
+<h3>Historial propio de bodega</h3>
 {% if historial_entregadas %}
 <section class="panel view-panel table-wrap">
 <table class="table-compact">
