@@ -1,0 +1,761 @@
+"""
+app/pdf_generator.py  —  v4
+Requisición liquidada — PDF imprimible ProHygiene.
+
+CONVENCIÓN DE COORDENADAS (importante para entender el código):
+  - ReportLab usa y desde abajo. Internamente trabajamos con 'top':
+    la coordenada Y de la PARTE SUPERIOR de cada elemento.
+  - Para dibujar texto: baseline = top - font_size
+  - Para dibujar un rectángulo de alto H empezando en 'top': rect(x, top-H, w, H)
+  - Cada función recibe 'top' y devuelve 'top - altura_consumida'.
+
+Uso:
+    from app.pdf_generator import generate_requisicion_pdf
+    pdf_bytes = generate_requisicion_pdf(req_dict)
+"""
+
+import io
+import json
+from collections import Counter
+from datetime import datetime
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import mm
+from reportlab.pdfgen import canvas as rl_canvas
+
+# ─── Página ───────────────────────────────────────────────────────────────────
+PW, PH = letter          # 612 × 792 pt
+ML  = 14 * mm
+MR  = 14 * mm
+MT  = 12 * mm
+MB  = 12 * mm
+UW  = PW - ML - MR       # ≈ 533 pt
+
+GAP = 5 * mm             # separación vertical entre secciones
+
+# ─── Paleta (Arctic Glass, fiel a la app) ────────────────────────────────────
+C_PAGE_BG   = colors.HexColor("#e8f0fe")   # fondo página
+C_HDR_BG    = colors.HexColor("#1e3a5f")   # header azul oscuro
+C_PRI       = colors.HexColor("#1d4ed8")   # azul primario (botones, nodos)
+C_PRI_LIGHT = colors.HexColor("#dbeafe")   # azul muy claro (fondos)
+C_PRI_BORDER= colors.HexColor("#bfdbfe")   # borde azul claro
+C_CARD_TOP  = colors.HexColor("#1d4ed8")   # franja superior de cards
+C_WHITE     = colors.white
+C_CARD_BG   = colors.HexColor("#f8faff")   # fondo card
+C_TBL_ALT   = colors.HexColor("#f0f6ff")   # fila par tabla
+C_BLACK     = colors.HexColor("#111827")
+C_GRAY1     = colors.HexColor("#374151")   # texto normal
+C_GRAY2     = colors.HexColor("#6b7280")   # labels / secundario
+C_SEP       = colors.HexColor("#e2e8f0")   # separadores
+
+C_GREEN     = colors.HexColor("#16a34a")
+C_GREEN_BG  = colors.HexColor("#dcfce7")
+C_GREEN_BD  = colors.HexColor("#86efac")
+C_AMBER     = colors.HexColor("#d97706")
+C_AMBER_BG  = colors.HexColor("#fef9c3")
+C_AMBER_BD  = colors.HexColor("#fcd34d")
+C_RED       = colors.HexColor("#dc2626")
+C_RED_BG    = colors.HexColor("#fee2e2")
+C_RED_BD    = colors.HexColor("#fca5a5")
+
+ALERT_MAP = {
+    "ALERTA_FALTANTE":           "Faltante",
+    "ALERTA_EXCEDENTE":          "Excedente",
+    "ALERTA_SOBRANTE":          "Sobrante",
+    "ALERTA_RETORNO_EXTRA":     "Retorno extra",
+    "ALERTA_SALIDA_SIN_SOPORTE":"Inconsistencia",
+    "ALERTA_CONSUMO_CERO":       "Consumo cero",
+    "ALERTA_RETORNO_INCOMPLETO": "Retorno incompleto",
+    "ALERTA_SIN_PROKEY":         "Sin ProKey",
+}
+
+
+# ─── Primitivos de dibujo ────────────────────────────────────────────────────
+
+def _box(cv, x, top, w, h, *, fill=None, stroke=None, lw=0.5, r=0):
+    """Rectángulo. 'top' = coordenada Y superior."""
+    if fill:
+        cv.setFillColor(fill)
+    if stroke:
+        cv.setStrokeColor(stroke)
+        cv.setLineWidth(lw)
+    kw = dict(fill=1 if fill else 0, stroke=1 if stroke else 0)
+    if r:
+        cv.roundRect(x, top - h, w, h, r, **kw)
+    else:
+        cv.rect(x, top - h, w, h, **kw)
+
+
+def _hline(cv, x, y, w, color=C_SEP, lw=0.4):
+    cv.setStrokeColor(color)
+    cv.setLineWidth(lw)
+    cv.line(x, y, x + w, y)
+
+
+def _str(cv, x, top, text, *, font="Helvetica", size=8, color=C_BLACK,
+         align="left", max_ch=None):
+    """
+    Dibuja texto. 'top' = parte superior del bloque de texto.
+    baseline = top - size  (texto crece hacia abajo desde top).
+    Retorna la coordenada Y de la parte inferior del texto (= baseline).
+    """
+    s = str(text)
+    if max_ch and len(s) > max_ch:
+        s = s[:max_ch - 1] + "…"
+    baseline = top - size
+    cv.setFont(font, size)
+    cv.setFillColor(color)
+    if align == "center":
+        cv.drawCentredString(x, baseline, s)
+    elif align == "right":
+        cv.drawRightString(x, baseline, s)
+    else:
+        cv.drawString(x, baseline, s)
+    return baseline   # == top - size
+
+
+def _label_val(cv, x, top, label, value, *,
+               lsize=5.5, vsize=8.5, gap=2,
+               vfont="Helvetica-Bold", vcolor=C_BLACK,
+               max_ch=30):
+    """
+    Dibuja:  LABEL (pequeño, gris)     ← empieza en 'top'
+             Valor (grande, negrita)    ← empieza en top - lsize - gap
+
+    Retorna el 'top' de la siguiente fila (= top - lsize - gap - vsize - padding_bottom).
+    'gap' es el espacio entre la parte inferior del label y la parte superior del valor.
+    """
+    # Label: su parte superior es 'top', baseline = top - lsize
+    _str(cv, x, top, label.upper(), font="Helvetica", size=lsize, color=C_GRAY2)
+
+    # Valor: su parte superior es top - lsize - gap
+    val_top = top - lsize - gap
+    _str(cv, x, val_top, str(value),
+         font=vfont, size=vsize, color=vcolor, max_ch=max_ch)
+
+    # Devuelve dónde acaba el bloque completo (parte inferior del valor)
+    return val_top - vsize   # == top - lsize - gap - vsize
+
+
+# ─── Helpers de datos ────────────────────────────────────────────────────────
+
+def _parse_alerts(raw):
+    if not raw:
+        return []
+    if isinstance(raw, list):
+        return raw
+    try:
+        return json.loads(raw)
+    except Exception:
+        return []
+
+
+def _alert_type(alert):
+    if isinstance(alert, dict):
+        return str(alert.get("type") or "")
+    return str(alert or "")
+
+
+def _fmt(val, *, date_only=False):
+    if not val:
+        return "—"
+    try:
+        s = str(val)[:19].replace("T", " ")
+        dt = datetime.strptime(s, "%Y-%m-%d %H:%M:%S")
+        return dt.strftime("%d/%m/%Y") if date_only else dt.strftime("%d/%m/%Y %H:%M")
+    except Exception:
+        return str(val)[:16]
+
+
+def _estado_style(estado):
+    """(fg, bg, border)"""
+    return {
+        "liquidada": (C_GREEN,    C_GREEN_BG,  C_GREEN_BD),
+        "entregada": (C_PRI,      C_PRI_LIGHT, C_PRI_BORDER),
+        "aprobada":  (colors.HexColor("#7c3aed"),
+                      colors.HexColor("#ede9fe"),
+                      colors.HexColor("#c4b5fd")),
+        "pendiente": (C_AMBER, C_AMBER_BG, C_AMBER_BD),
+        "rechazada": (C_RED,   C_RED_BG,   C_RED_BD),
+    }.get(str(estado).lower(), (C_GRAY2, C_CARD_BG, C_SEP))
+
+
+def _dif_chip(item):
+    """(label, fg, bg, border)"""
+    mode = (item.get("liquidation_mode") or "").upper()
+    ent  = item.get("cantidad_entregada") or 0
+    ret  = item.get("cantidad_retorna")   or 0
+    usd  = item.get("cantidad_usada")     or 0
+    nou  = item.get("cantidad_no_usada")  or 0
+    d = (ret - ent) if mode == "RETORNABLE" else ((usd + nou) - ent)
+    if d == 0: return "OK",    C_GREEN, C_GREEN_BG, C_GREEN_BD
+    if d < 0:  return "Falta", C_RED,   C_RED_BG,   C_RED_BD
+    return             "Extra",C_AMBER, C_AMBER_BG, C_AMBER_BD
+
+
+def _wrap(text, max_ch=55):
+    words = str(text).split()
+    lines, cur = [], ""
+    for w in words:
+        t = (cur + " " + w).strip()
+        if len(t) > max_ch:
+            if cur: lines.append(cur)
+            cur = w
+        else:
+            cur = t
+    if cur: lines.append(cur)
+    return lines
+
+
+# ─── Generador principal ─────────────────────────────────────────────────────
+
+def generate_requisicion_pdf(req: dict) -> bytes:
+    buf = io.BytesIO()
+    cv  = rl_canvas.Canvas(buf, pagesize=letter)
+
+    folio = req.get("folio") or f"REQ-{req.get('id', 0):04d}"
+    cv.setTitle(f"Requisicion {folio}")
+    cv.setAuthor("Sistema de Requisiciones ProHygiene")
+
+    # Fondo de página
+    _box(cv, 0, PH, PW, PH, fill=C_PAGE_BG)
+
+    top = PH - MT   # cursor: parte superior disponible
+
+    top = _header(cv, req, folio, top)  ;  top -= GAP
+    top = _cards(cv, req, top)          ;  top -= GAP
+    top = _items_table(cv, req, top)    ;  top -= GAP
+    top = _just_com(cv, req, top)       ;  top -= GAP
+    top = _timeline(cv, req, top)
+
+    _footer(cv, folio)
+    cv.save()
+    buf.seek(0)
+    return buf.read()
+
+
+# ─── 1. HEADER ───────────────────────────────────────────────────────────────
+
+def _header(cv, req, folio, top):
+    H = 19 * mm
+    _box(cv, ML, top, UW, H, fill=C_HDR_BG, r=5)
+
+    # Empresa (izquierda)
+    _str(cv, ML + 6, top - 3,  "ProHygiene",
+         font="Helvetica-Bold", size=13, color=C_WHITE)
+    _str(cv, ML + 6, top - 3 - 13 - 2, "ENMANUEL, S.A. DE C.V.",
+         font="Helvetica", size=6.5,
+         color=colors.HexColor("#93c5fd"))
+    _str(cv, ML + 6, top - 3 - 13 - 2 - 6.5 - 2,
+         "Sistema interno de requisiciones",
+         font="Helvetica", size=5.5,
+         color=colors.HexColor("#bfdbfe"))
+
+    # Folio (centro)
+    cx = ML + UW / 2
+    _str(cv, cx, top - 4, "REQUISICIÓN",
+         font="Helvetica", size=6.5,
+         color=colors.HexColor("#93c5fd"), align="center")
+    _str(cv, cx, top - 4 - 6.5 - 2, folio,
+         font="Helvetica-Bold", size=15,
+         color=C_WHITE, align="center")
+
+    # Badge estado (derecha)
+    estado = str(req.get("estado", "liquidada")).lower()
+    fc, bg, bd = _estado_style(estado)
+    BW, BH = 30 * mm, 7 * mm
+    bx  = ML + UW - BW - 5
+    b_top = top - H / 2 + BH / 2
+    _box(cv, bx, b_top, BW, BH, fill=bg, stroke=bd, lw=0.8, r=3)
+    _str(cv, bx + BW / 2, b_top - (BH - 7) / 2,
+         estado.upper(), font="Helvetica-Bold",
+         size=7, color=fc, align="center")
+
+    return top - H
+
+
+# ─── 2. CARDS (3 columnas) ───────────────────────────────────────────────────
+
+# Altura fija de la card.  Calculamos: franja(3mm) + título(5mm) + sep(2mm) + 4filas×(5.5+2+8.5+4)mm
+# Cada fila label+valor: lsize=5.5 gap=2 vsize=8 padding_bajo=4 → 19.5pt ≈ 7mm
+# 4 filas = 28mm  +  título 5mm  +  franja 3mm  +  padding top 3mm = 39mm → redondeamos a 44mm
+CARD_H      = 44 * mm
+CARD_FRANJA = 3 * mm    # franja de color top
+CARD_PAD    = 4 * mm    # padding horizontal interior
+
+
+def _cards(cv, req, top):
+    GAP3 = 3 * mm
+    CW   = (UW - GAP3 * 2) / 3
+
+    for i, fn in enumerate([_card_info, _card_estado, _card_alertas]):
+        cx = ML + i * (CW + GAP3)
+
+        # Sombra/card blanca
+        _box(cv, cx, top, CW, CARD_H,
+             fill=C_WHITE, stroke=C_PRI_BORDER, lw=0.7, r=4)
+
+        # Franja de color en el tope (con esquinas redondeadas arriba)
+        # Truco: dibujamos rect redondeado encima y luego tapamos la mitad inferior
+        _box(cv, cx, top, CW, CARD_FRANJA,
+             fill=C_PRI, r=4)
+        _box(cv, cx, top - CARD_FRANJA / 2, CW, CARD_FRANJA / 2,
+             fill=C_PRI, r=0)
+
+        # Contenido de la card: top del contenido = top - franja - padding
+        content_top = top - CARD_FRANJA - CARD_PAD
+        fn(cv, req, cx + CARD_PAD, content_top, CW - CARD_PAD * 2)
+
+    return top - CARD_H
+
+
+def _card_header(cv, x, top, w, title):
+    """Dibuja el título de la card y devuelve el top del contenido bajo él."""
+    _str(cv, x, top, title,
+         font="Helvetica-Bold", size=7.5, color=C_HDR_BG)
+    sep_y = top - 7.5 - 2          # 2pt bajo la baseline del título
+    _hline(cv, x, sep_y, w, color=C_PRI_BORDER, lw=0.6)
+    return sep_y - 3               # 3pt de aire bajo el separador
+
+
+def _card_row(cv, x, top, label, value, *,
+              vcolor=C_BLACK, lsize=5.5, vsize=8, gap=1.5, row_gap=5):
+    """
+    Dibuja label + value y devuelve el 'top' de la siguiente fila.
+    - label: baseline en top - lsize
+    - value: top en top - lsize - gap  →  baseline en top - lsize - gap - vsize
+    - siguiente fila: top - lsize - gap - vsize - row_gap
+    """
+    _str(cv, x, top, label.upper(),
+         font="Helvetica", size=lsize, color=C_GRAY2)
+    val_top = top - lsize - gap
+    _str(cv, x, val_top, str(value),
+         font="Helvetica-Bold", size=vsize, color=vcolor, max_ch=28)
+    return val_top - vsize - row_gap
+
+
+def _card_info(cv, req, x, top, w):
+    cur = _card_header(cv, x, top, w, "Información general")
+    ROW_GAP = 5
+    for lbl, val in [
+        ("Cliente",        req.get("cliente") or "—"),
+        ("Código cliente", str(req.get("codigo_cliente") or "—")),
+        ("Ruta principal", req.get("ruta") or "—"),
+        ("Solicitante",    req.get("solicitante_nombre") or "—"),
+    ]:
+        cur = _card_row(cv, x, cur, lbl, val, row_gap=ROW_GAP)
+
+
+def _card_estado(cv, req, x, top, w):
+    cur = _card_header(cv, x, top, w, "Estado liquidación")
+
+    # ESTADO label
+    _str(cv, x, cur, "ESTADO", font="Helvetica", size=5.5, color=C_GRAY2)
+    cur -= 5.5 + 1.5    # bajo el label
+
+    # Badge de estado
+    estado = str(req.get("estado", "liquidada")).lower()
+    fc, bg, bd = _estado_style(estado)
+    BW, BH = w * 0.65, 6.5 * mm
+    _box(cv, x, cur, BW, BH, fill=bg, stroke=bd, lw=0.6, r=3)
+    _str(cv, x + BW / 2, cur - (BH - 7) / 2,
+         estado, font="Helvetica-Bold", size=7, color=fc, align="center")
+    cur -= BH + 4       # bajo el badge
+
+    ROW_GAP = 5
+    for lbl, val, col in [
+        ("Por",          req.get("aprobador_nombre") or "—",            C_BLACK),
+        ("Recibido por", (req.get("recibido_por_nombre")
+                          or req.get("tecnico_nombre") or "—"),         C_BLACK),
+        ("Hora firma",   _fmt(req.get("recibido_at")
+                              or req.get("delivered_at")),              C_BLACK),
+        ("Ref ProKey",   req.get("prokey_ref") or "Pendiente",
+                         C_AMBER if not req.get("prokey_ref") else C_BLACK),
+    ]:
+        cur = _card_row(cv, x, cur, lbl, val, vcolor=col, row_gap=ROW_GAP)
+
+
+def _card_alertas(cv, req, x, top, w):
+    cur = _card_header(cv, x, top, w, "Alertas de conciliación")
+
+    items = req.get("items", [])
+    all_al = []
+    for it in items:
+        all_al.extend(_parse_alerts(it.get("liquidation_alerts")))
+    high = sum(1 for a in all_al if str(getattr(a, "get", lambda *_: None)("severity") or "") == "high")
+    total = len(all_al)
+
+    ROW_GAP = 5
+    cur = _card_row(cv, x, cur, "Total",
+                    f"{total} detectadas" if total else "0 detectadas",
+                    vcolor=C_RED if total else C_GREEN,
+                    row_gap=ROW_GAP)
+    cur = _card_row(cv, x, cur, "Alta severidad",
+                    str(high),
+                    vcolor=C_RED if high else C_GREEN,
+                    row_gap=ROW_GAP)
+
+    _str(cv, x, cur, "TIPOS FRECUENTES",
+         font="Helvetica", size=5.5, color=C_GRAY2)
+    cur -= 5.5 + 1.5
+    if all_al:
+        cnt = Counter(_alert_type(alert) for alert in all_al if _alert_type(alert))
+        top_k = cnt.most_common(1)[0][0] if cnt else ""
+        top_lb = ALERT_MAP.get(top_k, top_k)
+        _str(cv, x, cur, top_lb, font="Helvetica-Bold",
+             size=8, color=C_RED, max_ch=24)
+    else:
+        _str(cv, x, cur, "Ninguno", font="Helvetica-Bold",
+             size=8, color=C_GREEN)
+
+
+# ─── 3. TABLA DE ÍTEMS ───────────────────────────────────────────────────────
+
+# (nombre, fraccion_ancho, align)
+_COLS = [
+    ("Descripción",  0.255, "left"),
+    ("Entregado",    0.07,  "center"),
+    ("Tipo",         0.09,  "center"),
+    ("Contexto",     0.10,  "center"),
+    ("Usado",        0.065, "center"),
+    ("No usado",     0.065, "center"),
+    ("Regresa",      0.065, "center"),
+    ("DIF",          0.075, "center"),
+    ("Ingreso PK",   0.075, "center"),
+    ("Alertas",      0.135, "center"),
+]
+
+HDR_H  = 8  * mm    # altura cabecera tabla
+ROW_H  = 11 * mm    # altura fila normal
+NOTE_H = 4.5 * mm   # altura extra si tiene nota
+
+
+def _items_table(cv, req, top):
+    items   = req.get("items", [])
+    widths  = [UW * f for _, f, _ in _COLS]
+    x0      = ML
+
+    rows_h  = [ROW_H + (NOTE_H if it.get("nota_liquidacion") else 0)
+               for it in items]
+    T_H     = HDR_H + sum(rows_h)
+
+    # Fondo blanco de toda la tabla
+    _box(cv, x0, top, UW, T_H,
+         fill=C_WHITE, stroke=C_PRI_BORDER, lw=0.8, r=4)
+
+    # ── Cabecera ──
+    _box(cv, x0, top, UW, HDR_H, fill=C_HDR_BG, r=4)
+    # Tapar esquinas redondeadas en la parte inferior de la cabecera
+    _box(cv, x0, top - HDR_H / 2, UW, HDR_H / 2, fill=C_HDR_BG, r=0)
+
+    cx = x0
+    for (lbl, _, align), w in zip(_COLS, widths):
+        tx = cx + w / 2 if align == "center" else cx + 3
+        # Centrar verticalmente el texto en la cabecera
+        _str(cv, tx, top - (HDR_H - 7) / 2,
+             lbl, font="Helvetica-Bold", size=6.5,
+             color=C_WHITE, align=align)
+        cx += w
+
+    cur_top = top - HDR_H
+
+    # ── Filas de datos ──
+    for i, item in enumerate(items):
+        rh     = rows_h[i]
+        alerts = _parse_alerts(item.get("liquidation_alerts"))
+        nota   = item.get("nota_liquidacion")
+
+        # Fondo alternado
+        if i % 2 == 0:
+            _box(cv, x0 + 1, cur_top, UW - 2, rh, fill=C_TBL_ALT)
+
+        # Separador inferior
+        _hline(cv, x0, cur_top - rh, UW, color=C_SEP, lw=0.3)
+
+        # Centro vertical de la fila (sólo ROW_H, no la nota)
+        row_mid = cur_top - ROW_H / 2
+
+        dif_lbl, dif_fc, dif_bg, dif_bd = _dif_chip(item)
+        mode_s  = (item.get("liquidation_mode") or "—").capitalize()
+        ctx_s   = (item.get("contexto_operacion") or "—").replace("_", " ").title()
+        pk_val = item.get("prokey_ref") or "—"
+        first_alert_type = _alert_type(alerts[0]) if alerts else ""
+        al_txt  = (ALERT_MAP.get(first_alert_type, first_alert_type)
+                   if first_alert_type else "Sin alertas")
+        al_col  = C_RED if alerts else C_GRAY2
+
+        row_vals = [
+            item.get("descripcion", "—"),
+            str(item.get("cantidad_entregada") or 0),
+            mode_s, ctx_s,
+            str(item.get("cantidad_usada")    or 0),
+            str(item.get("cantidad_no_usada") or 0),
+            str(item.get("cantidad_retorna")  or 0),
+            dif_lbl,   # chip especial
+            pk_val,
+            al_txt,
+        ]
+
+        cx = x0
+        for j, ((_, _, align), w, val) in enumerate(zip(_COLS, widths, row_vals)):
+            mid_x = cx + w / 2
+
+            if j == 7:   # DIF chip
+                cw, ch = w - 6, 5 * mm
+                _box(cv, cx + 3, row_mid + ch / 2, cw, ch,
+                     fill=dif_bg, stroke=dif_bd, lw=0.5, r=2)
+                _str(cv, mid_x, row_mid + ch / 2 - (ch - 7) / 2,
+                     dif_lbl, font="Helvetica-Bold",
+                     size=7, color=dif_fc, align="center")
+
+            elif j == 9: # Alertas
+                _str(cv, mid_x, row_mid + 3,
+                     al_txt, font="Helvetica", size=6,
+                     color=al_col, align="center", max_ch=20)
+
+            elif j == 0: # Descripción
+                _str(cv, cx + 3, row_mid + 4,
+                     str(val), font="Helvetica-Bold",
+                     size=7.5, color=C_BLACK, max_ch=32)
+
+            elif j == 3: # Contexto — gris, más pequeño
+                _str(cv, mid_x, row_mid + 3,
+                     str(val), font="Helvetica", size=6,
+                     color=C_GRAY2, align="center", max_ch=14)
+
+            elif j == 2: # Tipo
+                _str(cv, mid_x, row_mid + 3,
+                     str(val), font="Helvetica-Bold", size=6.5,
+                     color=C_GRAY1, align="center", max_ch=12)
+
+            else:
+                col = C_GRAY2 if (j == 8 and pk_val == "—") else C_GRAY1
+                _str(cv, mid_x, row_mid + 3,
+                     str(val), font="Helvetica", size=7.5,
+                     color=col, align="center")
+            cx += w
+
+        # Nota del ítem
+        if nota:
+            note_top = cur_top - ROW_H
+            _str(cv, x0 + 5, note_top - 1,
+                 f"↳ {str(nota)[:110]}",
+                 font="Helvetica-Oblique", size=5.5, color=C_GRAY2)
+
+        cur_top -= rh
+
+    # Líneas verticales de columnas
+    cv.setStrokeColor(C_SEP)
+    cv.setLineWidth(0.3)
+    cx = x0
+    for w in widths[:-1]:
+        cx += w
+        cv.line(cx, cur_top, cx, top - HDR_H)
+
+    return cur_top
+
+
+# ─── 4. JUSTIFICACIÓN + COMENTARIO ──────────────────────────────────────────
+
+JUST_H     = 22 * mm
+JUST_HDR_H = 8  * mm    # franja con el título dentro del panel
+JUST_PAD   = 4  * mm
+LINE_H_TXT = 5.5         # interlineado del texto de contenido
+
+
+def _just_com(cv, req, top):
+    HALF = (UW - 3 * mm) / 2
+
+    for label, text, rx in [
+        ("Justificación",
+         req.get("justificacion") or "—",
+         ML),
+        ("Comentario de liquidación",
+         req.get("comentario_liquidacion") or "—",
+         ML + HALF + 3 * mm),
+    ]:
+        # Card blanca
+        _box(cv, rx, top, HALF, JUST_H,
+             fill=C_WHITE, stroke=C_PRI_BORDER, lw=0.7, r=4)
+
+        # Franja título
+        _box(cv, rx, top, HALF, JUST_HDR_H, fill=C_CARD_BG, r=4)
+        _box(cv, rx, top - JUST_HDR_H / 2, HALF, JUST_HDR_H / 2,
+             fill=C_CARD_BG, r=0)
+        _str(cv, rx + JUST_PAD, top - (JUST_HDR_H - 7.5) / 2,
+             label, font="Helvetica-Bold", size=7.5, color=C_HDR_BG)
+        _hline(cv, rx + JUST_PAD, top - JUST_HDR_H,
+               HALF - JUST_PAD * 2, color=C_PRI_BORDER, lw=0.5)
+
+        # Texto envuelto
+        is_empty = str(text).strip() in ("", "—")
+        lines    = _wrap(str(text), max_ch=50)
+        cv.setFont("Helvetica", 7)
+        cv.setFillColor(C_GRAY2 if is_empty else C_GRAY1)
+        ty = top - JUST_HDR_H - JUST_PAD   # baseline primera línea
+        for line in lines[:3]:
+            cv.drawString(rx + JUST_PAD, ty - 7, line)
+            ty -= LINE_H_TXT + 7
+
+    return top - JUST_H
+
+
+# ─── 5. TIMELINE ────────────────────────────────────────────────────────────
+
+TL_H       = 28 * mm
+TL_HDR_H   = 8  * mm
+TL_PAD     = 4  * mm
+
+
+def _timeline(cv, req, top):
+    events = []
+    for lbl, actor_key, ts_key in [
+        ("Req. creada",    "solicitante_nombre", "created_at"),
+        ("Req. aprobada",  "aprobador_nombre",   "approved_at"),
+        ("Prep. bodega",   "jefe_bodega_nombre", "delivered_at"),
+        ("Recibido firma", "recibido_por_nombre","recibido_at"),
+        ("Liquidada",      "aprobador_nombre",   "liquidated_at"),
+    ]:
+        ts = (req.get(ts_key)
+              or (req.get("delivered_at") if ts_key == "recibido_at" else None))
+        if ts:
+            actor = (req.get(actor_key)
+                     or req.get("tecnico_nombre") or "—")
+            events.append((lbl, actor, ts))
+
+    if not events:
+        return top
+
+    _box(cv, ML, top, UW, TL_H,
+         fill=C_WHITE, stroke=C_PRI_BORDER, lw=0.7, r=4)
+
+    # Franja/título
+    _box(cv, ML, top, UW, TL_HDR_H, fill=C_CARD_BG, r=4)
+    _box(cv, ML, top - TL_HDR_H / 2, UW, TL_HDR_H / 2, fill=C_CARD_BG, r=0)
+    _str(cv, ML + TL_PAD, top - (TL_HDR_H - 7.5) / 2,
+         "Línea de tiempo del flujo",
+         font="Helvetica-Bold", size=7.5, color=C_HDR_BG)
+    _hline(cv, ML + TL_PAD, top - TL_HDR_H,
+           UW - TL_PAD * 2, color=C_PRI_BORDER, lw=0.5)
+
+    # Zona del timeline
+    tz_top = top - TL_HDR_H    # top de la zona gráfica
+    tz_h   = TL_H - TL_HDR_H  # altura disponible
+    line_y = tz_top - tz_h * 0.45  # Y de la línea horizontal
+
+    n     = len(events)
+    step  = UW / n
+    x1    = ML + step * 0.5
+    x2    = ML + step * (n - 0.5)
+
+    # Línea base
+    cv.setStrokeColor(C_PRI)
+    cv.setLineWidth(1.5)
+    cv.line(x1, line_y, x2, line_y)
+
+    R = 5  # radio del nodo
+
+    for i, (lbl, actor, ts) in enumerate(events):
+        nx = ML + step * (i + 0.5)
+
+        # Nodo
+        _box(cv, nx - R, line_y + R, R * 2, R * 2,
+             fill=C_PRI, r=R)
+        _str(cv, nx, line_y + R - (R * 2 - 7) / 2,
+             str(i + 1), font="Helvetica-Bold",
+             size=6, color=C_WHITE, align="center")
+
+        # Texto encima del nodo: label
+        lbl_top = line_y + R + 3 + 6    # 3pt sobre el nodo, texto size 6
+        _str(cv, nx, lbl_top, lbl,
+             font="Helvetica-Bold", size=6,
+             color=C_HDR_BG, align="center", max_ch=18)
+
+        # Texto debajo del nodo: actor y fecha
+        actor_top = line_y - R - 2       # 2pt bajo el nodo
+        _str(cv, nx, actor_top, str(actor),
+             font="Helvetica", size=5,
+             color=C_GRAY2, align="center", max_ch=20)
+
+        # Fecha debajo del actor
+        fecha_top = actor_top - 5 - 2    # size 5, luego 2pt gap
+        _str(cv, nx, fecha_top, _fmt(ts),
+             font="Helvetica", size=5,
+             color=C_GRAY2, align="center")
+
+    return top - TL_H
+
+
+# ─── FOOTER ──────────────────────────────────────────────────────────────────
+
+def _footer(cv, folio):
+    y_line = MB + 7   # Y de la línea separadora
+    _hline(cv, ML, y_line, UW, color=C_PRI_BORDER, lw=0.5)
+
+    ts = _fmt(datetime.now().isoformat())
+    # Texto baseline = y_line - gap
+    cv.setFont("Helvetica", 5.5)
+    cv.setFillColor(C_GRAY2)
+    cv.drawString(ML, y_line - 6, f"Documento generado: {ts}")
+    cv.drawRightString(ML + UW, y_line - 6,
+                       f"Sistema de Requisiciones ProHygiene  |  {folio}")
+
+
+# ─── PRUEBA LOCAL ─────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    sample = {
+        "id": 2, "folio": "REQ-0002", "estado": "liquidada",
+        "created_at":    "2026-03-03 14:48:41",
+        "approved_at":   "2026-03-03 14:48:47",
+        "delivered_at":  "2026-03-03 14:48:56",
+        "recibido_at":   "2026-03-03 14:48:56",
+        "liquidated_at": "2026-03-03 15:05:13",
+        "cliente":             "Cliente C",
+        "codigo_cliente":      "125",
+        "ruta":                "RD03",
+        "solicitante_nombre":  "Administrador",
+        "aprobador_nombre":    "Administrador",
+        "jefe_bodega_nombre":  "Administrador",
+        "recibido_por_nombre": "Julio Gonzalez",
+        "tecnico_nombre":      None,
+        "prokey_ref":          None,
+        "justificacion": (
+            "Lorem ipsum dolor sit amet consectetur adipiscing elit "
+            "eu tortor augue, fringilla enim et scelerisque posuere "
+            "placerat inceptos cubilia curae."
+        ),
+        "comentario_liquidacion": None,
+        "items": [
+            {
+                "descripcion":        "ALFOMBRA 2X3 AZUL",
+                "cantidad_entregada": 2,
+                "cantidad_usada":     2,
+                "cantidad_no_usada":  0,
+                "cantidad_retorna":   2,
+                "liquidation_mode":   "RETORNABLE",
+                "contexto_operacion": "instalacion_inicial",
+                "prokey_ref":         "2",
+                "liquidation_alerts": [],
+                "nota_liquidacion":   None,
+            },
+            {
+                "descripcion":        "SPRAY AROM FRUTAL",
+                "cantidad_entregada": 2,
+                "cantidad_usada":     1,
+                "cantidad_no_usada":  1,
+                "cantidad_retorna":   1,
+                "liquidation_mode":   "CONSUMIBLE",
+                "contexto_operacion": "reposicion",
+                "prokey_ref":         None,
+                "liquidation_alerts": [],
+                "nota_liquidacion":   None,
+            },
+        ],
+    }
+
+    out = "/mnt/user-data/outputs/requisicion_REQ0002_v4.pdf"
+    with open(out, "wb") as f:
+        f.write(generate_requisicion_pdf(sample))
+    print(f"✓ PDF → {out}")

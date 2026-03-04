@@ -47,6 +47,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-093A` | `done` | En liquidación, `Tipo` deja de ser editable cuando el catálogo ya lo clasifica; solo se mantiene como selector en ítems sin `tipo_item`, y backend fuerza el valor de catálogo para evitar overrides manuales.
 - `REQ-093B` | `done` | Ajuste de UX en detalle liquidado: la columna `DIF` ya no muestra signos ambiguos (`+/-`) y ahora comunica `Falta`, `Extra` u `OK` según el sentido operativo del retorno.
 - `REQ-093C` | `done` | Ajuste de copy en detalle liquidado: el encabezado `Ingreso PK` ahora explicita `Ingreso PK (Bodega)` para dejar claro el responsable operativo del registro.
+- `REQ-094` | `done` | Integración de exportación PDF para requisiciones liquidadas: endpoint `GET /requisiciones/{id}/pdf`, mapeo al modelo real, `pdf_url` en detalle y dependencia `reportlab`.
 - `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
 
 ## Despliegue Producción

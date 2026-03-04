@@ -2061,3 +2061,19 @@
   - Ve el historial completo de entregas (bodega plain solo ve las propias).
   - API de detalle: acceso sin restricción de estado (equivalente a aprobador).
   - Aparece en el formulario de creación/edición de usuarios del admin.
+
+## 2026-03-04 15:20 UTC-06:00 | tool: Codex CLI
+- Objetivo: Integrar generación PDF de requisiciones liquidadas al backend real.
+- Tareas: `REQ-094`.
+- Cambios:
+  - `app/pdf_generator.py`: se incorpora al repo y se ajusta para consumir alertas reales persistidas como lista de dicts (`type`, `severity`, `data`) sin fallar al renderizar cards ni tabla.
+  - `app/main.py`: nuevo helper `build_requisicion_pdf_payload(...)`, endpoint `GET /requisiciones/{id}/pdf`, `pdf_url` en `GET /api/requisiciones/{id}` y control de acceso reutilizando la misma política del detalle. El endpoint rechaza estados distintos de `liquidada` con `403`.
+  - `requirements.txt`: se agrega `reportlab==4.2.5`.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: actualizadas para reflejar `REQ-094` completada.
+- Comandos ejecutados:
+  - `python -m compileall app static`
+  - `.venv/bin/python -c "from app.main import app; print(app.title)"`
+- Resultado:
+  - El detalle ya puede habilitar `Ver PDF` con `pdf_url`.
+  - El endpoint produce `application/pdf` inline con nombre `requisicion_<folio>.pdf`.
+  - El mapeo usa el modelo real: fechas, nombres de actores, comentario de liquidación, contexto operativo y alertas por ítem.

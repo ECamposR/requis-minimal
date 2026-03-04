@@ -9,7 +9,7 @@ from .crud import now_sv
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, or_
@@ -39,6 +39,7 @@ from .crud import (
 )
 from .database import get_db, run_migrations
 from .models import CatalogoItem, Requisicion, Usuario
+from .pdf_generator import generate_requisicion_pdf
 
 load_dotenv()
 
@@ -158,6 +159,15 @@ def normalize_optional_text(value: str | None) -> str | None:
     return cleaned or None
 
 
+def can_view_requisicion(req: Requisicion, current_user: Usuario) -> bool:
+    return (
+        current_user.rol == "admin"
+        or current_user.id == req.solicitante_id
+        or current_user.rol in ["aprobador", "jefe_bodega"]
+        or (current_user.rol == "bodega" and req.estado in ["aprobada", "entregada", "liquidada"])
+    )
+
+
 def normalize_contexto_operacion(value: str | None) -> str | None:
     cleaned = normalize_optional_text(value)
     if cleaned is None:
@@ -166,6 +176,56 @@ def normalize_contexto_operacion(value: str | None) -> str | None:
     if lowered not in ("reposicion", "instalacion_inicial"):
         return None
     return lowered
+
+
+def build_requisicion_pdf_payload(req: Requisicion) -> dict[str, object]:
+    items_payload: list[dict[str, object]] = []
+    for item in req.items:
+        parsed_alerts: list[dict[str, object]] = []
+        if item.liquidation_alerts:
+            try:
+                parsed = json.loads(item.liquidation_alerts)
+                if isinstance(parsed, list):
+                    parsed_alerts = parsed
+            except (json.JSONDecodeError, TypeError, ValueError):
+                parsed_alerts = []
+
+        items_payload.append(
+            {
+                "descripcion": item.descripcion,
+                "cantidad_entregada": item.cantidad_entregada,
+                "cantidad_usada": item.qty_used,
+                "cantidad_no_usada": item.qty_left_at_client,
+                "cantidad_retorna": item.qty_returned_to_warehouse,
+                "liquidation_mode": item.liquidation_mode,
+                "contexto_operacion": normalize_contexto_operacion(item.contexto_operacion),
+                "prokey_ref": req.prokey_ref,
+                "liquidation_alerts": parsed_alerts,
+                "nota_liquidacion": normalize_optional_text(item.item_liquidation_note),
+            }
+        )
+
+    return {
+        "id": req.id,
+        "folio": req.folio,
+        "estado": req.estado,
+        "created_at": req.created_at,
+        "approved_at": req.approved_at,
+        "delivered_at": req.delivered_at,
+        "recibido_at": req.recibido_at,
+        "liquidated_at": req.liquidated_at,
+        "cliente": req.cliente_nombre,
+        "codigo_cliente": req.cliente_codigo,
+        "ruta": req.cliente_ruta_principal,
+        "solicitante_nombre": req.solicitante.nombre if req.solicitante else None,
+        "aprobador_nombre": req.aprobador.nombre if req.aprobador else None,
+        "jefe_bodega_nombre": req.entregador.nombre if req.entregador else None,
+        "recibido_por_nombre": req.recibido_por.nombre if req.recibido_por else None,
+        "prokey_ref": req.prokey_ref,
+        "justificacion": req.justificacion,
+        "comentario_liquidacion": normalize_optional_text(req.liquidation_comment),
+        "items": items_payload,
+    }
 
 
 def redirect_with_message(url: str, message: str, level: str = "success") -> RedirectResponse:
@@ -1641,13 +1701,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
     if not req:
         raise HTTPException(status_code=404, detail="No existe")
 
-    can_view = (
-        current_user.rol == "admin"
-        or current_user.id == req.solicitante_id
-        or current_user.rol in ["aprobador", "jefe_bodega"]
-        or (current_user.rol == "bodega" and req.estado in ["aprobada", "entregada", "liquidada"])
-    )
-    if not can_view:
+    if not can_view_requisicion(req, current_user):
         raise HTTPException(status_code=403, detail="No autorizado")
 
     timeline: list[dict[str, object]] = []
@@ -1790,6 +1844,39 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "liquidation_comment": normalize_optional_text(req.liquidation_comment),
         "liquidated_by_name": req.liquidator.nombre if req.liquidator else None,
         "liquidated_at": req.liquidated_at,
+        "pdf_url": f"/requisiciones/{req.id}/pdf" if req.estado == "liquidada" else None,
         "timeline": timeline,
         "items": items_payload,
     }
+
+
+@app.get("/requisiciones/{req_id}/pdf")
+def requisicion_pdf(req_id: int, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    req = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.entregador),
+            joinedload(Requisicion.recibido_por),
+            joinedload(Requisicion.liquidator),
+        )
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="No existe")
+    if not can_view_requisicion(req, current_user):
+        raise HTTPException(status_code=403, detail="No autorizado")
+    if req.estado != "liquidada":
+        raise HTTPException(status_code=403, detail="Solo se puede generar PDF de requisiciones liquidadas")
+
+    payload = build_requisicion_pdf_payload(req)
+    pdf_bytes = generate_requisicion_pdf(payload)
+    safe_folio = re.sub(r"[^A-Za-z0-9_-]+", "_", req.folio or f"requisicion_{req.id}")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="requisicion_{safe_folio}.pdf"'},
+    )
