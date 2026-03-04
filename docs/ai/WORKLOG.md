@@ -2077,3 +2077,17 @@
   - El detalle ya puede habilitar `Ver PDF` con `pdf_url`.
   - El endpoint produce `application/pdf` inline con nombre `requisicion_<folio>.pdf`.
   - El mapeo usa el modelo real: fechas, nombres de actores, comentario de liquidación, contexto operativo y alertas por ítem.
+
+## 2026-03-04 16:05 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir discrepancia entre detalle web y PDF en columnas `Ingreso PK (Bodega)` y `DIF`.
+- Tareas: `REQ-094A`.
+- Cambios:
+  - `app/pdf_generator.py`: `DIF` ahora usa la misma fórmula que el detalle web (`expected_return - returned`) y renderiza `Falta X` / `Extra X` / `OK`; `Ingreso PK` toma `pk_ingreso_qty` por ítem en lugar de `prokey_ref`.
+  - `app/main.py`: el payload para PDF ahora pasa `pk_ingreso_qty` por ítem, calculado como `qty_returned_to_warehouse` solo para `RETORNABLE`.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: actualizadas con el ajuste puntual.
+- Comandos ejecutados:
+  - `python -m compileall app`
+  - `.venv/bin/python -c "from app.main import app; print(app.title)"`
+- Resultado:
+  - El PDF ya no pierde filas en `Ingreso PK (Bodega)` por usar el campo equivocado.
+  - `DIF` deja de mostrar solo el estado textual y ahora incluye la magnitud numérica, consistente con el detalle de la app.

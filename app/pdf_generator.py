@@ -179,10 +179,13 @@ def _dif_chip(item):
     ret  = item.get("cantidad_retorna")   or 0
     usd  = item.get("cantidad_usada")     or 0
     nou  = item.get("cantidad_no_usada")  or 0
-    d = (ret - ent) if mode == "RETORNABLE" else ((usd + nou) - ent)
-    if d == 0: return "OK",    C_GREEN, C_GREEN_BG, C_GREEN_BD
-    if d < 0:  return "Falta", C_RED,   C_RED_BG,   C_RED_BD
-    return             "Extra",C_AMBER, C_AMBER_BG, C_AMBER_BD
+    expected_return = (usd + nou) if mode == "RETORNABLE" else nou
+    d = expected_return - ret
+    if d == 0:
+        return "OK", C_GREEN, C_GREEN_BG, C_GREEN_BD
+    if d > 0:
+        return f"Falta {d:g}", C_RED, C_RED_BG, C_RED_BD
+    return f"Extra {abs(d):g}", C_AMBER, C_AMBER_BG, C_AMBER_BD
 
 
 def _wrap(text, max_ch=55):
@@ -485,7 +488,8 @@ def _items_table(cv, req, top):
         dif_lbl, dif_fc, dif_bg, dif_bd = _dif_chip(item)
         mode_s  = (item.get("liquidation_mode") or "—").capitalize()
         ctx_s   = (item.get("contexto_operacion") or "—").replace("_", " ").title()
-        pk_val  = item.get("prokey_ref") or "—"
+        pk_qty = item.get("pk_ingreso_qty")
+        pk_val = "—" if pk_qty is None else f"{pk_qty:g}"
         al_txt  = (ALERT_MAP.get(alerts[0], alerts[0])
                    if alerts else "Sin alertas")
         al_col  = C_RED if alerts else C_GRAY2

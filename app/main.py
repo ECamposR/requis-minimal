@@ -1850,6 +1850,11 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
                 "liquidation_mode": item.liquidation_mode,
                 "contexto_operacion": item.contexto_operacion,
                 "prokey_ref": req.prokey_ref,
+                "pk_ingreso_qty": (
+                    item.qty_returned_to_warehouse
+                    if (item.liquidation_mode or "").upper() == "RETORNABLE"
+                    else None
+                ),
                 "liquidation_alerts": alert_types,
                 "nota_liquidacion": item.item_liquidation_note,
             }
