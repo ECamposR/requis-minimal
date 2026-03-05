@@ -107,8 +107,18 @@
 
 <script>
     function parseNum(value) {
-        const n = Number(value);
+        if (value === null || value === undefined) return 0;
+        const raw = String(value).trim();
+        if (!raw) return 0;
+        const normalized = raw.replace(",", ".");
+        const n = parseFloat(normalized);
         return Number.isFinite(n) ? n : 0;
+    }
+
+    function inputNum(row, selector) {
+        const input = row.querySelector(selector);
+        if (!input) return 0;
+        return parseNum(input.value);
     }
 
     function formatNum(value) {
@@ -119,9 +129,9 @@
     function recalcRow(row) {
         const deliveredCell = row.querySelector("[data-delivered]");
         const delivered = parseNum(deliveredCell.dataset.delivered);
-        const returned = parseNum(row.querySelector("input[name^='qty_returned_']").value);
-        const used = parseNum(row.querySelector("input[name^='qty_used_']").value);
-        const notUsed = parseNum(row.querySelector("input[name^='qty_not_used_']").value);
+        const returned = inputNum(row, "input[name^='qty_returned_']");
+        const used = inputNum(row, "input[name^='qty_used_']");
+        const notUsed = inputNum(row, "input[name^='qty_not_used_']");
         const mode = (row.querySelector("[data-mode]")?.value || "RETORNABLE").toUpperCase();
         const contextoOperacion = (row.dataset.contextoOperacion || "").toLowerCase() || "reposicion";
         const expectedReturn = (mode === "CONSUMIBLE" || contextoOperacion === "instalacion_inicial")
@@ -130,7 +140,8 @@
         const ocupo = used + notUsed;
         const diferencia = expectedReturn - returned;
         const coverageOk = ocupo === delivered;
-        const returnOk = mode === "CONSUMIBLE" ? returned === notUsed : returned <= ocupo;
+        const returnOk = mode === "CONSUMIBLE" ? returned === notUsed : true;
+        const retornoExtraRetornable = mode === "RETORNABLE" && returned > ocupo;
 
         const ocupoCell = row.querySelector("[data-ocupo]");
         const deltaCell = row.querySelector("[data-delta]");
@@ -159,6 +170,9 @@
                     ? `En consumible, Regresa debe ser igual a No usado. Regresa ${formatNum(returned)}, No usado ${formatNum(notUsed)}`
                     : `En retornable, Regresa no puede superar lo distribuido. Regresa ${formatNum(returned)}, Cobertura ${formatNum(ocupo)}`;
                 hint.hidden = false;
+            } else if (retornoExtraRetornable) {
+                hint.textContent = `Advertencia: en retornable, Regresa supera la cobertura. Regresa ${formatNum(returned)}, Cobertura ${formatNum(ocupo)}. Se guardara con alerta.`;
+                hint.hidden = false;
             } else {
                 hint.hidden = true;
             }
@@ -170,13 +184,9 @@
         const form = document.querySelector("[data-liquidacion-form]");
         const submitButton = document.querySelector("[data-liquidacion-submit]");
         const globalError = document.querySelector("[data-client-error]");
-        const rows = document.querySelectorAll("[data-liquidacion-row]");
+        const rows = Array.from(document.querySelectorAll("[data-liquidacion-row]"));
         const evaluateAllRows = () => {
-            let hasInvalid = false;
-            rows.forEach((row) => {
-                const result = recalcRow(row);
-                if (result.isInvalid) hasInvalid = true;
-            });
+            const hasInvalid = rows.some((row) => recalcRow(row).isInvalid);
             if (globalError) globalError.hidden = !hasInvalid;
             if (submitButton) submitButton.disabled = hasInvalid;
             return hasInvalid;

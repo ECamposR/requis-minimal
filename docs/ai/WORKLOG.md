@@ -1,5 +1,73 @@
 # Worklog (append-only)
 
+## 2026-03-05 14:03 UTC-6 | tool: Codex CLI
+- Objetivo: aplicar ajuste de permisos solicitado para REQ-099: permitir que `admin` también pueda ejecutar `Confirmar en Prokey`.
+- Tareas: `REQ-099E`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega.html`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k prokey -v`
+- Resultado:
+  - Guard backend de `/requisiciones/{id}/liquidar-prokey` actualizado a `admin` o `jefe_bodega`.
+  - Botón `Confirmar en Prokey` en historial de bodega visible para ambos roles.
+  - Test de permisos actualizado para validar acceso `admin` y rechazo para `bodega`/`aprobador`.
+- Proximo paso:
+  - Smoke manual con usuario `admin` en `/bodega` confirmando cierre en Prokey sobre una requisición `liquidada`.
+
+## 2026-03-05 13:46 UTC-6 | tool: Codex CLI
+- Objetivo: corregir error 500 al confirmar `liquidada_en_prokey` en bases SQLite históricas con CHECK antiguo de estado.
+- Tareas: `REQ-099D`
+- Cambios:
+  - `app/database.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app`
+- Resultado:
+  - `run_migrations()` ahora detecta si la definición SQL de `requisiciones` no contiene `liquidada_en_prokey`.
+  - En ese caso reconstruye la tabla (rename/create/copy/drop) con el CHECK actualizado de estados.
+  - Se elimina la causa de `IntegrityError` al intentar guardar estado `liquidada_en_prokey` en DB ya existentes.
+- Proximo paso:
+  - Reiniciar la app para ejecutar migración de startup y repetir `Confirmar en Prokey` sobre una requisición `liquidada`.
+
+## 2026-03-05 13:24 UTC-6 | tool: Codex CLI
+- Objetivo: implementar estado final de cierre `liquidada_en_prokey` (REQ-099C) con transición exclusiva de `jefe_bodega`, inmutabilidad y trazabilidad en detalle/timeline.
+- Tareas: `REQ-099C`
+- Cambios:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/crud.py`
+  - `app/main.py`
+  - `templates/macros/ui.html`
+  - `templates/aprobar.html`
+  - `templates/bodega.html`
+  - `templates/mis_requisiciones.html`
+  - `static/app.js`
+  - `static/theme.css`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app templates static tests`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v`
+- Resultado:
+  - Nuevo estado persistente `liquidada_en_prokey` y campos `prokey_liquidada_at` / `prokey_liquidada_por` en `Requisicion`.
+  - Nueva función `marcar_liquidada_en_prokey(...)` con precondición estricta (`estado == liquidada`) y transición controlada.
+  - Nuevo endpoint `POST /requisiciones/{id}/liquidar-prokey` exclusivo para rol `jefe_bodega`.
+  - Historial de bodega: botón `Confirmar en Prokey` solo para `jefe_bodega` cuando estado `liquidada`; estado final muestra badge diferenciado y sin acciones.
+  - API detalle + modal: incluyen actor/fecha de cierre Prokey y evento de timeline `Liquidada en Prokey`.
+  - Tests: cobertura de flujo feliz, precondición de estado, inmutabilidad, control de rol y campos en payload detalle.
+  - Validación: `45 passed`.
+- Proximo paso:
+  - Smoke manual con dos roles (`jefe_bodega` y `bodega`) para confirmar visibilidad del botón y bloqueo total de acciones en `liquidada_en_prokey`.
+
 ## 2026-03-05 12:46 UTC-6 | tool: Codex CLI
 - Objetivo: implementar REQ-099A para reemplazar el `confirm()` de cambio de receptor por una UX integrada y deliberada en `Gestionar Entrega`.
 - Tareas: `REQ-099A`
@@ -2328,3 +2396,39 @@
   - `es_demo` quedó disponible y visible en el ciclo completo, sin cambios en `calcular_alertas_item`, `ejecutar_liquidacion`, ni fórmulas de `expected_return/diferencia`.
   - `tests/test_liquidacion.py` pasó completo (40/40).
   - `tests/test_admin_catalog_items.py` quedó colgado en este entorno (comportamiento intermitente ya visto con `TestClient`), por lo que se dejó constancia y se requiere validación en entorno estable.
+
+## 2026-03-05 14:27 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir bug de validación intermitente del botón `Liquidar` cuando se editan campos numéricos en secuencia (borrar/escribir varias veces).
+- Tareas: `REQ-099F`.
+- Cambios:
+  - `templates/liquidar.html`:
+    - `parseNum(...)` ahora normaliza de forma defensiva: `null/undefined/vacío/coma decimal/NaN` a `0`.
+    - Se agregó helper `inputNum(...)` para centralizar lectura segura de inputs y evitar valores intermedios inestables.
+    - `evaluateAllRows(...)` pasa a cálculo stateless por evento usando `Array.some(...)`, evitando estados residuales de invalidez.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: actualización de gobernanza con cierre de `REQ-099F`.
+- Comandos ejecutados:
+  - `python -m compileall templates`
+- Resultado:
+  - El botón `Liquidar` ya no queda deshabilitado por estados intermedios de edición numérica; al corregir los campos, el estado se recupera sin refrescar la página.
+  - No se cambiaron reglas de negocio de cobertura/consistencia por modo, solo robustez de lectura y recálculo.
+
+## 2026-03-05 15:18 UTC-06:00 | tool: Codex CLI
+- Objetivo: Corregir validación bloqueante incorrecta en liquidación para `RETORNABLE` cuando `Regresa` supera cobertura/entregado.
+- Tareas: `REQ-099G`.
+- Cambios:
+  - `templates/liquidar.html`:
+    - la condición de bloqueo por retorno en `RETORNABLE` se eliminó (`returnOk` ahora solo bloquea para `CONSUMIBLE`).
+    - si `RETORNABLE` tiene `Regresa > Cobertura`, se muestra advertencia visual no bloqueante en la fila.
+  - `app/crud.py`:
+    - `validar_liquidacion_item(...)` deja de rechazar `RETORNABLE` por `returned > coverage_total`.
+    - se mantienen intactas las reglas bloqueantes de cobertura y consistencia en `CONSUMIBLE`.
+  - `tests/test_liquidacion.py`:
+    - `test_liquidar_con_retorno_extra` actualizado a flujo exitoso con alerta persistida.
+    - nuevo `test_permite_retornable_con_retorno_extra_no_bloquea_y_alerta`.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: gobernanza sincronizada con cierre de `REQ-099G`.
+- Comandos ejecutados:
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -v`
+- Resultado:
+  - `Regresa` mayor al entregado/cobertura en ítems `RETORNABLE` ya no bloquea `Liquidar`.
+  - La liquidación guarda correctamente y registra alertas (`ALERTA_RETORNO_EXTRA`/`ALERTA_SOBRANTE`) para trazabilidad.
+  - Suite objetivo verde: `46 passed`.

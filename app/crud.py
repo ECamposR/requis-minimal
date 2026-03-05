@@ -273,12 +273,6 @@ def validar_liquidacion_item(
             f"Regresa={returned}, No usado={not_used}"
         )
 
-    if mode == "RETORNABLE" and returned > coverage_total:
-        return (
-            "En retornable, Regresa no puede superar lo distribuido en Usado y No usado. "
-            f"Regresa={returned}, Cobertura={coverage_total}"
-        )
-
     return None
 
 
@@ -329,6 +323,21 @@ def ejecutar_liquidacion(
     db.commit()
 
 
+def marcar_liquidada_en_prokey(db: Session, req_id: int, usuario_id: int) -> Requisicion:
+    req = db.query(Requisicion).filter(Requisicion.id == req_id).first()
+    if not req:
+        raise ValueError("Requisicion no encontrada")
+    if req.estado != "liquidada":
+        raise ValueError("Solo se puede confirmar en Prokey una requisicion en estado liquidada")
+
+    req.estado = "liquidada_en_prokey"
+    req.prokey_liquidada_at = now_sv()
+    req.prokey_liquidada_por = usuario_id
+    db.commit()
+    db.refresh(req)
+    return req
+
+
 def transicionar_requisicion(
     db: Session,
     requisicion: Requisicion,
@@ -343,6 +352,9 @@ def transicionar_requisicion(
     recibido_por_id: int | None = None,
     recibido_at: datetime | None = None,
 ) -> Requisicion:
+    if requisicion.estado == "liquidada_en_prokey":
+        raise ValueError("La requisicion ya fue cerrada en Prokey y no admite cambios")
+
     if nuevo_estado == "aprobada":
         requisicion.estado = "aprobada"
         requisicion.approved_at = now_sv()

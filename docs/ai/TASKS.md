@@ -64,6 +64,11 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-099` | `done` | Receptor designado al crear requisición: campo `receptor_designado_id`, selección obligatoria en `/crear`, visibilidad en firma de bodega con confirmación si cambia y exposición en API detalle.
 - `REQ-099A` | `done` | Mejora UX de cambio de receptor en firma bodega (`gestionar` y `entrega parcial`): selector bloqueado por defecto, botón `Cambiar receptor`, advertencia visual integrada y retiro de `confirm()` del navegador.
 - `REQ-099B` | `done` | UX antifallo en cambio de receptor: tras habilitar edición aparecen `Guardar cambio` y `Cancelar`; al guardar/cancelar el selector vuelve a bloquearse para evitar cambios accidentales.
+- `REQ-099C` | `done` | Estado terminal `liquidada_en_prokey`: transición exclusiva de `jefe_bodega`, trazabilidad (`prokey_liquidada_at`/`prokey_liquidada_por`), botón `Confirmar en Prokey`, badge diferenciado y detalle/timeline actualizados.
+- `REQ-099D` | `done` | Fix de migración SQLite para REQ-099C: reconstrucción automática de `requisiciones` cuando el CHECK de `estado` no incluye `liquidada_en_prokey`, evitando error 500 al confirmar en Prokey en DB históricas.
+- `REQ-099E` | `done` | Permiso extendido de confirmación en Prokey para rol `admin` (backend + botón en bodega + test de acceso actualizado).
+- `REQ-099F` | `done` | Fix de robustez en validación JS de `Liquidar`: normalización defensiva de campos numéricos (`''/NaN/coma decimal`) y recálculo stateless por evento para evitar botón deshabilitado residual.
+- `REQ-099G` | `done` | Liquidación RETORNABLE: `Regresa > cobertura/entregado` deja de bloquear guardado y pasa a advertencia no bloqueante con alerta persistida (`ALERTA_RETORNO_EXTRA`).
 - `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
 
 ## Despliegue Producción
