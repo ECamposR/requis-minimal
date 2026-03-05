@@ -62,6 +62,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-098B` | `done` | Fix visual checkbox Para Demo: border-radius cuadrado y checkmark ✓ visible en estado checked.
 - `REQ-098C` | `done` | Fix definitivo checkbox Para Demo: `!important` para neutralizar `pico.css` y user agent stylesheet.
 - `REQ-099` | `done` | Receptor designado al crear requisición: campo `receptor_designado_id`, selección obligatoria en `/crear`, visibilidad en firma de bodega con confirmación si cambia y exposición en API detalle.
+- `REQ-099A` | `done` | Mejora UX de cambio de receptor en firma bodega (`gestionar` y `entrega parcial`): selector bloqueado por defecto, botón `Cambiar receptor`, advertencia visual integrada y retiro de `confirm()` del navegador.
+- `REQ-099B` | `done` | UX antifallo en cambio de receptor: tras habilitar edición aparecen `Guardar cambio` y `Cancelar`; al guardar/cancelar el selector vuelve a bloquearse para evitar cambios accidentales.
 - `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
 
 ## Despliegue Producción

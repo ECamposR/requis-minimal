@@ -1,5 +1,57 @@
 # Worklog (append-only)
 
+## 2026-03-05 12:46 UTC-6 | tool: Codex CLI
+- Objetivo: implementar REQ-099A para reemplazar el `confirm()` de cambio de receptor por una UX integrada y deliberada en `Gestionar Entrega`.
+- Tareas: `REQ-099A`
+- Cambios:
+  - `templates/bodega_gestionar.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall templates static`
+- Resultado:
+  - El selector de receptor inicia bloqueado (`disabled`).
+  - Se agregó botón `Cambiar receptor`; al usarlo, habilita selector, oculta botón y muestra bloque de advertencia en página con el receptor designado original.
+  - Se eliminó por completo el `confirm()` popup del navegador.
+  - Se agregó respaldo en submit para que, si el selector sigue deshabilitado, su valor actual se envíe igualmente como campo hidden.
+- Proximo paso:
+  - Smoke manual en `/bodega/{id}/gestionar` para validar ambos caminos: sin cambio de receptor y con cambio explícito.
+
+## 2026-03-05 12:58 UTC-6 | tool: Codex CLI
+- Objetivo: extender REQ-099A a la pantalla de `Entrega Parcial`, manteniendo consistencia UX con `Gestionar Entrega`.
+- Tareas: `REQ-099A`
+- Cambios:
+  - `templates/bodega_entrega_parcial.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall templates static`
+- Resultado:
+  - `Entrega Parcial` ahora inicia con selector de receptor deshabilitado, botón `Cambiar receptor`, bloque visual de advertencia integrada al habilitar cambio y sin `confirm()` del navegador.
+  - Se agregó envío hidden del receptor cuando el select permanece deshabilitado, evitando pérdida de dato al submit.
+- Proximo paso:
+  - Ejecutar smoke manual en `/entregar/{id}/parcial` para validar los flujos con y sin cambio de receptor.
+
+## 2026-03-05 13:09 UTC-6 | tool: Codex CLI
+- Objetivo: implementar ajuste menor antierror solicitado en firma bodega: requerir confirmación explícita en página para cerrar cambio de receptor (`Guardar cambio`) y permitir rollback (`Cancelar`) en completo y parcial.
+- Tareas: `REQ-099B`
+- Cambios:
+  - `templates/bodega_gestionar.html`
+  - `templates/bodega_entrega_parcial.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall templates static`
+- Resultado:
+  - En ambas vistas, tras `Cambiar receptor` aparecen botones `Guardar cambio` y `Cancelar`.
+  - `Guardar cambio` bloquea nuevamente el selector; `Cancelar` revierte al valor previo y también bloquea.
+  - Se mantiene la advertencia visual integrada y no se usa `confirm()` del navegador.
+- Proximo paso:
+  - Smoke manual de dos escenarios por vista: cambiar+guardar y cambiar+cancelar, verificando que el valor enviado al backend coincida con el estado final bloqueado.
+
 ## 2026-03-05 12:22 UTC-6 | tool: Codex CLI
 - Objetivo: implementar REQ-099 para capturar receptor designado desde la creación y reforzar trazabilidad/confirmación en firma de bodega.
 - Tareas: `REQ-099`

@@ -66,6 +66,8 @@
             data-receptor-select
             data-designado-id="{{ req.receptor_designado_id or '' }}"
             data-designado-nombre="{{ req.receptor_designado.nombre if req.receptor_designado else '' }}"
+            data-designado-rol="{{ req.receptor_designado.rol if req.receptor_designado else '' }}"
+            disabled
         >
             <option value="">Seleccionar...</option>
             {% for receptor in receptores %}
@@ -75,6 +77,24 @@
             {% endfor %}
         </select>
     </label>
+    <p>
+        <button type="button" class="secondary outline" data-unlock-receptor>Cambiar receptor</button>
+    </p>
+    <div class="form-actions" data-receptor-change-actions hidden>
+        <button type="button" data-save-receptor-change>Guardar cambio</button>
+        <button type="button" class="secondary" data-cancel-receptor-change>Cancelar</button>
+    </div>
+    <div class="alert alert-warning" data-receptor-warning hidden>
+        ⚠️ Estás cambiando el receptor original. El receptor designado fue
+        <strong data-designado-text>
+            {% if req.receptor_designado %}
+                {{ req.receptor_designado.nombre }} ({{ req.receptor_designado.rol }})
+            {% else %}
+                -
+            {% endif %}
+        </strong>.
+        Asegúrate de que el cambio es intencional.
+    </div>
     <label>
         PIN del receptor
         <input type="password" name="pin_receptor" required placeholder="PIN para firma de recibido">
@@ -94,19 +114,50 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector("form[action$='/parcial']");
     if (!form) return;
     const receptorSelect = form.querySelector("[data-receptor-select]");
-    if (!receptorSelect) return;
+    const unlockButton = form.querySelector("[data-unlock-receptor]");
+    const warning = form.querySelector("[data-receptor-warning]");
+    const designadoText = form.querySelector("[data-designado-text]");
+    const changeActions = form.querySelector("[data-receptor-change-actions]");
+    const saveChangeButton = form.querySelector("[data-save-receptor-change]");
+    const cancelChangeButton = form.querySelector("[data-cancel-receptor-change]");
+    if (!receptorSelect || !unlockButton || !warning || !changeActions || !saveChangeButton || !cancelChangeButton) return;
+    let baselineReceptorValue = receptorSelect.value || "";
 
-    form.addEventListener("submit", (event) => {
-        const designadoId = (receptorSelect.dataset.designadoId || "").trim();
-        const designadoNombre = (receptorSelect.dataset.designadoNombre || "N/D").trim();
-        const receptorId = (receptorSelect.value || "").trim();
-        if (!designadoId || !receptorId || designadoId === receptorId) return;
-        const ok = window.confirm(
-            `⚠️ El receptor seleccionado es distinto al designado originalmente (${designadoNombre}). ¿Confirmar cambio?`
-        );
-        if (!ok) {
-            event.preventDefault();
+    unlockButton.addEventListener("click", () => {
+        baselineReceptorValue = receptorSelect.value || "";
+        receptorSelect.disabled = false;
+        unlockButton.hidden = true;
+        changeActions.hidden = false;
+        warning.hidden = false;
+        const nombre = (receptorSelect.dataset.designadoNombre || "-").trim();
+        const rol = (receptorSelect.dataset.designadoRol || "-").trim();
+        if (designadoText) {
+            designadoText.textContent = `${nombre} (${rol})`;
         }
+    });
+
+    saveChangeButton.addEventListener("click", () => {
+        receptorSelect.disabled = true;
+        warning.hidden = true;
+        changeActions.hidden = true;
+        unlockButton.hidden = false;
+    });
+
+    cancelChangeButton.addEventListener("click", () => {
+        receptorSelect.value = baselineReceptorValue;
+        receptorSelect.disabled = true;
+        warning.hidden = true;
+        changeActions.hidden = true;
+        unlockButton.hidden = false;
+    });
+
+    form.addEventListener("submit", () => {
+        if (!receptorSelect.disabled) return;
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = receptorSelect.name;
+        hidden.value = receptorSelect.value || "";
+        form.appendChild(hidden);
     });
 });
 </script>
