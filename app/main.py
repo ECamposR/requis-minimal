@@ -208,6 +208,13 @@ def get_active_receptores(db: Session) -> list[Usuario]:
     return db.query(Usuario).filter(Usuario.activo.is_(True)).order_by(Usuario.nombre.asc()).all()
 
 
+def safe_joinedload(model: type, attr_name: str):
+    attr = getattr(model, attr_name, None)
+    if attr is None:
+        return None
+    return joinedload(attr)
+
+
 def validar_receptor_firma(
     db: Session,
     recibido_por_id_raw: str,
@@ -647,15 +654,19 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
     vista = request.query_params.get("vista", "todos").strip().lower()
     resultado = request.query_params.get("resultado", "todos").strip().lower()
 
+    bodega_optionals = [
+        joinedload(Requisicion.solicitante),
+        joinedload(Requisicion.aprobador),
+        joinedload(Requisicion.entregador),
+        joinedload(Requisicion.liquidator),
+    ]
+    maybe_prokey_liquidator = safe_joinedload(Requisicion, "prokey_liquidator")
+    if maybe_prokey_liquidator is not None:
+        bodega_optionals.append(maybe_prokey_liquidator)
+
     pendientes_query = (
         db.query(Requisicion)
-        .options(
-            joinedload(Requisicion.solicitante),
-            joinedload(Requisicion.aprobador),
-            joinedload(Requisicion.entregador),
-            joinedload(Requisicion.liquidator),
-            joinedload(Requisicion.prokey_liquidator),
-        )
+        .options(*bodega_optionals)
         .filter(
             or_(
                 Requisicion.estado == "aprobada",
@@ -1723,19 +1734,23 @@ def admin_catalogo_item_eliminar(
 
 @app.get("/api/requisiciones/{req_id}")
 def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    detail_options = [
+        joinedload(Requisicion.items),
+        joinedload(Requisicion.solicitante),
+        joinedload(Requisicion.aprobador),
+        joinedload(Requisicion.rechazador),
+        joinedload(Requisicion.entregador),
+        joinedload(Requisicion.recibido_por),
+        joinedload(Requisicion.receptor_designado),
+        joinedload(Requisicion.liquidator),
+    ]
+    maybe_prokey_liquidator = safe_joinedload(Requisicion, "prokey_liquidator")
+    if maybe_prokey_liquidator is not None:
+        detail_options.append(maybe_prokey_liquidator)
+
     req = (
         db.query(Requisicion)
-        .options(
-            joinedload(Requisicion.items),
-            joinedload(Requisicion.solicitante),
-            joinedload(Requisicion.aprobador),
-            joinedload(Requisicion.rechazador),
-            joinedload(Requisicion.entregador),
-            joinedload(Requisicion.recibido_por),
-            joinedload(Requisicion.receptor_designado),
-            joinedload(Requisicion.liquidator),
-            joinedload(Requisicion.prokey_liquidator),
-        )
+        .options(*detail_options)
         .filter(Requisicion.id == req_id)
         .first()
     )
@@ -1802,11 +1817,12 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                 "fecha_hora": req.liquidated_at,
             }
         )
+    prokey_liquidator = getattr(req, "prokey_liquidator", None)
     if req.prokey_liquidada_at:
         timeline.append(
             {
                 "evento": "Liquidada en Prokey",
-                "actor": req.prokey_liquidator.nombre if req.prokey_liquidator else None,
+                "actor": prokey_liquidator.nombre if prokey_liquidator else None,
                 "fecha_hora": req.prokey_liquidada_at,
             }
         )
@@ -1905,7 +1921,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "liquidated_by_name": req.liquidator.nombre if req.liquidator else None,
         "liquidated_at": req.liquidated_at,
         "prokey_liquidada_at": req.prokey_liquidada_at,
-        "prokey_liquidado_por_nombre": req.prokey_liquidator.nombre if req.prokey_liquidator else None,
+        "prokey_liquidado_por_nombre": prokey_liquidator.nombre if prokey_liquidator else None,
         "pdf_url": f"/requisiciones/{req.id}/pdf" if req.estado in ("liquidada", "liquidada_en_prokey") else None,
         "timeline": timeline,
         "items": items_payload,
