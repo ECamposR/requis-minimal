@@ -235,6 +235,7 @@ function agregarItem() {
     const demoCheck = document.createElement("input");
     demoCheck.type = "checkbox";
     demoCheck.name = `es_demo_${itemCount}`;
+    demoCheck.value = "on";
     demoLabel.append(demoCheck, document.createTextNode(" Para Demo"));
     contextoWrap.appendChild(demoLabel);
 

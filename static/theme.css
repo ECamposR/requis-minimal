@@ -220,7 +220,37 @@ a[role="button"].danger:hover {
 }
 
 .item-demo-check input[type="checkbox"] {
-    margin: 0;
+    margin: 0 !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    border: 1.5px solid #64748b !important;
+    border-radius: 3px !important;
+    background: #ffffff !important;
+    cursor: pointer !important;
+    flex-shrink: 0;
+    display: inline-grid !important;
+    place-content: center;
+    transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.item-demo-check input[type="checkbox"]:checked {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+}
+
+.item-demo-check input[type="checkbox"]::before {
+    content: "✓";
+    font-size: 0.65rem;
+    color: #ffffff;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+.item-demo-check input[type="checkbox"]:checked::before {
+    opacity: 1;
 }
 
 .item-demo-badge {

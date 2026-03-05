@@ -1,5 +1,51 @@
 # Worklog (append-only)
 
+## 2026-03-05 11:48 UTC-6 | tool: Codex CLI
+- Objetivo: cerrar REQ-098C para forzar la apariencia de checkbox "Para Demo" contra overrides de `pico.css` y user agent (`appearance: auto` / `border-radius` heredado).
+- Tareas: `REQ-098C`
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall static`
+- Resultado:
+  - El selector de `.item-demo-check input[type="checkbox"]` quedó reforzado con `!important` en propiedades críticas (`appearance`, dimensiones, borde, radio, fondo, display y estado checked).
+  - Se neutraliza la interferencia visual del UA stylesheet y de PicoCSS en el control "Para Demo".
+- Proximo paso:
+  - Verificar en navegador con caché deshabilitada que el control se vea cuadrado y muestre `✓` blanca con fondo azul al marcarse.
+
+## 2026-03-05 11:36 UTC-6 | tool: Codex CLI
+- Objetivo: cerrar REQ-098B corrigiendo la apariencia del control "Para Demo" para que se perciba claramente como checkbox (no radio) y su estado checked sea visible.
+- Tareas: `REQ-098B`
+- Cambios:
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall static`
+- Resultado:
+  - El control ahora usa forma cuadrada (`border-radius: 3px`) y muestra `✓` blanca al marcarse.
+  - Se eliminó el pseudo-indicador circular que inducía apariencia de radio.
+- Proximo paso:
+  - Validar en `/crear` que todas las filas (inicial y dinámicas) mantengan lectura clara de marcado/desmarcado.
+
+## 2026-03-05 11:20 UTC-6 | tool: Codex CLI
+- Objetivo: cerrar REQ-098A para dejar explícito el control "Para Demo" como checkbox en template y JS dinámico, evitando ambigüedad de comportamiento visual.
+- Tareas: `REQ-098A`
+- Cambios:
+  - `templates/crear_requisicion.html`
+  - `static/app.js`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app templates static`
+- Resultado:
+  - El control `Para Demo` queda definido explícitamente como `checkbox` con `value="on"` en la fila base y filas agregadas dinámicamente.
+  - Se mantiene la lógica backend existente (presencia = `True`, ausencia = `False`) sin cambios.
+- Proximo paso:
+  - Validar manualmente en `/crear` que se pueda marcar/desmarcar en varias filas y que persista al enviar.
+
 ## 2026-03-03 14:41 UTC-6 | tool: Codex CLI
 - Objetivo: aclarar el encabezado de `Ingreso PK` en el detalle liquidado para explicitar que corresponde a la operación de bodega.
 - Tareas: `REQ-093C`

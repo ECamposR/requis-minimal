@@ -58,6 +58,9 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-096` | `done` | Actualización integral de `README.md` al estado real v1.x (roles, flujo completo, firma con PIN, liquidación, PDF y opciones de despliegue).
 - `REQ-097` | `done` | Manejo de autenticación web: cuando no hay sesión, rutas SSR ahora redirigen a `/login` (en vez de mostrar `401`), manteniendo `401` JSON en rutas `/api/*`.
 - `REQ-098` | `done` | Etiqueta "Para Demo" por ítem: campo `es_demo` booleano, visible en bodega, detalle y PDF; sin efecto en lógica de liquidación.
+- `REQ-098A` | `done` | Fix visual checkbox Para Demo: corregido tipo de input de radio a checkbox en template y JS dinámico.
+- `REQ-098B` | `done` | Fix visual checkbox Para Demo: border-radius cuadrado y checkmark ✓ visible en estado checked.
+- `REQ-098C` | `done` | Fix definitivo checkbox Para Demo: `!important` para neutralizar `pico.css` y user agent stylesheet.
 - `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
 
 ## Despliegue Producción

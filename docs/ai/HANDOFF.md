@@ -51,6 +51,7 @@
 - `REQ-096` completada: `README.md` actualizado al estado real v1.x (flujo vigente, roles actuales, firma con PIN, liquidación, PDF y opciones de despliegue local/Docker+Caddy).
 - `REQ-097` completada: autenticación web ajustada para UX de entrada por IP/puerto; usuarios sin sesión ya no ven `401` en SSR y son redirigidos a `/login`, mientras `/api/*` conserva respuesta `401` JSON.
 - `REQ-098` completada: cada línea de ítem ya puede marcarse como `Para Demo` al crear requisición (`Item.es_demo`), quedando visible en bodega, detalle y PDF sin alterar ninguna fórmula/alerta de liquidación.
+- `REQ-098A/REQ-098B/REQ-098C` completadas: cierre de ajuste visual del control `Para Demo`; quedó como checkbox cuadrado con `✓` visible y estilos reforzados (`!important`) para neutralizar overrides de `pico.css` y del user agent (`appearance/border-radius`).
 - `REQ-094` completada: el generador `app/pdf_generator.py` quedó integrado al backend real; `GET /requisiciones/{id}/pdf` produce PDF solo para requisiciones `liquidada`, el detalle API expone `pdf_url` y el botón `Ver PDF` del modal apunta al endpoint inline.
 - `REQ-094A` completada: el PDF ya no toma `Ingreso PK` desde una referencia textual; ahora usa la cantidad operativa por ítem y la columna `DIF` muestra `Falta/Extra` con número, igual que el detalle web.
 - `REQ-094B` completada: el PDF reemplaza el texto `ProHygiene` del header por el logo real usado en la app (`static/branding/logo-prohygiene-es.png`), manteniendo fallback textual si el recurso no carga.
