@@ -2432,3 +2432,18 @@
   - `Regresa` mayor al entregado/cobertura en ítems `RETORNABLE` ya no bloquea `Liquidar`.
   - La liquidación guarda correctamente y registra alertas (`ALERTA_RETORNO_EXTRA`/`ALERTA_SOBRANTE`) para trazabilidad.
   - Suite objetivo verde: `46 passed`.
+
+## 2026-03-05 15:02 UTC-06:00 | tool: Codex CLI
+- Objetivo: Habilitar `Ver PDF` también para requisiciones en estado terminal `liquidada_en_prokey`.
+- Tareas: `REQ-099H`.
+- Cambios:
+  - `app/main.py`:
+    - `pdf_url` en `GET /api/requisiciones/{id}` ahora se publica para `liquidada` y `liquidada_en_prokey`.
+    - endpoint `GET /requisiciones/{id}/pdf` acepta ambos estados (antes solo `liquidada`).
+  - `static/app.js`:
+    - habilitación del botón `Ver PDF` en modal de detalle ajustada para ambos estados.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: sincronización de gobernanza.
+- Comandos ejecutados:
+  - `python -m compileall app static`
+- Resultado:
+  - Requisiciones cerradas en `liquidada_en_prokey` ya pueden abrir PDF desde detalle sin error 403 ni botón deshabilitado.

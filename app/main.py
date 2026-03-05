@@ -30,6 +30,7 @@ from .crud import (
     agregar_item_db,
     calcular_retorno_esperado,
     ejecutar_liquidacion,
+    marcar_liquidada_en_prokey,
     puede_liquidar,
     crear_requisicion_db,
     parse_items_from_form,
@@ -173,7 +174,7 @@ def can_view_requisicion(req: Requisicion, current_user: Usuario) -> bool:
         current_user.rol == "admin"
         or current_user.id == req.solicitante_id
         or current_user.rol in ["aprobador", "jefe_bodega"]
-        or (current_user.rol == "bodega" and req.estado in ["aprobada", "entregada", "liquidada"])
+        or (current_user.rol == "bodega" and req.estado in ["aprobada", "entregada", "liquidada", "liquidada_en_prokey"])
     )
 
 
@@ -503,7 +504,7 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
         "pendiente_entregar": "aprobada",
     }
     estado_real = alias_estado.get(estado, estado)
-    estados_validos = {"pendiente", "aprobada", "rechazada", "entregada", "liquidada"}
+    estados_validos = {"pendiente", "aprobada", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"}
     query = (
         db.query(Requisicion)
         .options(
@@ -513,7 +514,11 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
             joinedload(Requisicion.entregador),
             joinedload(Requisicion.liquidator),
         )
-        .filter(Requisicion.estado.in_(["pendiente", "aprobada", "rechazada", "entregada", "liquidada"]))
+        .filter(
+            Requisicion.estado.in_(
+                ["pendiente", "aprobada", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"]
+            )
+        )
     )
     if estado_real in estados_validos:
         query = query.filter(Requisicion.estado == estado_real)
@@ -649,6 +654,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.entregador),
             joinedload(Requisicion.liquidator),
+            joinedload(Requisicion.prokey_liquidator),
         )
         .filter(
             or_(
@@ -689,7 +695,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.entregador),
         )
-        .filter(Requisicion.estado.in_(["entregada", "liquidada"]))
+        .filter(Requisicion.estado.in_(["entregada", "liquidada", "liquidada_en_prokey"]))
     )
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(
@@ -770,6 +776,21 @@ def bodega_gestionar(
             form_data={},
         ),
     )
+
+
+@app.post("/requisiciones/{req_id}/liquidar-prokey")
+def liquidar_en_prokey(
+    req_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.rol not in ("jefe_bodega", "admin"):
+        raise HTTPException(status_code=403, detail="No autorizado")
+    try:
+        marcar_liquidada_en_prokey(db, req_id=req_id, usuario_id=current_user.id)
+    except ValueError as exc:
+        return redirect_with_message("/bodega", str(exc), "error")
+    return redirect_with_message("/bodega", "Requisicion confirmada como liquidada en Prokey", "success")
 
 
 @app.post("/entregar/{req_id}")
@@ -1713,6 +1734,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             joinedload(Requisicion.recibido_por),
             joinedload(Requisicion.receptor_designado),
             joinedload(Requisicion.liquidator),
+            joinedload(Requisicion.prokey_liquidator),
         )
         .filter(Requisicion.id == req_id)
         .first()
@@ -1780,6 +1802,14 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                 "fecha_hora": req.liquidated_at,
             }
         )
+    if req.prokey_liquidada_at:
+        timeline.append(
+            {
+                "evento": "Liquidada en Prokey",
+                "actor": req.prokey_liquidator.nombre if req.prokey_liquidator else None,
+                "fecha_hora": req.prokey_liquidada_at,
+            }
+        )
 
     items_payload: list[dict[str, object]] = []
     for item in req.items:
@@ -1791,7 +1821,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             "contexto_operacion": normalize_contexto_operacion(item.contexto_operacion),
             "es_demo": bool(item.es_demo),
         }
-        if req.estado == "liquidada":
+        if req.estado in ("liquidada", "liquidada_en_prokey"):
             mode = (item.liquidation_mode or "RETORNABLE").upper()
             if mode not in ("RETORNABLE", "CONSUMIBLE"):
                 mode = "RETORNABLE"
@@ -1874,7 +1904,9 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "liquidation_comment": normalize_optional_text(req.liquidation_comment),
         "liquidated_by_name": req.liquidator.nombre if req.liquidator else None,
         "liquidated_at": req.liquidated_at,
-        "pdf_url": f"/requisiciones/{req.id}/pdf" if req.estado == "liquidada" else None,
+        "prokey_liquidada_at": req.prokey_liquidada_at,
+        "prokey_liquidado_por_nombre": req.prokey_liquidator.nombre if req.prokey_liquidator else None,
+        "pdf_url": f"/requisiciones/{req.id}/pdf" if req.estado in ("liquidada", "liquidada_en_prokey") else None,
         "timeline": timeline,
         "items": items_payload,
     }
@@ -1901,7 +1933,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         raise HTTPException(status_code=404, detail="Requisición no encontrada")
     if not can_view_requisicion(req, current_user):
         raise HTTPException(status_code=403, detail="No autorizado")
-    if req.estado != "liquidada":
+    if req.estado not in ("liquidada", "liquidada_en_prokey"):
         raise HTTPException(status_code=403, detail="PDF solo disponible para requisiciones liquidadas")
 
     items_data = []

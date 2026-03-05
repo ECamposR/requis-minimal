@@ -284,7 +284,7 @@ function verDetalle(id) {
             }
 
             const items = Array.isArray(data.items) ? data.items : [];
-            const isLiquidada = data.estado === "liquidada";
+            const isLiquidada = data.estado === "liquidada" || data.estado === "liquidada_en_prokey";
             const showDelivered = items.some(
                 (i) => i.cantidad_entregada !== null && i.cantidad_entregada !== undefined
             );
@@ -397,6 +397,8 @@ function verDetalle(id) {
             const liquidationComment = data.liquidation_comment
                 ? escapeHtml(data.liquidation_comment)
                 : "—";
+            const prokeyClosedBy = escapeHtml(data.prokey_liquidado_por_nombre || "-");
+            const prokeyClosedAt = fmtDateTime(data.prokey_liquidada_at);
             const itemsSection = isLiquidada
                 ? `<section class="detalle-items-section">
                     <h4><span class="icon-items">\u2299</span> Items Liquidados</h4>
@@ -434,7 +436,7 @@ function verDetalle(id) {
                         </table>
                     </div>
                 </section>`;
-            const isPdfEnabled = data.estado === "liquidada" && !!data.pdf_url;
+            const isPdfEnabled = (data.estado === "liquidada" || data.estado === "liquidada_en_prokey") && !!data.pdf_url;
             const pdfAction = isPdfEnabled
                 ? `<a class="secondary" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer">Ver PDF</a>`
                 : `<button type="button" class="secondary btn-disabled" disabled title="${data.estado === "liquidada" ? "En desarrollo" : "Disponible al liquidar"}">Ver PDF</button>`;
@@ -490,6 +492,8 @@ function verDetalle(id) {
                         <div class="dd-kv"><div class="dd-kv-label">Recibido por</div><div class="dd-kv-value">${escapeHtml(data.recibido_por || data.delivered_to || "-")}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Hora firma</div><div class="dd-kv-value">${fmtDateTime(data.recibido_at || data.delivered_at)}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Ref Prokey</div><div class="dd-kv-value">${prokeyRefHtml}</div></div>
+                        ${data.estado === "liquidada_en_prokey" ? `<div class="dd-kv"><div class="dd-kv-label">Confirmado en Prokey por</div><div class="dd-kv-value">${prokeyClosedBy}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Fecha confirmación Prokey</div><div class="dd-kv-value">${prokeyClosedAt}</div></div>` : ""}
                     </article>
                     <article class="detalle-block dashboard-card dd-card ${alertCardClass}">
                         <h4 class="dd-card-title">Alertas de conciliación</h4>
