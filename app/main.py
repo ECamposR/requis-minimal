@@ -1818,12 +1818,13 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             }
         )
     prokey_liquidator = getattr(req, "prokey_liquidator", None)
-    if req.prokey_liquidada_at:
+    prokey_liquidada_at = getattr(req, "prokey_liquidada_at", None)
+    if prokey_liquidada_at:
         timeline.append(
             {
                 "evento": "Liquidada en Prokey",
                 "actor": prokey_liquidator.nombre if prokey_liquidator else None,
-                "fecha_hora": req.prokey_liquidada_at,
+                "fecha_hora": prokey_liquidada_at,
             }
         )
 
@@ -1920,7 +1921,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "liquidation_comment": normalize_optional_text(req.liquidation_comment),
         "liquidated_by_name": req.liquidator.nombre if req.liquidator else None,
         "liquidated_at": req.liquidated_at,
-        "prokey_liquidada_at": req.prokey_liquidada_at,
+        "prokey_liquidada_at": prokey_liquidada_at,
         "prokey_liquidado_por_nombre": prokey_liquidator.nombre if prokey_liquidator else None,
         "pdf_url": f"/requisiciones/{req.id}/pdf" if req.estado in ("liquidada", "liquidada_en_prokey") else None,
         "timeline": timeline,
