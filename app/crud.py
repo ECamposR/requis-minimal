@@ -51,6 +51,7 @@ def crear_requisicion_db(
     cliente_nombre: str,
     cliente_ruta_principal: str,
     justificacion: str,
+    receptor_designado_id: int | None = None,
 ) -> Requisicion:
     req = Requisicion(
         folio=generar_folio(db),
@@ -61,6 +62,7 @@ def crear_requisicion_db(
         cliente_ruta_principal=cliente_ruta_principal,
         estado="pendiente",
         justificacion=justificacion,
+        receptor_designado_id=receptor_designado_id,
         # Evita depender del server_default SQLite (UTC) para mantener hora local consistente.
         created_at=now_sv(),
     )

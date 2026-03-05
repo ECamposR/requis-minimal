@@ -360,9 +360,15 @@ def crear_form(request: Request, current_user: Usuario = Depends(get_current_use
         .order_by(CatalogoItem.nombre.asc())
         .all()
     )
+    usuarios_activos = get_active_receptores(db)
     return templates.TemplateResponse(
         "crear_requisicion.html",
-        template_context(request, current_user, catalogo_items=[i.nombre for i in catalogo_items]),
+        template_context(
+            request,
+            current_user,
+            catalogo_items=[i.nombre for i in catalogo_items],
+            usuarios_activos=usuarios_activos,
+        ),
     )
 
 
@@ -372,6 +378,7 @@ async def crear(
     cliente_codigo: str = Form(...),
     cliente_nombre: str = Form(...),
     cliente_ruta_principal: str = Form(...),
+    receptor_designado_id: str = Form(...),
     justificacion: str = Form(...),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -385,6 +392,20 @@ async def crear(
         raise HTTPException(status_code=400, detail="Nombre de cliente invalido")
     if not re.fullmatch(r"[A-Z]{2}\d{2}", cliente_ruta_principal_limpia):
         raise HTTPException(status_code=400, detail="Ruta principal invalida (formato: AA00)")
+    receptor_designado_id_limpio = receptor_designado_id.strip()
+    if not receptor_designado_id_limpio:
+        raise HTTPException(status_code=400, detail="Debes seleccionar receptor designado")
+    try:
+        receptor_designado_id_int = int(receptor_designado_id_limpio)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Receptor designado invalido") from exc
+    receptor_designado = (
+        db.query(Usuario)
+        .filter(Usuario.id == receptor_designado_id_int, Usuario.activo.is_(True))
+        .first()
+    )
+    if not receptor_designado:
+        raise HTTPException(status_code=400, detail="El receptor designado no existe o esta inactivo")
 
     req = crear_requisicion_db(
         db=db,
@@ -394,6 +415,7 @@ async def crear(
         cliente_nombre=cliente_nombre_limpio,
         cliente_ruta_principal=cliente_ruta_principal_limpia,
         justificacion=justificacion,
+        receptor_designado_id=receptor_designado.id,
     )
 
     form_data = await request.form()
@@ -721,7 +743,12 @@ def bodega_gestionar(
 
     req = (
         db.query(Requisicion)
-        .options(joinedload(Requisicion.solicitante), joinedload(Requisicion.aprobador), joinedload(Requisicion.items))
+        .options(
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.receptor_designado),
+        )
         .filter(Requisicion.id == req_id)
         .first()
     )
@@ -758,7 +785,12 @@ def entregar(
 ):
     req = (
         db.query(Requisicion)
-        .options(joinedload(Requisicion.items), joinedload(Requisicion.solicitante), joinedload(Requisicion.aprobador))
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.receptor_designado),
+        )
         .filter(Requisicion.id == req_id)
         .first()
     )
@@ -844,7 +876,12 @@ def entrega_parcial_form(
 ):
     req = (
         db.query(Requisicion)
-        .options(joinedload(Requisicion.items), joinedload(Requisicion.solicitante), joinedload(Requisicion.aprobador))
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.receptor_designado),
+        )
         .filter(Requisicion.id == req_id)
         .first()
     )
@@ -879,7 +916,7 @@ async def entrega_parcial_guardar(
 ):
     req = (
         db.query(Requisicion)
-        .options(joinedload(Requisicion.items))
+        .options(joinedload(Requisicion.items), joinedload(Requisicion.receptor_designado))
         .filter(Requisicion.id == req_id)
         .first()
     )
@@ -1674,6 +1711,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             joinedload(Requisicion.rechazador),
             joinedload(Requisicion.entregador),
             joinedload(Requisicion.recibido_por),
+            joinedload(Requisicion.receptor_designado),
             joinedload(Requisicion.liquidator),
         )
         .filter(Requisicion.id == req_id)
@@ -1816,6 +1854,15 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "delivered_to": req.delivered_to,
         "recibido_por": req.recibido_por.nombre if req.recibido_por else None,
         "recibido_at": req.recibido_at,
+        "receptor_designado": (
+            {
+                "id": req.receptor_designado.id,
+                "nombre": req.receptor_designado.nombre,
+                "rol": req.receptor_designado.rol,
+            }
+            if req.receptor_designado
+            else None
+        ),
         "delivery_result": req.delivery_result,
         "delivery_comment": req.delivery_comment,
         "rejection_reason": req.rejection_reason,

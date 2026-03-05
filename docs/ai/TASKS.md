@@ -61,6 +61,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-098A` | `done` | Fix visual checkbox Para Demo: corregido tipo de input de radio a checkbox en template y JS dinámico.
 - `REQ-098B` | `done` | Fix visual checkbox Para Demo: border-radius cuadrado y checkmark ✓ visible en estado checked.
 - `REQ-098C` | `done` | Fix definitivo checkbox Para Demo: `!important` para neutralizar `pico.css` y user agent stylesheet.
+- `REQ-099` | `done` | Receptor designado al crear requisición: campo `receptor_designado_id`, selección obligatoria en `/crear`, visibilidad en firma de bodega con confirmación si cambia y exposición en API detalle.
 - `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
 
 ## Despliegue Producción

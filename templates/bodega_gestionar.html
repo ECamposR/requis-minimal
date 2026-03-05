@@ -45,9 +45,18 @@
 
     <article class="gestion-card panel">
         <h3>Registrar resultado de entrega</h3>
+        <p>
+            <strong>Receptor designado:</strong>
+            {% if req.receptor_designado %}
+                {{ req.receptor_designado.nombre }} ({{ req.receptor_designado.rol }})
+            {% else %}
+                -
+            {% endif %}
+        </p>
         {% if error_message %}
         <p class="form-error">{{ error_message }}</p>
         {% endif %}
+        {% set receptor_actual = form_data.get('recibido_por_id', req.receptor_designado_id|string if req.receptor_designado_id else '') %}
         <form method="POST" action="/entregar/{{ req.id }}" class="gestion-form">
             <label>
                 Resultado
@@ -59,10 +68,16 @@
             </label>
             <label>
                 Receptor
-                <select name="recibido_por_id" aria-label="Receptor">
+                <select
+                    name="recibido_por_id"
+                    aria-label="Receptor"
+                    data-receptor-select
+                    data-designado-id="{{ req.receptor_designado_id or '' }}"
+                    data-designado-nombre="{{ req.receptor_designado.nombre if req.receptor_designado else '' }}"
+                >
                     <option value="">Seleccionar...</option>
                     {% for receptor in receptores %}
-                    <option value="{{ receptor.id }}" {% if form_data.get('recibido_por_id', '')|string == receptor.id|string %}selected{% endif %}>
+                    <option value="{{ receptor.id }}" {% if receptor_actual|string == receptor.id|string %}selected{% endif %}>
                         {{ receptor.nombre }} ({{ receptor.rol }})
                     </option>
                     {% endfor %}
@@ -84,4 +99,28 @@
         </p>
     </article>
 </section>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.querySelector(".gestion-form");
+    if (!form) return;
+    const receptorSelect = form.querySelector("[data-receptor-select]");
+    const resultadoSelect = form.querySelector("select[name='resultado']");
+    if (!receptorSelect) return;
+
+    form.addEventListener("submit", (event) => {
+        const resultado = (resultadoSelect?.value || "").trim();
+        if (resultado === "no_entregada") return;
+        const designadoId = (receptorSelect.dataset.designadoId || "").trim();
+        const designadoNombre = (receptorSelect.dataset.designadoNombre || "N/D").trim();
+        const receptorId = (receptorSelect.value || "").trim();
+        if (!designadoId || !receptorId || designadoId === receptorId) return;
+        const ok = window.confirm(
+            `⚠️ El receptor seleccionado es distinto al designado originalmente (${designadoNombre}). ¿Confirmar cambio?`
+        );
+        if (!ok) {
+            event.preventDefault();
+        }
+    });
+});
+</script>
 {% endblock %}

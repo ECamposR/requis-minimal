@@ -7,11 +7,20 @@
 <p><strong>Folio:</strong> {{ req.folio }}</p>
 <p><strong>Solicitante:</strong> {{ req.solicitante.nombre if req.solicitante else '-' }}</p>
 <p><strong>Aprobado por:</strong> {{ req.aprobador.nombre if req.aprobador else '-' }}</p>
+<p>
+    <strong>Receptor designado:</strong>
+    {% if req.receptor_designado %}
+        {{ req.receptor_designado.nombre }} ({{ req.receptor_designado.rol }})
+    {% else %}
+        -
+    {% endif %}
+</p>
 <p><strong>Justificacion:</strong> {{ req.justificacion }}</p>
 {% if error_message %}
 <p class="form-error">{{ error_message }}</p>
 {% endif %}
 
+{% set receptor_actual = form_data.get('recibido_por_id', req.receptor_designado_id|string if req.receptor_designado_id else '') %}
 <form method="POST" action="/entregar/{{ req.id }}/parcial">
     <div class="table-wrap">
     <table>
@@ -51,10 +60,16 @@
 
     <label>
         Receptor
-        <select name="recibido_por_id" required>
+        <select
+            name="recibido_por_id"
+            required
+            data-receptor-select
+            data-designado-id="{{ req.receptor_designado_id or '' }}"
+            data-designado-nombre="{{ req.receptor_designado.nombre if req.receptor_designado else '' }}"
+        >
             <option value="">Seleccionar...</option>
             {% for receptor in receptores %}
-            <option value="{{ receptor.id }}" {% if form_data.get('recibido_por_id', '')|string == receptor.id|string %}selected{% endif %}>
+            <option value="{{ receptor.id }}" {% if receptor_actual|string == receptor.id|string %}selected{% endif %}>
                 {{ receptor.nombre }} ({{ receptor.rol }})
             </option>
             {% endfor %}
@@ -74,4 +89,25 @@
     </div>
 </form>
 </section>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.querySelector("form[action$='/parcial']");
+    if (!form) return;
+    const receptorSelect = form.querySelector("[data-receptor-select]");
+    if (!receptorSelect) return;
+
+    form.addEventListener("submit", (event) => {
+        const designadoId = (receptorSelect.dataset.designadoId || "").trim();
+        const designadoNombre = (receptorSelect.dataset.designadoNombre || "N/D").trim();
+        const receptorId = (receptorSelect.value || "").trim();
+        if (!designadoId || !receptorId || designadoId === receptorId) return;
+        const ok = window.confirm(
+            `⚠️ El receptor seleccionado es distinto al designado originalmente (${designadoNombre}). ¿Confirmar cambio?`
+        );
+        if (!ok) {
+            event.preventDefault();
+        }
+    });
+});
+</script>
 {% endblock %}

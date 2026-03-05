@@ -63,6 +63,10 @@ class Requisicion(Base):
     recibido_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     delivery_result: Mapped[str | None] = mapped_column(String(20), nullable=True)
     delivery_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    receptor_designado_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     prokey_ref: Mapped[str | None] = mapped_column(String, nullable=True)
     liquidation_comment: Mapped[str | None] = mapped_column(String, nullable=True)
     liquidated_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
@@ -95,6 +99,10 @@ class Requisicion(Base):
     recibido_por: Mapped["Usuario | None"] = relationship(
         "Usuario",
         foreign_keys=[recibido_por_id],
+    )
+    receptor_designado: Mapped["Usuario | None"] = relationship(
+        "Usuario",
+        foreign_keys=[receptor_designado_id],
     )
     liquidator: Mapped["Usuario | None"] = relationship(
         "Usuario",

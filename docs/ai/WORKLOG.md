@@ -1,5 +1,29 @@
 # Worklog (append-only)
 
+## 2026-03-05 12:22 UTC-6 | tool: Codex CLI
+- Objetivo: implementar REQ-099 para capturar receptor designado desde la creación y reforzar trazabilidad/confirmación en firma de bodega.
+- Tareas: `REQ-099`
+- Cambios:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/crud.py`
+  - `app/main.py`
+  - `templates/crear_requisicion.html`
+  - `templates/bodega_gestionar.html`
+  - `templates/bodega_entrega_parcial.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app templates static`
+- Resultado:
+  - Nuevo campo persistido `receptor_designado_id` en requisición (nullable para históricos).
+  - `/crear` ahora exige seleccionar receptor designado (usuario activo) y lo valida en backend.
+  - En captura de firma bodega (completa/parcial) se muestra el receptor designado y se solicita confirmación explícita si el receptor seleccionado difiere.
+  - `GET /api/requisiciones/{id}` expone `receptor_designado` como objeto `{id,nombre,rol}`.
+- Proximo paso:
+  - Ejecutar smoke manual E2E: crear requisición con designado, gestionar entrega con mismo receptor (sin aviso) y con distinto receptor (con confirmación).
+
 ## 2026-03-05 11:48 UTC-6 | tool: Codex CLI
 - Objetivo: cerrar REQ-098C para forzar la apariencia de checkbox "Para Demo" contra overrides de `pico.css` y user agent (`appearance: auto` / `border-radius` heredado).
 - Tareas: `REQ-098C`

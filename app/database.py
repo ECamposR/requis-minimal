@@ -82,6 +82,13 @@ def run_migrations() -> None:
                 conn.execute(text("ALTER TABLE requisiciones ADD COLUMN recibido_por_id INTEGER REFERENCES usuarios(id)"))
             if "recibido_at" not in columns:
                 conn.execute(text("ALTER TABLE requisiciones ADD COLUMN recibido_at TEXT"))
+            if "receptor_designado_id" not in columns:
+                conn.execute(
+                    text(
+                        "ALTER TABLE requisiciones "
+                        "ADD COLUMN receptor_designado_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL"
+                    )
+                )
 
         if "items" in tables:
             item_columns = {
