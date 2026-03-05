@@ -2,10 +2,13 @@
 
 Aplicación interna LAN para gestionar requisiciones desde solicitud hasta liquidación y soporte de registro en ProKey.
 
+## Manual de usuario final
+- Ver `MANUAL_USUARIO.md`
+
 ## Estado actual
 - Versión operativa `v1.x` (ya no MVP base).
 - Flujo implementado:
-  - `pendiente` -> `aprobada` / `rechazada` -> `entregada` -> `liquidada`
+  - `pendiente` -> `aprobada` / `rechazada` -> `entregada` -> `liquidada` -> `liquidada_en_prokey`
 - Funciones clave activas:
   - catálogo administrable (CRUD + importación CSV/XLSX + búsqueda)
   - entrega con firma de recibido por usuario + PIN
@@ -60,7 +63,7 @@ pytest -q tests/test_liquidacion.py
 
 ## PDF de liquidación
 - Endpoint: `GET /requisiciones/{id}/pdf`
-- Solo disponible cuando la requisición está en estado `liquidada`
+- Disponible cuando la requisición está en estado `liquidada` o `liquidada_en_prokey`
 - Respuesta inline (`application/pdf`) con:
   - resumen de estado
   - timeline
