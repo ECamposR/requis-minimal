@@ -2485,3 +2485,15 @@
 - Resultado:
   - Admin puede cargar archivos similares al listado de personal y ver un reporte antes de escribir en DB.
   - La importación real crea/actualiza usuarios con reglas consistentes por puesto, sin requerir edición fila por fila.
+
+## 2026-03-06 12:35 UTC-06:00 | tool: Codex CLI
+- Objetivo: Ajustar convención de `username` en importación masiva y alinear documentación operativa.
+- Tareas: `REQ-100A`.
+- Cambios:
+  - `app/main.py`: `build_username_base(...)` actualizado a `inicial del primer nombre + primer apellido` (usando convención hispana con penúltima palabra para nombres de 3+ tokens).
+  - `README.md`: nueva sección de importación masiva de usuarios con formato esperado, mapeo de puestos, regla de username y credenciales temporales.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: sincronización de gobernanza para cierre de `REQ-100A`.
+- Comandos ejecutados:
+  - `python -m compileall app/main.py`
+- Resultado:
+  - Usernames de importación quedan consistentes con operación (`cramirez`, `jramirez`, etc.), manteniendo manejo de colisiones por sufijo.

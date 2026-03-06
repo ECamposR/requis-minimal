@@ -30,6 +30,29 @@ Aplicación interna LAN para gestionar requisiciones desde solicitud hasta liqui
 - `user`
 - `tecnico` (sin login; usado para firma con PIN)
 
+## Importación masiva de usuarios (admin)
+- Pantalla: `Administración de Usuarios`
+- Endpoint: `POST /admin/usuarios/importar`
+- Formato de archivo soportado: `XLSX` y `CSV`
+- Columnas requeridas: `NOMBRE`, `PUESTO`
+- Flujo:
+  - `Previsualizar` (`dry-run`): valida y muestra qué filas se crearán/actualizarán.
+  - `Importar`: aplica cambios de forma idempotente.
+- Reglas de mapeo por puesto:
+  - `AUXILIAR DE BODEGA` -> `rol=bodega`, `departamento=Bodega`
+  - `TECNICO DE SERVICIO` -> `rol=tecnico`, `departamento=Logistica`
+  - `EJECUTIVO/A DE CUENTAS` -> `rol=user`, `departamento=Cuentas`
+  - `EJECUTIVO DE VENTAS` -> `rol=user`, `departamento=Ventas`
+  - `ASISTENTE ADMINISTRATIVO` -> `rol=user`, `departamento=Admon`
+  - `GERENTE GENERAL` y `JEFES` -> `rol=aprobador`, `departamento=Admon`
+- Regla de username:
+  - `inicial del primer nombre + primer apellido`
+  - Ejemplo: `Carlos Humberto Ramirez Segura` -> `cramirez`
+  - Si hay colisión se agrega sufijo numérico (`cramirez2`, `cramirez3`, ...).
+- Credenciales iniciales por importación:
+  - Roles no técnicos: contraseña temporal `Temp@2026`
+  - Técnicos: PIN temporal `1234` y `puede_iniciar_sesion=False`
+
 ## Arranque local rápido
 ```bash
 python -m venv .venv

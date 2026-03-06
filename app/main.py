@@ -112,7 +112,8 @@ def build_username_base(nombre: str) -> str:
         return "usuario"
     if len(parts) == 1:
         return parts[0]
-    return f"{parts[0]}.{parts[-1]}"
+    primer_apellido = parts[-2] if len(parts) >= 3 else parts[1]
+    return f"{parts[0][0]}{primer_apellido}"
 
 
 def pick_unique_username(base: str, taken: set[str]) -> str:
