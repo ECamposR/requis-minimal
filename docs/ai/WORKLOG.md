@@ -2541,3 +2541,29 @@
   - `python -m compileall app README.md docs/ai`
 - Resultado:
   - Quedó trazabilidad suficiente para investigación de incidentes en local/Docker sin cambiar lógica funcional del negocio.
+
+## 2026-03-06 14:45 UTC-06:00 | tool: Codex CLI
+- Objetivo: implementar `REQ-103` para capturar motivo/clasificación obligatorio en creación de requisición.
+- Tareas: `REQ-103`.
+- Cambios:
+  - `app/models.py`: nuevo campo `Requisicion.motivo_requisicion` (`String(80)`, nullable para compatibilidad histórica).
+  - `app/database.py`:
+    - migración incremental idempotente `ALTER TABLE requisiciones ADD COLUMN motivo_requisicion TEXT`.
+    - ajuste de reconstrucción de tabla `requisiciones` para incluir el nuevo campo y no perder datos en migraciones históricas.
+  - `app/crud.py`: `crear_requisicion_db(...)` ahora recibe y persiste `motivo_requisicion`.
+  - `app/main.py`:
+    - catálogo fijo `MOTIVOS_REQUISICION` con 11 valores de negocio.
+    - `/crear` GET envía motivos al template.
+    - `/crear` POST valida motivo obligatorio y pertenencia al catálogo; si no cumple retorna `400`.
+  - `templates/crear_requisicion.html`: nuevo selector obligatorio `Motivo / Clasificacion`.
+  - `tests/test_basic_flow.py`:
+    - ajuste de payloads `/crear` para incluir `motivo_requisicion`.
+    - nuevos tests: `motivo` requerido e inválido.
+  - `tests/test_liquidacion_integration.py`: actualización de firma de `crear_requisicion_db(...)` con `motivo_requisicion`.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: gobernanza actualizada.
+- Comandos ejecutados:
+  - `python -m compileall app templates tests`
+  - `.venv/bin/python -m pytest -q tests/test_basic_flow.py -k \"motivo or crear_requisicion\" -v`
+- Resultado:
+  - nuevas requisiciones no se crean sin motivo válido.
+  - el campo queda persistido para futuras métricas/BI sin alterar flujos de aprobación/entrega/liquidación.

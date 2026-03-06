@@ -50,6 +50,7 @@ class Requisicion(Base):
     cliente_nombre: Mapped[str | None] = mapped_column(String(160), nullable=True)
     cliente_ruta_principal: Mapped[str | None] = mapped_column(String(4), nullable=True)
     estado: Mapped[str] = mapped_column(String(20), default="pendiente", nullable=False)
+    motivo_requisicion: Mapped[str | None] = mapped_column(String(80), nullable=True)
     justificacion: Mapped[str] = mapped_column(Text, nullable=False)
 
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())

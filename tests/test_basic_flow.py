@@ -204,6 +204,8 @@ def test_crear_requisicion(client: TestClient, db_session: Session):
             "cliente_codigo": "C-1001",
             "cliente_nombre": "Cliente Uno",
             "cliente_ruta_principal": "RA02",
+            "receptor_designado_id": "1",
+            "motivo_requisicion": "Servicio pendiente",
             "justificacion": "Material para mantenimiento correctivo",
             "items[0][descripcion]": "Cable UTP Cat6",
             "items[0][cantidad]": "25",
@@ -219,8 +221,47 @@ def test_crear_requisicion(client: TestClient, db_session: Session):
     assert req.cliente_codigo == "C-1001"
     assert req.cliente_nombre == "Cliente Uno"
     assert req.cliente_ruta_principal == "RA02"
+    assert req.motivo_requisicion == "Servicio pendiente"
     assert len(req.items) == 1
     assert req.items[0].descripcion == "Cable UTP Cat6"
+
+
+def test_crear_requisicion_requiere_motivo(client: TestClient):
+    login(client, "user.ops", "pass123")
+    response = client.post(
+        "/crear",
+        data={
+            "cliente_codigo": "C-1002",
+            "cliente_nombre": "Cliente sin motivo",
+            "cliente_ruta_principal": "RA02",
+            "receptor_designado_id": "1",
+            "motivo_requisicion": "",
+            "justificacion": "Debe fallar por motivo vacio",
+            "items[0][descripcion]": "Cable UTP Cat6",
+            "items[0][cantidad]": "1",
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Debes seleccionar un motivo"
+
+
+def test_crear_requisicion_rechaza_motivo_invalido(client: TestClient):
+    login(client, "user.ops", "pass123")
+    response = client.post(
+        "/crear",
+        data={
+            "cliente_codigo": "C-1003",
+            "cliente_nombre": "Cliente motivo invalido",
+            "cliente_ruta_principal": "RA02",
+            "receptor_designado_id": "1",
+            "motivo_requisicion": "MOTIVO_INVALIDO",
+            "justificacion": "Debe fallar por motivo invalido",
+            "items[0][descripcion]": "Cable UTP Cat6",
+            "items[0][cantidad]": "1",
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Motivo de requisicion invalido"
 
 
 def test_crear_requisicion_ignora_departamento_enviado(client: TestClient, db_session: Session):
@@ -233,6 +274,8 @@ def test_crear_requisicion_ignora_departamento_enviado(client: TestClient, db_se
             "cliente_codigo": "C-2001",
             "cliente_nombre": "Cliente Dos",
             "cliente_ruta_principal": "rb03",
+            "receptor_designado_id": "1",
+            "motivo_requisicion": "Servicio pendiente",
             "justificacion": "Prueba de spoof de departamento",
             "items[0][descripcion]": "Conector RJ45",
             "items[0][cantidad]": "2",
@@ -424,6 +467,8 @@ def test_crear_requisicion_rechaza_item_fuera_catalogo(client: TestClient):
             "cliente_codigo": "C-3001",
             "cliente_nombre": "Cliente Tres",
             "cliente_ruta_principal": "RA02",
+            "receptor_designado_id": "1",
+            "motivo_requisicion": "Servicio pendiente",
             "justificacion": "Intento con item invalido",
             "items[0][descripcion]": "ITEM NO VALIDO",
             "items[0][cantidad]": "1",
@@ -443,6 +488,8 @@ def test_crear_requisicion_rechaza_items_duplicados(client: TestClient):
             "cliente_codigo": "C-4001",
             "cliente_nombre": "Cliente Cuatro",
             "cliente_ruta_principal": "RA02",
+            "receptor_designado_id": "1",
+            "motivo_requisicion": "Servicio pendiente",
             "justificacion": "Intento con item duplicado",
             "items[0][descripcion]": "Cable UTP Cat6",
             "items[0][cantidad]": "1",
@@ -464,6 +511,8 @@ def test_crear_requisicion_normaliza_item_con_espacios_y_mayusculas(client: Test
             "cliente_codigo": "C-4002",
             "cliente_nombre": "Cliente Cinco",
             "cliente_ruta_principal": "RA02",
+            "receptor_designado_id": "1",
+            "motivo_requisicion": "Servicio pendiente",
             "justificacion": "Normalizacion de item",
             "items[0][descripcion]": "  cable   utp   CAT6  ",
             "items[0][cantidad]": "1",
@@ -486,6 +535,8 @@ def test_crear_requisicion_requiere_datos_cliente(client: TestClient):
             "cliente_codigo": "",
             "cliente_nombre": "",
             "cliente_ruta_principal": "",
+            "receptor_designado_id": "1",
+            "motivo_requisicion": "Servicio pendiente",
             "justificacion": "Sin datos cliente",
             "items[0][descripcion]": "Cable UTP Cat6",
             "items[0][cantidad]": "1",
@@ -505,6 +556,8 @@ def test_crear_requisicion_requiere_formato_ruta_principal(client: TestClient):
             "cliente_codigo": "C-5001",
             "cliente_nombre": "Cliente Ruta Invalida",
             "cliente_ruta_principal": "RUTA1",
+            "receptor_designado_id": "1",
+            "motivo_requisicion": "Servicio pendiente",
             "justificacion": "Prueba de validacion de ruta principal",
             "items[0][descripcion]": "Cable UTP Cat6",
             "items[0][cantidad]": "1",

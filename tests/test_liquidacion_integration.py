@@ -87,6 +87,7 @@ def build_req(db: Session, items: list[tuple[str, int]]) -> Requisicion:
         cliente_codigo="C123",
         cliente_nombre="Cliente Test",
         cliente_ruta_principal="RA01",
+        motivo_requisicion="Servicio pendiente",
         justificacion="Flujo integracion liquidacion",
     )
     for desc, qty in items:

@@ -65,6 +65,19 @@ PASSWORD_MIN_LENGTH = 8
 USUARIOS_IMPORT_HEADERS = {"nombre", "puesto"}
 TEMP_IMPORT_PASSWORD = "Temp@2026"
 TEMP_IMPORT_PIN = "1234"
+MOTIVOS_REQUISICION = [
+    "Queja Fragancia",
+    "Otros",
+    "Demostración",
+    "Queja Eq. Dañado",
+    "Servicio No Programado",
+    "R1E",
+    "Queja Mal Estado",
+    "Restauracion Eq. Calidad",
+    "Reponer KIT a Tecnico",
+    "Cambio de Fragancia",
+    "Servicio pendiente",
+]
 PUESTO_MAP = {
     "AUXILIAR DE BODEGA": ("bodega", "Bodega"),
     "TECNICO DE SERVICIO": ("tecnico", "Logistica"),
@@ -738,6 +751,7 @@ def crear_form(request: Request, current_user: Usuario = Depends(get_current_use
             current_user,
             catalogo_items=[i.nombre for i in catalogo_items],
             usuarios_activos=usuarios_activos,
+            motivos_requisicion=MOTIVOS_REQUISICION,
         ),
     )
 
@@ -749,6 +763,7 @@ async def crear(
     cliente_nombre: str = Form(...),
     cliente_ruta_principal: str = Form(...),
     receptor_designado_id: str = Form(...),
+    motivo_requisicion: str = Form(...),
     justificacion: str = Form(...),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -762,6 +777,11 @@ async def crear(
         raise HTTPException(status_code=400, detail="Nombre de cliente invalido")
     if not re.fullmatch(r"[A-Z]{2}\d{2}", cliente_ruta_principal_limpia):
         raise HTTPException(status_code=400, detail="Ruta principal invalida (formato: AA00)")
+    motivo_requisicion_limpio = motivo_requisicion.strip()
+    if not motivo_requisicion_limpio:
+        raise HTTPException(status_code=400, detail="Debes seleccionar un motivo")
+    if motivo_requisicion_limpio not in MOTIVOS_REQUISICION:
+        raise HTTPException(status_code=400, detail="Motivo de requisicion invalido")
     receptor_designado_id_limpio = receptor_designado_id.strip()
     if not receptor_designado_id_limpio:
         raise HTTPException(status_code=400, detail="Debes seleccionar receptor designado")
@@ -784,6 +804,7 @@ async def crear(
         cliente_codigo=cliente_codigo_limpio,
         cliente_nombre=cliente_nombre_limpio,
         cliente_ruta_principal=cliente_ruta_principal_limpia,
+        motivo_requisicion=motivo_requisicion_limpio,
         justificacion=justificacion,
         receptor_designado_id=receptor_designado.id,
     )
@@ -2294,6 +2315,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "cliente_nombre": req.cliente_nombre,
         "cliente_ruta_principal": req.cliente_ruta_principal,
         "estado": req.estado,
+        "motivo_requisicion": req.motivo_requisicion,
         "justificacion": req.justificacion,
         "created_at": req.created_at,
         "approved_by": req.aprobador.nombre if req.aprobador else None,

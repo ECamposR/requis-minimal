@@ -50,6 +50,7 @@ def crear_requisicion_db(
     cliente_codigo: str,
     cliente_nombre: str,
     cliente_ruta_principal: str,
+    motivo_requisicion: str,
     justificacion: str,
     receptor_designado_id: int | None = None,
 ) -> Requisicion:
@@ -60,6 +61,7 @@ def crear_requisicion_db(
         cliente_codigo=cliente_codigo,
         cliente_nombre=cliente_nombre,
         cliente_ruta_principal=cliente_ruta_principal,
+        motivo_requisicion=motivo_requisicion,
         estado="pendiente",
         justificacion=justificacion,
         receptor_designado_id=receptor_designado_id,

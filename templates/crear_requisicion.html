@@ -40,6 +40,15 @@
                     {% endfor %}
                 </select>
             </label>
+            <label>
+                Motivo / Clasificacion
+                <select name="motivo_requisicion" required>
+                    <option value="">Seleccionar motivo...</option>
+                    {% for motivo in motivos_requisicion %}
+                    <option value="{{ motivo }}">{{ motivo }}</option>
+                    {% endfor %}
+                </select>
+            </label>
         </div>
         <label>
             Justificacion

@@ -89,6 +89,8 @@ def run_migrations() -> None:
                         "ADD COLUMN receptor_designado_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL"
                     )
                 )
+            if "motivo_requisicion" not in columns:
+                conn.execute(text("ALTER TABLE requisiciones ADD COLUMN motivo_requisicion TEXT"))
 
         if "items" in tables:
             item_columns = {
@@ -149,6 +151,7 @@ def run_migrations() -> None:
                                 cliente_nombre VARCHAR(160),
                                 cliente_ruta_principal VARCHAR(4),
                                 estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+                                motivo_requisicion VARCHAR(80),
                                 justificacion TEXT NOT NULL,
                                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                 approved_at DATETIME,
@@ -184,7 +187,7 @@ def run_migrations() -> None:
                             """
                             INSERT INTO requisiciones (
                                 id, folio, solicitante_id, departamento, cliente_codigo, cliente_nombre, cliente_ruta_principal,
-                                estado, justificacion, created_at, approved_at, approved_by, approval_comment,
+                                estado, motivo_requisicion, justificacion, created_at, approved_at, approved_by, approval_comment,
                                 delivered_at, delivered_by, recibido_por_id, delivered_to, recibido_at, delivery_result,
                                 delivery_comment, receptor_designado_id, prokey_ref, liquidation_comment, liquidated_by,
                                 liquidated_at, prokey_liquidada_at, prokey_liquidada_por, rejected_at, rejected_by,
@@ -192,7 +195,7 @@ def run_migrations() -> None:
                             )
                             SELECT
                                 id, folio, solicitante_id, departamento, cliente_codigo, cliente_nombre, cliente_ruta_principal,
-                                estado, justificacion, created_at, approved_at, approved_by, approval_comment,
+                                estado, motivo_requisicion, justificacion, created_at, approved_at, approved_by, approval_comment,
                                 delivered_at, delivered_by, recibido_por_id, delivered_to, recibido_at, delivery_result,
                                 delivery_comment, receptor_designado_id, prokey_ref, liquidation_comment, liquidated_by,
                                 liquidated_at, prokey_liquidada_at, prokey_liquidada_por, rejected_at, rejected_by,
