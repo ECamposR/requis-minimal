@@ -2464,3 +2464,24 @@
 - Resultado:
   - Entorno remoto alineado con `main`.
   - Vista `Bodega`, detalle de requisición y flujo `liquidada_en_prokey` operativos sin `500`.
+
+## 2026-03-06 12:10 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar importación masiva de usuarios basada en `Listado Personal al 06.03.2026.xlsx` con mapeo por puesto y flujo seguro de previsualización.
+- Tareas: `REQ-100`.
+- Cambios:
+  - `app/main.py`:
+    - Se agregó parser de usuarios para XLSX/CSV con columnas `NOMBRE` y `PUESTO`.
+    - Se agregó normalización robusta de texto (tildes/espacios) para mapear puestos reales.
+    - Se agregó mapeo operativo de puestos a `rol`/`departamento` según definición del usuario.
+    - Se implementó generación de `username` (`nombre.apellido` + sufijo por colisión).
+    - Se implementó `dry-run` (`POST /admin/usuarios/importar` con `dry_run=1`) y aplicación real idempotente (`dry_run=0`).
+    - Se definieron credenciales temporales de importación: no técnicos `Temp@2026`, técnicos `PIN 1234` y login deshabilitado.
+  - `templates/admin_usuarios.html`:
+    - Se agregó bloque de importación con carga de archivo y dos acciones: `Previsualizar` / `Importar`.
+    - Se agregó render de reporte (totales, errores por fila y filas válidas con acción crear/actualizar).
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: sincronización de gobernanza.
+- Comandos ejecutados:
+  - `python -m compileall app templates`
+- Resultado:
+  - Admin puede cargar archivos similares al listado de personal y ver un reporte antes de escribir en DB.
+  - La importación real crea/actualiza usuarios con reglas consistentes por puesto, sin requerir edición fila por fila.

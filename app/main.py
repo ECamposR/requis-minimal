@@ -2,6 +2,7 @@ import os
 import re
 import json
 import secrets
+import unicodedata
 from io import BytesIO
 import csv
 from datetime import datetime, timedelta
@@ -54,6 +55,22 @@ templates = Jinja2Templates(directory="templates")
 DEPARTAMENTOS_VALIDOS = ["Cuentas", "Ventas", "Bodega", "Admon", "Logistica"]
 CATALOGO_HEADERS = {"nombre", "item", "producto", "descripcion"}
 ROLES_VALIDOS = ["user", "aprobador", "bodega", "jefe_bodega", "admin", "tecnico"]
+USUARIOS_IMPORT_HEADERS = {"nombre", "puesto"}
+TEMP_IMPORT_PASSWORD = "Temp@2026"
+TEMP_IMPORT_PIN = "1234"
+PUESTO_MAP = {
+    "AUXILIAR DE BODEGA": ("bodega", "Bodega"),
+    "TECNICO DE SERVICIO": ("tecnico", "Logistica"),
+    "EJECUTIVO DE CUENTAS": ("user", "Cuentas"),
+    "EJECUTIVA DE CUENTAS": ("user", "Cuentas"),
+    "EJECUTIVO DE VENTAS": ("user", "Ventas"),
+    "ASISTENTE ADMINISTRATIVO": ("user", "Admon"),
+    "GERENTE GENERAL": ("aprobador", "Admon"),
+    "JEFE ADMINISTRATIVO": ("aprobador", "Admon"),
+    "JEFE DE BODEGA": ("aprobador", "Admon"),
+    "JEFE DE OPERACIONES": ("aprobador", "Admon"),
+    "JEFE DE LOGISTICA": ("aprobador", "Admon"),
+}
 
 
 @app.exception_handler(HTTPException)
@@ -72,6 +89,40 @@ def startup_migrations() -> None:
 
 def normalize_catalog_name(value: str) -> str:
     return " ".join(value.split()).strip().casefold()
+
+
+def normalize_text(value: str) -> str:
+    base = unicodedata.normalize("NFD", value or "")
+    without_marks = "".join(ch for ch in base if unicodedata.category(ch) != "Mn")
+    return " ".join(without_marks.split()).strip()
+
+
+def normalize_person_name(value: str) -> str:
+    return normalize_text(value).upper()
+
+
+def normalize_puesto(value: str) -> str:
+    return normalize_text(value).upper()
+
+
+def build_username_base(nombre: str) -> str:
+    parts = [re.sub(r"[^a-z0-9]", "", p) for p in normalize_text(nombre).lower().split()]
+    parts = [p for p in parts if p]
+    if not parts:
+        return "usuario"
+    if len(parts) == 1:
+        return parts[0]
+    return f"{parts[0]}.{parts[-1]}"
+
+
+def pick_unique_username(base: str, taken: set[str]) -> str:
+    candidate = base
+    suffix = 1
+    while candidate in taken:
+        suffix += 1
+        candidate = f"{base}{suffix}"
+    taken.add(candidate)
+    return candidate
 
 
 def _extract_names_from_rows(rows: list[list[str]]) -> list[str]:
@@ -135,6 +186,58 @@ def _parse_catalog_xlsx(raw: bytes) -> list[str]:
         return _extract_names_from_rows(rows)
     finally:
         wb.close()
+
+
+def _parse_users_rows(raw: bytes, filename: str) -> list[dict[str, str]]:
+    ext = os.path.splitext(filename.lower())[1]
+    rows: list[list[str]] = []
+    if ext in (".xlsx", ".xlsm", ".xltx", ".xltm"):
+        try:
+            from openpyxl import load_workbook
+        except ModuleNotFoundError as exc:
+            raise ValueError("Falta dependencia openpyxl para importar XLSX") from exc
+        wb = load_workbook(filename=BytesIO(raw), read_only=True, data_only=True)
+        try:
+            ws = wb.active
+            for row in ws.iter_rows(values_only=True):
+                values = ["" if value is None else str(value).strip() for value in row]
+                if any(values):
+                    rows.append(values)
+        finally:
+            wb.close()
+    elif ext == ".csv":
+        text = ""
+        for encoding in ("utf-8-sig", "utf-8", "latin-1"):
+            try:
+                text = raw.decode(encoding)
+                break
+            except UnicodeDecodeError:
+                continue
+        if not text:
+            raise ValueError("No se pudo leer el CSV")
+        reader = csv.reader(text.splitlines())
+        rows = [[str(cell).strip() for cell in row] for row in reader if any(str(cell).strip() for cell in row)]
+    else:
+        raise ValueError("Formato no soportado. Usa XLSX o CSV")
+
+    if not rows:
+        raise ValueError("El archivo no contiene filas")
+
+    headers = [normalize_text(col).lower() for col in rows[0]]
+    try:
+        idx_nombre = headers.index("nombre")
+        idx_puesto = headers.index("puesto")
+    except ValueError as exc:
+        raise ValueError("El archivo debe incluir columnas NOMBRE y PUESTO") from exc
+
+    parsed: list[dict[str, str]] = []
+    for line_num, row in enumerate(rows[1:], start=2):
+        nombre = row[idx_nombre].strip() if idx_nombre < len(row) else ""
+        puesto = row[idx_puesto].strip() if idx_puesto < len(row) else ""
+        if not nombre and not puesto:
+            continue
+        parsed.append({"linea": str(line_num), "nombre": nombre, "puesto": puesto})
+    return parsed
 
 
 def template_context(request: Request, current_user: Usuario | None = None, **kwargs: object) -> dict[str, object]:
@@ -202,6 +305,104 @@ def puede_editar_prokey_ref(req: Requisicion, current_user: Usuario) -> bool:
 def ensure_admin(current_user: Usuario) -> None:
     if current_user.rol != "admin":
         raise HTTPException(status_code=403, detail="No autorizado")
+
+
+def build_users_import_report(rows: list[dict[str, str]], db: Session) -> dict[str, object]:
+    report: dict[str, object] = {
+        "total": len(rows),
+        "created": 0,
+        "updated": 0,
+        "errors": 0,
+        "error_rows": [],
+        "preview_rows": [],
+    }
+    existing_users = db.query(Usuario).all()
+    by_name = {normalize_person_name(u.nombre): u for u in existing_users}
+    by_username = {u.username: u for u in existing_users}
+    taken_usernames = set(by_username.keys())
+    preview_rows: list[dict[str, str]] = []
+    error_rows: list[dict[str, str]] = []
+
+    for row in rows:
+        nombre = normalize_text(row.get("nombre", ""))
+        puesto = normalize_puesto(row.get("puesto", ""))
+        linea = row.get("linea", "-")
+        if len(nombre) < 3:
+            error_rows.append({"linea": linea, "nombre": nombre, "puesto": puesto, "error": "Nombre invalido"})
+            continue
+        if puesto not in PUESTO_MAP:
+            error_rows.append({"linea": linea, "nombre": nombre, "puesto": puesto, "error": "Puesto no mapeado"})
+            continue
+
+        rol, departamento = PUESTO_MAP[puesto]
+        existing_by_name = by_name.get(normalize_person_name(nombre))
+        created = existing_by_name is None
+        if created:
+            username_base = build_username_base(nombre)
+            username = pick_unique_username(username_base, taken_usernames)
+            by_username[username] = Usuario(
+                username=username,
+                nombre=nombre,
+                rol=rol,
+                departamento=departamento,
+                activo=True,
+                password="",
+            )
+        else:
+            username = existing_by_name.username
+        preview_rows.append(
+            {
+                "linea": linea,
+                "nombre": nombre,
+                "puesto": puesto,
+                "rol": rol,
+                "departamento": departamento,
+                "username": username,
+                "accion": "crear" if created else "actualizar",
+            }
+        )
+
+    report["preview_rows"] = preview_rows
+    report["error_rows"] = error_rows
+    report["errors"] = len(error_rows)
+    report["created"] = sum(1 for row in preview_rows if row["accion"] == "crear")
+    report["updated"] = sum(1 for row in preview_rows if row["accion"] == "actualizar")
+    return report
+
+
+def apply_users_import(preview_rows: list[dict[str, str]], db: Session) -> dict[str, int]:
+    created = 0
+    updated = 0
+    for row in preview_rows:
+        username = row["username"]
+        nombre = row["nombre"]
+        rol = row["rol"]
+        departamento = row["departamento"]
+        usuario = db.query(Usuario).filter(Usuario.username == username).first()
+        if usuario:
+            usuario.nombre = nombre
+            usuario.rol = rol
+            usuario.departamento = departamento
+            usuario.activo = True
+            usuario.puede_iniciar_sesion = rol != "tecnico"
+            if rol == "tecnico" and not usuario.pin_hash:
+                usuario.pin_hash = hash_password(TEMP_IMPORT_PIN)
+            updated += 1
+            continue
+        nuevo = Usuario(
+            username=username,
+            nombre=nombre,
+            rol=rol,
+            departamento=departamento,
+            activo=True,
+            password=hash_password(secrets.token_urlsafe(24)) if rol == "tecnico" else hash_password(TEMP_IMPORT_PASSWORD),
+            pin_hash=hash_password(TEMP_IMPORT_PIN) if rol == "tecnico" else None,
+            puede_iniciar_sesion=rol != "tecnico",
+        )
+        db.add(nuevo)
+        created += 1
+    db.commit()
+    return {"created": created, "updated": updated}
 
 
 def get_active_receptores(db: Session) -> list[Usuario]:
@@ -1275,7 +1476,48 @@ def admin_usuarios(request: Request, current_user: Usuario = Depends(get_current
     usuarios = query.order_by(Usuario.activo.desc(), Usuario.id.asc()).all()
     return templates.TemplateResponse(
         "admin_usuarios.html",
-        template_context(request, current_user, usuarios=usuarios, estado=estado),
+        template_context(request, current_user, usuarios=usuarios, estado=estado, import_report=None),
+    )
+
+
+@app.post("/admin/usuarios/importar")
+async def admin_usuarios_importar(
+    request: Request,
+    file: UploadFile = File(...),
+    dry_run: str = Form("1"),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    if not file.filename:
+        return redirect_with_message("/admin/usuarios", "Debes seleccionar un archivo", "error")
+    raw = await file.read()
+    if not raw:
+        return redirect_with_message("/admin/usuarios", "El archivo esta vacio", "error")
+    try:
+        rows = _parse_users_rows(raw, file.filename)
+        report = build_users_import_report(rows, db)
+    except ValueError as exc:
+        return redirect_with_message("/admin/usuarios", str(exc), "error")
+
+    usuarios = db.query(Usuario).filter(Usuario.activo.is_(True)).order_by(Usuario.activo.desc(), Usuario.id.asc()).all()
+    if dry_run == "1":
+        return templates.TemplateResponse(
+            "admin_usuarios.html",
+            template_context(request, current_user, usuarios=usuarios, estado="activos", import_report=report),
+        )
+
+    if report["errors"]:
+        return templates.TemplateResponse(
+            "admin_usuarios.html",
+            template_context(request, current_user, usuarios=usuarios, estado="activos", import_report=report),
+        )
+
+    result = apply_users_import(report["preview_rows"], db)
+    return redirect_with_message(
+        "/admin/usuarios",
+        f"Importacion completada: {result['created']} creados, {result['updated']} actualizados",
+        "success",
     )
 
 

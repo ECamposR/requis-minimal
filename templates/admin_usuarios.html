@@ -10,6 +10,88 @@
     <a href="/admin/usuarios?estado=inactivos" role="button" class="{% if estado != 'inactivos' %}secondary{% endif %}">Inactivos</a>
     <a href="/admin/usuarios?estado=todos" role="button" class="{% if estado != 'todos' %}secondary{% endif %}">Todos</a>
 </p>
+<article class="view-panel panel" style="margin: 1rem 0;">
+    <h3>Importar usuarios (XLSX/CSV)</h3>
+    <p class="status-muted">Formato esperado: columnas <strong>NOMBRE</strong> y <strong>PUESTO</strong>.</p>
+    <form method="POST" action="/admin/usuarios/importar" enctype="multipart/form-data" class="gestion-form">
+        <label>Archivo
+            <input type="file" name="file" accept=".xlsx,.csv" required>
+        </label>
+        <div class="form-actions">
+            <button type="submit" name="dry_run" value="1" class="secondary">Previsualizar</button>
+            <button type="submit" name="dry_run" value="0">Importar</button>
+        </div>
+    </form>
+    <p class="status-muted">Credenciales iniciales de importacion: no tecnicos usan contrasena temporal <code>Temp@2026</code>; tecnicos usan PIN temporal <code>1234</code> y no pueden iniciar sesion.</p>
+</article>
+
+{% if import_report %}
+<article class="view-panel panel" style="margin: 1rem 0;">
+    <h3>Resultado de previsualizacion</h3>
+    <p class="status-muted">
+        Total: {{ import_report.total }} |
+        Crear: {{ import_report.created }} |
+        Actualizar: {{ import_report.updated }} |
+        Errores: {{ import_report.errors }}
+    </p>
+    {% if import_report.error_rows %}
+    <h4>Filas con error</h4>
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>Linea</th>
+                <th>Nombre</th>
+                <th>Puesto</th>
+                <th>Error</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for err in import_report.error_rows %}
+            <tr>
+                <td>{{ err.linea }}</td>
+                <td>{{ err.nombre }}</td>
+                <td>{{ err.puesto }}</td>
+                <td>{{ err.error }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    {% if import_report.preview_rows %}
+    <h4>Filas validas</h4>
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>Linea</th>
+                <th>Accion</th>
+                <th>Username</th>
+                <th>Nombre</th>
+                <th>Puesto</th>
+                <th>Rol</th>
+                <th>Departamento</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in import_report.preview_rows %}
+            <tr>
+                <td>{{ row.linea }}</td>
+                <td>{{ row.accion }}</td>
+                <td>{{ row.username }}</td>
+                <td>{{ row.nombre }}</td>
+                <td>{{ row.puesto }}</td>
+                <td>{{ row.rol }}</td>
+                <td>{{ row.departamento }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</article>
+{% endif %}
 
 {% if usuarios %}
 <div class="table-wrap">

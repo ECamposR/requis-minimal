@@ -72,6 +72,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-099H` | `done` | PDF habilitado también para estado terminal `liquidada_en_prokey` (endpoint + `pdf_url` API + botón en detalle).
 - `REQ-099I` | `done` | Incidente de despliegue Docker remoto: desalineación de versión entre `main.py` y `models.py` (atributos Prokey faltantes); se corrigió con guards defensivos + commit de modelo/migración y verificación en contenedor (`True True`).
 - `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
+- `REQ-100` | `done` | Importación masiva de usuarios desde XLSX/CSV (`NOMBRE`, `PUESTO`) con mapeo de puesto->rol/departamento, previsualización (`dry-run`) y ejecución idempotente (crear/actualizar).
 
 ## Despliegue Producción
 - `REQ-086` | `done` | Agregar Dockerfile, docker-compose.yml de la app y configuración de Caddy (`deploy/caddy/`) para despliegue LAN con reverse proxy. Red Docker externa `proxy` desacopla Caddy de cada servicio.
