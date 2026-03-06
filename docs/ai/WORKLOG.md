@@ -2447,3 +2447,20 @@
   - `python -m compileall app static`
 - Resultado:
   - Requisiciones cerradas en `liquidada_en_prokey` ya pueden abrir PDF desde detalle sin error 403 ni botón deshabilitado.
+
+## 2026-03-06 08:35 UTC-06:00 | tool: Codex CLI
+- Objetivo: Documentar y cerrar incidente de despliegue remoto Docker con desalineación de código en producción.
+- Tareas: `REQ-099I`.
+- Contexto del incidente:
+  - `/bodega` y `/api/requisiciones/{id}` fallaban con `AttributeError` por atributos ausentes (`prokey_liquidator`, `prokey_liquidada_at`).
+  - Diagnóstico en contenedor mostró estado mixto: `main.py` actualizado con guards, pero `models.py` sin campos Prokey (`False False` en `hasattr`).
+- Cambios aplicados:
+  - `app/main.py`: guards defensivos para evitar crash cuando faltan atributos en despliegues mixtos.
+  - `app/models.py` y `app/database.py`: commit correctivo con campos/relación de cierre Prokey y migración/check actualizado.
+  - Operación de recuperación: validación en contenedor tras redeploy limpio (`True True`), y reseteo operativo de credenciales admin para acceso.
+- Comandos operativos relevantes:
+  - verificación runtime: `docker compose exec requisiciones python -c "... hasattr(Requisicion, 'prokey_liquidator') ..."`
+  - redeploy: `docker compose build --no-cache requisiciones && docker compose up -d requisiciones`
+- Resultado:
+  - Entorno remoto alineado con `main`.
+  - Vista `Bodega`, detalle de requisición y flujo `liquidada_en_prokey` operativos sin `500`.

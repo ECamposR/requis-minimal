@@ -70,6 +70,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-099F` | `done` | Fix de robustez en validación JS de `Liquidar`: normalización defensiva de campos numéricos (`''/NaN/coma decimal`) y recálculo stateless por evento para evitar botón deshabilitado residual.
 - `REQ-099G` | `done` | Liquidación RETORNABLE: `Regresa > cobertura/entregado` deja de bloquear guardado y pasa a advertencia no bloqueante con alerta persistida (`ALERTA_RETORNO_EXTRA`).
 - `REQ-099H` | `done` | PDF habilitado también para estado terminal `liquidada_en_prokey` (endpoint + `pdf_url` API + botón en detalle).
+- `REQ-099I` | `done` | Incidente de despliegue Docker remoto: desalineación de versión entre `main.py` y `models.py` (atributos Prokey faltantes); se corrigió con guards defensivos + commit de modelo/migración y verificación en contenedor (`True True`).
 - `REQ-091B` | `done` | Fix de layout en catálogo admin: se agregó la grilla CSS faltante (`form-grid-2`) para que el reordenamiento visual de tarjetas realmente se aplique.
 
 ## Despliegue Producción
