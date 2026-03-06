@@ -2597,3 +2597,21 @@
   - `.venv/bin/python -m pytest -q tests/test_basic_flow.py -k \"editar_requisicion or crear_requisicion\" -v`
 - Resultado:
   - El solicitante ya puede corregir la requisición antes de que sea aprobada, sin abrir edición en estados posteriores.
+
+## 2026-03-06 16:05 UTC-06:00 | tool: Codex CLI
+- Objetivo: mejorar UX en selección de receptor cuando hay más de 50 usuarios.
+- Tareas: `REQ-105`.
+- Cambios:
+  - `templates/crear_requisicion.html` y `templates/editar_requisicion.html`:
+    - se agregó input `Buscar receptor...` encima del select `receptor_designado_id`.
+  - `templates/bodega_gestionar.html` y `templates/bodega_entrega_parcial.html`:
+    - se agregó buscador de receptor en la firma de entrega.
+    - el buscador respeta el flujo de bloqueo/desbloqueo (`Cambiar receptor`, `Guardar cambio`, `Cancelar`).
+  - `static/app.js`:
+    - helper genérico de filtrado de options por texto (`nombre/rol`) con normalización de acentos.
+    - inicialización automática para inputs con `data-select-search`.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: gobernanza actualizada.
+- Comandos ejecutados:
+  - `python -m compileall templates static app`
+- Resultado:
+  - Los selects largos de receptor ahora se filtran en tiempo real, reduciendo errores y tiempo de captura en operación.

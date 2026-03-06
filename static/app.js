@@ -1,5 +1,40 @@
 let itemCount = 1;
 
+function normalizeSearchText(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+function applySelectFilter(select, rawTerm) {
+    if (!select) return;
+    const term = normalizeSearchText(rawTerm);
+    const options = Array.from(select.options || []);
+    for (const [index, option] of options.entries()) {
+        if (index === 0) {
+            option.hidden = false;
+            continue;
+        }
+        const label = normalizeSearchText(option.textContent);
+        const matches = !term || label.includes(term) || option.selected;
+        option.hidden = !matches;
+    }
+}
+
+function initSearchableSelects(root = document) {
+    const inputs = root.querySelectorAll("[data-select-search]");
+    for (const input of inputs) {
+        const targetId = input.getAttribute("data-select-search");
+        if (!targetId) continue;
+        const select = document.getElementById(targetId);
+        if (!select) continue;
+        applySelectFilter(select, input.value);
+        input.addEventListener("input", () => applySelectFilter(select, input.value));
+    }
+}
+
 function escapeHtml(text) {
     const value = String(text ?? "");
     return value
@@ -251,6 +286,7 @@ function agregarItem() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    initSearchableSelects(document);
     const itemInputs = document.querySelectorAll("#items-container input[name*='[descripcion]']");
     for (const input of itemInputs) {
         input.addEventListener("change", () => handleItemInputChange(input));

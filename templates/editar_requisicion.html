@@ -34,7 +34,13 @@
             </label>
             <label>
                 Receptor designado
-                <select name="receptor_designado_id" required>
+                <input
+                    type="text"
+                    placeholder="Buscar receptor..."
+                    data-select-search="receptor-designado-select"
+                    autocomplete="off"
+                >
+                <select id="receptor-designado-select" name="receptor_designado_id" required>
                     <option value="">Seleccionar...</option>
                     {% for usuario in usuarios_activos %}
                     <option value="{{ usuario.id }}" {% if req.receptor_designado_id == usuario.id %}selected{% endif %}>{{ usuario.nombre }} ({{ usuario.rol }})</option>

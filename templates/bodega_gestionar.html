@@ -68,7 +68,15 @@
             </label>
             <label>
                 Receptor
+                <input
+                    type="text"
+                    placeholder="Buscar receptor..."
+                    data-receptor-search
+                    autocomplete="off"
+                    disabled
+                >
                 <select
+                    id="receptor-firma-select"
                     name="recibido_por_id"
                     aria-label="Receptor"
                     data-receptor-select
@@ -124,6 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector(".gestion-form");
     if (!form) return;
     const receptorSelect = form.querySelector("[data-receptor-select]");
+    const receptorSearch = form.querySelector("[data-receptor-search]");
     const unlockButton = form.querySelector("[data-unlock-receptor]");
     const warning = form.querySelector("[data-receptor-warning]");
     const designadoText = form.querySelector("[data-designado-text]");
@@ -132,10 +141,32 @@ document.addEventListener("DOMContentLoaded", () => {
     const cancelChangeButton = form.querySelector("[data-cancel-receptor-change]");
     if (!receptorSelect || !unlockButton || !warning || !changeActions || !saveChangeButton || !cancelChangeButton) return;
     let baselineReceptorValue = receptorSelect.value || "";
+    const normalizeText = (value) => String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+    const filterReceptores = () => {
+        if (!receptorSearch) return;
+        const term = normalizeText(receptorSearch.value);
+        Array.from(receptorSelect.options).forEach((option, index) => {
+            if (index === 0) {
+                option.hidden = false;
+                return;
+            }
+            const label = normalizeText(option.textContent);
+            option.hidden = !!term && !label.includes(term) && !option.selected;
+        });
+    };
+    if (receptorSearch) {
+        receptorSearch.addEventListener("input", filterReceptores);
+        filterReceptores();
+    }
 
     unlockButton.addEventListener("click", () => {
         baselineReceptorValue = receptorSelect.value || "";
         receptorSelect.disabled = false;
+        if (receptorSearch) receptorSearch.disabled = false;
         unlockButton.hidden = true;
         changeActions.hidden = false;
         warning.hidden = false;
@@ -148,6 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     saveChangeButton.addEventListener("click", () => {
         receptorSelect.disabled = true;
+        if (receptorSearch) receptorSearch.disabled = true;
         warning.hidden = true;
         changeActions.hidden = true;
         unlockButton.hidden = false;
@@ -156,6 +188,11 @@ document.addEventListener("DOMContentLoaded", () => {
     cancelChangeButton.addEventListener("click", () => {
         receptorSelect.value = baselineReceptorValue;
         receptorSelect.disabled = true;
+        if (receptorSearch) {
+            receptorSearch.value = "";
+            receptorSearch.disabled = true;
+        }
+        filterReceptores();
         warning.hidden = true;
         changeActions.hidden = true;
         unlockButton.hidden = false;
