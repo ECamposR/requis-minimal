@@ -9,7 +9,7 @@
 <table class="table-compact">
     <thead>
     <tr>
-        <th class="col-folio">Folio</th>
+        <th class="col-folio"># Req</th>
         <th>Departamento</th>
         <th class="col-estado">Estado</th>
         <th class="col-fecha">Fecha</th>
@@ -32,6 +32,8 @@
                 {{ ui.status_badge('Entregada') }}
             {% elif req.estado == 'liquidada' %}
                 {{ ui.status_badge('Liquidada') }}
+            {% elif req.estado == 'liquidada_en_prokey' %}
+                {{ ui.status_badge('liquidada_en_prokey') }}
             {% else %}
                 {{ ui.status_badge(req.estado) }}
             {% endif %}

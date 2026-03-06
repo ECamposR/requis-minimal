@@ -4,7 +4,7 @@
 {% block content %}
 {{ ui.page_header("Bodega", "Procesa entregas y consulta trazabilidad de despacho por requisicion.") }}
 <form method="GET" class="filters-bar panel">
-    <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por folio, cliente, solicitante...">
+    <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante...">
     <select name="vista">
         <option value="todos" {% if filtro_vista == 'todos' %}selected{% endif %}>Pendientes + Historial</option>
         <option value="pendientes" {% if filtro_vista == 'pendientes' %}selected{% endif %}>Solo pendientes</option>
@@ -29,7 +29,7 @@
 <table class="table-compact">
     <thead>
     <tr>
-        <th class="col-folio">Folio</th>
+        <th class="col-folio"># Req</th>
         <th>Estado</th>
         <th>Solicitante</th>
         <th>Departamento</th>
@@ -89,7 +89,7 @@
 <table class="table-compact">
     <thead>
     <tr>
-        <th class="col-folio">Folio</th>
+        <th class="col-folio"># Req</th>
         <th>Solicitante</th>
         <th>Departamento</th>
         <th>Aprobado por</th>
@@ -125,7 +125,21 @@
             {% if req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
             <a href="/liquidar/{{ req.id }}" role="button" class="secondary">Liquidar</a>
             {% elif req.estado == 'liquidada' %}
-            {{ ui.status_badge('liquidada') }}
+                {% if current_user.rol in ['jefe_bodega', 'admin'] %}
+                <form method="POST" action="/requisiciones/{{ req.id }}/liquidar-prokey" style="display:inline">
+                    <button
+                        type="submit"
+                        class="secondary"
+                        onclick="return confirm('¿Confirmar que esta requisición ya fue liquidada en Prokey?')"
+                    >
+                        Confirmar en Prokey
+                    </button>
+                </form>
+                {% else %}
+                {{ ui.status_badge('liquidada') }}
+                {% endif %}
+            {% elif req.estado == 'liquidada_en_prokey' %}
+            {{ ui.status_badge('liquidada_en_prokey') }}
             {% else %}
             -
             {% endif %}

@@ -4,7 +4,7 @@
 {% block content %}
 {{ ui.page_header("Aprobar Requisiciones", "Gestiona solicitudes pendientes y consulta el historial completo de decisiones.") }}
 <form method="GET" class="filters-bar panel">
-    <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por folio, cliente, solicitante...">
+    <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante...">
     <select name="estado">
         <option value="todos" {% if filtro_estado == 'todos' %}selected{% endif %}>Todos los estados</option>
         <option value="pendiente_aprobar" {% if filtro_estado == 'pendiente_aprobar' or filtro_estado == 'pendiente' %}selected{% endif %}>Pendiente de aprobar</option>
@@ -12,6 +12,7 @@
         <option value="rechazada" {% if filtro_estado == 'rechazada' %}selected{% endif %}>Rechazada</option>
         <option value="entregada" {% if filtro_estado == 'entregada' %}selected{% endif %}>Entregada</option>
         <option value="liquidada" {% if filtro_estado == 'liquidada' %}selected{% endif %}>Liquidada</option>
+        <option value="liquidada_en_prokey" {% if filtro_estado == 'liquidada_en_prokey' %}selected{% endif %}>Liquidada en Prokey</option>
     </select>
     <select name="departamento">
         <option value="todos" {% if filtro_departamento == 'todos' %}selected{% endif %}>Todos los departamentos</option>
@@ -27,7 +28,7 @@
 <table class="table-compact">
     <thead>
     <tr>
-        <th class="col-folio">Folio</th>
+        <th class="col-folio"># Req</th>
         <th class="col-estado">Estado</th>
         <th>Solicitante</th>
         <th>Departamento</th>
@@ -53,6 +54,8 @@
                 {{ ui.status_badge('entregada') }}
             {% elif req.estado == 'liquidada' %}
                 {{ ui.status_badge('liquidada') }}
+            {% elif req.estado == 'liquidada_en_prokey' %}
+                {{ ui.status_badge('liquidada_en_prokey') }}
             {% else %}
                 {{ ui.status_badge(req.estado) }}
             {% endif %}
@@ -70,6 +73,8 @@
                 {{ req.entregador.nombre }}
             {% elif req.estado == 'liquidada' and req.liquidator %}
                 {{ req.liquidator.nombre }}
+            {% elif req.estado == 'liquidada_en_prokey' and req.prokey_liquidator %}
+                {{ req.prokey_liquidator.nombre }}
             {% else %}
                 -
             {% endif %}

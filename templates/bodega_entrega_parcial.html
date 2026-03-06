@@ -4,7 +4,7 @@
 {% block content %}
 {{ ui.page_header("Entrega Parcial", "Ajusta cantidades realmente entregadas y registra evidencia.") }}
 <section class="panel view-panel">
-<p><strong>Folio:</strong> {{ req.folio }}</p>
+<p><strong># Req:</strong> {{ req.folio }}</p>
 <p><strong>Solicitante:</strong> {{ req.solicitante.nombre if req.solicitante else '-' }}</p>
 <p><strong>Aprobado por:</strong> {{ req.aprobador.nombre if req.aprobador else '-' }}</p>
 <p>
