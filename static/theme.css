@@ -1698,3 +1698,9 @@ input.req-client-field:-webkit-autofill:active {
         grid-template-columns: 6.8rem 1fr auto;
     }
 }
+
+.badge-prokey-final {
+    background: linear-gradient(135deg, #0f8a5f, #146c43) !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
+    color: #ecfdf5 !important;
+}

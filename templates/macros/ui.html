@@ -11,6 +11,8 @@
 {% set s = (status or '')|lower %}
 {% if s in ['entregada', 'completa'] %}
 <span class="badge success">{{ status }}</span>
+{% elif s in ['liquidada_en_prokey'] %}
+<span class="badge success badge-prokey-final">✔✔ {{ status }}</span>
 {% elif s in ['liquidada'] %}
 <span class="badge info">{{ status }}</span>
 {% elif s in ['rechazada', 'no entregada', 'no_entregada'] %}
