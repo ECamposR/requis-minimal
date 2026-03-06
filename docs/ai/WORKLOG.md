@@ -2519,3 +2519,25 @@
 - Resultado:
   - La app permite actualizar contraseña en cualquier momento para usuarios con login habilitado, sin alterar el flujo de técnicos (sin login).
   - Nota de entorno: en esta sesión `pytest` quedó colgado al iniciar `tests/test_admin_users.py` (comportamiento intermitente ya observado con `TestClient`); se validó compilación completa y registro de rutas `GET/POST /mi-cuenta/password`.
+
+## 2026-03-06 14:05 UTC-06:00 | tool: Codex CLI
+- Objetivo: habilitar observabilidad base de la app para diagnóstico operativo (login, fallas, latencias y trazabilidad por request).
+- Tareas: `REQ-102`.
+- Cambios:
+  - `app/logging_utils.py` (nuevo):
+    - configuración de logging estructurado JSON.
+    - filtro por `request_id` con `contextvars`.
+    - soporte opcional de archivo rotativo por variables de entorno (`LOG_TO_FILE`, `LOG_DIR`, `LOG_FILE`, `LOG_MAX_BYTES`, `LOG_BACKUP_COUNT`).
+  - `app/main.py`:
+    - inicialización central de logging en arranque.
+    - middleware HTTP de trazabilidad (`request_id`, `method`, `path`, `status_code`, `duration_ms`, `client_ip`, `user_id`).
+    - header de respuesta `X-Request-ID`.
+    - registro explícito de excepciones HTTP.
+    - registro de eventos de autenticación: login exitoso, login fallido (credenciales/permiso), logout.
+  - `README.md`:
+    - documentación de variables de logging y capacidades de observabilidad.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: sincronización de gobernanza.
+- Comandos ejecutados:
+  - `python -m compileall app README.md docs/ai`
+- Resultado:
+  - Quedó trazabilidad suficiente para investigación de incidentes en local/Docker sin cambiar lógica funcional del negocio.

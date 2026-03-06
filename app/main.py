@@ -3,9 +3,12 @@ import re
 import json
 import secrets
 import unicodedata
+import uuid
+import logging
 from io import BytesIO
 import csv
 from datetime import datetime, timedelta
+from time import perf_counter
 from .crud import now_sv
 
 from dotenv import load_dotenv
@@ -41,9 +44,12 @@ from .crud import (
     validar_liquidacion_item,
 )
 from .database import get_db, run_migrations
+from .logging_utils import clear_request_id, set_request_id, setup_logging
 from .models import CatalogoItem, Requisicion, Usuario
 
 load_dotenv()
+setup_logging()
+logger = logging.getLogger(__name__)
 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
 
@@ -74,8 +80,80 @@ PUESTO_MAP = {
 }
 
 
+def get_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    client = request.client
+    return client.host if client else "-"
+
+
+def get_session_user_id(request: Request) -> int | None:
+    try:
+        return request.session.get("user_id")
+    except Exception:
+        return None
+
+
+@app.middleware("http")
+async def request_logging_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex[:12]
+    set_request_id(request_id)
+    start = perf_counter()
+    client_ip = get_client_ip(request)
+    user_id = get_session_user_id(request)
+    try:
+        response = await call_next(request)
+        duration_ms = round((perf_counter() - start) * 1000, 2)
+        response.headers["X-Request-ID"] = request_id
+        if not request.url.path.startswith("/static"):
+            logger.info(
+                "request_completed",
+                extra={
+                    "event": "request_completed",
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status_code": response.status_code,
+                    "duration_ms": duration_ms,
+                    "client_ip": client_ip,
+                    "user_id": user_id,
+                },
+            )
+        return response
+    except Exception:
+        duration_ms = round((perf_counter() - start) * 1000, 2)
+        logger.exception(
+            "request_failed",
+            extra={
+                "event": "request_failed",
+                "method": request.method,
+                "path": request.url.path,
+                "duration_ms": duration_ms,
+                "client_ip": client_ip,
+                "user_id": user_id,
+            },
+        )
+        raise
+    finally:
+        clear_request_id()
+
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
+    log_level = logging.ERROR if exc.status_code >= 500 else logging.WARNING
+    logger.log(
+        log_level,
+        "http_exception",
+        extra={
+            "event": "http_exception",
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": exc.status_code,
+            "client_ip": get_client_ip(request),
+            "reason": str(exc.detail),
+            "user_id": get_session_user_id(request),
+        },
+    )
     if exc.status_code == status.HTTP_401_UNAUTHORIZED:
         if request.url.path.startswith("/api/"):
             return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
@@ -469,12 +547,24 @@ def login(
     password: str = Form(...),
     db: Session = Depends(get_db),
 ):
+    username_clean = username.strip()
     user = authenticate_user(db, username=username, password=password)
     if not user:
         disabled_login_user = (
             db.query(Usuario)
-            .filter(Usuario.username == username.strip(), Usuario.activo.is_(True), Usuario.puede_iniciar_sesion.is_(False))
+            .filter(Usuario.username == username_clean, Usuario.activo.is_(True), Usuario.puede_iniciar_sesion.is_(False))
             .first()
+        )
+        logger.warning(
+            "auth_login_failed",
+            extra={
+                "event": "auth_login_failed",
+                "username": username_clean,
+                "path": "/login",
+                "method": "POST",
+                "client_ip": get_client_ip(request),
+                "reason": "sin_permiso_login" if disabled_login_user else "credenciales_invalidas",
+            },
         )
         error_message = (
             "Este usuario no tiene permiso para iniciar sesion"
@@ -487,12 +577,35 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
     login_user(request, user)
+    logger.info(
+        "auth_login_success",
+        extra={
+            "event": "auth_login_success",
+            "user_id": user.id,
+            "username": user.username,
+            "role": user.rol,
+            "path": "/login",
+            "method": "POST",
+            "client_ip": get_client_ip(request),
+        },
+    )
     return RedirectResponse(url="/", status_code=303)
 
 
 @app.post("/logout")
 def logout(request: Request):
+    user_id = get_session_user_id(request)
     logout_user(request)
+    logger.info(
+        "auth_logout",
+        extra={
+            "event": "auth_logout",
+            "user_id": user_id,
+            "path": "/logout",
+            "method": "POST",
+            "client_ip": get_client_ip(request),
+        },
+    )
     return RedirectResponse(url="/login", status_code=303)
 
 

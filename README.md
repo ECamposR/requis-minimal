@@ -71,6 +71,12 @@ Variables principales:
 - `SECRET_KEY`
 - `DATABASE_URL` (por defecto SQLite local)
 - `APP_NAME`
+- `LOG_LEVEL` (default `INFO`)
+- `LOG_TO_FILE` (`1` para habilitar archivo rotativo)
+- `LOG_DIR` (default `logs/`)
+- `LOG_FILE` (default `app.log`)
+- `LOG_MAX_BYTES` (default `5242880`)
+- `LOG_BACKUP_COUNT` (default `5`)
 
 ## Usuarios semilla (init_db.py)
 - `admin / admin123`
@@ -93,6 +99,15 @@ pytest -q tests/test_liquidacion.py
   - timeline
   - items liquidados
   - alertas y diferencia por ítem
+
+## Logging y observabilidad básica
+- Logs estructurados JSON en salida estándar (útil para Docker).
+- `request_id` por solicitud (`X-Request-ID` en respuesta).
+- Registro de:
+  - requests (`method`, `path`, `status_code`, `duration_ms`, `user_id`, `client_ip`)
+  - excepciones HTTP
+  - login exitoso/fallido y logout
+- Opcional: archivo rotativo vía `LOG_TO_FILE=1`.
 
 ## Despliegue
 ### Opción 1: local/systemd (simple)
