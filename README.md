@@ -12,6 +12,7 @@ Aplicación interna LAN para gestionar requisiciones desde solicitud hasta liqui
 - Funciones clave activas:
   - catálogo administrable (CRUD + importación CSV/XLSX + búsqueda)
   - entrega con firma de recibido por usuario + PIN
+  - cambio de contraseña autoservicio para usuarios con login habilitado
   - liquidación por ítem con alertas y trazabilidad
   - detalle tipo dashboard con timeline
   - generación de PDF para requisiciones liquidadas

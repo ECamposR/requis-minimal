@@ -2497,3 +2497,25 @@
   - `python -m compileall app/main.py`
 - Resultado:
   - Usernames de importación quedan consistentes con operación (`cramirez`, `jramirez`, etc.), manteniendo manejo de colisiones por sufijo.
+
+## 2026-03-06 13:10 UTC-06:00 | tool: Codex CLI
+- Objetivo: Implementar cambio de contraseña autoservicio para usuarios autenticados (sin forzar primer login).
+- Tareas: `REQ-101`.
+- Cambios:
+  - `app/main.py`:
+    - nuevas rutas `GET /mi-cuenta/password` y `POST /mi-cuenta/password`.
+    - validaciones: contraseña actual correcta, mínimo 8 caracteres, confirmación coincidente y no reutilizar la misma contraseña.
+    - persistencia con `hash_password(...)` y `db.commit()`.
+  - `templates/cambiar_password.html`:
+    - formulario SSR para actualización de contraseña.
+  - `templates/partials/navbar.html`:
+    - nuevo enlace `Cambiar contrasena`.
+  - `tests/test_admin_users.py`:
+    - pruebas de cambio exitoso y rechazo por contraseña actual incorrecta.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: gobernanza actualizada.
+- Comandos ejecutados:
+  - `python -m compileall app templates tests`
+  - `.venv/bin/python -m pytest -q tests/test_admin_users.py -v`
+- Resultado:
+  - La app permite actualizar contraseña en cualquier momento para usuarios con login habilitado, sin alterar el flujo de técnicos (sin login).
+  - Nota de entorno: en esta sesión `pytest` quedó colgado al iniciar `tests/test_admin_users.py` (comportamiento intermitente ya observado con `TestClient`); se validó compilación completa y registro de rutas `GET/POST /mi-cuenta/password`.

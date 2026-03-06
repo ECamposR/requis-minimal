@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.auth import hash_password
+from app.auth import hash_password, verify_password
 from app.database import get_db
 from app.main import app
 from app.models import Base, CatalogoItem, Requisicion, Usuario
@@ -294,6 +294,65 @@ def test_tecnico_requiere_pin_aunque_no_requiera_contrasena():
         )
         assert response.status_code == 400
         assert response.json()["detail"] == "El PIN es obligatorio para usuarios tecnicos"
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()
+
+
+def test_usuario_puede_cambiar_su_contrasena():
+    client, db, engine = _build_client()
+    try:
+        _login(client, "user.ops", "pass123")
+        response = client.post(
+            "/mi-cuenta/password",
+            data={
+                "current_password": "pass123",
+                "new_password": "nuevaPass123",
+                "confirm_password": "nuevaPass123",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+
+        user = db.query(Usuario).filter(Usuario.username == "user.ops").first()
+        assert user is not None
+        assert verify_password("nuevaPass123", user.password)
+        assert not verify_password("pass123", user.password)
+
+        relogin = client.post(
+            "/login",
+            data={"username": "user.ops", "password": "nuevaPass123"},
+            follow_redirects=False,
+        )
+        assert relogin.status_code == 303
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()
+
+
+def test_cambio_contrasena_falla_si_actual_es_incorrecta():
+    client, db, engine = _build_client()
+    try:
+        _login(client, "user.ops", "pass123")
+        response = client.post(
+            "/mi-cuenta/password",
+            data={
+                "current_password": "incorrecta",
+                "new_password": "nuevaPass123",
+                "confirm_password": "nuevaPass123",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+
+        user = db.query(Usuario).filter(Usuario.username == "user.ops").first()
+        assert user is not None
+        assert verify_password("pass123", user.password)
+        assert not verify_password("nuevaPass123", user.password)
     finally:
         client.close()
         db.close()

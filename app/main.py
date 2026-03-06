@@ -55,6 +55,7 @@ templates = Jinja2Templates(directory="templates")
 DEPARTAMENTOS_VALIDOS = ["Cuentas", "Ventas", "Bodega", "Admon", "Logistica"]
 CATALOGO_HEADERS = {"nombre", "item", "producto", "descripcion"}
 ROLES_VALIDOS = ["user", "aprobador", "bodega", "jefe_bodega", "admin", "tecnico"]
+PASSWORD_MIN_LENGTH = 8
 USUARIOS_IMPORT_HEADERS = {"nombre", "puesto"}
 TEMP_IMPORT_PASSWORD = "Temp@2026"
 TEMP_IMPORT_PIN = "1234"
@@ -493,6 +494,52 @@ def login(
 def logout(request: Request):
     logout_user(request)
     return RedirectResponse(url="/login", status_code=303)
+
+
+@app.get("/mi-cuenta/password")
+def cambiar_password_form(
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not current_user.puede_iniciar_sesion:
+        raise HTTPException(status_code=403, detail="Este usuario no puede iniciar sesion")
+    return templates.TemplateResponse(
+        "cambiar_password.html",
+        template_context(request, current_user),
+    )
+
+
+@app.post("/mi-cuenta/password")
+def cambiar_password_guardar(
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not current_user.puede_iniciar_sesion:
+        raise HTTPException(status_code=403, detail="Este usuario no puede iniciar sesion")
+
+    current_clean = current_password.strip()
+    new_clean = new_password.strip()
+    confirm_clean = confirm_password.strip()
+
+    if not verify_password(current_clean, current_user.password):
+        return redirect_with_message("/mi-cuenta/password", "La contrasena actual no es correcta", "error")
+    if len(new_clean) < PASSWORD_MIN_LENGTH:
+        return redirect_with_message(
+            "/mi-cuenta/password",
+            f"La nueva contrasena debe tener al menos {PASSWORD_MIN_LENGTH} caracteres",
+            "error",
+        )
+    if new_clean != confirm_clean:
+        return redirect_with_message("/mi-cuenta/password", "La confirmacion no coincide", "error")
+    if verify_password(new_clean, current_user.password):
+        return redirect_with_message("/mi-cuenta/password", "La nueva contrasena debe ser diferente", "error")
+
+    current_user.password = hash_password(new_clean)
+    db.commit()
+    return redirect_with_message("/mi-cuenta/password", "Contrasena actualizada", "success")
 
 
 @app.get("/")
