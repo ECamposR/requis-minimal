@@ -71,6 +71,8 @@ class Requisicion(Base):
     liquidation_comment: Mapped[str | None] = mapped_column(String, nullable=True)
     liquidated_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     liquidated_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
+    prokey_liquidada_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
+    prokey_liquidada_por: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     rejected_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     rejected_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -108,6 +110,10 @@ class Requisicion(Base):
         "Usuario",
         foreign_keys=[liquidated_by],
     )
+    prokey_liquidator: Mapped["Usuario | None"] = relationship(
+        "Usuario",
+        foreign_keys=[prokey_liquidada_por],
+    )
     items: Mapped[list["Item"]] = relationship(
         "Item",
         back_populates="requisicion",
@@ -116,7 +122,7 @@ class Requisicion(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "estado in ('pendiente', 'aprobada', 'rechazada', 'entregada', 'liquidada')",
+            "estado in ('pendiente', 'aprobada', 'rechazada', 'entregada', 'liquidada', 'liquidada_en_prokey')",
             name="ck_requisiciones_estado",
         ),
     )

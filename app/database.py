@@ -108,6 +108,8 @@ def run_migrations() -> None:
                 "liquidation_comment": "ALTER TABLE requisiciones ADD COLUMN liquidation_comment TEXT",
                 "liquidated_by": "ALTER TABLE requisiciones ADD COLUMN liquidated_by INTEGER REFERENCES usuarios(id)",
                 "liquidated_at": "ALTER TABLE requisiciones ADD COLUMN liquidated_at TIMESTAMP",
+                "prokey_liquidada_at": "ALTER TABLE requisiciones ADD COLUMN prokey_liquidada_at TIMESTAMP",
+                "prokey_liquidada_por": "ALTER TABLE requisiciones ADD COLUMN prokey_liquidada_por INTEGER REFERENCES usuarios(id)",
             }
             for column, sql in req_migrations.items():
                 if column in req_columns:
@@ -120,6 +122,88 @@ def run_migrations() -> None:
                         continue
                     logger.error("Error en migracion de liquidacion requisiciones: %s -> %s", sql, e)
                     raise
+
+            # SQLite no permite ALTER CHECK constraint; si la tabla historica quedó
+            # con CHECK de estado antiguo, reconstruimos tabla para incluir
+            # `liquidada_en_prokey` y evitar fallos de commit al cerrar en Prokey.
+            table_sql_row = conn.execute(
+                text("SELECT sql FROM sqlite_master WHERE type='table' AND name='requisiciones'")
+            ).fetchone()
+            table_sql = (table_sql_row[0] or "").lower() if table_sql_row else ""
+            if table_sql and "liquidada_en_prokey" not in table_sql:
+                logger.warning(
+                    "Detectado CHECK antiguo en requisiciones.estado; reconstruyendo tabla para incluir liquidada_en_prokey"
+                )
+                conn.execute(text("PRAGMA foreign_keys=OFF"))
+                try:
+                    conn.execute(text("ALTER TABLE requisiciones RENAME TO requisiciones_old"))
+                    conn.execute(
+                        text(
+                            """
+                            CREATE TABLE requisiciones (
+                                id INTEGER NOT NULL PRIMARY KEY,
+                                folio VARCHAR(30) NOT NULL UNIQUE,
+                                solicitante_id INTEGER NOT NULL REFERENCES usuarios(id),
+                                departamento VARCHAR(80) NOT NULL,
+                                cliente_codigo VARCHAR(40),
+                                cliente_nombre VARCHAR(160),
+                                cliente_ruta_principal VARCHAR(4),
+                                estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+                                justificacion TEXT NOT NULL,
+                                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                approved_at DATETIME,
+                                approved_by INTEGER REFERENCES usuarios(id),
+                                approval_comment TEXT,
+                                delivered_at DATETIME,
+                                delivered_by INTEGER REFERENCES usuarios(id),
+                                recibido_por_id INTEGER REFERENCES usuarios(id),
+                                delivered_to VARCHAR(120),
+                                recibido_at TEXT,
+                                delivery_result VARCHAR(20),
+                                delivery_comment TEXT,
+                                receptor_designado_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+                                prokey_ref TEXT,
+                                liquidation_comment TEXT,
+                                liquidated_by INTEGER REFERENCES usuarios(id),
+                                liquidated_at TIMESTAMP,
+                                prokey_liquidada_at TIMESTAMP,
+                                prokey_liquidada_por INTEGER REFERENCES usuarios(id),
+                                rejected_at DATETIME,
+                                rejected_by INTEGER,
+                                rejection_reason TEXT,
+                                rejection_comment TEXT,
+                                CONSTRAINT ck_requisiciones_estado CHECK (
+                                    estado in ('pendiente', 'aprobada', 'rechazada', 'entregada', 'liquidada', 'liquidada_en_prokey')
+                                )
+                            )
+                            """
+                        )
+                    )
+                    conn.execute(
+                        text(
+                            """
+                            INSERT INTO requisiciones (
+                                id, folio, solicitante_id, departamento, cliente_codigo, cliente_nombre, cliente_ruta_principal,
+                                estado, justificacion, created_at, approved_at, approved_by, approval_comment,
+                                delivered_at, delivered_by, recibido_por_id, delivered_to, recibido_at, delivery_result,
+                                delivery_comment, receptor_designado_id, prokey_ref, liquidation_comment, liquidated_by,
+                                liquidated_at, prokey_liquidada_at, prokey_liquidada_por, rejected_at, rejected_by,
+                                rejection_reason, rejection_comment
+                            )
+                            SELECT
+                                id, folio, solicitante_id, departamento, cliente_codigo, cliente_nombre, cliente_ruta_principal,
+                                estado, justificacion, created_at, approved_at, approved_by, approval_comment,
+                                delivered_at, delivered_by, recibido_por_id, delivered_to, recibido_at, delivery_result,
+                                delivery_comment, receptor_designado_id, prokey_ref, liquidation_comment, liquidated_by,
+                                liquidated_at, prokey_liquidada_at, prokey_liquidada_por, rejected_at, rejected_by,
+                                rejection_reason, rejection_comment
+                            FROM requisiciones_old
+                            """
+                        )
+                    )
+                    conn.execute(text("DROP TABLE requisiciones_old"))
+                finally:
+                    conn.execute(text("PRAGMA foreign_keys=ON"))
 
         if "items" in tables:
             item_columns = {
