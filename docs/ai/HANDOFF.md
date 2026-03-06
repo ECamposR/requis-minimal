@@ -67,6 +67,7 @@
 - `REQ-101` completada: usuarios con sesión habilitada ya pueden cambiar su contraseña en `/mi-cuenta/password`; backend valida contraseña actual, mínimo de 8 caracteres, confirmación y evita reutilizar la misma contraseña.
 - `REQ-102` completada: observabilidad base activada con logs JSON, `request_id` por request, trazabilidad de latencia/estado por ruta y eventos de autenticación (login exitoso/fallido/logout), más opción de archivo rotativo por variables de entorno.
 - `REQ-103` completada: creación de requisición ahora exige seleccionar `motivo_requisicion` desde catálogo fijo de clasificaciones; el valor se persiste en DB sin impactar lógica operativa actual.
+- `REQ-104` completada: solicitante puede editar su requisición solo mientras siga en `pendiente` y sin aprobación (`approved_by is None`), con actualización de cliente/ruta/receptor/motivo/justificación e ítems.
 - `REQ-094` completada: el generador `app/pdf_generator.py` quedó integrado al backend real; `GET /requisiciones/{id}/pdf` produce PDF solo para requisiciones `liquidada`, el detalle API expone `pdf_url` y el botón `Ver PDF` del modal apunta al endpoint inline.
 - `REQ-094A` completada: el PDF ya no toma `Ingreso PK` desde una referencia textual; ahora usa la cantidad operativa por ítem y la columna `DIF` muestra `Falta/Extra` con número, igual que el detalle web.
 - `REQ-094B` completada: el PDF reemplaza el texto `ProHygiene` del header por el logo real usado en la app (`static/branding/logo-prohygiene-es.png`), manteniendo fallback textual si el recurso no carga.

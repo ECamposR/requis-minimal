@@ -77,6 +77,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-101` | `done` | Cambio de contraseña por usuario autenticado (`GET/POST /mi-cuenta/password`) con validación de contraseña actual, longitud mínima, confirmación y bloqueo de reutilización.
 - `REQ-102` | `done` | Logging estructurado JSON con `request_id`, middleware de trazabilidad de requests/errores y eventos de autenticación (login/login fallido/logout), con soporte opcional de archivo rotativo.
 - `REQ-103` | `done` | Motivo/clasificación obligatorio al crear requisición (`motivo_requisicion`) con selector en UI, validación backend y persistencia para uso futuro en métricas/BI.
+- `REQ-104` | `done` | Edición de requisición por solicitante: nueva vista/POST de edición permitida solo si la requisición está `pendiente` y aún no aprobada; incluye actualización de datos principales e ítems.
 
 ## Despliegue Producción
 - `REQ-086` | `done` | Agregar Dockerfile, docker-compose.yml de la app y configuración de Caddy (`deploy/caddy/`) para despliegue LAN con reverse proxy. Red Docker externa `proxy` desacopla Caddy de cada servicio.

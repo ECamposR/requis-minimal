@@ -42,6 +42,7 @@
         <td class="table-actions">
             <button type="button" onclick="verDetalle({{ req.id }})">Ver</button>
             {% if req.estado == 'pendiente' %}
+            <a href="/mis-requisiciones/{{ req.id }}/editar" role="button" class="secondary">Editar</a>
             <form method="POST" action="/mis-requisiciones/{{ req.id }}/eliminar" class="inline">
                 <button type="submit" class="danger">Eliminar</button>
             </form>

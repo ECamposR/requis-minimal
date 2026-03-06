@@ -45,7 +45,7 @@ from .crud import (
 )
 from .database import get_db, run_migrations
 from .logging_utils import clear_request_id, set_request_id, setup_logging
-from .models import CatalogoItem, Requisicion, Usuario
+from .models import CatalogoItem, Item, Requisicion, Usuario
 
 load_dotenv()
 setup_logging()
@@ -502,6 +502,24 @@ def get_active_receptores(db: Session) -> list[Usuario]:
     return db.query(Usuario).filter(Usuario.activo.is_(True)).order_by(Usuario.nombre.asc()).all()
 
 
+def validar_receptor_designado(db: Session, receptor_designado_id_raw: str) -> Usuario:
+    receptor_designado_id_limpio = receptor_designado_id_raw.strip()
+    if not receptor_designado_id_limpio:
+        raise HTTPException(status_code=400, detail="Debes seleccionar receptor designado")
+    try:
+        receptor_designado_id_int = int(receptor_designado_id_limpio)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Receptor designado invalido") from exc
+    receptor_designado = (
+        db.query(Usuario)
+        .filter(Usuario.id == receptor_designado_id_int, Usuario.activo.is_(True))
+        .first()
+    )
+    if not receptor_designado:
+        raise HTTPException(status_code=400, detail="El receptor designado no existe o esta inactivo")
+    return receptor_designado
+
+
 def safe_joinedload(model: type, attr_name: str):
     attr = getattr(model, attr_name, None)
     if attr is None:
@@ -782,20 +800,7 @@ async def crear(
         raise HTTPException(status_code=400, detail="Debes seleccionar un motivo")
     if motivo_requisicion_limpio not in MOTIVOS_REQUISICION:
         raise HTTPException(status_code=400, detail="Motivo de requisicion invalido")
-    receptor_designado_id_limpio = receptor_designado_id.strip()
-    if not receptor_designado_id_limpio:
-        raise HTTPException(status_code=400, detail="Debes seleccionar receptor designado")
-    try:
-        receptor_designado_id_int = int(receptor_designado_id_limpio)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail="Receptor designado invalido") from exc
-    receptor_designado = (
-        db.query(Usuario)
-        .filter(Usuario.id == receptor_designado_id_int, Usuario.activo.is_(True))
-        .first()
-    )
-    if not receptor_designado:
-        raise HTTPException(status_code=400, detail="El receptor designado no existe o esta inactivo")
+    receptor_designado = validar_receptor_designado(db, receptor_designado_id)
 
     req = crear_requisicion_db(
         db=db,
@@ -853,6 +858,145 @@ def mis_requisiciones(
     return templates.TemplateResponse(
         "mis_requisiciones.html", template_context(request, current_user, requisiciones=requisiciones)
     )
+
+
+@app.get("/mis-requisiciones/{req_id}/editar")
+def editar_mi_requisicion_form(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.items))
+        .filter(Requisicion.id == req_id, Requisicion.solicitante_id == current_user.id)
+        .first()
+    )
+    if not req:
+        return redirect_with_message("/mis-requisiciones", "Requisicion no encontrada", "error")
+    if req.estado != "pendiente" or req.approved_by is not None:
+        return redirect_with_message(
+            "/mis-requisiciones",
+            "Solo puedes editar requisiciones pendientes sin aprobar",
+            "warning",
+        )
+
+    catalogo_items = (
+        db.query(CatalogoItem)
+        .filter(CatalogoItem.activo.is_(True))
+        .order_by(CatalogoItem.nombre.asc())
+        .all()
+    )
+    return templates.TemplateResponse(
+        "editar_requisicion.html",
+        template_context(
+            request,
+            current_user,
+            req=req,
+            catalogo_items=[i.nombre for i in catalogo_items],
+            usuarios_activos=get_active_receptores(db),
+            motivos_requisicion=MOTIVOS_REQUISICION,
+        ),
+    )
+
+
+@app.post("/mis-requisiciones/{req_id}/editar")
+async def editar_mi_requisicion(
+    req_id: int,
+    request: Request,
+    cliente_codigo: str = Form(...),
+    cliente_nombre: str = Form(...),
+    cliente_ruta_principal: str = Form(...),
+    receptor_designado_id: str = Form(...),
+    motivo_requisicion: str = Form(...),
+    justificacion: str = Form(...),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.items))
+        .filter(Requisicion.id == req_id, Requisicion.solicitante_id == current_user.id)
+        .first()
+    )
+    if not req:
+        return redirect_with_message("/mis-requisiciones", "Requisicion no encontrada", "error")
+    if req.estado != "pendiente" or req.approved_by is not None:
+        return redirect_with_message(
+            "/mis-requisiciones",
+            "Solo puedes editar requisiciones pendientes sin aprobar",
+            "warning",
+        )
+
+    cliente_codigo_limpio = cliente_codigo.strip()
+    cliente_nombre_limpio = cliente_nombre.strip()
+    cliente_ruta_principal_limpia = cliente_ruta_principal.strip().upper()
+    if len(cliente_codigo_limpio) < 2:
+        raise HTTPException(status_code=400, detail="Codigo de cliente invalido")
+    if len(cliente_nombre_limpio) < 3:
+        raise HTTPException(status_code=400, detail="Nombre de cliente invalido")
+    if not re.fullmatch(r"[A-Z]{2}\d{2}", cliente_ruta_principal_limpia):
+        raise HTTPException(status_code=400, detail="Ruta principal invalida (formato: AA00)")
+
+    motivo_requisicion_limpio = motivo_requisicion.strip()
+    if not motivo_requisicion_limpio:
+        raise HTTPException(status_code=400, detail="Debes seleccionar un motivo")
+    if motivo_requisicion_limpio not in MOTIVOS_REQUISICION:
+        raise HTTPException(status_code=400, detail="Motivo de requisicion invalido")
+
+    receptor_designado = validar_receptor_designado(db, receptor_designado_id)
+
+    form_data = await request.form()
+    try:
+        items_data = parse_items_from_form(form_data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not items_data:
+        raise HTTPException(status_code=400, detail="Debe agregar al menos un item")
+
+    descripciones = [normalize_catalog_name(item["descripcion"]) for item in items_data]
+    if len(set(descripciones)) != len(descripciones):
+        raise HTTPException(
+            status_code=400,
+            detail="No se permiten items duplicados en una misma requisicion",
+        )
+
+    catalogo_habilitado = {
+        normalize_catalog_name(row.nombre): row.nombre
+        for row in db.query(CatalogoItem.nombre).filter(CatalogoItem.activo.is_(True)).all()
+    }
+    if not catalogo_habilitado:
+        raise HTTPException(status_code=400, detail="No hay items activos en catalogo")
+
+    for item_data in items_data:
+        descripcion_normalizada = normalize_catalog_name(item_data["descripcion"])
+        if descripcion_normalizada not in catalogo_habilitado:
+            raise HTTPException(status_code=400, detail="Item no permitido en catalogo")
+        item_data["descripcion"] = catalogo_habilitado[descripcion_normalizada]
+
+    req.cliente_codigo = cliente_codigo_limpio
+    req.cliente_nombre = cliente_nombre_limpio
+    req.cliente_ruta_principal = cliente_ruta_principal_limpia
+    req.motivo_requisicion = motivo_requisicion_limpio
+    req.justificacion = justificacion
+    req.receptor_designado_id = receptor_designado.id
+
+    req.items.clear()
+    db.flush()
+    for item_data in items_data:
+        req.items.append(
+            Item(
+                descripcion=item_data["descripcion"],
+                cantidad=float(item_data["cantidad"]),
+                unidad=item_data["unidad"],
+                contexto_operacion=item_data["contexto_operacion"],
+                es_demo=bool(item_data["es_demo"]),
+            )
+        )
+
+    db.commit()
+    return redirect_with_message("/mis-requisiciones", "Requisicion actualizada", "success")
 
 
 @app.post("/mis-requisiciones/{req_id}/eliminar")

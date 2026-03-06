@@ -2567,3 +2567,33 @@
 - Resultado:
   - nuevas requisiciones no se crean sin motivo válido.
   - el campo queda persistido para futuras métricas/BI sin alterar flujos de aprobación/entrega/liquidación.
+
+## 2026-03-06 15:30 UTC-06:00 | tool: Codex CLI
+- Objetivo: habilitar edición de requisición por solicitante antes de aprobación.
+- Tareas: `REQ-104`.
+- Cambios:
+  - `app/main.py`:
+    - nuevo helper `validar_receptor_designado(...)` reutilizado en creación y edición.
+    - nuevas rutas:
+      - `GET /mis-requisiciones/{id}/editar`
+      - `POST /mis-requisiciones/{id}/editar`
+    - guardias: solo solicitante, estado `pendiente` y `approved_by is None`.
+    - actualización completa de datos principales + reemplazo de items en edición.
+  - `templates/editar_requisicion.html` (nuevo):
+    - formulario de edición con datos precargados.
+    - edición de ítems con contexto y etiqueta `Para Demo`.
+  - `templates/mis_requisiciones.html`:
+    - botón `Editar` visible solo para requisiciones pendientes.
+  - `templates/crear_requisicion.html` + `static/app.js`:
+    - estandarización de formulario de requisición con `data-requisicion-form` para compartir validación JS entre crear/editar.
+    - contador dinámico de filas inicializado según cantidad de ítems existentes.
+  - `tests/test_basic_flow.py`:
+    - nuevos tests para edición permitida en pendiente propia y bloqueos por estado/apropiación.
+  - `tests/test_liquidacion_integration.py`:
+    - ajuste de firma de `crear_requisicion_db(...)` con `motivo_requisicion`.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: gobernanza actualizada.
+- Comandos ejecutados:
+  - `python -m compileall app templates static tests`
+  - `.venv/bin/python -m pytest -q tests/test_basic_flow.py -k \"editar_requisicion or crear_requisicion\" -v`
+- Resultado:
+  - El solicitante ya puede corregir la requisición antes de que sea aprobada, sin abrir edición en estados posteriores.

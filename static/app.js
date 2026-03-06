@@ -256,9 +256,13 @@ document.addEventListener("DOMContentLoaded", () => {
         input.addEventListener("change", () => handleItemInputChange(input));
         input.addEventListener("blur", () => handleItemInputChange(input));
     }
-    const crearForm = document.querySelector('form[action="/crear"]');
-    if (crearForm) {
-        crearForm.addEventListener("submit", (event) => {
+    const itemRows = document.querySelectorAll("#items-container .item-row");
+    if (itemRows.length > 0) {
+        itemCount = itemRows.length;
+    }
+    const requisicionForm = document.querySelector("form[data-requisicion-form='true']");
+    if (requisicionForm) {
+        requisicionForm.addEventListener("submit", (event) => {
             const inputs = Array.from(document.querySelectorAll("#items-container input[name*='[descripcion]']"));
             const invalidInput = inputs.find((input) => !validateCatalogItemInput(input, false));
             if (invalidInput) {

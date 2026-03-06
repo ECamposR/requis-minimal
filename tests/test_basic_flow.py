@@ -568,6 +568,132 @@ def test_crear_requisicion_requiere_formato_ruta_principal(client: TestClient):
     assert response.json()["detail"] == "Ruta principal invalida (formato: AA00)"
 
 
+def test_usuario_puede_editar_requisicion_pendiente_propia(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    receptor = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    req = Requisicion(
+        folio="REQ-0500",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        cliente_codigo="C-EDIT-1",
+        cliente_nombre="Cliente Original",
+        cliente_ruta_principal="RA02",
+        motivo_requisicion="Servicio pendiente",
+        justificacion="Texto original",
+        receptor_designado_id=receptor.id,
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+    db_session.add(
+        Item(
+            requisicion_id=req.id,
+            descripcion="Cable UTP Cat6",
+            cantidad=1,
+            unidad="unidad",
+            contexto_operacion="reposicion",
+            es_demo=False,
+        )
+    )
+    db_session.commit()
+
+    login(client, "user.ops", "pass123")
+    form_resp = client.get(f"/mis-requisiciones/{req.id}/editar")
+    assert form_resp.status_code == 200
+    assert "Editar Requisicion" in form_resp.text
+
+    edit_resp = client.post(
+        f"/mis-requisiciones/{req.id}/editar",
+        data={
+            "cliente_codigo": "C-EDIT-2",
+            "cliente_nombre": "Cliente Editado",
+            "cliente_ruta_principal": "RB03",
+            "receptor_designado_id": str(receptor.id),
+            "motivo_requisicion": "Queja Fragancia",
+            "justificacion": "Texto actualizado",
+            "items[0][descripcion]": "Conector RJ45",
+            "items[0][cantidad]": "3",
+            "items[0][contexto_operacion]": "instalacion_inicial",
+            "es_demo_0": "on",
+        },
+        follow_redirects=False,
+    )
+    assert edit_resp.status_code == 303
+    db_session.refresh(req)
+    assert req.cliente_codigo == "C-EDIT-2"
+    assert req.cliente_nombre == "Cliente Editado"
+    assert req.cliente_ruta_principal == "RB03"
+    assert req.motivo_requisicion == "Queja Fragancia"
+    assert req.justificacion == "Texto actualizado"
+    assert len(req.items) == 1
+    assert req.items[0].descripcion == "Conector RJ45"
+    assert req.items[0].cantidad == 3
+    assert req.items[0].contexto_operacion == "instalacion_inicial"
+    assert req.items[0].es_demo is True
+
+
+def test_usuario_no_puede_editar_requisicion_aprobada(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    req = Requisicion(
+        folio="REQ-0500A",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        cliente_codigo="C-APR-1",
+        cliente_nombre="Cliente Aprobado",
+        cliente_ruta_principal="RA02",
+        motivo_requisicion="Servicio pendiente",
+        justificacion="No editable",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "user.ops", "pass123")
+    response = client.post(
+        f"/mis-requisiciones/{req.id}/editar",
+        data={
+            "cliente_codigo": "C-APR-2",
+            "cliente_nombre": "No debe cambiar",
+            "cliente_ruta_principal": "RA02",
+            "receptor_designado_id": str(aprobador.id),
+            "motivo_requisicion": "Otros",
+            "justificacion": "Intento",
+            "items[0][descripcion]": "Cable UTP Cat6",
+            "items[0][cantidad]": "1",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.cliente_codigo == "C-APR-1"
+
+
+def test_usuario_no_puede_editar_requisicion_de_otro(client: TestClient, db_session: Session):
+    otro = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    req = Requisicion(
+        folio="REQ-0500B",
+        solicitante_id=otro.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        cliente_codigo="C-OTRO-1",
+        cliente_nombre="Cliente Otro",
+        cliente_ruta_principal="RA02",
+        motivo_requisicion="Otros",
+        justificacion="No editable por user.ops",
+        receptor_designado_id=otro.id,
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "user.ops", "pass123")
+    response = client.get(f"/mis-requisiciones/{req.id}/editar", follow_redirects=False)
+    assert response.status_code == 303
+
+
 def test_usuario_puede_eliminar_su_requisicion_pendiente(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     req = Requisicion(
