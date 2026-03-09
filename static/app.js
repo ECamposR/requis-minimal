@@ -622,15 +622,8 @@ function verDetalle(id) {
                     <article class="detalle-block dashboard-card dd-card">
                         <h4 class="dd-card-title">Estado liquidación</h4>
                         <div class="dd-kv"><div class="dd-kv-label">Estado</div><div class="dd-kv-value">${escapeHtml(data.estado || "-")}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Preparado por</div><div class="dd-kv-value">${escapeHtml(data.prepared_by || "-")}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Fecha preparación</div><div class="dd-kv-value">${fmtDateTime(data.prepared_at)}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Resultado entrega</div><div class="dd-kv-value">${resultHtml}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Por</div><div class="dd-kv-value">${escapeHtml(data.liquidated_by_name || data.delivered_by || "-")}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Recibido por</div><div class="dd-kv-value">${escapeHtml(data.recibido_por || data.delivered_to || "-")}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Hora firma</div><div class="dd-kv-value">${fmtDateTime(data.recibido_at || data.delivered_at)}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Ref Prokey</div><div class="dd-kv-value">${prokeyRefHtml}</div></div>
-                        ${data.estado === "liquidada_en_prokey" ? `<div class="dd-kv"><div class="dd-kv-label">Confirmado en Prokey por</div><div class="dd-kv-value">${prokeyClosedBy}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Fecha confirmación Prokey</div><div class="dd-kv-value">${prokeyClosedAt}</div></div>` : ""}
                     </article>
                     <article class="detalle-block dashboard-card dd-card ${alertCardClass}">
                         <h4 class="dd-card-title">Alertas de conciliación</h4>
@@ -640,9 +633,11 @@ function verDetalle(id) {
                     </article>
                     <article class="detalle-block dashboard-card dd-card dashboard-timeline">
                         <h4 class="dd-card-title">Línea de tiempo del flujo</h4>
-                        <ol class="dd-timeline">
-                            ${timelineRows || '<li class="dd-timeline__item"><div class="dd-timeline__title">Sin movimientos</div><div class="dd-timeline__meta">-</div></li>'}
-                        </ol>
+                        <div class="dd-timeline-scroll">
+                            <ol class="dd-timeline">
+                                ${timelineRows || '<li class="dd-timeline__item"><div class="dd-timeline__title">Sin movimientos</div><div class="dd-timeline__meta">-</div></li>'}
+                            </ol>
+                        </div>
                     </article>
                 </section>
                 ${itemsSection}

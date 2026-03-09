@@ -578,20 +578,20 @@ table tbody tr:hover td {
 
 #modal-detalle .dashboard-card {
     min-height: 100%;
-    padding: 14px 16px;
+    padding: 11px 14px;
     border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.09);
     background: linear-gradient(180deg, rgba(15, 32, 54, 0.9), rgba(10, 24, 42, 0.9));
 }
 
 #modal-detalle .dd-card-title {
-    margin: 0 0 10px;
-    font-size: 0.95rem;
+    margin: 0 0 8px;
+    font-size: 0.92rem;
     opacity: 0.92;
 }
 
 #modal-detalle .dd-kv {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
 }
 
 #modal-detalle .dd-kv:last-child {
@@ -599,16 +599,16 @@ table tbody tr:hover td {
 }
 
 #modal-detalle .dd-kv-label {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     opacity: 0.75;
 }
 
 #modal-detalle .dd-kv-value {
-    font-size: 1.02rem;
+    font-size: 0.96rem;
     font-weight: 650;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 #modal-detalle .dd-kv-muted {
@@ -629,7 +629,15 @@ table tbody tr:hover td {
 
 #modal-detalle .dashboard-timeline {
     grid-column: 4;
-    grid-row: 1 / span 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#modal-detalle .dd-timeline-scroll {
+    max-height: 13.2rem;
+    overflow-y: auto;
+    padding-right: 0.35rem;
 }
 
 #modal-detalle .detalle-bottom-grid {
