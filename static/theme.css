@@ -211,6 +211,71 @@ a[role="button"].danger:hover {
     gap: 0.35rem;
 }
 
+.field-help-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.field-help-inline {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: fit-content;
+}
+
+.field-help-trigger {
+    width: 1.35rem;
+    height: 1.35rem;
+    min-width: 1.35rem;
+    padding: 0;
+    border-radius: 999px;
+    border: 1px solid rgba(76, 129, 255, 0.35);
+    background: rgba(76, 129, 255, 0.12);
+    color: #d9e6ff;
+    font-size: 0.8rem;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.field-help-trigger:hover,
+.field-help-trigger:focus-visible {
+    background: rgba(76, 129, 255, 0.2);
+    border-color: rgba(76, 129, 255, 0.55);
+}
+
+.field-help-popover {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.35rem);
+    z-index: 20;
+    width: min(320px, 70vw);
+    padding: 0.7rem 0.8rem;
+    border-radius: 10px;
+    border: 1px solid rgba(76, 129, 255, 0.28);
+    background: rgba(11, 25, 43, 0.96);
+    color: #eef5ff;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.28);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
+}
+
+.field-help-inline:hover .field-help-popover,
+.field-help-inline:focus-within .field-help-popover {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
 .item-demo-check {
     display: inline-flex;
     align-items: center;
@@ -378,12 +443,23 @@ table tbody tr:hover td {
     color: #ffc3cf;
 }
 
+.liquidacion-inline-error-decimal {
+    border-color: rgba(239, 68, 68, 0.6);
+    background: rgba(127, 29, 29, 0.32);
+    color: #ffe1e1;
+    font-weight: 700;
+}
+
 .liquidacion-table tr.row-incomplete td {
     background: rgba(133, 45, 63, 0.15);
 }
 
 .liquidacion-table tr.row-return-invalid td {
     background: rgba(217, 119, 6, 0.16);
+}
+
+.liquidacion-table tr.row-decimal-invalid td {
+    background: rgba(127, 29, 29, 0.24);
 }
 
 .liquidacion-table .hint-incomplete {
@@ -396,6 +472,11 @@ table tbody tr:hover td {
 
 .liquidacion-table tr.row-return-invalid .hint-incomplete {
     color: #8a4b00;
+}
+
+.liquidacion-table tr.row-decimal-invalid .hint-incomplete {
+    color: #ff6b6b;
+    font-weight: 700;
 }
 
 .liquidacion-summary {

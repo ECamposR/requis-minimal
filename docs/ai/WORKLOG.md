@@ -2717,3 +2717,32 @@
   - `python -m compileall templates`
 - Resultado:
   - La validacion de liquidacion queda mas tolerante a ediciones intermedias y eventos de navegador en inputs numericos.
+
+## 2026-03-09 16:20 UTC-06:00 | tool: Codex CLI
+- Objetivo: hacer visible el bloqueo por decimales no permitidos en la vista de liquidacion.
+- Tareas: `REQ-106E`.
+- Cambios:
+  - `templates/liquidar.html`:
+    - nuevo banner global `data-decimal-error` para explicar que solo los concentrados autorizados aceptan fracciones.
+    - `recalcRow(...)` ahora distingue motivo de invalidacion y marca `row-decimal-invalid`.
+  - `static/theme.css`:
+    - estilos especificos para banner y fila de error por decimal no permitido, con mayor contraste visual.
+- Comandos ejecutados:
+  - `python -m compileall templates static`
+- Resultado:
+  - Cuando la liquidacion se bloquea por un decimal invalido, el usuario ahora ve una alerta visible y la fila exacta resaltada.
+
+## 2026-03-09 16:35 UTC-06:00 | tool: Codex CLI
+- Objetivo: agregar ayuda contextual dentro de la app para orientar el uso de `Contexto operativo`.
+- Tareas: `REQ-107`.
+- Cambios:
+  - `templates/crear_requisicion.html`, `templates/editar_requisicion.html`:
+    - ayuda contextual visible junto al selector de `Contexto operativo`.
+  - `static/app.js`:
+    - las filas dinamicas nuevas replican la misma ayuda.
+  - `static/theme.css`:
+    - estilos de tooltip/popover reutilizable con soporte hover/focus/click.
+- Comandos ejecutados:
+  - `python -m compileall templates static`
+- Resultado:
+  - El usuario ahora puede consultar una explicacion breve de cuando usar `Reposicion` vs `Instalacion inicial` sin salir del formulario.

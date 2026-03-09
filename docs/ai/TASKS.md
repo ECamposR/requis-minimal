@@ -151,6 +151,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-106B` | `done` | Restriccion de decimales extendida a liquidacion: solo items con `permite_decimal` en catalogo aceptan fracciones; resto solo enteros en frontend y backend.
 - `REQ-106C` | `done` | Fix UX liquidacion: el boton `Liquidar` ya no queda pegado deshabilitado tras corregir valores; recálculo robusto por eventos y comparaciones con tolerancia.
 - `REQ-106D` | `done` | Hardening UX liquidacion: reevaluacion diferida del formulario y listeners adicionales para evitar boton `Liquidar` congelado tras corregir inputs numericos.
+- `REQ-106E` | `done` | Alerta visual de decimales no permitidos en liquidacion: banner global y resaltado de fila para identificar claramente el error.
+- `REQ-107` | `done` | Ayuda contextual en `Contexto operativo` de crear/editar requisicion con tooltip hover/focus/click para guiar uso de `Reposicion` vs `Instalacion inicial`.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

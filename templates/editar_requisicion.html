@@ -69,10 +69,18 @@
                 <input type="text" name="items[{{ loop.index0 }}][descripcion]" list="catalogo-items" placeholder="Buscar item..." autocomplete="off" required value="{{ item.descripcion }}">
                 <input type="number" step="1" min="1" name="items[{{ loop.index0 }}][cantidad]" placeholder="Cantidad" required value="{{ item.cantidad }}">
                 <div class="item-context-block">
-                    <select name="items[{{ loop.index0 }}][contexto_operacion]" aria-label="Contexto operativo del item">
-                        <option value="reposicion" {% if (item.contexto_operacion or 'reposicion') == 'reposicion' %}selected{% endif %}>Reposicion</option>
-                        <option value="instalacion_inicial" {% if item.contexto_operacion == 'instalacion_inicial' %}selected{% endif %}>Instalacion inicial</option>
-                    </select>
+                    <div class="field-help-row">
+                        <select name="items[{{ loop.index0 }}][contexto_operacion]" aria-label="Contexto operativo del item">
+                            <option value="reposicion" {% if (item.contexto_operacion or 'reposicion') == 'reposicion' %}selected{% endif %}>Reposicion</option>
+                            <option value="instalacion_inicial" {% if item.contexto_operacion == 'instalacion_inicial' %}selected{% endif %}>Instalacion inicial</option>
+                        </select>
+                        <div class="field-help-inline">
+                            <button type="button" class="field-help-trigger" aria-label="Ayuda sobre contexto operativo">?</button>
+                            <div class="field-help-popover" role="note">
+                                Usa <strong>Instalacion inicial</strong> solo para <strong>R1E</strong> o <strong>Demostracion</strong>, cuando el equipo se instala por primera vez en el cliente. Para el resto, usa <strong>Reposicion</strong>.
+                            </div>
+                        </div>
+                    </div>
                     <label class="item-demo-check">
                         <input type="checkbox" name="es_demo_{{ loop.index0 }}" value="on" {% if item.es_demo %}checked{% endif %}>
                         Para Demo

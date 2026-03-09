@@ -67,10 +67,18 @@
                 <input type="text" name="items[0][descripcion]" list="catalogo-items" placeholder="Buscar item..." autocomplete="off" required>
                 <input type="number" step="1" min="1" name="items[0][cantidad]" placeholder="Cantidad" required>
                 <div class="item-context-block">
-                    <select name="items[0][contexto_operacion]" aria-label="Contexto operativo del item">
-                        <option value="reposicion" selected>Reposicion</option>
-                        <option value="instalacion_inicial">Instalacion inicial</option>
-                    </select>
+                    <div class="field-help-row">
+                        <select name="items[0][contexto_operacion]" aria-label="Contexto operativo del item">
+                            <option value="reposicion" selected>Reposicion</option>
+                            <option value="instalacion_inicial">Instalacion inicial</option>
+                        </select>
+                        <div class="field-help-inline">
+                            <button type="button" class="field-help-trigger" aria-label="Ayuda sobre contexto operativo">?</button>
+                            <div class="field-help-popover" role="note">
+                                Usa <strong>Instalacion inicial</strong> solo para <strong>R1E</strong> o <strong>Demostracion</strong>, cuando el equipo se instala por primera vez en el cliente. Para el resto, usa <strong>Reposicion</strong>.
+                            </div>
+                        </div>
+                    </div>
                     <label class="item-demo-check">
                         <input type="checkbox" name="es_demo_0" value="on">
                         Para Demo

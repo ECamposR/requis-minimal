@@ -26,6 +26,9 @@
     <article class="liquidacion-inline-error liquidacion-inline-error-client" role="alert" data-client-error hidden>
         Hay items con cobertura o retorno inconsistente. Revisa Usado, No usado y Regresa.
     </article>
+    <article class="liquidacion-inline-error liquidacion-inline-error-client liquidacion-inline-error-decimal" role="alert" data-decimal-error hidden>
+        Hay items con decimales no permitidos. Solo los concentrados autorizados aceptan fracciones.
+    </article>
     <form method="POST" action="/liquidar/{{ req.id }}" data-liquidacion-form>
         <div class="table-wrap">
             <table class="table-compact liquidacion-table">
@@ -173,14 +176,19 @@
 
         row.classList.toggle("row-incomplete", !coverageOk);
         row.classList.toggle("row-return-invalid", integerOk && coverageOk && !returnOk);
+        row.classList.toggle("row-decimal-invalid", !integerOk);
+        let reason = null;
         if (hint) {
             if (!integerOk) {
+                reason = "decimal";
                 hint.textContent = "Este item solo permite cantidades enteras en liquidacion.";
                 hint.hidden = false;
             } else if (!coverageOk) {
+                reason = "coverage";
                 hint.textContent = `Falta distribuir entregado: Entregado ${formatNum(delivered)}, Usado+No usado ${formatNum(ocupo)}`;
                 hint.hidden = false;
             } else if (!returnOk) {
+                reason = "return";
                 hint.textContent = mode === "CONSUMIBLE"
                     ? `En consumible, Regresa debe ser igual a No usado. Regresa ${formatNum(returned)}, No usado ${formatNum(notUsed)}`
                     : `En retornable, Regresa no puede superar lo distribuido. Regresa ${formatNum(returned)}, Cobertura ${formatNum(ocupo)}`;
@@ -192,13 +200,14 @@
                 hint.hidden = true;
             }
         }
-        return { isInvalid: !integerOk || !coverageOk || !returnOk };
+        return { isInvalid: !integerOk || !coverageOk || !returnOk, reason };
     }
 
     function bindLiquidacion() {
         const form = document.querySelector("[data-liquidacion-form]");
         const submitButton = document.querySelector("[data-liquidacion-submit]");
         const globalError = document.querySelector("[data-client-error]");
+        const decimalError = document.querySelector("[data-decimal-error]");
         const getRows = () => Array.from(document.querySelectorAll("[data-liquidacion-row]"));
         let evaluateTimer = null;
 
@@ -213,8 +222,12 @@
         };
 
         const evaluateAllRows = () => {
-            const hasInvalid = getRows().some((row) => recalcRow(row).isInvalid);
-            if (globalError) globalError.hidden = !hasInvalid;
+            const results = getRows().map((row) => recalcRow(row));
+            const hasInvalid = results.some((result) => result.isInvalid);
+            const hasDecimalInvalid = results.some((result) => result.reason === "decimal");
+            const hasOtherInvalid = results.some((result) => result.isInvalid && result.reason !== "decimal");
+            if (globalError) globalError.hidden = !hasOtherInvalid;
+            if (decimalError) decimalError.hidden = !hasDecimalInvalid;
             if (submitButton) submitButton.disabled = hasInvalid;
             return hasInvalid;
         };

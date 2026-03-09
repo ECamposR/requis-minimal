@@ -330,7 +330,18 @@ function agregarItem() {
 
     const contextoWrap = document.createElement("div");
     contextoWrap.className = "item-context-block";
-    contextoWrap.appendChild(contexto);
+    const contextoRow = document.createElement("div");
+    contextoRow.className = "field-help-row";
+    const contextoHelp = document.createElement("div");
+    contextoHelp.className = "field-help-inline";
+    contextoHelp.innerHTML = `
+        <button type="button" class="field-help-trigger" aria-label="Ayuda sobre contexto operativo">?</button>
+        <div class="field-help-popover" role="note">
+            Usa <strong>Instalacion inicial</strong> solo para <strong>R1E</strong> o <strong>Demostracion</strong>, cuando el equipo se instala por primera vez en el cliente. Para el resto, usa <strong>Reposicion</strong>.
+        </div>
+    `;
+    contextoRow.append(contexto, contextoHelp);
+    contextoWrap.appendChild(contextoRow);
 
     const demoLabel = document.createElement("label");
     demoLabel.className = "item-demo-check";
