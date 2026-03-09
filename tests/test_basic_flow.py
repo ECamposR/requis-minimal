@@ -1078,6 +1078,11 @@ def test_bodega_debe_preparar_antes_de_entregar(client: TestClient, db_session: 
     db_session.refresh(req)
 
     login(client, "bodega.1", "pass123")
+    preparar_form = client.get(f"/bodega/{req.id}/preparar")
+    assert preparar_form.status_code == 200
+    assert "Preparar Requisición" in preparar_form.text
+    assert "Debe pasar por preparado" in preparar_form.text
+
     preparar = client.post(f"/bodega/{req.id}/preparar", follow_redirects=False)
     assert preparar.status_code == 303
     db_session.refresh(req)

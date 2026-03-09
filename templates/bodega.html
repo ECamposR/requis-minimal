@@ -69,9 +69,7 @@
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td class="table-actions">
             {% if req.estado == 'aprobada' %}
-            <form method="POST" action="/bodega/{{ req.id }}/preparar" style="display:inline">
-                <button type="submit" class="secondary">Preparar</button>
-            </form>
+            <a href="/bodega/{{ req.id }}/preparar" role="button" class="secondary">Preparar</a>
             {% elif req.estado == 'preparado' %}
             <a href="/bodega/{{ req.id }}/gestionar" role="button" class="secondary">Entregar</a>
             {% elif req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}

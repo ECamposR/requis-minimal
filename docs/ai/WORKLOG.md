@@ -34,6 +34,24 @@
 - Proximo paso:
   - Smoke manual en `/bodega` validando secuencia `aprobada -> preparado -> entregada` y apertura de PDF tanto en `aprobada` como en `preparado`.
 
+## 2026-03-09 10:48 UTC-6 | tool: Codex CLI
+- Objetivo: refinar UX del nuevo paso `Preparar` para que no cambie estado directo desde el listado de bodega.
+- Tareas: `REQ-110A`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega.html`
+  - `templates/bodega_preparar.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app templates tests`
+- Resultado:
+  - `Preparar` ahora abre `GET /bodega/{id}/preparar` con tabla de ítems y cantidades.
+  - La transición a `preparado` solo ocurre tras pulsar `Preparado`; `Cancelar` vuelve a `/bodega` sin cambios.
+  - El test del flujo de preparación quedó alineado a la pantalla intermedia.
+
 ## 2026-03-05 14:03 UTC-6 | tool: Codex CLI
 - Objetivo: aplicar ajuste de permisos solicitado para REQ-099: permitir que `admin` también pueda ejecutar `Confirmar en Prokey`.
 - Tareas: `REQ-099E`

@@ -1391,8 +1391,36 @@ def bodega_gestionar(
     )
 
 
+@app.get("/bodega/{req_id}/preparar")
+def bodega_preparar_form(
+    req_id: int,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    req = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.aprobador),
+        )
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if not puede_preparar(req, current_user.rol):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    return templates.TemplateResponse(
+        "bodega_preparar.html",
+        template_context(request, current_user, req=req),
+    )
+
+
 @app.post("/bodega/{req_id}/preparar")
-def bodega_preparar(
+def bodega_preparar_confirmar(
     req_id: int,
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),

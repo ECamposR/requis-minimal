@@ -127,6 +127,7 @@
 - `REQ-109` completada: el PDF ya puede abrirse desde `aprobada` en adelante; el endpoint `/requisiciones/{id}/pdf` y el botón `Ver PDF` del detalle quedaron habilitados para `aprobada`, `entregada`, `liquidada` y `liquidada_en_prokey`.
 - `REQ-109A` completada: el PDF distingue el caso `aprobada` pre-entrega; la tabla de ítems ya no titula `Entregado` ni usa `cantidad_entregada`, sino `Solicitado` con la cantidad original de la requisición.
 - `REQ-110` completada: se agregó el estado previo `preparado` entre `aprobada` y `entregada`. Bodega ahora debe accionar `Preparar` primero y solo después puede abrir `Gestionar Entrega` para capturar firma/PIN y cerrar la entrega. El estado nuevo tiene trazabilidad (`prepared_at`/`prepared_by`), aparece en detalle/timeline/badges, entra en filtros y el PDF lo trata como etapa pre-entrega (muestra solicitado).
+- `REQ-110A` completada: el paso `Preparar` ya no cambia estado desde el listado; ahora abre una vista dedicada con tabla de ítems y botones `Preparado` / `Cancelar` para confirmar deliberadamente la transición a `preparado`.
 
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  

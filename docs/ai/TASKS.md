@@ -84,6 +84,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-109` | `done` | El PDF de requisición queda disponible desde estado `aprobada` en adelante (`aprobada`, `entregada`, `liquidada`, `liquidada_en_prokey`); detalle y endpoint quedan alineados.
 - `REQ-109A` | `done` | Ajuste de PDF pre-entrega: cuando la requisición está `aprobada`, la tabla usa cantidades solicitadas y el encabezado cambia a `Solicitado`, evitando mostrar cantidades entregadas antes de esa fase.
 - `REQ-110` | `done` | Nuevo estado operativo `preparado`: bodega marca la requisición como preparada antes de entregar; solo desde ese estado se captura firma/PIN y se transiciona a `entregada`. Detalle, PDF, badges, filtros y trazabilidad quedaron alineados.
+- `REQ-110A` | `done` | Refinamiento UX de preparación: el botón `Preparar` abre una pantalla de confirmación con tabla de ítems/cantidades y acciones `Preparado` / `Cancelar`, evitando cambiar estado directamente desde el listado.
 
 ## Despliegue Producción
 - `REQ-086` | `done` | Agregar Dockerfile, docker-compose.yml de la app y configuración de Caddy (`deploy/caddy/`) para despliegue LAN con reverse proxy. Red Docker externa `proxy` desacopla Caddy de cada servicio.

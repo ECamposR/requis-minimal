@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+{% block title %}Preparar Requisición{% endblock %}
+{% block content %}
+{{ ui.page_header("Preparar Requisición", "Revisa los ítems y confirma que el pedido está listo para entrega.") }}
+
+<section class="panel view-panel">
+    <p><strong># Req:</strong> {{ req.folio }}</p>
+    <p><strong>Solicitante:</strong> {{ req.solicitante.nombre if req.solicitante else '-' }}</p>
+    <p><strong>Aprobado por:</strong> {{ req.aprobador.nombre if req.aprobador else '-' }}</p>
+    <p><strong>Justificación:</strong> {{ req.justificacion }}</p>
+
+    <div class="table-wrap">
+        <table class="table-compact">
+            <thead>
+                <tr>
+                    <th>Ítem</th>
+                    <th class="col-estado">Cantidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in req.items %}
+                <tr>
+                    <td>
+                        {{ item.descripcion }}
+                        {% if item.es_demo %}
+                        <span class="badge warning item-demo-badge">Para Demo</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.cantidad }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-actions" style="margin-top: 1rem;">
+        <form method="POST" action="/bodega/{{ req.id }}/preparar" class="inline">
+            <button type="submit">Preparado</button>
+        </form>
+        <a href="/bodega" role="button" class="secondary" style="display:inline-flex; align-items:center;">Cancelar</a>
+    </div>
+</section>
+{% endblock %}
