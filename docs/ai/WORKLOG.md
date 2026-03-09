@@ -2671,3 +2671,36 @@
   - `python -m compileall static`
 - Resultado:
   - La validación del formulario vuelve a aceptar ítems válidos del catálogo al crear/editar requisiciones.
+
+## 2026-03-09 15:35 UTC-06:00 | tool: Codex CLI
+- Objetivo: extender la restriccion de decimales por catalogo a la vista y backend de liquidacion.
+- Tareas: `REQ-106B`.
+- Cambios:
+  - `app/main.py`:
+    - `attach_catalog_item_defaults(...)` ahora adjunta tambien `permite_decimal` por item desde catalogo.
+    - `POST /liquidar/{id}` rechaza decimales en `Regresa`, `Usado` y `No usado` cuando el item no permite fracciones.
+  - `templates/liquidar.html`:
+    - inputs de cantidades usan `step=1` o `0.01` segun el item.
+    - validacion JS por fila bloquea submit si un item no permitido recibe decimales.
+    - mensaje inline especifico para este caso.
+  - `tests/test_liquidacion.py`:
+    - nuevo caso de rechazo para item no habilitado.
+    - nuevo caso de aceptacion para `LIQUIDO CONCENTRADO DESODORIZADOR`.
+- Comandos ejecutados:
+  - `python -m compileall app templates tests`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k 'decimal' -v`
+- Resultado:
+  - La restriccion de enteros/decimales ya aplica tambien a liquidacion, sin tocar formulas ni alertas existentes.
+
+## 2026-03-09 15:50 UTC-06:00 | tool: Codex CLI
+- Objetivo: corregir UX de `liquidar.html` cuando un valor invalido deja el boton `Liquidar` pegado deshabilitado.
+- Tareas: `REQ-106C`.
+- Cambios:
+  - `templates/liquidar.html`:
+    - nuevo recálculo robusto con tolerancia numerica (`numbersEqual`, `isWholeNumber`).
+    - listeners delegados a nivel de formulario para `input`, `change`, `blur` y `keyup`.
+    - el estado del boton se recalcula siempre desde el DOM actual, evitando residuos de estados intermedios.
+- Comandos ejecutados:
+  - `python -m compileall templates`
+- Resultado:
+  - Tras corregir un valor invalido en liquidacion, el boton se vuelve a habilitar sin recargar la pagina.

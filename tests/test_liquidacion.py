@@ -23,7 +23,7 @@ from app.main import (
     liquidar_form,
     liquidar_guardar,
 )
-from app.models import Base, Item, Requisicion, Usuario
+from app.models import Base, CatalogoItem, Item, Requisicion, Usuario
 
 TEST_DB_URL = "sqlite://"
 
@@ -87,6 +87,12 @@ def test_engine():
                 ),
             ]
         )
+        seed_db.add_all(
+            [
+                CatalogoItem(nombre="CONCENTRADO SHF", activo=True, permite_decimal=True),
+                CatalogoItem(nombre="LIQUIDO CONCENTRADO DESODORIZADOR", activo=True, permite_decimal=True),
+            ]
+        )
         seed_db.commit()
 
     try:
@@ -128,6 +134,7 @@ def create_req_entregada(
     estado: str = "entregada",
     cantidad: float = 10.0,
     cantidad_entregada: float | None = None,
+    descripcion: str = "Item Test",
 ) -> Requisicion:
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprob = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
@@ -151,7 +158,7 @@ def create_req_entregada(
     db_session.add(
         Item(
             requisicion_id=req.id,
-            descripcion="Item Test",
+            descripcion=descripcion,
             cantidad=cantidad,
             cantidad_entregada=cantidad if cantidad_entregada is None else cantidad_entregada,
             unidad="unidad",
@@ -675,6 +682,64 @@ async def test_permite_retornable_con_retorno_extra_no_bloquea_y_alerta(db_sessi
     assert req.estado == "liquidada"
     tipos = {a["type"] for a in json.loads(item.liquidation_alerts)}
     assert "ALERTA_RETORNO_EXTRA" in tipos
+
+
+@pytest.mark.anyio
+async def test_liquidacion_rechaza_decimales_para_item_no_habilitado(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=5, descripcion="Item Test")
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "1.5",
+                f"qty_used_{item.id}": "3",
+                f"qty_not_used_{item.id}": "2",
+                f"mode_{item.id}": "RETORNABLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 200
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+
+
+@pytest.mark.anyio
+async def test_liquidacion_permite_decimales_para_concentrado_habilitado(db_session: Session):
+    req = create_req_entregada(
+        db_session,
+        cantidad=2.5,
+        descripcion="LIQUIDO CONCENTRADO DESODORIZADOR",
+    )
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "0.5",
+                f"qty_used_{item.id}": "2",
+                f"qty_not_used_{item.id}": "0.5",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    db_session.refresh(item)
+    assert req.estado == "liquidada"
+    assert item.qty_returned_to_warehouse == 0.5
 
 
 @pytest.mark.anyio

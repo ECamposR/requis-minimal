@@ -148,6 +148,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-059` | `done` | Registrar en detalle de requisicion la linea de tiempo de cambios de estado (creacion, aprobacion/rechazo, preparacion/entrega y recibido) con hora `HH:MM:SS`.
 - `REQ-106` | `done` | Restriccion de decimales por catalogo: nuevo flag `permite_decimal`, autocalculado para `CONCENTRADO SHF` y `LIQUIDO CONCENTRADO DESODORIZADOR`, aplicado en formularios crear/editar y validacion backend.
 - `REQ-106A` | `done` | Fix validacion JS de catalogo en crear/editar: compatibilidad con payload string/objeto y comparacion normalizada para evitar falsos "item invalido".
+- `REQ-106B` | `done` | Restriccion de decimales extendida a liquidacion: solo items con `permite_decimal` en catalogo aceptan fracciones; resto solo enteros en frontend y backend.
+- `REQ-106C` | `done` | Fix UX liquidacion: el boton `Liquidar` ya no queda pegado deshabilitado tras corregir valores; recálculo robusto por eventos y comparaciones con tolerancia.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

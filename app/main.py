@@ -362,11 +362,16 @@ templates.env.filters["fmt_dt"] = format_datetime
 
 def attach_catalog_item_defaults(items: list, db: Session) -> None:
     catalog_map = {
-        normalize_catalog_name(catalog_item.nombre): (catalog_item.tipo_item or classify_catalog_item_type(catalog_item.nombre))
+        normalize_catalog_name(catalog_item.nombre): {
+            "default_mode": (catalog_item.tipo_item or classify_catalog_item_type(catalog_item.nombre)),
+            "permite_decimal": bool(catalog_item.permite_decimal),
+        }
         for catalog_item in db.query(CatalogoItem).all()
     }
     for item in items:
-        item.default_mode = catalog_map.get(normalize_catalog_name(item.descripcion))
+        catalog_defaults = catalog_map.get(normalize_catalog_name(item.descripcion), {})
+        item.default_mode = catalog_defaults.get("default_mode")
+        item.permite_decimal = bool(catalog_defaults.get("permite_decimal", False))
 
 
 def normalize_optional_text(value: str | None) -> str | None:
@@ -1660,6 +1665,9 @@ async def liquidar_guardar(
             raise ValueError(f"{field_label} no puede ser negativo")
         return value
 
+    def is_effective_integer(value: float) -> bool:
+        return float(value).is_integer()
+
     for item in req.items:
         qty_returned_raw = str(form_data.get(f"qty_returned_{item.id}", "0")).strip() or "0"
         qty_used_raw = str(form_data.get(f"qty_used_{item.id}", "0")).strip() or "0"
@@ -1697,6 +1705,22 @@ async def liquidar_guardar(
                 ),
                 status_code=200,
             )
+        if not bool(getattr(item, "permite_decimal", False)):
+            if not all(is_effective_integer(value) for value in (qty_returned, qty_used, qty_not_used)):
+                attach_catalog_item_defaults(req.items, db)
+                return templates.TemplateResponse(
+                    "liquidar.html",
+                    template_context(
+                        request,
+                        current_user,
+                        req=req,
+                        error_message=f"El item {item.descripcion} solo permite cantidades enteras en liquidacion",
+                        item_incompletos=[],
+                        liquidacion_values=liquidacion_values,
+                        liquidacion_meta=liquidacion_meta,
+                    ),
+                    status_code=200,
+                )
         if mode_raw not in ("RETORNABLE", "CONSUMIBLE"):
             attach_catalog_item_defaults(req.items, db)
             return templates.TemplateResponse(

@@ -45,7 +45,7 @@
                 <tbody>
                     {% for item in req.items %}
                     {% set values = liquidacion_values.get(item.id, {}) if liquidacion_values else {} %}
-                    <tr data-liquidacion-row data-contexto-operacion="{{ item.contexto_operacion or '' }}" {% if item.id in item_incompletos %}class="row-incomplete"{% endif %}>
+                    <tr data-liquidacion-row data-contexto-operacion="{{ item.contexto_operacion or '' }}" data-permite-decimal="{{ 'true' if item.permite_decimal else 'false' }}" {% if item.id in item_incompletos %}class="row-incomplete"{% endif %}>
                         <td>{{ item.descripcion }}</td>
                         <td>
                             {% set resolved_mode = item.default_mode if item.default_mode in ['RETORNABLE', 'CONSUMIBLE'] else values.get('mode', item.default_mode) %}
@@ -62,13 +62,13 @@
                         </td>
                         <td data-delivered="{{ item.cantidad_entregada }}">{{ item.cantidad_entregada }}</td>
                         <td>
-                            <input type="number" min="0" step="any" name="qty_returned_{{ item.id }}" value="{{ values.get('qty_returned', '0') }}" required>
+                            <input type="number" min="0" step="{{ '0.01' if item.permite_decimal else '1' }}" name="qty_returned_{{ item.id }}" value="{{ values.get('qty_returned', '0') }}" required>
                         </td>
                         <td>
-                            <input type="number" min="0" step="any" name="qty_used_{{ item.id }}" value="{{ values.get('qty_used', '0') }}" required>
+                            <input type="number" min="0" step="{{ '0.01' if item.permite_decimal else '1' }}" name="qty_used_{{ item.id }}" value="{{ values.get('qty_used', '0') }}" required>
                         </td>
                         <td>
-                            <input type="number" min="0" step="any" name="qty_not_used_{{ item.id }}" value="{{ values.get('qty_not_used', '0') }}" required>
+                            <input type="number" min="0" step="{{ '0.01' if item.permite_decimal else '1' }}" name="qty_not_used_{{ item.id }}" value="{{ values.get('qty_not_used', '0') }}" required>
                         </td>
                         <td data-ocupo>0</td>
                         <td>
@@ -126,12 +126,21 @@
         return value.toFixed(2);
     }
 
+    function numbersEqual(a, b) {
+        return Math.abs(a - b) < 0.0001;
+    }
+
+    function isWholeNumber(value) {
+        return numbersEqual(value, Math.round(value));
+    }
+
     function recalcRow(row) {
         const deliveredCell = row.querySelector("[data-delivered]");
         const delivered = parseNum(deliveredCell.dataset.delivered);
         const returned = inputNum(row, "input[name^='qty_returned_']");
         const used = inputNum(row, "input[name^='qty_used_']");
         const notUsed = inputNum(row, "input[name^='qty_not_used_']");
+        const allowsDecimal = row.dataset.permiteDecimal === "true";
         const mode = (row.querySelector("[data-mode]")?.value || "RETORNABLE").toUpperCase();
         const contextoOperacion = (row.dataset.contextoOperacion || "").toLowerCase() || "reposicion";
         const expectedReturn = (mode === "CONSUMIBLE" || contextoOperacion === "instalacion_inicial")
@@ -139,9 +148,12 @@
             : used + notUsed;
         const ocupo = used + notUsed;
         const diferencia = expectedReturn - returned;
-        const coverageOk = ocupo === delivered;
-        const returnOk = mode === "CONSUMIBLE" ? returned === notUsed : true;
+        const coverageOk = numbersEqual(ocupo, delivered);
+        const returnOk = mode === "CONSUMIBLE" ? numbersEqual(returned, notUsed) : true;
         const retornoExtraRetornable = mode === "RETORNABLE" && returned > ocupo;
+        const integerOk = allowsDecimal
+            ? true
+            : [returned, used, notUsed].every((value) => isWholeNumber(value));
 
         const ocupoCell = row.querySelector("[data-ocupo]");
         const deltaCell = row.querySelector("[data-delta]");
@@ -160,9 +172,12 @@
         }
 
         row.classList.toggle("row-incomplete", !coverageOk);
-        row.classList.toggle("row-return-invalid", coverageOk && !returnOk);
+        row.classList.toggle("row-return-invalid", integerOk && coverageOk && !returnOk);
         if (hint) {
-            if (!coverageOk) {
+            if (!integerOk) {
+                hint.textContent = "Este item solo permite cantidades enteras en liquidacion.";
+                hint.hidden = false;
+            } else if (!coverageOk) {
                 hint.textContent = `Falta distribuir entregado: Entregado ${formatNum(delivered)}, Usado+No usado ${formatNum(ocupo)}`;
                 hint.hidden = false;
             } else if (!returnOk) {
@@ -177,27 +192,37 @@
                 hint.hidden = true;
             }
         }
-        return { isInvalid: !coverageOk || !returnOk };
+        return { isInvalid: !integerOk || !coverageOk || !returnOk };
     }
 
     function bindLiquidacion() {
         const form = document.querySelector("[data-liquidacion-form]");
         const submitButton = document.querySelector("[data-liquidacion-submit]");
         const globalError = document.querySelector("[data-client-error]");
-        const rows = Array.from(document.querySelectorAll("[data-liquidacion-row]"));
+        const getRows = () => Array.from(document.querySelectorAll("[data-liquidacion-row]"));
         const evaluateAllRows = () => {
-            const hasInvalid = rows.some((row) => recalcRow(row).isInvalid);
+            const hasInvalid = getRows().some((row) => recalcRow(row).isInvalid);
             if (globalError) globalError.hidden = !hasInvalid;
             if (submitButton) submitButton.disabled = hasInvalid;
             return hasInvalid;
         };
 
-        rows.forEach((row) => {
-            const inputs = row.querySelectorAll("input[name^='qty_returned_'], input[name^='qty_used_'], input[name^='qty_not_used_'], select[data-mode]");
-            inputs.forEach((input) => input.addEventListener("input", evaluateAllRows));
-            inputs.forEach((input) => input.addEventListener("change", evaluateAllRows));
-        });
         if (form) {
+            const shouldTrack = (target) =>
+                target &&
+                target.matches &&
+                target.matches("input[name^='qty_returned_'], input[name^='qty_used_'], input[name^='qty_not_used_'], select[data-mode]");
+
+            ["input", "change", "blur", "keyup"].forEach((eventName) => {
+                form.addEventListener(
+                    eventName,
+                    (event) => {
+                        if (!shouldTrack(event.target)) return;
+                        requestAnimationFrame(evaluateAllRows);
+                    },
+                    true
+                );
+            });
             form.addEventListener("submit", (event) => {
                 if (evaluateAllRows()) {
                     event.preventDefault();
