@@ -2629,3 +2629,45 @@
   - `python -m compileall templates`
 - Resultado:
   - Si la entrega no avanza por problema de firma, el usuario ahora ve claramente por qué.
+
+## 2026-03-09 14:35 UTC-06:00 | tool: Codex CLI
+- Objetivo: mover la regla de cantidades decimales al catalogo como fuente de verdad y limitarla a concentrados autorizados.
+- Tareas: `REQ-106`.
+- Cambios:
+  - `app/catalog_types.py`:
+    - nuevo helper `catalog_item_allows_decimal(...)` con regla centralizada para `CONCENTRADO SHF` y `LIQUIDO CONCENTRADO DESODORIZADOR`.
+  - `app/models.py`:
+    - nuevo campo `CatalogoItem.permite_decimal`.
+  - `app/database.py`:
+    - migracion incremental para `catalogo_items.permite_decimal`.
+    - backfill automatico del flag segun nombre del item ya existente.
+  - `app/main.py`:
+    - payload de catalogo enriquecido para formularios crear/editar.
+    - validacion backend fuerte: si un item no permite decimal, rechaza cantidades no enteras.
+    - importacion/alta/edicion de catalogo actualizan `permite_decimal` automaticamente segun nombre.
+  - `templates/crear_requisicion.html`, `templates/editar_requisicion.html`, `static/app.js`:
+    - UX de cantidad sensible al item seleccionado: entero por defecto, decimal solo cuando el catalogo lo habilita.
+  - `templates/admin_catalogo_items.html`, `templates/admin_catalogo_item_form.html`:
+    - visibilidad del flag `permite_decimal` en administracion de catalogo.
+  - `tests/test_basic_flow.py`, `tests/test_admin_catalog_items.py`:
+    - cobertura para rechazo de decimal en item no habilitado, aceptacion en concentrado permitido y autoclasificacion del flag en catalogo.
+- Comandos ejecutados:
+  - `python -m compileall app templates static tests`
+  - `.venv/bin/python -m pytest -q tests/test_admin_catalog_items.py -v`
+  - `.venv/bin/python -m pytest -q tests/test_basic_flow.py -k 'decimal or crear_requisicion' -v`
+- Resultado:
+  - Compilacion completa correcta.
+  - Los `pytest` arrancan pero vuelven a quedar colgados al entrar en `TestClient` en este entorno; se mantiene como limitacion local ya conocida.
+
+## 2026-03-09 15:05 UTC-06:00 | tool: Codex CLI
+- Objetivo: corregir falso rechazo "Selecciona un item válido del catálogo" tras enriquecer `window.CATALOGO_ITEMS`.
+- Tareas: `REQ-106A`.
+- Cambios:
+  - `static/app.js`:
+    - `getCatalogItemMeta(...)` ahora soporta payload legado de strings y payload nuevo de objetos.
+    - comparación normalizada (trim/minúsculas/sin acentos) para evitar rechazos por formato o caché.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: gobernanza actualizada.
+- Comandos ejecutados:
+  - `python -m compileall static`
+- Resultado:
+  - La validación del formulario vuelve a aceptar ítems válidos del catálogo al crear/editar requisiciones.

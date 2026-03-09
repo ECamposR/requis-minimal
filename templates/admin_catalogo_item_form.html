@@ -16,6 +16,11 @@
         Activo
     </label>
 
+    <p class="page-subtitle">
+        Permite decimales: {% if item and item.permite_decimal %}<strong>Si</strong>{% else %}<strong>No</strong>{% endif %}.
+        Se calcula automaticamente segun el nombre del item.
+    </p>
+
     <div class="form-actions">
         <button type="submit">{% if modo == 'crear' %}Crear{% else %}Guardar cambios{% endif %}</button>
         <a href="/admin/catalogo-items" role="button" class="secondary">Cancelar</a>

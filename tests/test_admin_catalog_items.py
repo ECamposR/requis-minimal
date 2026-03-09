@@ -77,6 +77,7 @@ def test_admin_catalog_item_crud_flow():
         assert item is not None
         assert item.activo is True
         assert item.tipo_item is None
+        assert item.permite_decimal is False
 
         edit_resp = client.post(
             f"/admin/catalogo-items/{item.id}/editar",
@@ -141,6 +142,8 @@ def test_admin_import_catalog_csv_crea_y_reactiva_items():
         assert conector.activo is True
         assert cable.tipo_item is None
         assert conector.tipo_item is None
+        assert cable.permite_decimal is False
+        assert conector.permite_decimal is False
     finally:
         client.close()
         db.close()
@@ -193,6 +196,26 @@ def test_catalogo_tipo_item_se_clasifica_automaticamente():
     assert classify_catalog_item_type("SPRAY CITRUS") == "CONSUMIBLE"
     assert classify_catalog_item_type("CORAZÓN AZUL") == "RETORNABLE"
     assert classify_catalog_item_type("Cable UTP Cat6") is None
+
+
+def test_admin_catalogo_marca_decimal_automaticamente_para_concentrados():
+    client, db, engine = _build_client()
+    try:
+        _login(client, "admin", "admin123")
+        response = client.post(
+            "/admin/catalogo-items",
+            data={"nombre": "LIQUIDO CONCENTRADO DESODORIZADOR", "activo": "on"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        item = db.query(CatalogoItem).filter(CatalogoItem.nombre == "LIQUIDO CONCENTRADO DESODORIZADOR").first()
+        assert item is not None
+        assert item.permite_decimal is True
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()
 
 
 def test_attach_catalog_item_defaults_fallback_usa_clasificacion_si_tipo_item_es_null():

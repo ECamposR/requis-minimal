@@ -65,7 +65,7 @@
             <legend>Items</legend>
             <div class="item-row">
                 <input type="text" name="items[0][descripcion]" list="catalogo-items" placeholder="Buscar item..." autocomplete="off" required>
-                <input type="number" step="0.01" min="0.01" name="items[0][cantidad]" placeholder="Cantidad" required>
+                <input type="number" step="1" min="1" name="items[0][cantidad]" placeholder="Cantidad" required>
                 <div class="item-context-block">
                     <select name="items[0][contexto_operacion]" aria-label="Contexto operativo del item">
                         <option value="reposicion" selected>Reposicion</option>
@@ -80,7 +80,7 @@
         </fieldset>
         <datalist id="catalogo-items">
             {% for item in catalogo_items %}
-            <option value="{{ item }}"></option>
+            <option value="{{ item.nombre }}"></option>
             {% endfor %}
         </datalist>
         <p id="item-error" class="page-subtitle" role="alert" aria-live="polite"></p>

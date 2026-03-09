@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
-from .catalog_types import classify_catalog_item_type
+from .catalog_types import catalog_item_allows_decimal, classify_catalog_item_type
 
 load_dotenv()
 
@@ -260,14 +260,24 @@ def run_migrations() -> None:
             }
             if "tipo_item" not in catalog_columns:
                 conn.execute(text("ALTER TABLE catalogo_items ADD COLUMN tipo_item VARCHAR(20)"))
-            catalog_rows = conn.execute(text("SELECT id, nombre, tipo_item FROM catalogo_items")).fetchall()
-            for item_id, nombre, tipo_item in catalog_rows:
+            if "permite_decimal" not in catalog_columns:
+                conn.execute(text("ALTER TABLE catalogo_items ADD COLUMN permite_decimal INTEGER NOT NULL DEFAULT 0"))
+            catalog_rows = conn.execute(
+                text("SELECT id, nombre, tipo_item, permite_decimal FROM catalogo_items")
+            ).fetchall()
+            for item_id, nombre, tipo_item, permite_decimal in catalog_rows:
                 if tipo_item is not None:
-                    continue
-                computed = classify_catalog_item_type(nombre or "")
-                if computed is None:
-                    continue
-                conn.execute(
-                    text("UPDATE catalogo_items SET tipo_item = :tipo_item WHERE id = :item_id"),
-                    {"tipo_item": computed, "item_id": item_id},
-                )
+                    pass
+                else:
+                    computed = classify_catalog_item_type(nombre or "")
+                    if computed is not None:
+                        conn.execute(
+                            text("UPDATE catalogo_items SET tipo_item = :tipo_item WHERE id = :item_id"),
+                            {"tipo_item": computed, "item_id": item_id},
+                        )
+                expected_decimal = 1 if catalog_item_allows_decimal(nombre or "") else 0
+                if permite_decimal != expected_decimal:
+                    conn.execute(
+                        text("UPDATE catalogo_items SET permite_decimal = :permite_decimal WHERE id = :item_id"),
+                        {"permite_decimal": expected_decimal, "item_id": item_id},
+                    )

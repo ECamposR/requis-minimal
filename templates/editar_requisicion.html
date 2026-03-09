@@ -67,7 +67,7 @@
             {% for item in req.items %}
             <div class="item-row">
                 <input type="text" name="items[{{ loop.index0 }}][descripcion]" list="catalogo-items" placeholder="Buscar item..." autocomplete="off" required value="{{ item.descripcion }}">
-                <input type="number" step="0.01" min="0.01" name="items[{{ loop.index0 }}][cantidad]" placeholder="Cantidad" required value="{{ item.cantidad }}">
+                <input type="number" step="1" min="1" name="items[{{ loop.index0 }}][cantidad]" placeholder="Cantidad" required value="{{ item.cantidad }}">
                 <div class="item-context-block">
                     <select name="items[{{ loop.index0 }}][contexto_operacion]" aria-label="Contexto operativo del item">
                         <option value="reposicion" {% if (item.contexto_operacion or 'reposicion') == 'reposicion' %}selected{% endif %}>Reposicion</option>
@@ -84,7 +84,7 @@
         </fieldset>
         <datalist id="catalogo-items">
             {% for item in catalogo_items %}
-            <option value="{{ item }}"></option>
+            <option value="{{ item.nombre }}"></option>
             {% endfor %}
         </datalist>
         <p id="item-error" class="page-subtitle" role="alert" aria-live="polite"></p>

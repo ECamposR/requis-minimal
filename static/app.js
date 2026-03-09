@@ -130,6 +130,65 @@ function getCurrentSelectedValues() {
         .filter((v) => v);
 }
 
+function getCatalogItemMeta(name) {
+    const value = normalizeSearchText(name);
+    const catalogo = Array.isArray(window.CATALOGO_ITEMS) ? window.CATALOGO_ITEMS : [];
+    for (const item of catalogo) {
+        if (typeof item === "string") {
+            if (normalizeSearchText(item) === value) {
+                return { nombre: item, permite_decimal: false };
+            }
+            continue;
+        }
+        if (item && normalizeSearchText(item.nombre) === value) {
+            return item;
+        }
+    }
+    return null;
+}
+
+function itemAllowsDecimal(name) {
+    const meta = getCatalogItemMeta(name);
+    return Boolean(meta?.permite_decimal);
+}
+
+function validateQtyInput(input, report = false) {
+    if (!input) return false;
+    const row = input.closest(".item-row");
+    const itemInput = row?.querySelector("input[name*='[descripcion]']");
+    const rawValue = String(input.value || "").trim();
+    const qty = Number(rawValue);
+    const allowsDecimal = itemAllowsDecimal(itemInput?.value);
+
+    if (!rawValue || Number.isNaN(qty) || qty <= 0) {
+        input.setCustomValidity("Ingresa una cantidad válida mayor que cero.");
+        if (report) input.reportValidity();
+        return false;
+    }
+    if (!allowsDecimal && !Number.isInteger(qty)) {
+        input.setCustomValidity("Este item solo permite cantidades enteras.");
+        if (report) input.reportValidity();
+        return false;
+    }
+
+    input.setCustomValidity("");
+    return true;
+}
+
+function syncQtyInputForRow(row) {
+    if (!row) return;
+    const itemInput = row.querySelector("input[name*='[descripcion]']");
+    const qtyInput = row.querySelector("input[name*='[cantidad]']");
+    if (!itemInput || !qtyInput) return;
+    const allowsDecimal = itemAllowsDecimal(itemInput.value);
+    qtyInput.step = allowsDecimal ? "0.01" : "1";
+    qtyInput.min = allowsDecimal ? "0.01" : "1";
+    qtyInput.placeholder = allowsDecimal ? "Cantidad (admite decimal)" : "Cantidad entera";
+    if (qtyInput.value.trim()) {
+        validateQtyInput(qtyInput, false);
+    }
+}
+
 function setItemError(message) {
     const errorEl = document.getElementById("item-error");
     if (!errorEl) return;
@@ -139,8 +198,7 @@ function setItemError(message) {
 function validateCatalogItemInput(input, report = false) {
     if (!input) return false;
     const value = input.value.trim();
-    const catalogo = window.CATALOGO_ITEMS || [];
-    const existe = catalogo.includes(value);
+    const existe = Boolean(getCatalogItemMeta(value));
 
     if (!value) {
         input.setCustomValidity("Selecciona un item válido del catálogo.");
@@ -162,6 +220,7 @@ function validateCatalogItemInput(input, report = false) {
     }
 
     input.setCustomValidity("");
+    syncQtyInputForRow(input.closest(".item-row"));
     return true;
 }
 
@@ -174,17 +233,23 @@ function handleItemInputChange(input) {
 }
 
 function syncItemInputs() {
-    const inputs = Array.from(document.querySelectorAll("#items-container input[name*='[descripcion]']"));
-    if (inputs.length === 0) return;
+    const rows = Array.from(document.querySelectorAll("#items-container .item-row"));
+    if (rows.length === 0) return;
     let hasInvalid = false;
-    for (const input of inputs) {
+    for (const row of rows) {
+        const input = row.querySelector("input[name*='[descripcion]']");
+        const qtyInput = row.querySelector("input[name*='[cantidad]']");
+        if (!input) continue;
         const valid = validateCatalogItemInput(input, false);
         if (!valid && input.value.trim()) {
             hasInvalid = true;
         }
+        if (qtyInput && qtyInput.value.trim() && !validateQtyInput(qtyInput, false)) {
+            hasInvalid = true;
+        }
     }
     if (hasInvalid) {
-        setItemError("Selecciona un item válido del catálogo.");
+        setItemError("Revisa item y cantidad. Solo los items marcados en catálogo permiten decimales.");
         return;
     }
     setItemError("");
@@ -209,8 +274,7 @@ function canAddItemRow(container) {
         return false;
     }
     if (qtyInput) {
-        const qty = Number(qtyInput.value);
-        const qtyValida = qtyInput.value !== "" && !Number.isNaN(qty) && qty > 0;
+        const qtyValida = validateQtyInput(qtyInput, false);
         if (!qtyValida) {
             qtyInput.reportValidity();
             qtyInput.focus();
@@ -237,14 +301,17 @@ function agregarItem() {
     input.required = true;
     input.addEventListener("change", () => handleItemInputChange(input));
     input.addEventListener("blur", () => handleItemInputChange(input));
+    input.addEventListener("input", () => syncQtyInputForRow(div));
 
     const qty = document.createElement("input");
     qty.type = "number";
     qty.name = `items[${itemCount}][cantidad]`;
-    qty.placeholder = "Cantidad";
-    qty.step = "0.01";
-    qty.min = "0.01";
+    qty.placeholder = "Cantidad entera";
+    qty.step = "1";
+    qty.min = "1";
     qty.required = true;
+    qty.addEventListener("input", () => validateQtyInput(qty, false));
+    qty.addEventListener("blur", () => validateQtyInput(qty, false));
 
     const contexto = document.createElement("select");
     contexto.name = `items[${itemCount}][contexto_operacion]`;
@@ -299,14 +366,31 @@ document.addEventListener("DOMContentLoaded", () => {
     const requisicionForm = document.querySelector("form[data-requisicion-form='true']");
     if (requisicionForm) {
         requisicionForm.addEventListener("submit", (event) => {
-            const inputs = Array.from(document.querySelectorAll("#items-container input[name*='[descripcion]']"));
-            const invalidInput = inputs.find((input) => !validateCatalogItemInput(input, false));
+            const rows = Array.from(document.querySelectorAll("#items-container .item-row"));
+            const invalidInput = rows
+                .map((row) => row.querySelector("input[name*='[descripcion]']"))
+                .find((input) => input && !validateCatalogItemInput(input, false));
             if (invalidInput) {
                 event.preventDefault();
                 setItemError(invalidInput.validationMessage || "Selecciona un item válido del catálogo.");
                 invalidInput.reportValidity();
+                return;
+            }
+            const invalidQtyInput = rows
+                .map((row) => row.querySelector("input[name*='[cantidad]']"))
+                .find((input) => input && !validateQtyInput(input, false));
+            if (invalidQtyInput) {
+                event.preventDefault();
+                setItemError(invalidQtyInput.validationMessage || "Cantidad inválida.");
+                invalidQtyInput.reportValidity();
             }
         });
+    }
+    const qtyInputs = document.querySelectorAll("#items-container input[name*='[cantidad]']");
+    for (const qtyInput of qtyInputs) {
+        qtyInput.addEventListener("input", () => validateQtyInput(qtyInput, false));
+        qtyInput.addEventListener("blur", () => validateQtyInput(qtyInput, false));
+        syncQtyInputForRow(qtyInput.closest(".item-row"));
     }
     syncItemInputs();
 });

@@ -113,6 +113,10 @@
 - Mantener governance docs sincronizados en cada commit.
 - El entorno actual deja `TestClient` colgado incluso contra `/health`; para validar REQ-085 se usó compilación y smoke directo de modelo/auth/CRUD con DB temporal, pero falta smoke HTTP/manual real.
 
+## Ultimo cambio cerrado
+- `REQ-106` completada: el catalogo ahora persiste `permite_decimal` como fuente de verdad. Solo `CONCENTRADO SHF` y `LIQUIDO CONCENTRADO DESODORIZADOR` quedan habilitados para cantidades decimales; crear/editar requisicion ajusta la UX del campo cantidad y el backend rechaza decimales para cualquier otro item activo del catalogo.
+- `REQ-106A` completada: se corrigio la validacion JS del selector de items en crear/editar para aceptar tanto payload legado de strings como payload enriquecido de objetos, evitando falsos rechazos al enviar requisiciones.
+
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  
 - Para ejecucion, usar solo este bloque activo.

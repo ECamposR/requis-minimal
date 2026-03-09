@@ -64,6 +64,8 @@ def db_session():
             [
                 CatalogoItem(nombre="Cable UTP Cat6", activo=True),
                 CatalogoItem(nombre="Conector RJ45", activo=True),
+                CatalogoItem(nombre="CONCENTRADO SHF", activo=True, permite_decimal=True),
+                CatalogoItem(nombre="LIQUIDO CONCENTRADO DESODORIZADOR", activo=True, permite_decimal=True),
             ]
         )
         seed_db.commit()
@@ -262,6 +264,48 @@ def test_crear_requisicion_rechaza_motivo_invalido(client: TestClient):
     )
     assert response.status_code == 400
     assert response.json()["detail"] == "Motivo de requisicion invalido"
+
+
+def test_crear_requisicion_rechaza_decimal_en_item_no_habilitado(client: TestClient):
+    login(client, "user.ops", "pass123")
+    response = client.post(
+        "/crear",
+        data={
+            "cliente_codigo": "C-1010",
+            "cliente_nombre": "Cliente Entero",
+            "cliente_ruta_principal": "RA02",
+            "receptor_designado_id": "1",
+            "motivo_requisicion": "Servicio pendiente",
+            "justificacion": "Debe fallar por decimal no permitido",
+            "items[0][descripcion]": "Cable UTP Cat6",
+            "items[0][cantidad]": "1.5",
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "El item Cable UTP Cat6 solo permite cantidades enteras"
+
+
+def test_crear_requisicion_permite_decimal_en_item_habilitado(client: TestClient, db_session: Session):
+    login(client, "user.ops", "pass123")
+    response = client.post(
+        "/crear",
+        data={
+            "cliente_codigo": "C-1011",
+            "cliente_nombre": "Cliente Decimal",
+            "cliente_ruta_principal": "RA02",
+            "receptor_designado_id": "1",
+            "motivo_requisicion": "Servicio pendiente",
+            "justificacion": "Debe aceptar decimal en concentrado",
+            "items[0][descripcion]": "LIQUIDO CONCENTRADO DESODORIZADOR",
+            "items[0][cantidad]": "1.5",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    req = db_session.query(Requisicion).order_by(Requisicion.id.desc()).first()
+    assert req is not None
+    assert req.items[0].descripcion == "LIQUIDO CONCENTRADO DESODORIZADOR"
+    assert req.items[0].cantidad == 1.5
 
 
 def test_crear_requisicion_ignora_departamento_enviado(client: TestClient, db_session: Session):

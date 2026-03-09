@@ -29,7 +29,7 @@ from .auth import (
     logout_user,
     verify_password,
 )
-from .catalog_types import classify_catalog_item_type
+from .catalog_types import catalog_item_allows_decimal, classify_catalog_item_type
 from .crud import (
     agregar_item_db,
     calcular_retorno_esperado,
@@ -78,6 +78,17 @@ MOTIVOS_REQUISICION = [
     "Cambio de Fragancia",
     "Servicio pendiente",
 ]
+
+
+def build_catalog_payload(items: list[CatalogoItem]) -> list[dict[str, object]]:
+    return [
+        {
+            "nombre": item.nombre,
+            "tipo_item": item.tipo_item,
+            "permite_decimal": bool(item.permite_decimal),
+        }
+        for item in items
+    ]
 PUESTO_MAP = {
     "AUXILIAR DE BODEGA": ("bodega", "Bodega"),
     "TECNICO DE SERVICIO": ("tecnico", "Logistica"),
@@ -767,7 +778,7 @@ def crear_form(request: Request, current_user: Usuario = Depends(get_current_use
         template_context(
             request,
             current_user,
-            catalogo_items=[i.nombre for i in catalogo_items],
+            catalogo_items=build_catalog_payload(catalogo_items),
             usuarios_activos=usuarios_activos,
             motivos_requisicion=MOTIVOS_REQUISICION,
         ),
@@ -829,8 +840,8 @@ async def crear(
         )
 
     catalogo_habilitado = {
-        normalize_catalog_name(row.nombre): row.nombre
-        for row in db.query(CatalogoItem.nombre).filter(CatalogoItem.activo.is_(True)).all()
+        normalize_catalog_name(row.nombre): row
+        for row in db.query(CatalogoItem).filter(CatalogoItem.activo.is_(True)).all()
     }
     if not catalogo_habilitado:
         raise HTTPException(status_code=400, detail="No hay items activos en catalogo")
@@ -839,7 +850,14 @@ async def crear(
         descripcion_normalizada = normalize_catalog_name(item_data["descripcion"])
         if descripcion_normalizada not in catalogo_habilitado:
             raise HTTPException(status_code=400, detail="Item no permitido en catalogo")
-        item_data["descripcion"] = catalogo_habilitado[descripcion_normalizada]
+        catalog_item = catalogo_habilitado[descripcion_normalizada]
+        cantidad = float(item_data["cantidad"])
+        if not catalog_item.permite_decimal and not cantidad.is_integer():
+            raise HTTPException(
+                status_code=400,
+                detail=f"El item {catalog_item.nombre} solo permite cantidades enteras",
+            )
+        item_data["descripcion"] = catalog_item.nombre
         agregar_item_db(db, req.id, **item_data)
 
     return redirect_with_message("/mis-requisiciones", "Requisicion creada", "success")
@@ -894,7 +912,7 @@ def editar_mi_requisicion_form(
             request,
             current_user,
             req=req,
-            catalogo_items=[i.nombre for i in catalogo_items],
+            catalogo_items=build_catalog_payload(catalogo_items),
             usuarios_activos=get_active_receptores(db),
             motivos_requisicion=MOTIVOS_REQUISICION,
         ),
@@ -963,8 +981,8 @@ async def editar_mi_requisicion(
         )
 
     catalogo_habilitado = {
-        normalize_catalog_name(row.nombre): row.nombre
-        for row in db.query(CatalogoItem.nombre).filter(CatalogoItem.activo.is_(True)).all()
+        normalize_catalog_name(row.nombre): row
+        for row in db.query(CatalogoItem).filter(CatalogoItem.activo.is_(True)).all()
     }
     if not catalogo_habilitado:
         raise HTTPException(status_code=400, detail="No hay items activos en catalogo")
@@ -973,7 +991,14 @@ async def editar_mi_requisicion(
         descripcion_normalizada = normalize_catalog_name(item_data["descripcion"])
         if descripcion_normalizada not in catalogo_habilitado:
             raise HTTPException(status_code=400, detail="Item no permitido en catalogo")
-        item_data["descripcion"] = catalogo_habilitado[descripcion_normalizada]
+        catalog_item = catalogo_habilitado[descripcion_normalizada]
+        cantidad = float(item_data["cantidad"])
+        if not catalog_item.permite_decimal and not cantidad.is_integer():
+            raise HTTPException(
+                status_code=400,
+                detail=f"El item {catalog_item.nombre} solo permite cantidades enteras",
+            )
+        item_data["descripcion"] = catalog_item.nombre
 
     req.cliente_codigo = cliente_codigo_limpio
     req.cliente_nombre = cliente_nombre_limpio
@@ -2180,6 +2205,7 @@ async def admin_catalogo_item_importar(
         key = normalize_catalog_name(nombre)
         existente = existentes.get(key)
         tipo_item = classify_catalog_item_type(nombre)
+        permite_decimal = catalog_item_allows_decimal(nombre)
         if existente:
             hubo_cambio = False
             if existente.activo != activar:
@@ -2188,12 +2214,22 @@ async def admin_catalogo_item_importar(
             if existente.tipo_item != tipo_item:
                 existente.tipo_item = tipo_item
                 hubo_cambio = True
+            if existente.permite_decimal != permite_decimal:
+                existente.permite_decimal = permite_decimal
+                hubo_cambio = True
             if hubo_cambio:
                 actualizados += 1
             else:
                 sin_cambios += 1
             continue
-        db.add(CatalogoItem(nombre=nombre, activo=activar, tipo_item=tipo_item))
+        db.add(
+            CatalogoItem(
+                nombre=nombre,
+                activo=activar,
+                tipo_item=tipo_item,
+                permite_decimal=permite_decimal,
+            )
+        )
         creados += 1
 
     db.commit()
@@ -2230,6 +2266,7 @@ def admin_catalogo_item_crear(
         nombre=nombre_limpio,
         activo=(activo == "on"),
         tipo_item=classify_catalog_item_type(nombre_limpio),
+        permite_decimal=catalog_item_allows_decimal(nombre_limpio),
     )
     db.add(nuevo)
     db.commit()
@@ -2281,6 +2318,7 @@ def admin_catalogo_item_editar(
     item.nombre = nombre_limpio
     item.activo = activo == "on"
     item.tipo_item = classify_catalog_item_type(nombre_limpio)
+    item.permite_decimal = catalog_item_allows_decimal(nombre_limpio)
     db.commit()
     return redirect_with_message("/admin/catalogo-items", "Item actualizado", "success")
 

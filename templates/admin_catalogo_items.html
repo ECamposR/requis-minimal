@@ -69,6 +69,7 @@
     <tr>
         <th>ID</th>
         <th>Nombre</th>
+        <th>Decimal</th>
         <th>Activo</th>
         <th>Acciones</th>
     </tr>
@@ -78,6 +79,7 @@
     <tr>
         <td>{{ item.id }}</td>
         <td>{{ item.nombre }}</td>
+        <td>{% if item.permite_decimal %}Si{% else %}No{% endif %}</td>
         <td>{% if item.activo %}{{ ui.status_badge('Activo') }}{% else %}{{ ui.status_badge('Inactivo') }}{% endif %}</td>
         <td class="table-actions">
             <a href="/admin/catalogo-items/{{ item.id }}/editar">Editar</a>
