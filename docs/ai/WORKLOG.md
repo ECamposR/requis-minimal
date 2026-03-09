@@ -2615,3 +2615,17 @@
   - `python -m compileall templates static app`
 - Resultado:
   - Los selects largos de receptor ahora se filtran en tiempo real, reduciendo errores y tiempo de captura en operación.
+
+## 2026-03-09 10:20 UTC-06:00 | tool: Codex CLI
+- Objetivo: corregir feedback insuficiente en `Gestionar Entrega` cuando la firma del receptor falla por PIN faltante/incorrecto.
+- Tareas: `REQ-105A`.
+- Cambios:
+  - `templates/bodega_gestionar.html`:
+    - el `error_message` ahora se muestra como banner `alert alert-error` visible encima del formulario.
+    - se agregó mensaje inline junto al campo `PIN del receptor`.
+    - al re-render con error, la vista hace scroll automático al banner para que el usuario vea la causa.
+  - `docs/ai/TASKS.md`, `docs/ai/HANDOFF.md`: gobernanza actualizada.
+- Comandos ejecutados:
+  - `python -m compileall templates`
+- Resultado:
+  - Si la entrega no avanza por problema de firma, el usuario ahora ve claramente por qué.

@@ -54,7 +54,10 @@
             {% endif %}
         </p>
         {% if error_message %}
-        <p class="form-error">{{ error_message }}</p>
+        <div class="alert alert-error" role="alert" data-delivery-error>
+            <strong>No se pudo registrar la entrega.</strong>
+            <div>{{ error_message }}</div>
+        </div>
         {% endif %}
         {% set receptor_actual = form_data.get('recibido_por_id', req.receptor_designado_id|string if req.receptor_designado_id else '') %}
         <form method="POST" action="/entregar/{{ req.id }}" class="gestion-form">
@@ -113,8 +116,16 @@
             </div>
             <label>
                 PIN del receptor
-                <input type="password" name="pin_receptor" placeholder="PIN para firma de recibido">
+                <input
+                    type="password"
+                    name="pin_receptor"
+                    placeholder="PIN para firma de recibido"
+                    aria-describedby="{% if error_message %}pin-receptor-error{% endif %}"
+                >
             </label>
+            {% if error_message %}
+            <small id="pin-receptor-error" class="form-error">Debes ingresar un PIN valido del receptor para continuar.</small>
+            {% endif %}
             <label>
                 Comentario
                 <input type="text" name="comentario" value="{{ form_data.get('comentario', '') }}" placeholder="Ej: faltante por inventario">
@@ -131,6 +142,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector(".gestion-form");
     if (!form) return;
+    const errorBanner = document.querySelector("[data-delivery-error]");
     const receptorSelect = form.querySelector("[data-receptor-select]");
     const receptorSearch = form.querySelector("[data-receptor-search]");
     const unlockButton = form.querySelector("[data-unlock-receptor]");
@@ -161,6 +173,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (receptorSearch) {
         receptorSearch.addEventListener("input", filterReceptores);
         filterReceptores();
+    }
+    if (errorBanner) {
+        errorBanner.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
     unlockButton.addEventListener("click", () => {

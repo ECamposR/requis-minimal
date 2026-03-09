@@ -79,6 +79,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-103` | `done` | Motivo/clasificación obligatorio al crear requisición (`motivo_requisicion`) con selector en UI, validación backend y persistencia para uso futuro en métricas/BI.
 - `REQ-104` | `done` | Edición de requisición por solicitante: nueva vista/POST de edición permitida solo si la requisición está `pendiente` y aún no aprobada; incluye actualización de datos principales e ítems.
 - `REQ-105` | `done` | Buscador de receptor en formularios con listas largas: filtro en tiempo real por nombre/rol para `receptor_designado` (crear/editar) y receptor de firma en bodega (completa/parcial).
+- `REQ-105A` | `done` | Fix UX en `Gestionar Entrega`: cuando falta PIN o firma es inválida, la pantalla ahora muestra banner de error visible e indicación inline junto al campo PIN.
 
 ## Despliegue Producción
 - `REQ-086` | `done` | Agregar Dockerfile, docker-compose.yml de la app y configuración de Caddy (`deploy/caddy/`) para despliegue LAN con reverse proxy. Red Docker externa `proxy` desacopla Caddy de cada servicio.
