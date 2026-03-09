@@ -118,6 +118,7 @@
 - `REQ-106A` completada: se corrigio la validacion JS del selector de items en crear/editar para aceptar tanto payload legado de strings como payload enriquecido de objetos, evitando falsos rechazos al enviar requisiciones.
 - `REQ-106B` completada: la misma restriccion de enteros/decimales ahora aplica en liquidacion. Solo items con `permite_decimal` en catalogo aceptan fracciones en `Regresa`, `Usado` y `No usado`; el resto se bloquea con mensaje claro en frontend y backend.
 - `REQ-106C` completada: se corrigio la validacion reactiva de `liquidar.html` para que el boton `Liquidar` se rehabilite al corregir un valor invalido, sin requerir recarga de pagina ni perder captura previa.
+- `REQ-106D` completada: se reforzo la reevaluacion del formulario de liquidacion con listeners adicionales y sincronizacion diferida para evitar que el boton quede congelado despues de editar inputs numericos invalidos.
 
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  

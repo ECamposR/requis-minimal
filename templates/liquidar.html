@@ -200,6 +200,18 @@
         const submitButton = document.querySelector("[data-liquidacion-submit]");
         const globalError = document.querySelector("[data-client-error]");
         const getRows = () => Array.from(document.querySelectorAll("[data-liquidacion-row]"));
+        let evaluateTimer = null;
+
+        const scheduleEvaluate = () => {
+            if (evaluateTimer) {
+                clearTimeout(evaluateTimer);
+            }
+            evaluateTimer = setTimeout(() => {
+                evaluateTimer = null;
+                evaluateAllRows();
+            }, 0);
+        };
+
         const evaluateAllRows = () => {
             const hasInvalid = getRows().some((row) => recalcRow(row).isInvalid);
             if (globalError) globalError.hidden = !hasInvalid;
@@ -218,7 +230,17 @@
                     eventName,
                     (event) => {
                         if (!shouldTrack(event.target)) return;
-                        requestAnimationFrame(evaluateAllRows);
+                        scheduleEvaluate();
+                    },
+                    true
+                );
+            });
+            ["paste", "focusout"].forEach((eventName) => {
+                form.addEventListener(
+                    eventName,
+                    (event) => {
+                        if (!shouldTrack(event.target)) return;
+                        scheduleEvaluate();
                     },
                     true
                 );
@@ -229,7 +251,8 @@
                 }
             });
         }
-        evaluateAllRows();
+        scheduleEvaluate();
+        window.addEventListener("pageshow", scheduleEvaluate);
     }
 
     bindLiquidacion();

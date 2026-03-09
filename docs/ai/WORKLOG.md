@@ -2704,3 +2704,16 @@
   - `python -m compileall templates`
 - Resultado:
   - Tras corregir un valor invalido en liquidacion, el boton se vuelve a habilitar sin recargar la pagina.
+
+## 2026-03-09 16:05 UTC-06:00 | tool: Codex CLI
+- Objetivo: reforzar la reevaluacion reactiva de `liquidar.html` tras persistir el congelamiento del boton `Liquidar`.
+- Tareas: `REQ-106D`.
+- Cambios:
+  - `templates/liquidar.html`:
+    - nuevo `scheduleEvaluate()` con `setTimeout(..., 0)` para recalcular despues de que el navegador asiente el valor del input.
+    - listeners adicionales `paste`, `focusout` y `pageshow`.
+    - consolidacion del ciclo de reevaluacion del boton en un punto unico.
+- Comandos ejecutados:
+  - `python -m compileall templates`
+- Resultado:
+  - La validacion de liquidacion queda mas tolerante a ediciones intermedias y eventos de navegador en inputs numericos.
