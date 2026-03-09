@@ -8,14 +8,14 @@ Aplicación interna LAN para gestionar requisiciones desde solicitud hasta liqui
 ## Estado actual
 - Versión operativa `v1.x` (ya no MVP base).
 - Flujo implementado:
-  - `pendiente` -> `aprobada` / `rechazada` -> `entregada` -> `liquidada` -> `liquidada_en_prokey`
+  - `pendiente` -> `aprobada` / `rechazada` -> `preparado` -> `entregada` -> `liquidada` -> `liquidada_en_prokey`
 - Funciones clave activas:
   - catálogo administrable (CRUD + importación CSV/XLSX + búsqueda)
   - entrega con firma de recibido por usuario + PIN
   - cambio de contraseña autoservicio para usuarios con login habilitado
   - liquidación por ítem con alertas y trazabilidad
   - detalle tipo dashboard con timeline
-  - generación de PDF para requisiciones liquidadas
+  - generación de PDF desde requisiciones aprobadas en adelante
 
 ## Stack
 - Backend: `FastAPI`
@@ -93,7 +93,7 @@ pytest -q tests/test_liquidacion.py
 
 ## PDF de liquidación
 - Endpoint: `GET /requisiciones/{id}/pdf`
-- Disponible cuando la requisición está en estado `liquidada` o `liquidada_en_prokey`
+- Disponible cuando la requisición está en estado `aprobada`, `preparado`, `entregada`, `liquidada` o `liquidada_en_prokey`
 - Respuesta inline (`application/pdf`) con:
   - resumen de estado
   - timeline

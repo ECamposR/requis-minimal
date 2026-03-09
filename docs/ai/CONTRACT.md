@@ -11,7 +11,7 @@ Construir un MVP interno de requisiciones en LAN, rapido y simple, evitando sobr
 - Sin integraciones externas (ERP, email, bots, webhooks).
 - Sin notificaciones automáticas en MVP.
 - Sin borradores y sin edicion post-envio.
-- Flujo de estados: `pendiente -> aprobada|rechazada -> entregada`.
+- Flujo de estados: `pendiente -> aprobada|rechazada -> preparado -> entregada -> liquidada -> liquidada_en_prokey`.
 
 ## 3) Autenticacion (decision cerrada)
 - Se usara `login por formulario` + `cookie de sesion firmada`.

@@ -72,6 +72,10 @@ def run_migrations() -> None:
                 conn.execute(text("ALTER TABLE requisiciones ADD COLUMN cliente_ruta_principal VARCHAR(4)"))
             if "approval_comment" not in columns:
                 conn.execute(text("ALTER TABLE requisiciones ADD COLUMN approval_comment TEXT"))
+            if "prepared_at" not in columns:
+                conn.execute(text("ALTER TABLE requisiciones ADD COLUMN prepared_at DATETIME"))
+            if "prepared_by" not in columns:
+                conn.execute(text("ALTER TABLE requisiciones ADD COLUMN prepared_by INTEGER REFERENCES usuarios(id)"))
             if "rejection_comment" not in columns:
                 conn.execute(text("ALTER TABLE requisiciones ADD COLUMN rejection_comment TEXT"))
             if "delivery_result" not in columns:
@@ -132,9 +136,9 @@ def run_migrations() -> None:
                 text("SELECT sql FROM sqlite_master WHERE type='table' AND name='requisiciones'")
             ).fetchone()
             table_sql = (table_sql_row[0] or "").lower() if table_sql_row else ""
-            if table_sql and "liquidada_en_prokey" not in table_sql:
+            if table_sql and ("liquidada_en_prokey" not in table_sql or "preparado" not in table_sql):
                 logger.warning(
-                    "Detectado CHECK antiguo en requisiciones.estado; reconstruyendo tabla para incluir liquidada_en_prokey"
+                    "Detectado CHECK antiguo en requisiciones.estado; reconstruyendo tabla para incluir preparado/liquidada_en_prokey"
                 )
                 conn.execute(text("PRAGMA foreign_keys=OFF"))
                 try:
@@ -157,6 +161,8 @@ def run_migrations() -> None:
                                 approved_at DATETIME,
                                 approved_by INTEGER REFERENCES usuarios(id),
                                 approval_comment TEXT,
+                                prepared_at DATETIME,
+                                prepared_by INTEGER REFERENCES usuarios(id),
                                 delivered_at DATETIME,
                                 delivered_by INTEGER REFERENCES usuarios(id),
                                 recibido_por_id INTEGER REFERENCES usuarios(id),
@@ -176,7 +182,7 @@ def run_migrations() -> None:
                                 rejection_reason TEXT,
                                 rejection_comment TEXT,
                                 CONSTRAINT ck_requisiciones_estado CHECK (
-                                    estado in ('pendiente', 'aprobada', 'rechazada', 'entregada', 'liquidada', 'liquidada_en_prokey')
+                                    estado in ('pendiente', 'aprobada', 'preparado', 'rechazada', 'entregada', 'liquidada', 'liquidada_en_prokey')
                                 )
                             )
                             """
@@ -188,6 +194,7 @@ def run_migrations() -> None:
                             INSERT INTO requisiciones (
                                 id, folio, solicitante_id, departamento, cliente_codigo, cliente_nombre, cliente_ruta_principal,
                                 estado, motivo_requisicion, justificacion, created_at, approved_at, approved_by, approval_comment,
+                                prepared_at, prepared_by,
                                 delivered_at, delivered_by, recibido_por_id, delivered_to, recibido_at, delivery_result,
                                 delivery_comment, receptor_designado_id, prokey_ref, liquidation_comment, liquidated_by,
                                 liquidated_at, prokey_liquidada_at, prokey_liquidada_por, rejected_at, rejected_by,
@@ -196,6 +203,7 @@ def run_migrations() -> None:
                             SELECT
                                 id, folio, solicitante_id, departamento, cliente_codigo, cliente_nombre, cliente_ruta_principal,
                                 estado, motivo_requisicion, justificacion, created_at, approved_at, approved_by, approval_comment,
+                                prepared_at, prepared_by,
                                 delivered_at, delivered_by, recibido_por_id, delivered_to, recibido_at, delivery_result,
                                 delivery_comment, receptor_designado_id, prokey_ref, liquidation_comment, liquidated_by,
                                 liquidated_at, prokey_liquidada_at, prokey_liquidada_por, rejected_at, rejected_by,

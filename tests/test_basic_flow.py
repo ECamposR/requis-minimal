@@ -927,10 +927,12 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
         folio="REQ-0001",
         solicitante_id=user.id,
         departamento="Operaciones",
-        estado="aprobada",
+        estado="preparado",
         justificacion="Requisicion para prueba de entrega",
         approved_by=aprobador.id,
         approved_at=datetime.now(),
+        prepared_by=bodega.id,
+        prepared_at=datetime.now(),
     )
     db_session.add(req)
     db_session.commit()
@@ -978,10 +980,12 @@ def test_bodega_puede_marcar_entrega_parcial(client: TestClient, db_session: Ses
         folio="REQ-0011",
         solicitante_id=user.id,
         departamento="Operaciones",
-        estado="aprobada",
+        estado="preparado",
         justificacion="Entrega parcial por faltante",
         approved_by=aprobador.id,
         approved_at=datetime.now(),
+        prepared_by=bodega.id,
+        prepared_at=datetime.now(),
     )
     db_session.add(req)
     db_session.commit()
@@ -998,11 +1002,7 @@ def test_bodega_puede_marcar_entrega_parcial(client: TestClient, db_session: Ses
     db_session.refresh(req)
 
     login(client, "bodega.1", "pass123")
-    response_inicio = client.post(
-        f"/entregar/{req.id}",
-        data={"resultado": "parcial"},
-        follow_redirects=False,
-    )
+    response_inicio = client.post(f"/entregar/{req.id}", data={"resultado": "parcial"}, follow_redirects=False)
     assert response_inicio.status_code == 303
     assert response_inicio.headers["location"] == f"/entregar/{req.id}/parcial"
 
@@ -1035,15 +1035,18 @@ def test_bodega_puede_marcar_entrega_parcial(client: TestClient, db_session: Ses
 def test_bodega_puede_abrir_vista_gestion_entrega(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
 
     req = Requisicion(
         folio="REQ-0202",
         solicitante_id=user.id,
         departamento="Operaciones",
-        estado="aprobada",
+        estado="preparado",
         justificacion="Vista dedicada de bodega",
         approved_by=aprobador.id,
         approved_at=datetime.now(),
+        prepared_by=bodega.id,
+        prepared_at=datetime.now(),
     )
     db_session.add(req)
     db_session.commit()
@@ -1056,6 +1059,37 @@ def test_bodega_puede_abrir_vista_gestion_entrega(client: TestClient, db_session
     assert req.folio in response.text
 
 
+def test_bodega_debe_preparar_antes_de_entregar(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req = Requisicion(
+        folio="REQ-0203",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="Debe pasar por preparado",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "bodega.1", "pass123")
+    preparar = client.post(f"/bodega/{req.id}/preparar", follow_redirects=False)
+    assert preparar.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "preparado"
+    assert req.prepared_by == bodega.id
+    assert req.prepared_at is not None
+
+    gestionar = client.get(f"/bodega/{req.id}/gestionar")
+    assert gestionar.status_code == 200
+    assert "Gestionar Entrega" in gestionar.text
+
+
 def test_bodega_puede_marcar_no_entregada(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
@@ -1065,10 +1099,12 @@ def test_bodega_puede_marcar_no_entregada(client: TestClient, db_session: Sessio
         folio="REQ-0012",
         solicitante_id=user.id,
         departamento="Operaciones",
-        estado="aprobada",
+        estado="preparado",
         justificacion="Sin inventario",
         approved_by=aprobador.id,
         approved_at=datetime.now(),
+        prepared_by=bodega.id,
+        prepared_at=datetime.now(),
     )
     db_session.add(req)
     db_session.commit()
@@ -1097,15 +1133,18 @@ def test_bodega_puede_marcar_no_entregada(client: TestClient, db_session: Sessio
 def test_bodega_entrega_completa_requiere_recibe(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
 
     req = Requisicion(
         folio="REQ-0013",
         solicitante_id=user.id,
         departamento="Operaciones",
-        estado="aprobada",
+        estado="preparado",
         justificacion="Validacion de quien recibe",
         approved_by=aprobador.id,
         approved_at=datetime.now(),
+        prepared_by=bodega.id,
+        prepared_at=datetime.now(),
     )
     db_session.add(req)
     db_session.commit()
@@ -1120,21 +1159,24 @@ def test_bodega_entrega_completa_requiere_recibe(client: TestClient, db_session:
 
     assert response.status_code == 400
     db_session.refresh(req)
-    assert req.estado == "aprobada"
+    assert req.estado == "preparado"
 
 
 def test_entrega_con_pin_incorrecto_no_procesa(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
 
     req = Requisicion(
         folio="REQ-0015",
         solicitante_id=user.id,
         departamento="Operaciones",
-        estado="aprobada",
+        estado="preparado",
         justificacion="PIN incorrecto",
         approved_by=aprobador.id,
         approved_at=datetime.now(),
+        prepared_by=bodega.id,
+        prepared_at=datetime.now(),
     )
     db_session.add(req)
     db_session.commit()
@@ -1154,22 +1196,25 @@ def test_entrega_con_pin_incorrecto_no_procesa(client: TestClient, db_session: S
 
     assert response.status_code == 400
     db_session.refresh(req)
-    assert req.estado == "aprobada"
+    assert req.estado == "preparado"
     assert req.recibido_por_id is None
 
 
 def test_entrega_con_receptor_inexistente_no_procesa(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
 
     req = Requisicion(
         folio="REQ-0016",
         solicitante_id=user.id,
         departamento="Operaciones",
-        estado="aprobada",
+        estado="preparado",
         justificacion="Receptor inexistente",
         approved_by=aprobador.id,
         approved_at=datetime.now(),
+        prepared_by=bodega.id,
+        prepared_at=datetime.now(),
     )
     db_session.add(req)
     db_session.commit()
@@ -1189,7 +1234,7 @@ def test_entrega_con_receptor_inexistente_no_procesa(client: TestClient, db_sess
 
     assert response.status_code == 400
     db_session.refresh(req)
-    assert req.estado == "aprobada"
+    assert req.estado == "preparado"
     assert req.recibido_por_id is None
 
 

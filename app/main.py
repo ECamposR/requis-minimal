@@ -36,6 +36,7 @@ from .crud import (
     ejecutar_liquidacion,
     marcar_liquidada_en_prokey,
     puede_liquidar,
+    puede_preparar,
     crear_requisicion_db,
     parse_items_from_form,
     puede_aprobar,
@@ -386,7 +387,10 @@ def can_view_requisicion(req: Requisicion, current_user: Usuario) -> bool:
         current_user.rol == "admin"
         or current_user.id == req.solicitante_id
         or current_user.rol in ["aprobador", "jefe_bodega"]
-        or (current_user.rol == "bodega" and req.estado in ["aprobada", "entregada", "liquidada", "liquidada_en_prokey"])
+        or (
+            current_user.rol == "bodega"
+            and req.estado in ["aprobada", "preparado", "entregada", "liquidada", "liquidada_en_prokey"]
+        )
     )
 
 
@@ -725,7 +729,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
 
     mis_requisiciones = mis_requisiciones_query.count()
     mis_pendientes = mis_requisiciones_query.filter(Requisicion.estado == "pendiente").count()
-    mis_aprobadas = mis_requisiciones_query.filter(Requisicion.estado == "aprobada").count()
+    mis_aprobadas = mis_requisiciones_query.filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
     mis_rechazadas = mis_requisiciones_query.filter(Requisicion.estado == "rechazada").count()
     mis_entregadas = mis_requisiciones_query.filter(Requisicion.estado == "entregada").count()
     mis_creadas_mes = mis_requisiciones_query.filter(Requisicion.created_at >= inicio_mes).count()
@@ -744,7 +748,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
     )
     pendientes_bodega = 0
     if current_user.rol in ["bodega", "admin", "jefe_bodega"]:
-        pendientes_bodega = db.query(Requisicion).filter(Requisicion.estado == "aprobada").count()
+        pendientes_bodega = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
     pendientes_entregar_panel = pendientes_bodega if current_user.rol in ["bodega", "admin", "jefe_bodega"] else aprobadas_panel
     rechazadas_panel = (
         db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
@@ -1100,23 +1104,26 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
         "pendiente_entregar": "aprobada",
     }
     estado_real = alias_estado.get(estado, estado)
-    estados_validos = {"pendiente", "aprobada", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"}
+    estados_validos = {"pendiente", "aprobada", "preparado", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"}
     query = (
         db.query(Requisicion)
         .options(
             joinedload(Requisicion.solicitante),
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.rechazador),
+            joinedload(Requisicion.preparador),
             joinedload(Requisicion.entregador),
             joinedload(Requisicion.liquidator),
         )
         .filter(
             Requisicion.estado.in_(
-                ["pendiente", "aprobada", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"]
+                ["pendiente", "aprobada", "preparado", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"]
             )
         )
     )
-    if estado_real in estados_validos:
+    if estado == "pendiente_entregar":
+        query = query.filter(Requisicion.estado.in_(["aprobada", "preparado"]))
+    elif estado_real in estados_validos:
         query = query.filter(Requisicion.estado == estado_real)
     if departamento and departamento != "todos":
         query = query.filter(Requisicion.departamento == departamento)
@@ -1246,6 +1253,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
     bodega_optionals = [
         joinedload(Requisicion.solicitante),
         joinedload(Requisicion.aprobador),
+        joinedload(Requisicion.preparador),
         joinedload(Requisicion.entregador),
         joinedload(Requisicion.liquidator),
     ]
@@ -1259,6 +1267,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         .filter(
             or_(
                 Requisicion.estado == "aprobada",
+                Requisicion.estado == "preparado",
                 Requisicion.estado == "entregada",
             )
         )
@@ -1266,6 +1275,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
     pendientes_query = pendientes_query.filter(
         or_(
             Requisicion.estado == "aprobada",
+            Requisicion.estado == "preparado",
             Requisicion.delivery_result.in_(["completa", "parcial"]),
         )
     )
@@ -1284,6 +1294,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
 
     pendientes_entrega = pendientes_query.order_by(
         Requisicion.approved_at.asc(),
+        Requisicion.prepared_at.asc(),
         Requisicion.delivered_at.asc(),
         Requisicion.created_at.asc(),
     ).all()
@@ -1293,6 +1304,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         .options(
             joinedload(Requisicion.solicitante),
             joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.preparador),
             joinedload(Requisicion.entregador),
         )
         .filter(Requisicion.estado.in_(["entregada", "liquidada", "liquidada_en_prokey"]))
@@ -1300,6 +1312,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(
             or_(
+                Requisicion.prepared_by == current_user.id,
                 Requisicion.delivered_by == current_user.id,
                 Requisicion.liquidated_by == current_user.id,
             )
@@ -1360,8 +1373,8 @@ def bodega_gestionar(
     )
     if not req:
         raise HTTPException(status_code=404, detail="Requisicion no encontrada")
-    if req.estado != "aprobada":
-        return redirect_with_message("/bodega", "Solo puedes gestionar requisiciones aprobadas", "warning")
+    if req.estado != "preparado":
+        return redirect_with_message("/bodega", "Solo puedes gestionar requisiciones preparadas", "warning")
     if not puede_entregar(req, current_user.rol):
         raise HTTPException(status_code=403, detail="No autorizado")
 
@@ -1376,6 +1389,32 @@ def bodega_gestionar(
             form_data={},
         ),
     )
+
+
+@app.post("/bodega/{req_id}/preparar")
+def bodega_preparar(
+    req_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    req = (
+        db.query(Requisicion)
+        .options(joinedload(Requisicion.items))
+        .filter(Requisicion.id == req_id)
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Requisicion no encontrada")
+    if not puede_preparar(req, current_user.rol):
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    transicionar_requisicion(
+        db,
+        req,
+        nuevo_estado="preparado",
+        actor_id=current_user.id,
+    )
+    return redirect_with_message("/bodega", "Requisicion marcada como preparada", "success")
 
 
 @app.post("/requisiciones/{req_id}/liquidar-prokey")
@@ -2401,6 +2440,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         joinedload(Requisicion.solicitante),
         joinedload(Requisicion.aprobador),
         joinedload(Requisicion.rechazador),
+        joinedload(Requisicion.preparador),
         joinedload(Requisicion.entregador),
         joinedload(Requisicion.recibido_por),
         joinedload(Requisicion.receptor_designado),
@@ -2439,6 +2479,14 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                 "fecha_hora": req.approved_at,
             }
         )
+    if req.prepared_at:
+        timeline.append(
+            {
+                "evento": "Requisicion preparada",
+                "actor": req.preparador.nombre if req.preparador else None,
+                "fecha_hora": req.prepared_at,
+            }
+        )
     if req.rejected_at:
         timeline.append(
             {
@@ -2450,7 +2498,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
     if req.delivered_at:
         timeline.append(
             {
-                "evento": "Preparacion/entrega de bodega",
+                "evento": "Entrega de bodega",
                 "actor": req.entregador.nombre if req.entregador else None,
                 "fecha_hora": req.delivered_at,
             }
@@ -2558,6 +2606,8 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "created_at": req.created_at,
         "approved_by": req.aprobador.nombre if req.aprobador else None,
         "approval_comment": req.approval_comment,
+        "prepared_by": req.preparador.nombre if req.preparador else None,
+        "prepared_at": req.prepared_at,
         "rejected_by": req.rechazador.nombre if req.rechazador else None,
         "rejection_comment": req.rejection_comment,
         "delivered_by": req.entregador.nombre if req.entregador else None,
@@ -2577,6 +2627,8 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "delivery_comment": req.delivery_comment,
         "rejection_reason": req.rejection_reason,
         "approved_at": req.approved_at,
+        "prepared_by": req.preparador.nombre if req.preparador else None,
+        "prepared_at": req.prepared_at,
         "rejected_at": req.rejected_at,
         "delivered_at": req.delivered_at,
         "prokey_ref": req.prokey_ref,
@@ -2588,7 +2640,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "prokey_liquidado_por_nombre": prokey_liquidator.nombre if prokey_liquidator else None,
         "pdf_url": (
             f"/requisiciones/{req.id}/pdf"
-            if req.estado in ("aprobada", "entregada", "liquidada", "liquidada_en_prokey")
+            if req.estado in ("aprobada", "preparado", "entregada", "liquidada", "liquidada_en_prokey")
             else None
         ),
         "timeline": timeline,
@@ -2606,6 +2658,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
             joinedload(Requisicion.items),
             joinedload(Requisicion.solicitante),
             joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.preparador),
             joinedload(Requisicion.entregador),
             joinedload(Requisicion.recibido_por),
             joinedload(Requisicion.liquidator),
@@ -2617,7 +2670,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         raise HTTPException(status_code=404, detail="Requisición no encontrada")
     if not can_view_requisicion(req, current_user):
         raise HTTPException(status_code=403, detail="No autorizado")
-    if req.estado not in ("aprobada", "entregada", "liquidada", "liquidada_en_prokey"):
+    if req.estado not in ("aprobada", "preparado", "entregada", "liquidada", "liquidada_en_prokey"):
         raise HTTPException(status_code=403, detail="PDF disponible solo desde requisiciones aprobadas")
 
     items_data = []
@@ -2665,6 +2718,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         "estado": req.estado,
         "created_at": str(req.created_at) if req.created_at else None,
         "approved_at": str(req.approved_at) if req.approved_at else None,
+        "prepared_at": str(req.prepared_at) if req.prepared_at else None,
         "delivered_at": str(req.delivered_at) if req.delivered_at else None,
         "recibido_at": str(req.recibido_at) if req.recibido_at else None,
         "liquidated_at": str(req.liquidated_at) if req.liquidated_at else None,
@@ -2673,6 +2727,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         "ruta": req.cliente_ruta_principal,
         "solicitante_nombre": req.solicitante.nombre if req.solicitante else None,
         "aprobador_nombre": req.aprobador.nombre if req.aprobador else None,
+        "preparador_nombre": req.preparador.nombre if req.preparador else None,
         "jefe_bodega_nombre": req.entregador.nombre if req.entregador else None,
         "liquidado_por_nombre": req.liquidator.nombre if req.liquidator else None,
         "recibido_por_nombre": req.recibido_por.nombre if req.recibido_por else None,

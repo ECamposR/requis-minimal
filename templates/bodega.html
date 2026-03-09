@@ -47,6 +47,8 @@
         <td>
             {% if req.estado == 'aprobada' %}
             {{ ui.status_badge('aprobada') }}
+            {% elif req.estado == 'preparado' %}
+            {{ ui.status_badge('preparado') }}
             {% else %}
             {{ ui.status_badge('entregada') }}
             {% endif %}
@@ -58,6 +60,8 @@
         <td>
             {% if req.estado == 'aprobada' %}
             {{ req.approved_at | fmt_dt }}
+            {% elif req.estado == 'preparado' %}
+            {{ req.prepared_at | fmt_dt }}
             {% else %}
             {{ req.delivered_at | fmt_dt }}
             {% endif %}
@@ -65,7 +69,11 @@
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td class="table-actions">
             {% if req.estado == 'aprobada' %}
-            <a href="/bodega/{{ req.id }}/gestionar" role="button" class="secondary">Gestionar</a>
+            <form method="POST" action="/bodega/{{ req.id }}/preparar" style="display:inline">
+                <button type="submit" class="secondary">Preparar</button>
+            </form>
+            {% elif req.estado == 'preparado' %}
+            <a href="/bodega/{{ req.id }}/gestionar" role="button" class="secondary">Entregar</a>
             {% elif req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
             <a href="/liquidar/{{ req.id }}" role="button" class="secondary">Liquidar</a>
             {% else %}

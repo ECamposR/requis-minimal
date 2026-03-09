@@ -9,6 +9,7 @@
         <option value="todos" {% if filtro_estado == 'todos' %}selected{% endif %}>Todos los estados</option>
         <option value="pendiente_aprobar" {% if filtro_estado == 'pendiente_aprobar' or filtro_estado == 'pendiente' %}selected{% endif %}>Pendiente de aprobar</option>
         <option value="pendiente_entregar" {% if filtro_estado == 'pendiente_entregar' or filtro_estado == 'aprobada' %}selected{% endif %}>Pendiente de entregar</option>
+        <option value="preparado" {% if filtro_estado == 'preparado' %}selected{% endif %}>Preparado</option>
         <option value="rechazada" {% if filtro_estado == 'rechazada' %}selected{% endif %}>Rechazada</option>
         <option value="entregada" {% if filtro_estado == 'entregada' %}selected{% endif %}>Entregada</option>
         <option value="liquidada" {% if filtro_estado == 'liquidada' %}selected{% endif %}>Liquidada</option>
@@ -48,6 +49,8 @@
                 {{ ui.status_badge('pendiente de aprobar') }}
             {% elif req.estado == 'aprobada' %}
                 {{ ui.status_badge('pendiente de entregar') }}
+            {% elif req.estado == 'preparado' %}
+                {{ ui.status_badge('preparado') }}
             {% elif req.estado == 'rechazada' %}
                 {{ ui.status_badge('rechazada') }}
             {% elif req.estado == 'entregada' %}
@@ -67,6 +70,8 @@
         <td>
             {% if req.estado == 'aprobada' and req.aprobador %}
                 {{ req.aprobador.nombre }}
+            {% elif req.estado == 'preparado' and req.preparador %}
+                {{ req.preparador.nombre }}
             {% elif req.estado == 'rechazada' and req.rechazador %}
                 {{ req.rechazador.nombre }}
             {% elif req.estado == 'entregada' and req.entregador %}

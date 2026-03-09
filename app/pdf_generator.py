@@ -169,6 +169,7 @@ def _estado_style(estado):
         "aprobada":  (colors.HexColor("#7c3aed"),
                       colors.HexColor("#ede9fe"),
                       colors.HexColor("#c4b5fd")),
+        "preparado": (C_AMBER, C_AMBER_BG, C_AMBER_BD),
         "pendiente": (C_AMBER, C_AMBER_BG, C_AMBER_BD),
         "rechazada": (C_RED,   C_RED_BG,   C_RED_BD),
     }.get(str(estado).lower(), (C_GRAY2, C_CARD_BG, C_SEP))
@@ -433,7 +434,7 @@ def _card_alertas(cv, req, x, top, w):
 # ─── 3. TABLA DE ÍTEMS ───────────────────────────────────────────────────────
 
 def _table_columns(req):
-    qty_label = "Solicitado" if str(req.get("estado", "")).lower() == "aprobada" else "Entregado"
+    qty_label = "Solicitado" if str(req.get("estado", "")).lower() in {"aprobada", "preparado"} else "Entregado"
     return [
         ("Descripción",  0.255, "left"),
         (qty_label,      0.07,  "center"),
@@ -522,7 +523,7 @@ def _items_table(cv, req, top):
         al_col  = C_RED if alerts else C_GRAY2
         qty_ref = (
             item.get("cantidad_solicitada")
-            if str(req.get("estado", "")).lower() == "aprobada"
+            if str(req.get("estado", "")).lower() in {"aprobada", "preparado"}
             else item.get("cantidad_entregada")
         )
 
@@ -669,7 +670,8 @@ def _timeline(cv, req, top):
     for lbl, actor_key, ts_key in [
         ("Req. creada",    "solicitante_nombre", "created_at"),
         ("Req. aprobada",  "aprobador_nombre",   "approved_at"),
-        ("Prep. bodega",   "jefe_bodega_nombre", "delivered_at"),
+        ("Prep. bodega",   "preparador_nombre", "prepared_at"),
+        ("Entregada",      "jefe_bodega_nombre", "delivered_at"),
         ("Recibido firma", "recibido_por_nombre","recibido_at"),
         ("Liquidada",      "liquidado_por_nombre","liquidated_at"),
     ]:

@@ -155,6 +155,12 @@ def puede_aprobar(requisicion: Requisicion, rol: str) -> bool:
 def puede_entregar(requisicion: Requisicion, rol: str) -> bool:
     if rol not in ["bodega", "admin", "jefe_bodega"]:
         return False
+    return requisicion.estado == "preparado"
+
+
+def puede_preparar(requisicion: Requisicion, rol: str) -> bool:
+    if rol not in ["bodega", "admin", "jefe_bodega"]:
+        return False
     return requisicion.estado == "aprobada"
 
 
@@ -362,6 +368,10 @@ def transicionar_requisicion(
         requisicion.approved_at = now_sv()
         requisicion.approved_by = actor_id
         requisicion.approval_comment = approval_comment
+    elif nuevo_estado == "preparado":
+        requisicion.estado = "preparado"
+        requisicion.prepared_at = now_sv()
+        requisicion.prepared_by = actor_id
     elif nuevo_estado == "rechazada":
         requisicion.estado = "rechazada"
         requisicion.rejected_at = now_sv()

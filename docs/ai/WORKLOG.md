@@ -1,5 +1,39 @@
 # Worklog (append-only)
 
+## 2026-03-09 10:32 UTC-6 | tool: Codex CLI
+- Objetivo: introducir estado operativo `preparado` antes de `entregada`, exigiendo preparación explícita de bodega antes de capturar la firma/PIN del receptor.
+- Tareas: `REQ-110`
+- Cambios:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/crud.py`
+  - `app/main.py`
+  - `app/pdf_generator.py`
+  - `static/app.js`
+  - `templates/bodega.html`
+  - `templates/aprobar.html`
+  - `templates/mis_requisiciones.html`
+  - `templates/macros/ui.html`
+  - `tests/test_basic_flow.py`
+  - `README.md`
+  - `docs/ai/CONTRACT.md`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app templates static tests`
+  - `.venv/bin/python -m pytest -q tests/test_basic_flow.py -k "prepar" -v`
+- Resultado:
+  - Nuevo estado `preparado` con trazabilidad `prepared_at` / `prepared_by`.
+  - `/bodega` ahora separa `Preparar` (cuando estado `aprobada`) de `Entregar` (cuando estado `preparado`).
+  - `Gestionar Entrega`, `POST /entregar/{id}` y flujo parcial exigen requisición `preparado`.
+  - Detalle API/modal, badges, filtros y PDF reconocen `preparado`; el PDF lo trata como fase pre-entrega y sigue mostrando cantidades solicitadas.
+  - Historial de bodega queda alineado también con `prepared_by` para trazabilidad personal.
+  - `python -m compileall app templates static tests` pasó sin errores.
+  - `pytest` focal volvió a quedarse colgado tras la colección (`tests/test_basic_flow.py` con plugin `anyio`), comportamiento ya visto en este entorno; no se observaron fallos de sintaxis ni importación.
+- Proximo paso:
+  - Smoke manual en `/bodega` validando secuencia `aprobada -> preparado -> entregada` y apertura de PDF tanto en `aprobada` como en `preparado`.
+
 ## 2026-03-05 14:03 UTC-6 | tool: Codex CLI
 - Objetivo: aplicar ajuste de permisos solicitado para REQ-099: permitir que `admin` también pueda ejecutar `Confirmar en Prokey`.
 - Tareas: `REQ-099E`

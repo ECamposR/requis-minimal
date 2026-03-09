@@ -26,6 +26,8 @@
                 {{ ui.status_badge('Pendiente de aprobar') }}
             {% elif req.estado == 'aprobada' %}
                 {{ ui.status_badge('Pendiente de entregar') }}
+            {% elif req.estado == 'preparado' %}
+                {{ ui.status_badge('Preparado') }}
             {% elif req.estado == 'rechazada' %}
                 {{ ui.status_badge('Rechazada') }}
             {% elif req.estado == 'entregada' %}

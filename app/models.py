@@ -37,6 +37,11 @@ class Usuario(Base):
         foreign_keys="Requisicion.delivered_by",
         back_populates="entregador",
     )
+    preparaciones_realizadas: Mapped[list["Requisicion"]] = relationship(
+        "Requisicion",
+        foreign_keys="Requisicion.prepared_by",
+        back_populates="preparador",
+    )
 
 
 class Requisicion(Base):
@@ -57,6 +62,8 @@ class Requisicion(Base):
     approved_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     approved_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     approval_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prepared_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
+    prepared_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     delivered_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     delivered_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     recibido_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
@@ -99,6 +106,11 @@ class Requisicion(Base):
         foreign_keys=[delivered_by],
         back_populates="entregas_realizadas",
     )
+    preparador: Mapped["Usuario | None"] = relationship(
+        "Usuario",
+        foreign_keys=[prepared_by],
+        back_populates="preparaciones_realizadas",
+    )
     recibido_por: Mapped["Usuario | None"] = relationship(
         "Usuario",
         foreign_keys=[recibido_por_id],
@@ -123,7 +135,7 @@ class Requisicion(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "estado in ('pendiente', 'aprobada', 'rechazada', 'entregada', 'liquidada', 'liquidada_en_prokey')",
+            "estado in ('pendiente', 'aprobada', 'preparado', 'rechazada', 'entregada', 'liquidada', 'liquidada_en_prokey')",
             name="ck_requisiciones_estado",
         ),
     )

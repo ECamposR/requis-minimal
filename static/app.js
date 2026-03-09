@@ -571,7 +571,7 @@ function verDetalle(id) {
                         </table>
                     </div>
                 </section>`;
-            const isPdfEnabled = ["aprobada", "entregada", "liquidada", "liquidada_en_prokey"].includes(data.estado) && !!data.pdf_url;
+            const isPdfEnabled = ["aprobada", "preparado", "entregada", "liquidada", "liquidada_en_prokey"].includes(data.estado) && !!data.pdf_url;
             const pdfAction = isPdfEnabled
                 ? `<a class="secondary" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer">Ver PDF</a>`
                 : `<button type="button" class="secondary btn-disabled" disabled title="${data.estado === "pendiente" ? "Disponible al aprobar" : "No disponible para este estado"}">Ver PDF</button>`;
@@ -622,6 +622,8 @@ function verDetalle(id) {
                     <article class="detalle-block dashboard-card dd-card">
                         <h4 class="dd-card-title">Estado liquidación</h4>
                         <div class="dd-kv"><div class="dd-kv-label">Estado</div><div class="dd-kv-value">${escapeHtml(data.estado || "-")}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Preparado por</div><div class="dd-kv-value">${escapeHtml(data.prepared_by || "-")}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Fecha preparación</div><div class="dd-kv-value">${fmtDateTime(data.prepared_at)}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Resultado entrega</div><div class="dd-kv-value">${resultHtml}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Por</div><div class="dd-kv-value">${escapeHtml(data.liquidated_by_name || data.delivered_by || "-")}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Recibido por</div><div class="dd-kv-value">${escapeHtml(data.recibido_por || data.delivered_to || "-")}</div></div>
