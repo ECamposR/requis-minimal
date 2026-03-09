@@ -2770,3 +2770,20 @@
   - `python -m compileall templates`
 - Resultado:
   - La referencia Prokey ya no se captura en liquidacion y queda reservada para visualizacion/actualizacion posterior en detalle.
+- Fecha: 2026-03-09
+- Objetivo: restringir el rol `bodega` a la operación de bodega, quitando acceso a creación e historial propio de requisiciones.
+- Archivos tocados:
+  - `app/main.py`
+  - `templates/partials/navbar.html`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "bodega|mis-requisiciones|/crear" app templates tests -S`
+  - `python -m compileall app templates tests`
+- Resultado:
+  - El rol `bodega` plano ya no ve `Nueva Requisicion` ni `Mis Requisiciones` en navbar/home.
+  - Intentos directos a `/crear`, `/mis-requisiciones`, editar y eliminar se redirigen a `/bodega` con mensaje.
+  - `jefe_bodega` no cambia: mantiene accesos mixtos de aprobar y bodega.

@@ -411,6 +411,20 @@ def puede_editar_prokey_ref(req: Requisicion, current_user: Usuario) -> bool:
     return req.estado == "liquidada" and (current_user.rol == "admin" or req.solicitante_id == current_user.id)
 
 
+def es_bodega_plano(current_user: Usuario) -> bool:
+    return current_user.rol == "bodega"
+
+
+def redirect_if_bodega_plain_accesses_own_requests(current_user: Usuario) -> RedirectResponse | None:
+    if es_bodega_plano(current_user):
+        return redirect_with_message(
+            "/bodega",
+            "El rol bodega solo puede operar desde la vista de bodega",
+            "warning",
+        )
+    return None
+
+
 def ensure_admin(current_user: Usuario) -> None:
     if current_user.rol != "admin":
         raise HTTPException(status_code=403, detail="No autorizado")
@@ -771,6 +785,9 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
 
 @app.get("/crear")
 def crear_form(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    restricted_redirect = redirect_if_bodega_plain_accesses_own_requests(current_user)
+    if restricted_redirect:
+        return restricted_redirect
     catalogo_items = (
         db.query(CatalogoItem)
         .filter(CatalogoItem.activo.is_(True))
@@ -802,6 +819,9 @@ async def crear(
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    restricted_redirect = redirect_if_bodega_plain_accesses_own_requests(current_user)
+    if restricted_redirect:
+        return restricted_redirect
     cliente_codigo_limpio = cliente_codigo.strip()
     cliente_nombre_limpio = cliente_nombre.strip()
     cliente_ruta_principal_limpia = cliente_ruta_principal.strip().upper()
@@ -872,6 +892,9 @@ async def crear(
 def mis_requisiciones(
     request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)
 ):
+    restricted_redirect = redirect_if_bodega_plain_accesses_own_requests(current_user)
+    if restricted_redirect:
+        return restricted_redirect
     requisiciones = (
         db.query(Requisicion)
         .filter(Requisicion.solicitante_id == current_user.id)
@@ -890,6 +913,9 @@ def editar_mi_requisicion_form(
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    restricted_redirect = redirect_if_bodega_plain_accesses_own_requests(current_user)
+    if restricted_redirect:
+        return restricted_redirect
     req = (
         db.query(Requisicion)
         .options(joinedload(Requisicion.items))
@@ -937,6 +963,9 @@ async def editar_mi_requisicion(
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    restricted_redirect = redirect_if_bodega_plain_accesses_own_requests(current_user)
+    if restricted_redirect:
+        return restricted_redirect
     req = (
         db.query(Requisicion)
         .options(joinedload(Requisicion.items))
@@ -1035,6 +1064,9 @@ def eliminar_mi_requisicion(
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    restricted_redirect = redirect_if_bodega_plain_accesses_own_requests(current_user)
+    if restricted_redirect:
+        return restricted_redirect
     req = (
         db.query(Requisicion)
         .filter(Requisicion.id == req_id, Requisicion.solicitante_id == current_user.id)

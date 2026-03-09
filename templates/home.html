@@ -7,15 +7,21 @@
             <h1>Panel de Requisiciones</h1>
             <p>Control centralizado de solicitudes, aprobaciones, entregas y seguimiento operativo.</p>
         </div>
+        {% if current_user.rol != 'bodega' %}
         <a href="/crear" role="button" class="home-new-btn">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             Nueva Requisición
         </a>
+        {% endif %}
     </header>
 
     <section class="home-kpi-grid">
         <article class="home-kpi-card">
+            {% if current_user.rol != 'bodega' %}
             <a href="/mis-requisiciones" class="kpi-detail-link">Ver detalle &gt;</a>
+            {% else %}
+            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
+            {% endif %}
             <span class="kpi-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             </span>
@@ -24,7 +30,11 @@
         </article>
 
         <article class="home-kpi-card">
+            {% if current_user.rol != 'bodega' %}
             <a href="/mis-requisiciones" class="kpi-detail-link">Ver detalle &gt;</a>
+            {% else %}
+            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
+            {% endif %}
             <span class="kpi-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             </span>

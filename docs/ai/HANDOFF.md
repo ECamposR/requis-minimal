@@ -123,6 +123,7 @@
 - `REQ-107` completada: crear/editar requisicion ahora incluye ayuda contextual en `Contexto operativo`, aclarando que `Instalacion inicial` se usa solo para `R1E` o `Demostracion`.
 - `REQ-107A` completada: la vista de liquidacion ahora incluye ayuda contextual breve sobre la regla operativa de captura para orientar a bodega.
 - `REQ-107B` completada: el campo `Referencia comprobante Prokey` se retiro de la vista de liquidacion; la referencia queda solo para consulta en detalle.
+- `REQ-108` completada: el rol `bodega` plano ya no puede crear ni consultar sus propias requisiciones; navbar/home ocultan esos accesos y backend redirige `/crear`, `/mis-requisiciones`, editar y eliminar hacia `/bodega` sin afectar `jefe_bodega`.
 
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  

@@ -197,6 +197,48 @@ def test_home_aprobador_grafico_usa_pendientes_globales(client: TestClient, db_s
     assert row_match.group(1) == "1"
 
 
+def test_bodega_no_ve_accesos_de_creacion_ni_mis_requisiciones(client: TestClient):
+    login(client, "bodega.1", "pass123")
+    response = client.get("/")
+    assert response.status_code == 200
+    html = response.text
+    assert "/crear" not in html
+    assert "/mis-requisiciones" not in html
+    assert "/bodega" in html
+
+
+def test_bodega_es_redirigido_si_intenta_abrir_crear_o_mis_requisiciones(client: TestClient):
+    login(client, "bodega.1", "pass123")
+    response_crear = client.get("/crear", follow_redirects=False)
+    response_mis = client.get("/mis-requisiciones", follow_redirects=False)
+    assert response_crear.status_code == 303
+    assert response_crear.headers["location"].startswith("/bodega?")
+    assert response_mis.status_code == 303
+    assert response_mis.headers["location"].startswith("/bodega?")
+
+
+def test_bodega_no_puede_crear_requisicion_por_post_directo(client: TestClient, db_session: Session):
+    login(client, "bodega.1", "pass123")
+    tecnico = db_session.query(Usuario).filter(Usuario.username == "tecnico.1").first()
+    response = client.post(
+        "/crear",
+        data={
+            "cliente_codigo": "C-1099",
+            "cliente_nombre": "Cliente bloqueado",
+            "cliente_ruta_principal": "RA02",
+            "receptor_designado_id": str(tecnico.id),
+            "motivo_requisicion": "Servicio pendiente",
+            "justificacion": "No debe permitir crear a bodega",
+            "items[0][descripcion]": "Cable UTP Cat6",
+            "items[0][cantidad]": "1",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/bodega?")
+    assert db_session.query(Requisicion).filter(Requisicion.cliente_nombre == "Cliente bloqueado").first() is None
+
+
 def test_crear_requisicion(client: TestClient, db_session: Session):
     login(client, "user.ops", "pass123")
 
