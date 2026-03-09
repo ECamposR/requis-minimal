@@ -153,6 +153,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-106D` | `done` | Hardening UX liquidacion: reevaluacion diferida del formulario y listeners adicionales para evitar boton `Liquidar` congelado tras corregir inputs numericos.
 - `REQ-106E` | `done` | Alerta visual de decimales no permitidos en liquidacion: banner global y resaltado de fila para identificar claramente el error.
 - `REQ-107` | `done` | Ayuda contextual en `Contexto operativo` de crear/editar requisicion con tooltip hover/focus/click para guiar uso de `Reposicion` vs `Instalacion inicial`.
+- `REQ-107A` | `done` | Ayuda contextual en liquidacion explicando la regla de captura: `Usado + No usado = Entregado` y, para consumibles, `Regresa = No usado`.
+- `REQ-107B` | `done` | UI liquidacion: removido el campo `Referencia comprobante Prokey`; la referencia queda visible solo en detalle.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

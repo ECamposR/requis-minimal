@@ -2746,3 +2746,27 @@
   - `python -m compileall templates static`
 - Resultado:
   - El usuario ahora puede consultar una explicacion breve de cuando usar `Reposicion` vs `Instalacion inicial` sin salir del formulario.
+
+## 2026-03-09 17:05 UTC-06:00 | tool: Codex CLI
+- Objetivo: orientar a bodega en la vista de liquidacion con una ayuda breve sobre las reglas de captura.
+- Tareas: `REQ-107A`.
+- Cambios:
+  - `templates/liquidar.html`:
+    - nuevo `?` contextual antes de las alertas del formulario de liquidacion.
+  - `static/theme.css`:
+    - ajuste menor de espaciado para el bloque de ayuda en liquidacion.
+- Comandos ejecutados:
+  - `python -m compileall templates static`
+- Resultado:
+  - La pantalla de liquidacion ahora explica de forma breve que `Usado + No usado = Entregado` y que, en consumibles, `Regresa = No usado`.
+
+## 2026-03-09 17:15 UTC-06:00 | tool: Codex CLI
+- Objetivo: simplificar la vista de liquidacion removiendo la captura de referencia Prokey.
+- Tareas: `REQ-107B`.
+- Cambios:
+  - `templates/liquidar.html`:
+    - se retiro el bloque `Referencia comprobante Prokey (opcional, se completa despues)`.
+- Comandos ejecutados:
+  - `python -m compileall templates`
+- Resultado:
+  - La referencia Prokey ya no se captura en liquidacion y queda reservada para visualizacion/actualizacion posterior en detalle.

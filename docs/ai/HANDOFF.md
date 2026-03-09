@@ -121,6 +121,8 @@
 - `REQ-106D` completada: se reforzo la reevaluacion del formulario de liquidacion con listeners adicionales y sincronizacion diferida para evitar que el boton quede congelado despues de editar inputs numericos invalidos.
 - `REQ-106E` completada: la liquidacion ahora muestra una alerta visual especifica cuando el bloqueo se debe a decimales no permitidos, con banner global y fila resaltada.
 - `REQ-107` completada: crear/editar requisicion ahora incluye ayuda contextual en `Contexto operativo`, aclarando que `Instalacion inicial` se usa solo para `R1E` o `Demostracion`.
+- `REQ-107A` completada: la vista de liquidacion ahora incluye ayuda contextual breve sobre la regla operativa de captura para orientar a bodega.
+- `REQ-107B` completada: el campo `Referencia comprobante Prokey` se retiro de la vista de liquidacion; la referencia queda solo para consulta en detalle.
 
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  

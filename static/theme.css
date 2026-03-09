@@ -276,6 +276,10 @@ a[role="button"].danger:hover {
     transform: translateY(0);
 }
 
+.liquidacion-help-inline {
+    margin-bottom: 0.65rem;
+}
+
 .item-demo-check {
     display: inline-flex;
     align-items: center;

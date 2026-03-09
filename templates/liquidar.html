@@ -23,6 +23,12 @@
         {{ error_message }}
     </article>
     {% endif %}
+    <div class="field-help-inline liquidacion-help-inline">
+        <button type="button" class="field-help-trigger" aria-label="Ayuda sobre reglas de liquidacion">?</button>
+        <div class="field-help-popover" role="note">
+            Para liquidar, <strong>Usado + No usado</strong> debe ser igual a <strong>Entregado</strong>. En items <strong>consumibles</strong>, ademas <strong>Regresa</strong> debe ser igual a <strong>No usado</strong>.
+        </div>
+    </div>
     <article class="liquidacion-inline-error liquidacion-inline-error-client" role="alert" data-client-error hidden>
         Hay items con cobertura o retorno inconsistente. Revisa Usado, No usado y Regresa.
     </article>
@@ -86,14 +92,6 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-
-        <div class="form-grid-3">
-            <label>
-                Referencia comprobante Prokey (opcional, se completa despues)
-                <input type="text" name="prokey_ref" value="{{ liquidacion_meta.get('prokey_ref', '') if liquidacion_meta else '' }}">
-                <small>Se usa para enlazar con el comprobante en Prokey una vez se cree.</small>
-            </label>
         </div>
 
         <label>
