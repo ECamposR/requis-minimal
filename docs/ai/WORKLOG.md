@@ -2787,3 +2787,33 @@
   - El rol `bodega` plano ya no ve `Nueva Requisicion` ni `Mis Requisiciones` en navbar/home.
   - Intentos directos a `/crear`, `/mis-requisiciones`, editar y eliminar se redirigen a `/bodega` con mensaje.
   - `jefe_bodega` no cambia: mantiene accesos mixtos de aprobar y bodega.
+- Fecha: 2026-03-09
+- Objetivo: habilitar impresión PDF desde estado `aprobada` en adelante, no solo tras liquidación.
+- Archivos tocados:
+  - `app/main.py`
+  - `static/app.js`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app static tests`
+- Resultado:
+  - `GET /requisiciones/{id}/pdf` ya permite `aprobada`, `entregada`, `liquidada` y `liquidada_en_prokey`.
+  - El detalle expone `pdf_url` desde `aprobada` y el botón `Ver PDF` queda habilitado en todos esos estados.
+  - `pendiente` sigue bloqueado con `403`.
+- Fecha: 2026-03-09
+- Objetivo: corregir el PDF previo a entrega para que no muestre cantidades entregadas cuando la requisición solo está aprobada.
+- Archivos tocados:
+  - `app/main.py`
+  - `app/pdf_generator.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall app tests`
+- Resultado:
+  - En estado `aprobada`, el PDF cambia el encabezado de la columna a `Solicitado`.
+  - La tabla usa `cantidad_solicitada` en vez de `cantidad_entregada` mientras no exista entrega.
+  - No se alteró la UI web ni la lógica de entrega/liquidación.

@@ -406,6 +406,87 @@ def test_aprobar_requisicion(client: TestClient, db_session: Session):
     assert req.approval_comment == "Aprobado para continuidad operativa"
 
 
+def test_pdf_disponible_desde_aprobada(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req = Requisicion(
+        folio="REQ-0099",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="PDF debe estar disponible desde aprobada",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        cliente_codigo="C-9090",
+        cliente_nombre="Cliente PDF",
+        cliente_ruta_principal="RA02",
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get(f"/requisiciones/{req.id}/pdf")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+
+
+def test_pdf_sigue_bloqueado_en_pendiente(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    req = Requisicion(
+        folio="REQ-0100",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="PDF no debe abrirse en pendiente",
+        cliente_codigo="C-9091",
+        cliente_nombre="Cliente PDF Pendiente",
+        cliente_ruta_principal="RA02",
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "user.ops", "pass123")
+    response = client.get(f"/requisiciones/{req.id}/pdf")
+    assert response.status_code == 403
+    assert response.json()["detail"] == "PDF disponible solo desde requisiciones aprobadas"
+
+
+def test_pdf_aprobada_usa_cantidad_solicitada(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req = Requisicion(
+        folio="REQ-0101",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="PDF debe mostrar cantidad solicitada antes de entrega",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        cliente_codigo="C-9092",
+        cliente_nombre="Cliente PDF Solicitado",
+        cliente_ruta_principal="RA02",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.add(
+        Item(
+            requisicion_id=req.id,
+            descripcion="Cable UTP Cat6",
+            cantidad=7,
+            cantidad_entregada=0,
+            unidad="unidad",
+        )
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get(f"/requisiciones/{req.id}/pdf")
+    assert response.status_code == 200
+    assert response.content.startswith(b"%PDF")
+
+
 def test_aprobador_puede_aprobar_otra_area(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

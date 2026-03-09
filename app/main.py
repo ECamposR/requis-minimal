@@ -2586,7 +2586,11 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "liquidated_at": req.liquidated_at,
         "prokey_liquidada_at": prokey_liquidada_at,
         "prokey_liquidado_por_nombre": prokey_liquidator.nombre if prokey_liquidator else None,
-        "pdf_url": f"/requisiciones/{req.id}/pdf" if req.estado in ("liquidada", "liquidada_en_prokey") else None,
+        "pdf_url": (
+            f"/requisiciones/{req.id}/pdf"
+            if req.estado in ("aprobada", "entregada", "liquidada", "liquidada_en_prokey")
+            else None
+        ),
         "timeline": timeline,
         "items": items_payload,
     }
@@ -2613,8 +2617,8 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         raise HTTPException(status_code=404, detail="Requisición no encontrada")
     if not can_view_requisicion(req, current_user):
         raise HTTPException(status_code=403, detail="No autorizado")
-    if req.estado not in ("liquidada", "liquidada_en_prokey"):
-        raise HTTPException(status_code=403, detail="PDF solo disponible para requisiciones liquidadas")
+    if req.estado not in ("aprobada", "entregada", "liquidada", "liquidada_en_prokey"):
+        raise HTTPException(status_code=403, detail="PDF disponible solo desde requisiciones aprobadas")
 
     items_data = []
     for item in req.items:
@@ -2636,6 +2640,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         items_data.append(
             {
                 "descripcion": item.descripcion,
+                "cantidad_solicitada": item.cantidad,
                 "cantidad_entregada": item.cantidad_entregada,
                 "cantidad_usada": item.qty_used,
                 "cantidad_no_usada": item.qty_left_at_client,

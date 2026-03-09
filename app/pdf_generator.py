@@ -432,19 +432,20 @@ def _card_alertas(cv, req, x, top, w):
 
 # ─── 3. TABLA DE ÍTEMS ───────────────────────────────────────────────────────
 
-# (nombre, fraccion_ancho, align)
-_COLS = [
-    ("Descripción",  0.255, "left"),
-    ("Entregado",    0.07,  "center"),
-    ("Tipo",         0.09,  "center"),
-    ("Contexto",     0.10,  "center"),
-    ("Usado",        0.065, "center"),
-    ("No usado",     0.065, "center"),
-    ("Regresa",      0.065, "center"),
-    ("DIF",          0.075, "center"),
-    ("Ingreso PK",   0.075, "center"),
-    ("Alertas",      0.135, "center"),
-]
+def _table_columns(req):
+    qty_label = "Solicitado" if str(req.get("estado", "")).lower() == "aprobada" else "Entregado"
+    return [
+        ("Descripción",  0.255, "left"),
+        (qty_label,      0.07,  "center"),
+        ("Tipo",         0.09,  "center"),
+        ("Contexto",     0.10,  "center"),
+        ("Usado",        0.065, "center"),
+        ("No usado",     0.065, "center"),
+        ("Regresa",      0.065, "center"),
+        ("DIF",          0.075, "center"),
+        ("Ingreso PK",   0.075, "center"),
+        ("Alertas",      0.135, "center"),
+    ]
 
 HDR_H  = 8   * mm   # altura cabecera tabla
 ROW_H  = 11  * mm   # altura base por fila (1 línea de descripción)
@@ -469,7 +470,8 @@ def _row_height(item):
 
 def _items_table(cv, req, top):
     items   = req.get("items", [])
-    widths  = [UW * f for _, f, _ in _COLS]
+    cols    = _table_columns(req)
+    widths  = [UW * f for _, f, _ in cols]
     x0      = ML
 
     rows_h  = [_row_height(it) for it in items]
@@ -484,7 +486,7 @@ def _items_table(cv, req, top):
     _box(cv, x0, top - HDR_H / 2, UW, HDR_H / 2, fill=C_HDR_BG, r=0)
 
     cx = x0
-    for (lbl, _, align), w in zip(_COLS, widths):
+    for (lbl, _, align), w in zip(cols, widths):
         tx = cx + w / 2 if align == "center" else cx + 3
         _str(cv, tx, top - (HDR_H - 7) / 2,
              lbl, font="Helvetica-Bold", size=6.5,
@@ -518,10 +520,15 @@ def _items_table(cv, req, top):
         al_txt  = (ALERT_MAP.get(alerts[0], alerts[0])
                    if alerts else "Sin alertas")
         al_col  = C_RED if alerts else C_GRAY2
+        qty_ref = (
+            item.get("cantidad_solicitada")
+            if str(req.get("estado", "")).lower() == "aprobada"
+            else item.get("cantidad_entregada")
+        )
 
         row_vals = [
             f"{item.get('descripcion', '—')}{' [Para Demo]' if item.get('es_demo') else ''}",
-            str(item.get("cantidad_entregada") or 0),
+            str(qty_ref or 0),
             mode_s, ctx_s,
             str(item.get("cantidad_usada")    or 0),
             str(item.get("cantidad_no_usada") or 0),
@@ -532,7 +539,7 @@ def _items_table(cv, req, top):
         ]
 
         cx = x0
-        for j, ((_, _, align), w, val) in enumerate(zip(_COLS, widths, row_vals)):
+        for j, ((_, _, align), w, val) in enumerate(zip(cols, widths, row_vals)):
             mid_x = cx + w / 2
 
             if j == 0:   # Descripción — wrap a múltiples líneas

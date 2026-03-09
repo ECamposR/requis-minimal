@@ -571,10 +571,10 @@ function verDetalle(id) {
                         </table>
                     </div>
                 </section>`;
-            const isPdfEnabled = (data.estado === "liquidada" || data.estado === "liquidada_en_prokey") && !!data.pdf_url;
+            const isPdfEnabled = ["aprobada", "entregada", "liquidada", "liquidada_en_prokey"].includes(data.estado) && !!data.pdf_url;
             const pdfAction = isPdfEnabled
                 ? `<a class="secondary" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer">Ver PDF</a>`
-                : `<button type="button" class="secondary btn-disabled" disabled title="${data.estado === "liquidada" ? "En desarrollo" : "Disponible al liquidar"}">Ver PDF</button>`;
+                : `<button type="button" class="secondary btn-disabled" disabled title="${data.estado === "pendiente" ? "Disponible al aprobar" : "No disponible para este estado"}">Ver PDF</button>`;
             const commentsToggleHtml = `
                 <details class="detalle-collapsible dd-collapse">
                     <summary>Otros comentarios y proceso</summary>
