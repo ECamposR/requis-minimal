@@ -213,7 +213,7 @@ a[role="button"].danger:hover {
 
 .field-help-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 0.8fr) auto;
     gap: 0.35rem;
     align-items: center;
 }
