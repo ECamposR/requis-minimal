@@ -164,6 +164,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-112` | `done` | UI de liquidacion: visibilidad de `Contexto operativo` y `Para Demo` por item, sin cambios de logica.
 - `REQ-112A` | `done` | UI de liquidacion: ocultar temporalmente la columna `Ocupo` para evitar confusion, manteniendo intacta la validacion interna.
 - `REQ-113` | `done` | Unificar nombres visibles de estado en `Mis Requisiciones`, `Aprobar` y `Bodega` usando la macro `status_badge` como fuente unica.
+- `REQ-113A` | `done` | UI de liquidacion: aumentar contraste visual del chip de `Contexto operativo` para mejorar legibilidad en tema dark.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

@@ -2943,3 +2943,19 @@
   - `python -m compileall templates`
 - Resultado:
   - La UI usa etiquetas de estado consistentes entre vistas: `Pendiente de aprobar`, `Aprobada`, `Preparado`, `Entregada`, `Liquidada` y `Liquidada en Prokey`.
+
+## 2026-03-10 18:49 UTC-06:00 | tool: Codex CLI
+- Objetivo: mejorar el contraste del chip de `Contexto operativo` en la vista de liquidacion para que deje de perderse visualmente.
+- Tareas: `REQ-113A`.
+- Archivos tocados:
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios:
+  - se reforzo el fondo del chip, el borde y el peso del texto
+  - se agrego leve `box-shadow` interno para separarlo mejor del panel dark
+- Comandos:
+  - `python -m compileall static`
+- Resultado:
+  - `Reposicion` / `Instalacion inicial` ahora se leen con mayor claridad en la captura de liquidacion.
