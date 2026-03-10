@@ -3000,3 +3000,20 @@
   - `python -m compileall app`
 - Resultado:
   - la generacion de respaldos ya no falla por `Attempt to overwrite 'filename' in LogRecord` y mantiene trazabilidad de backup/restore en logs.
+
+## 2026-03-10 20:28 UTC-06:00 | tool: Codex CLI
+- Objetivo: dejar en `README.md` una guia de contingencia explicita para reconstruir `.env` sin tener que buscar valores ni comandos en emergencia.
+- Tareas: `REQ-114B`.
+- Archivos tocados:
+  - `README.md`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios:
+  - se documento el valor exacto de `DATABASE_URL` usado hoy en Docker: `sqlite:////app/data/requisiciones.db`
+  - se agregaron comandos listos para generar un `SECRET_KEY`
+  - se agregaron pasos concretos para recrear `.env` y verificarlo desde el contenedor
+- Comandos:
+  - sin ejecucion adicional (cambio documental)
+- Resultado:
+  - el repo ya deja a mano el procedimiento de recuperacion de `.env` para escenarios de contingencia.

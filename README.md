@@ -79,6 +79,66 @@ Variables principales:
 - `LOG_BACKUP_COUNT` (default `5`)
 - `BACKUPS_DIR` (default `backups/`)
 
+### Reconstruir `.env` en emergencia
+Si se pierde el archivo `.env`, en este proyecto Docker debes recrearlo con estos valores minimos:
+
+```env
+DATABASE_URL=sqlite:////app/data/requisiciones.db
+SECRET_KEY=<SECRET_KEY_GENERADA>
+APP_NAME=Sistema de Requisiciones MVP
+```
+
+Notas:
+- `DATABASE_URL=sqlite:////app/data/requisiciones.db` es la ruta correcta actual para Docker.
+- Esa ruta funciona junto al volumen de `docker-compose.yml`:
+  - `./data:/app/data`
+- Si cambias `SECRET_KEY`, todas las sesiones activas se invalidan y los usuarios tendran que iniciar sesion de nuevo.
+
+### Generar un `SECRET_KEY` nuevo
+Usa cualquiera de estos comandos:
+
+```bash
+python - <<'PY'
+import secrets
+print(secrets.token_urlsafe(48))
+PY
+```
+
+o en una sola linea:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+### Pasos rapidos para reconstruir `.env`
+1. Crear el archivo:
+```bash
+cp .env.example .env
+```
+2. Editar `.env` y dejar:
+```env
+DATABASE_URL=sqlite:////app/data/requisiciones.db
+SECRET_KEY=<pega_aqui_la_clave_generada>
+APP_NAME=Sistema de Requisiciones MVP
+```
+3. Reiniciar la app:
+```bash
+docker compose up -d --build
+```
+
+### Verificacion rapida
+Confirma que el contenedor lea la ruta correcta de DB:
+
+```bash
+docker compose exec requisiciones python -c "from app.database import DATABASE_URL; print(DATABASE_URL)"
+```
+
+Debe imprimir:
+
+```text
+sqlite:////app/data/requisiciones.db
+```
+
 ## Usuarios semilla (init_db.py)
 - `admin / admin123`
 - `juan.perez / password`

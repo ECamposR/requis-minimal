@@ -135,6 +135,7 @@
 - `REQ-113A` completada: el chip de `Contexto operativo` en liquidacion subio contraste (fondo, borde y peso tipografico) para que `Reposicion` / `Instalacion inicial` no se pierdan sobre el fondo dark.
 - `REQ-114` completada: admin ya puede generar respaldos ZIP y restaurarlos desde UI dedicada (`/admin/respaldos`). El alcance queda limitado a la DB SQLite + manifest; la restauracion crea backup previo, bloquea temporalmente requests y fuerza nuevo login.
 - `REQ-114A` completada: se corrigio el primer bug operativo de `Respaldos`; el logger ya no intenta sobrescribir el atributo reservado `filename` de `LogRecord` y ahora registra `backup_filename/backup_source/safety_backup` sin romper la generacion del ZIP.
+- `REQ-114B` completada: `README.md` ya incluye guia de contingencia para reconstruir `.env`, con `DATABASE_URL` exacta de Docker, generacion de `SECRET_KEY`, pasos de recreacion y comando de verificacion.
 
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  
