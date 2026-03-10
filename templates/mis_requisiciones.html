@@ -22,23 +22,7 @@
         <td>{{ req.folio }}</td>
         <td>{{ req.departamento }}</td>
         <td>
-            {% if req.estado == 'pendiente' %}
-                {{ ui.status_badge('Pendiente de aprobar') }}
-            {% elif req.estado == 'aprobada' %}
-                {{ ui.status_badge('Pendiente de entregar') }}
-            {% elif req.estado == 'preparado' %}
-                {{ ui.status_badge('Preparado') }}
-            {% elif req.estado == 'rechazada' %}
-                {{ ui.status_badge('Rechazada') }}
-            {% elif req.estado == 'entregada' %}
-                {{ ui.status_badge('Entregada') }}
-            {% elif req.estado == 'liquidada' %}
-                {{ ui.status_badge('Liquidada') }}
-            {% elif req.estado == 'liquidada_en_prokey' %}
-                {{ ui.status_badge('liquidada_en_prokey') }}
-            {% else %}
-                {{ ui.status_badge(req.estado) }}
-            {% endif %}
+            {{ ui.status_badge(req.estado) }}
         </td>
         <td>{{ req.created_at | fmt_dt }}</td>
         <td class="table-actions">

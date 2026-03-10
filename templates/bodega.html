@@ -45,13 +45,7 @@
     <tr>
         <td>{{ req.folio }}</td>
         <td>
-            {% if req.estado == 'aprobada' %}
-            {{ ui.status_badge('aprobada') }}
-            {% elif req.estado == 'preparado' %}
-            {{ ui.status_badge('preparado') }}
-            {% else %}
-            {{ ui.status_badge('entregada') }}
-            {% endif %}
+            {{ ui.status_badge(req.estado) }}
         </td>
         <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
         <td>{{ req.departamento }}</td>

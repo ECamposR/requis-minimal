@@ -2923,3 +2923,23 @@
   - `python -m compileall templates`
 - Resultado:
   - La vista de liquidacion queda mas clara para bodega sin alterar la logica de validacion existente.
+
+## 2026-03-10 18:41 UTC-06:00 | tool: Codex CLI
+- Objetivo: unificar el nombre visible de los estados en `Mis Requisiciones`, `Aprobar` y `Bodega` para evitar mezcla entre estado real e interpretacion operativa.
+- Tareas: `REQ-113`.
+- Archivos tocados:
+  - `templates/macros/ui.html`
+  - `templates/mis_requisiciones.html`
+  - `templates/aprobar.html`
+  - `templates/bodega.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios:
+  - `status_badge` ahora traduce y capitaliza consistentemente estados reales y resultados de entrega
+  - las tablas de `Mis Requisiciones`, `Aprobar` y `Bodega` dejaron de pasar etiquetas divergentes como `Pendiente de entregar` para una requisicion `aprobada`
+  - el filtro visible de `Aprobar` para estado `aprobada` ahora se muestra como `Aprobada`
+- Comandos:
+  - `python -m compileall templates`
+- Resultado:
+  - La UI usa etiquetas de estado consistentes entre vistas: `Pendiente de aprobar`, `Aprobada`, `Preparado`, `Entregada`, `Liquidada` y `Liquidada en Prokey`.
