@@ -130,6 +130,7 @@
 - `REQ-110A` completada: el paso `Preparar` ya no cambia estado desde el listado; ahora abre una vista dedicada con tabla de ítems y botones `Preparado` / `Cancelar` para confirmar deliberadamente la transición a `preparado`.
 - `REQ-111` completada: `Ingreso PK (Bodega)` ya no equivale a `Regresa`. Para retornables ahora usa la formula compartida `min(used, returned) + max(returned - delivered, 0)`; consumibles siguen en `0`. El detalle web y el PDF salen del mismo payload/cuenta.
 - `REQ-112` completada: la pantalla de liquidacion ahora muestra por item el `Contexto operativo` (`Reposicion` / `Instalacion inicial`) y la etiqueta `Para Demo`, reutilizando solo datos ya persistidos y sin tocar validaciones ni formulas.
+- `REQ-112A` completada: la columna visual `Ocupo` se oculto de la captura de liquidacion; la suma `Usado + No usado` sigue usandose internamente para cobertura y mensajes, pero ya no se muestra como columna para reducir confusion.
 
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  

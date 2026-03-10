@@ -162,6 +162,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-107B` | `done` | UI liquidacion: removido el campo `Referencia comprobante Prokey`; la referencia queda visible solo en detalle.
 - `REQ-111` | `done` | Ajustar `Ingreso PK (Bodega)` para contar solo retornables usados que regresan, mas excedentes devueltos; detalle y PDF alineados con la misma formula.
 - `REQ-112` | `done` | UI de liquidacion: visibilidad de `Contexto operativo` y `Para Demo` por item, sin cambios de logica.
+- `REQ-112A` | `done` | UI de liquidacion: ocultar temporalmente la columna `Ocupo` para evitar confusion, manteniendo intacta la validacion interna.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

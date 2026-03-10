@@ -2907,3 +2907,19 @@
   - `python -m compileall templates static`
 - Resultado:
   - Bodega ya ve en la captura de liquidacion si cada item era `Para Demo` y bajo que `Contexto operativo` fue solicitado, sin cambio de logica.
+
+## 2026-03-10 18:33 UTC-06:00 | tool: Codex CLI
+- Objetivo: ocultar temporalmente la columna `Ocupo` de la vista de liquidacion para evitar confusiones, sin tocar reglas ni mensajes.
+- Tareas: `REQ-112A`.
+- Archivos tocados:
+  - `templates/liquidar.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios:
+  - se removio la columna visual `Ocupo` de la tabla
+  - el calculo `used + not_used` se mantiene interno para cobertura, diferencias y mensajes inline
+- Comandos:
+  - `python -m compileall templates`
+- Resultado:
+  - La vista de liquidacion queda mas clara para bodega sin alterar la logica de validacion existente.
