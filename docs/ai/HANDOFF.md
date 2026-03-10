@@ -128,6 +128,7 @@
 - `REQ-109A` completada: el PDF distingue el caso `aprobada` pre-entrega; la tabla de ítems ya no titula `Entregado` ni usa `cantidad_entregada`, sino `Solicitado` con la cantidad original de la requisición.
 - `REQ-110` completada: se agregó el estado previo `preparado` entre `aprobada` y `entregada`. Bodega ahora debe accionar `Preparar` primero y solo después puede abrir `Gestionar Entrega` para capturar firma/PIN y cerrar la entrega. El estado nuevo tiene trazabilidad (`prepared_at`/`prepared_by`), aparece en detalle/timeline/badges, entra en filtros y el PDF lo trata como etapa pre-entrega (muestra solicitado).
 - `REQ-110A` completada: el paso `Preparar` ya no cambia estado desde el listado; ahora abre una vista dedicada con tabla de ítems y botones `Preparado` / `Cancelar` para confirmar deliberadamente la transición a `preparado`.
+- `REQ-111` completada: `Ingreso PK (Bodega)` ya no equivale a `Regresa`. Para retornables ahora usa la formula compartida `min(used, returned) + max(returned - delivered, 0)`; consumibles siguen en `0`. El detalle web y el PDF salen del mismo payload/cuenta.
 
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  

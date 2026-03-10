@@ -37,6 +37,25 @@ def calcular_retorno_esperado(
     return used + not_used
 
 
+def calcular_ingreso_pk_bodega(
+    mode: str | None,
+    delivered: float,
+    used: float,
+    returned: float,
+) -> float:
+    normalized_mode = str(mode or "RETORNABLE").upper().strip()
+    if normalized_mode != "RETORNABLE":
+        return 0.0
+
+    delivered = float(delivered or 0)
+    used = float(used or 0)
+    returned = float(returned or 0)
+
+    used_that_returned = min(used, returned)
+    exceso_retorno = max(returned - delivered, 0.0)
+    return used_that_returned + exceso_retorno
+
+
 def generar_folio(db: Session) -> str:
     ultimo = db.query(Requisicion).order_by(Requisicion.id.desc()).first()
     numero = (ultimo.id + 1) if ultimo else 1

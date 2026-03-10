@@ -928,6 +928,33 @@ async def test_detalle_liquidada_campos_derivados(db_session: Session):
 
 
 @pytest.mark.anyio
+async def test_detalle_liquidada_ingreso_pk_excluye_no_usado_normal(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=3)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "3",
+                f"qty_used_{item.id}": "1",
+                f"qty_left_{item.id}": "2",
+                f"mode_{item.id}": "RETORNABLE",
+                "prokey_ref": "PK-DET-02B",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+    liq_item = payload["items"][0]
+    assert liq_item["returned"] == 3
+    assert liq_item["used"] == 1
+    assert liq_item["not_used"] == 2
+    assert liq_item["pk_ingreso_qty"] == 1
+
+
+@pytest.mark.anyio
 async def test_liquidada_es_solo_lectura(db_session: Session):
     req = create_req_entregada(db_session, cantidad=8)
     item = get_item(db_session, req)

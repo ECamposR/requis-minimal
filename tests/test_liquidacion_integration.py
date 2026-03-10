@@ -194,7 +194,7 @@ async def test_detalle_liquidada_muestra_campos_por_modo_y_pk(db_session: Sessio
     assert retornable["not_used"] == 2
     assert retornable["returned"] == 5
     assert retornable["difference"] == 0
-    assert retornable["pk_ingreso_qty"] == 5
+    assert retornable["pk_ingreso_qty"] == 3
 
     consumible = rows["Quimico B"]
     assert consumible["mode"] == "CONSUMIBLE"

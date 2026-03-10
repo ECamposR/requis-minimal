@@ -32,6 +32,7 @@ from .auth import (
 from .catalog_types import catalog_item_allows_decimal, classify_catalog_item_type
 from .crud import (
     agregar_item_db,
+    calcular_ingreso_pk_bodega,
     calcular_retorno_esperado,
     ejecutar_liquidacion,
     marcar_liquidada_en_prokey,
@@ -2587,7 +2588,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             contexto_operacion = normalize_contexto_operacion(item.contexto_operacion)
             expected_return = calcular_retorno_esperado(mode, qty_used, qty_not_used, contexto_operacion)
             difference = expected_return - qty_returned
-            pk_ingreso_qty = qty_returned if mode == "RETORNABLE" else 0
+            pk_ingreso_qty = calcular_ingreso_pk_bodega(mode, delivered, qty_used, qty_returned)
 
             parsed_alerts: list[dict[str, object]] = []
             if item.liquidation_alerts:
@@ -2730,10 +2731,11 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
                 "contexto_operacion": item.contexto_operacion,
                 "es_demo": bool(item.es_demo),
                 "prokey_ref": req.prokey_ref,
-                "pk_ingreso_qty": (
-                    item.qty_returned_to_warehouse
-                    if (item.liquidation_mode or "").upper() == "RETORNABLE"
-                    else None
+                "pk_ingreso_qty": calcular_ingreso_pk_bodega(
+                    item.liquidation_mode,
+                    item.cantidad_entregada or 0,
+                    item.qty_used or 0,
+                    item.qty_returned_to_warehouse or 0,
                 ),
                 "liquidation_alerts": alert_types,
                 "nota_liquidacion": item.item_liquidation_note,

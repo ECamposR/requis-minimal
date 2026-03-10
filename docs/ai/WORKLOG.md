@@ -2869,3 +2869,24 @@
   - En estado `aprobada`, el PDF cambia el encabezado de la columna a `Solicitado`.
   - La tabla usa `cantidad_solicitada` en vez de `cantidad_entregada` mientras no exista entrega.
   - No se alteró la UI web ni la lógica de entrega/liquidación.
+
+## 2026-03-10 18:10 UTC-06:00 | tool: Codex CLI
+- Objetivo: alinear la semantica de `Ingreso PK (Bodega)` con el criterio operativo nuevo: contar solo retornables usados que regresan y excedentes devueltos.
+- Tareas: `REQ-111`.
+- Archivos tocados:
+  - `app/crud.py`
+  - `app/main.py`
+  - `static/app.js`
+  - `tests/test_liquidacion.py`
+  - `tests/test_liquidacion_integration.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios:
+  - se agrego `calcular_ingreso_pk_bodega(...)` como fuente de verdad compartida
+  - el payload de detalle y el payload del PDF dejaron de mapear `pk_ingreso_qty` directamente desde `qty_returned_to_warehouse`
+  - se actualizo la expectativa del caso mixto y se agrego un caso explicito donde el retorno no usado normal deja de inflar `Ingreso PK`
+- Comandos:
+  - `python -m compileall app static tests`
+- Resultado:
+  - `Ingreso PK (Bodega)` ahora refleja `min(used, returned) + max(returned - delivered, 0)` para retornables y `0` para consumibles, tanto en el modal como en el PDF.
