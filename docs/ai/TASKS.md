@@ -161,6 +161,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-107A` | `done` | Ayuda contextual en liquidacion explicando la regla de captura: `Usado + No usado = Entregado` y, para consumibles, `Regresa = No usado`.
 - `REQ-107B` | `done` | UI liquidacion: removido el campo `Referencia comprobante Prokey`; la referencia queda visible solo en detalle.
 - `REQ-111` | `done` | Ajustar `Ingreso PK (Bodega)` para contar solo retornables usados que regresan, mas excedentes devueltos; detalle y PDF alineados con la misma formula.
+- `REQ-112` | `done` | UI de liquidacion: visibilidad de `Contexto operativo` y `Para Demo` por item, sin cambios de logica.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

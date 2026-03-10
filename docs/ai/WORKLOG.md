@@ -2890,3 +2890,20 @@
   - `python -m compileall app static tests`
 - Resultado:
   - `Ingreso PK (Bodega)` ahora refleja `min(used, returned) + max(returned - delivered, 0)` para retornables y `0` para consumibles, tanto en el modal como en el PDF.
+
+## 2026-03-10 18:24 UTC-06:00 | tool: Codex CLI
+- Objetivo: hacer visibles en la vista de liquidacion los metadatos operativos por item (`Contexto operativo` y `Para Demo`) sin tocar reglas ni persistencia.
+- Tareas: `REQ-112`.
+- Archivos tocados:
+  - `templates/liquidar.html`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios:
+  - se agrego un bloque visual debajo de la descripcion del item con chip de `Reposicion` / `Instalacion inicial`
+  - se hizo visible la etiqueta `Para Demo` en las filas de liquidacion
+- Comandos:
+  - `python -m compileall templates static`
+- Resultado:
+  - Bodega ya ve en la captura de liquidacion si cada item era `Para Demo` y bajo que `Contexto operativo` fue solicitado, sin cambio de logica.

@@ -54,8 +54,17 @@
                 <tbody>
                     {% for item in req.items %}
                     {% set values = liquidacion_values.get(item.id, {}) if liquidacion_values else {} %}
+                    {% set contexto_label = 'Instalacion inicial' if item.contexto_operacion == 'instalacion_inicial' else 'Reposicion' %}
                     <tr data-liquidacion-row data-contexto-operacion="{{ item.contexto_operacion or '' }}" data-permite-decimal="{{ 'true' if item.permite_decimal else 'false' }}" {% if item.id in item_incompletos %}class="row-incomplete"{% endif %}>
-                        <td>{{ item.descripcion }}</td>
+                        <td>
+                            <div class="liquidacion-item-name">{{ item.descripcion }}</div>
+                            <div class="liquidacion-item-meta">
+                                <span class="liquidacion-context-chip">{{ contexto_label }}</span>
+                                {% if item.es_demo %}
+                                <span class="badge warning item-demo-badge">Para Demo</span>
+                                {% endif %}
+                            </div>
+                        </td>
                         <td>
                             {% set resolved_mode = item.default_mode if item.default_mode in ['RETORNABLE', 'CONSUMIBLE'] else values.get('mode', item.default_mode) %}
                             {% if item.default_mode in ['RETORNABLE', 'CONSUMIBLE'] %}

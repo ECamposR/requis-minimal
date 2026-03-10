@@ -326,6 +326,32 @@ a[role="button"].danger:hover {
     margin-left: 0.45rem;
 }
 
+.liquidacion-item-name {
+    font-weight: 600;
+}
+
+.liquidacion-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    margin-top: 0.3rem;
+}
+
+.liquidacion-context-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(71, 136, 230, 0.12);
+    border: 1px solid rgba(71, 136, 230, 0.28);
+    color: #dcecff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
 .form-actions {
     display: flex;
     gap: 0.55rem;
