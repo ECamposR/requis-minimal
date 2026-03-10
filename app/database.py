@@ -1,9 +1,18 @@
 import os
 import logging
+import json
+import hashlib
+import sqlite3
+import tempfile
+import zipfile
 from collections.abc import Generator
+from datetime import datetime
+from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from .catalog_types import catalog_item_allows_decimal, classify_catalog_item_type
@@ -11,6 +20,7 @@ from .catalog_types import catalog_item_allows_decimal, classify_catalog_item_ty
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./requisiciones.db")
+BACKUP_FORMAT_VERSION = "requisiciones-backup-v1"
 
 engine = create_engine(
     DATABASE_URL,
@@ -27,6 +37,190 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+def is_sqlite_database() -> bool:
+    return DATABASE_URL.startswith("sqlite")
+
+
+def get_sqlite_database_path() -> Path:
+    if not is_sqlite_database():
+        raise RuntimeError("La funcionalidad de respaldo solo soporta SQLite")
+    url = make_url(DATABASE_URL)
+    database = url.database
+    if not database:
+        raise RuntimeError("DATABASE_URL no apunta a una base SQLite valida")
+    path = Path(database)
+    if not path.is_absolute():
+        path = (Path.cwd() / path).resolve()
+    return path
+
+
+def get_backup_directory() -> Path:
+    configured = os.getenv("BACKUPS_DIR", "backups")
+    path = Path(configured)
+    if not path.is_absolute():
+        path = (Path.cwd() / path).resolve()
+    return path
+
+
+def _local_now() -> datetime:
+    tz_name = os.getenv("TZ", "America/El_Salvador")
+    try:
+        return datetime.now(ZoneInfo(tz_name))
+    except Exception:
+        return datetime.now()
+
+
+def _backup_timestamp_slug() -> str:
+    return _local_now().strftime("%Y%m%d_%H%M%S")
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _sanitize_database_url() -> str:
+    if not is_sqlite_database():
+        return DATABASE_URL
+    return f"sqlite:///{get_sqlite_database_path().name}"
+
+
+def _collect_sqlite_tables() -> list[str]:
+    with engine.begin() as conn:
+        rows = conn.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+        ).fetchall()
+    return [row[0] for row in rows]
+
+
+def read_backup_manifest(archive_path: Path) -> dict[str, object]:
+    with zipfile.ZipFile(archive_path, "r") as zf:
+        try:
+            raw = zf.read("manifest.json")
+        except KeyError as exc:
+            raise ValueError("El respaldo no contiene manifest.json") from exc
+    try:
+        manifest = json.loads(raw.decode("utf-8"))
+    except Exception as exc:
+        raise ValueError("No se pudo leer el manifest del respaldo") from exc
+    if manifest.get("backup_format") != BACKUP_FORMAT_VERSION:
+        raise ValueError("Formato de respaldo no soportado")
+    return manifest
+
+
+def list_backup_archives() -> list[dict[str, object]]:
+    backup_dir = get_backup_directory()
+    if not backup_dir.exists():
+        return []
+    backups: list[dict[str, object]] = []
+    for archive_path in sorted(backup_dir.glob("*.zip"), key=lambda item: item.stat().st_mtime, reverse=True):
+        item = {
+            "filename": archive_path.name,
+            "size_bytes": archive_path.stat().st_size,
+            "modified_at": datetime.fromtimestamp(archive_path.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+            "generated_at": None,
+            "database_sha256": None,
+            "backup_format": None,
+        }
+        try:
+            manifest = read_backup_manifest(archive_path)
+        except Exception:
+            backups.append(item)
+            continue
+        item["generated_at"] = manifest.get("generated_at")
+        item["database_sha256"] = manifest.get("database_sha256")
+        item["backup_format"] = manifest.get("backup_format")
+        backups.append(item)
+    return backups
+
+
+def resolve_backup_archive(filename: str) -> Path:
+    safe_name = Path(filename).name
+    if safe_name != filename or not safe_name.endswith(".zip"):
+        raise ValueError("Nombre de respaldo invalido")
+    archive_path = get_backup_directory() / safe_name
+    if not archive_path.exists():
+        raise FileNotFoundError("Respaldo no encontrado")
+    return archive_path
+
+
+def create_backup_archive(prefix: str = "backup") -> Path:
+    db_path = get_sqlite_database_path()
+    if not db_path.exists():
+        raise FileNotFoundError("No se encontro la base de datos operativa")
+
+    backup_dir = get_backup_directory()
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    archive_name = f"{prefix}_{_backup_timestamp_slug()}.zip"
+    archive_path = backup_dir / archive_name
+
+    with tempfile.TemporaryDirectory(prefix="req-backup-") as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        snapshot_path = temp_dir_path / db_path.name
+        with sqlite3.connect(str(db_path), timeout=30) as source_db:
+            source_db.execute("PRAGMA busy_timeout = 5000")
+            with sqlite3.connect(str(snapshot_path), timeout=30) as snapshot_db:
+                source_db.backup(snapshot_db)
+        manifest = {
+            "backup_format": BACKUP_FORMAT_VERSION,
+            "generated_at": _local_now().strftime("%Y-%m-%d %H:%M:%S"),
+            "database_filename": db_path.name,
+            "database_sha256": _sha256_file(snapshot_path),
+            "database_size_bytes": snapshot_path.stat().st_size,
+            "database_url_sanitized": _sanitize_database_url(),
+            "app_name": os.getenv("APP_NAME", "Sistema de Requisiciones MVP"),
+            "app_version": os.getenv("APP_VERSION", "local"),
+            "tables": _collect_sqlite_tables(),
+            "secret_key_present": bool(os.getenv("SECRET_KEY")),
+        }
+        with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.write(snapshot_path, arcname=db_path.name)
+            archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
+
+    return archive_path
+
+
+def restore_backup_archive(archive_path: Path) -> dict[str, object]:
+    db_path = get_sqlite_database_path()
+    if not db_path.exists():
+        raise FileNotFoundError("No se encontro la base de datos operativa")
+
+    manifest = read_backup_manifest(archive_path)
+    safety_backup = create_backup_archive(prefix="pre_restore")
+
+    with tempfile.TemporaryDirectory(prefix="req-restore-") as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        with zipfile.ZipFile(archive_path, "r") as archive:
+            archive.extractall(temp_dir_path)
+
+        extracted_db = temp_dir_path / str(manifest.get("database_filename") or db_path.name)
+        if not extracted_db.exists():
+            db_candidates = list(temp_dir_path.glob("*.db"))
+            if not db_candidates:
+                raise ValueError("El respaldo no contiene una base SQLite valida")
+            extracted_db = db_candidates[0]
+
+        with sqlite3.connect(str(extracted_db), timeout=30) as source_db:
+            source_db.execute("SELECT name FROM sqlite_master LIMIT 1")
+
+        engine.dispose()
+        with sqlite3.connect(str(extracted_db), timeout=30) as source_db:
+            source_db.execute("PRAGMA busy_timeout = 5000")
+            with sqlite3.connect(str(db_path), timeout=30) as target_db:
+                target_db.execute("PRAGMA busy_timeout = 5000")
+                source_db.backup(target_db)
+        engine.dispose()
+        run_migrations()
+
+    return {
+        "manifest": manifest,
+        "safety_backup": safety_backup.name,
+    }
 
 
 def run_migrations() -> None:

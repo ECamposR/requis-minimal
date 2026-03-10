@@ -2959,3 +2959,44 @@
   - `python -m compileall static`
 - Resultado:
   - `Reposicion` / `Instalacion inicial` ahora se leen con mayor claridad en la captura de liquidacion.
+
+## 2026-03-10 20:05 UTC-06:00 | tool: Codex CLI
+- Objetivo: implementar respaldos y restauracion admin-only con alcance seguro sobre SQLite, sin tocar la logica operativa de requisiciones.
+- Tareas: `REQ-114`.
+- Archivos tocados:
+  - `.gitignore`
+  - `app/database.py`
+  - `app/main.py`
+  - `templates/admin_respaldos.html`
+  - `templates/partials/navbar.html`
+  - `README.md`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+  - `docs/ai/DECISIONS.md`
+- Cambios:
+  - se agregaron helpers de SQLite para generar respaldos ZIP consistentes usando la API de backup de SQLite, mas `manifest.json` con checksum y metadatos.
+  - se agrego pantalla admin `Respaldos` con generacion/descarga de backups guardados y restauracion desde respaldo guardado o ZIP subido.
+  - la restauracion ahora crea automaticamente un backup previo (`pre_restore_*`), activa un bloqueo temporal de nuevas requests y obliga a volver a iniciar sesion al terminar.
+  - se documento explicitamente que el alcance del respaldo es la DB + manifest, no codigo, Docker ni `.env`.
+- Comandos:
+  - `python -m compileall app templates`
+- Resultado:
+  - `admin` ya puede respaldar y restaurar rapidamente la data operativa desde UI sin copiar manualmente la DB, manteniendo una estrategia segura para SQLite.
+
+## 2026-03-10 20:18 UTC-06:00 | tool: Codex CLI
+- Objetivo: corregir el primer bug operativo de la nueva pantalla `Respaldos`, donde el logger rompia la generacion del ZIP por usar una clave reservada de `LogRecord`.
+- Tareas: `REQ-114A`.
+- Archivos tocados:
+  - `app/main.py`
+  - `app/logging_utils.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios:
+  - el evento `admin_backup_created` dejo de enviar `filename` en `extra=` y ahora usa `backup_filename`
+  - el formatter JSON se amplio para incluir `backup_filename`, `backup_source` y `safety_backup`
+- Comandos:
+  - `python -m compileall app`
+- Resultado:
+  - la generacion de respaldos ya no falla por `Attempt to overwrite 'filename' in LogRecord` y mantiene trazabilidad de backup/restore en logs.

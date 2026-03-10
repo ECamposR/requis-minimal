@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+{% block title %}Respaldos{% endblock %}
+{% block content %}
+{{ ui.page_header("Respaldos de la App", "Respaldo y restauracion rapida de la base operativa. Solo disponible para administracion.") }}
+
+<section class="view-panel panel">
+    {% if not backups_supported %}
+    <div class="alert alert-error">Esta funcionalidad solo esta disponible cuando la app usa SQLite.</div>
+    {% else %}
+    <article class="view-panel panel" style="margin: 0 0 1rem;">
+        <h3>Que incluye este respaldo</h3>
+        <ul>
+            <li>Base de datos completa de la app.</li>
+            <li>Manifest con fecha, formato, checksum y compatibilidad basica.</li>
+        </ul>
+        <p class="status-muted">No incluye codigo, imagen Docker, ni el archivo <code>.env</code>. Los respaldos se guardan en <code>{{ backup_dir }}</code>.</p>
+        <div class="form-actions">
+            <form method="POST" action="/admin/respaldos/generar" class="inline">
+                <button type="submit">Generar y descargar respaldo</button>
+            </form>
+        </div>
+    </article>
+
+    <article class="view-panel panel" style="margin: 0 0 1rem;">
+        <h3>Restaurar desde archivo</h3>
+        <p class="status-muted">La restauracion reemplaza la base actual, crea un backup automatico previo y obliga a volver a iniciar sesion.</p>
+        <form method="POST" action="/admin/respaldos/restaurar" enctype="multipart/form-data" class="gestion-form" onsubmit="return confirm('Esto reemplazara la base actual por el respaldo seleccionado. ¿Deseas continuar?');">
+            <label>Archivo ZIP de respaldo
+                <input type="file" name="file" accept=".zip" required>
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="danger">Restaurar respaldo</button>
+            </div>
+        </form>
+    </article>
+
+    <article class="view-panel panel">
+        <h3>Respaldos guardados</h3>
+        {% if backups %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Archivo</th>
+                    <th>Generado</th>
+                    <th>Tamano</th>
+                    <th>Checksum</th>
+                    <th>Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for backup in backups %}
+                <tr>
+                    <td><code>{{ backup.filename }}</code></td>
+                    <td>{{ backup.generated_at or backup.modified_at }}</td>
+                    <td>{{ backup.size_human }}</td>
+                    <td><code>{{ (backup.database_sha256 or 'sin manifest')[:12] }}{% if backup.database_sha256 %}...{% endif %}</code></td>
+                    <td class="table-actions">
+                        <a href="/admin/respaldos/{{ backup.filename }}/descargar">Descargar</a>
+                        <form method="POST" action="/admin/respaldos/{{ backup.filename }}/restaurar" class="inline" onsubmit="return confirm('Esto reemplazara la base actual con el respaldo {{ backup.filename }}. ¿Confirmar restauracion?');">
+                            <button type="submit" class="danger secondary">Restaurar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No hay respaldos guardados aun.</p>
+        {% endif %}
+    </article>
+    {% endif %}
+</section>
+{% endblock %}

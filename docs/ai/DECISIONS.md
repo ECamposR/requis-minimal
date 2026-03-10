@@ -79,3 +79,24 @@
   - Nueva columna en `items`.
   - El formulario de creacion captura el contexto por linea.
   - El detalle de liquidacion puede mostrar `RETORNABLE / Instalacion inicial` para auditoria.
+
+## ADR-006 | 2026-03-10 | Respaldo/restauracion admin con alcance a datos, no a infraestructura
+- Contexto:
+  - La app necesita una recuperacion rapida ante fallos operativos sin introducir complejidad de infraestructura desde la propia UI.
+  - La persistencia actual es SQLite y la configuracion critica llega por variables de entorno, no por un archivo administrado por la app.
+- Decision:
+  - Implementar una pantalla exclusiva de `admin` para generar respaldos ZIP y restaurarlos.
+  - El respaldo incluye solo:
+    - copia consistente de la base SQLite
+    - `manifest.json` con fecha, checksum y metadatos de compatibilidad
+  - La restauracion opera sobre la DB activa, crea un backup automatico previo y bloquea temporalmente nuevas requests mientras copia la base.
+- Motivo:
+  - Recuperar la data de negocio en minutos sin asumir control sobre Docker, codigo o `.env`.
+  - Evitar copias crudas inseguras de SQLite mientras la app esta escribiendo.
+- Alternativas descartadas:
+  - Copiar el archivo `.db` directamente desde la UI sin bloqueo ni backup API de SQLite.
+  - Intentar respaldar/restaurar tambien codigo, contenedor o `.env` desde la aplicacion.
+- Impacto:
+  - Nueva ruta admin para `Respaldos`.
+  - Nuevo directorio runtime `backups/` fuera de control de versiones.
+  - La restauracion obliga a volver a iniciar sesion y puede invalidar sesiones activas.

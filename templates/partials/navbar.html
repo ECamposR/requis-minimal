@@ -20,6 +20,7 @@
         {% if current_user.rol == 'admin' %}
         <li><a href="/admin/usuarios" class="nav-item {% if request.url.path.startswith('/admin/usuarios') %}is-active{% endif %}"><span>Usuarios</span></a></li>
         <li><a href="/admin/catalogo-items" class="nav-item {% if request.url.path.startswith('/admin/catalogo-items') %}is-active{% endif %}"><span>Catalogo</span></a></li>
+        <li><a href="/admin/respaldos" class="nav-item {% if request.url.path.startswith('/admin/respaldos') %}is-active{% endif %}"><span>Respaldos</span></a></li>
         {% endif %}
         <li><a href="/mi-cuenta/password" class="nav-item {% if request.url.path.startswith('/mi-cuenta/password') %}is-active{% endif %}"><span>Cambiar contrasena</span></a></li>
     </ul>

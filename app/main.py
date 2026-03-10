@@ -5,15 +5,17 @@ import secrets
 import unicodedata
 import uuid
 import logging
+from threading import Lock
 from io import BytesIO
 import csv
+import tempfile
 from datetime import datetime, timedelta
 from time import perf_counter
 from .crud import now_sv
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, status
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, or_
@@ -46,6 +48,14 @@ from .crud import (
     validar_liquidacion_item,
 )
 from .database import get_db, run_migrations
+from .database import (
+    create_backup_archive,
+    get_backup_directory,
+    is_sqlite_database,
+    list_backup_archives,
+    resolve_backup_archive,
+    restore_backup_archive,
+)
 from .logging_utils import clear_request_id, set_request_id, setup_logging
 from .models import CatalogoItem, Item, Requisicion, Usuario
 
@@ -80,6 +90,8 @@ MOTIVOS_REQUISICION = [
     "Cambio de Fragancia",
     "Servicio pendiente",
 ]
+MAINTENANCE_STATE = {"active": False, "reason": None}
+BACKUP_OPERATION_LOCK = Lock()
 
 
 def build_catalog_payload(items: list[CatalogoItem]) -> list[dict[str, object]]:
@@ -114,6 +126,43 @@ def get_client_ip(request: Request) -> str:
     return client.host if client else "-"
 
 
+def format_file_size(size_bytes: int) -> str:
+    size = float(size_bytes or 0)
+    for unit in ("B", "KB", "MB", "GB"):
+        if size < 1024 or unit == "GB":
+            if unit == "B":
+                return f"{int(size)} {unit}"
+            return f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size_bytes} B"
+
+
+def maintenance_response(request: Request) -> Response:
+    message = MAINTENANCE_STATE.get("reason") or "La aplicacion esta restaurando un respaldo. Intenta nuevamente en unos segundos."
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(status_code=503, content={"detail": message})
+    html = (
+        "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+        "<title>Mantenimiento</title></head>"
+        "<body style=\"font-family: Montserrat, sans-serif; background:#071a2e; color:#e7f0ff; display:flex; "
+        "align-items:center; justify-content:center; min-height:100vh; margin:0;\">"
+        "<div style=\"max-width:560px; padding:1.5rem; border:1px solid rgba(255,255,255,.12); "
+        "border-radius:16px; background:rgba(11,31,52,.96); box-shadow:0 12px 30px rgba(0,0,0,.28);\">"
+        "<h1 style=\"margin:0 0 .75rem; font-size:1.4rem; color:#98d3ff;\">Restaurando respaldo</h1>"
+        f"<p style=\"margin:0; line-height:1.55;\">{message}</p>"
+        "</div></body></html>"
+    )
+    return HTMLResponse(status_code=503, content=html)
+
+
+def build_backup_rows() -> list[dict[str, object]]:
+    rows = list_backup_archives()
+    for row in rows:
+        row["size_human"] = format_file_size(int(row.get("size_bytes") or 0))
+    return rows
+
+
 def get_session_user_id(request: Request) -> int | None:
     try:
         return request.session.get("user_id")
@@ -129,6 +178,21 @@ async def request_logging_middleware(request: Request, call_next):
     client_ip = get_client_ip(request)
     user_id = get_session_user_id(request)
     try:
+        if MAINTENANCE_STATE["active"] and not request.url.path.startswith("/static"):
+            response = maintenance_response(request)
+            response.headers["X-Request-ID"] = request_id
+            logger.warning(
+                "maintenance_blocked_request",
+                extra={
+                    "event": "maintenance_blocked_request",
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status_code": response.status_code,
+                    "client_ip": client_ip,
+                    "user_id": user_id,
+                },
+            )
+            return response
         response = await call_next(request)
         duration_ms = round((perf_counter() - start) * 1000, 2)
         response.headers["X-Request-ID"] = request_id
@@ -433,6 +497,15 @@ def redirect_if_bodega_plain_accesses_own_requests(current_user: Usuario) -> Red
 def ensure_admin(current_user: Usuario) -> None:
     if current_user.rol != "admin":
         raise HTTPException(status_code=403, detail="No autorizado")
+
+
+def with_backup_operation_lock() -> bool:
+    return BACKUP_OPERATION_LOCK.acquire(blocking=False)
+
+
+def release_backup_operation_lock() -> None:
+    if BACKUP_OPERATION_LOCK.locked():
+        BACKUP_OPERATION_LOCK.release()
 
 
 def build_users_import_report(rows: list[dict[str, str]], db: Session) -> dict[str, object]:
@@ -1953,6 +2026,168 @@ def admin_usuarios(request: Request, current_user: Usuario = Depends(get_current
         "admin_usuarios.html",
         template_context(request, current_user, usuarios=usuarios, estado=estado, import_report=None),
     )
+
+
+@app.get("/admin/respaldos")
+def admin_respaldos(request: Request, current_user: Usuario = Depends(get_current_user)):
+    ensure_admin(current_user)
+    return templates.TemplateResponse(
+        "admin_respaldos.html",
+        template_context(
+            request,
+            current_user,
+            backups_supported=is_sqlite_database(),
+            backups=build_backup_rows() if is_sqlite_database() else [],
+            backup_dir=str(get_backup_directory()),
+        ),
+    )
+
+
+@app.post("/admin/respaldos/generar")
+def admin_respaldos_generar(request: Request, current_user: Usuario = Depends(get_current_user)):
+    ensure_admin(current_user)
+    if not is_sqlite_database():
+        return redirect_with_message("/admin/respaldos", "Los respaldos automaticos solo soportan SQLite", "error")
+    if not with_backup_operation_lock():
+        return redirect_with_message("/admin/respaldos", "Ya hay una operacion de respaldo o restauracion en curso", "warning")
+    try:
+        archive_path = create_backup_archive()
+        logger.info(
+            "admin_backup_created",
+            extra={
+                "event": "admin_backup_created",
+                "user_id": current_user.id,
+                "backup_filename": archive_path.name,
+            },
+        )
+        return FileResponse(
+            path=str(archive_path),
+            media_type="application/zip",
+            filename=archive_path.name,
+        )
+    except Exception as exc:
+        logger.exception(
+            "admin_backup_failed",
+            extra={"event": "admin_backup_failed", "user_id": current_user.id},
+        )
+        return redirect_with_message("/admin/respaldos", f"No se pudo generar el respaldo: {exc}", "error")
+    finally:
+        release_backup_operation_lock()
+
+
+@app.get("/admin/respaldos/{backup_name}/descargar")
+def admin_respaldos_descargar(
+    backup_name: str,
+    current_user: Usuario = Depends(get_current_user),
+):
+    ensure_admin(current_user)
+    try:
+        archive_path = resolve_backup_archive(backup_name)
+    except Exception as exc:
+        return redirect_with_message("/admin/respaldos", str(exc), "error")
+    return FileResponse(path=str(archive_path), media_type="application/zip", filename=archive_path.name)
+
+
+def _perform_restore(
+    *,
+    request: Request,
+    current_user: Usuario,
+    archive_path,
+    source_label: str,
+) -> RedirectResponse:
+    if not with_backup_operation_lock():
+        return redirect_with_message("/admin/respaldos", "Ya hay una operacion de respaldo o restauracion en curso", "warning")
+
+    MAINTENANCE_STATE["active"] = True
+    MAINTENANCE_STATE["reason"] = "La aplicacion esta restaurando un respaldo administrativo. Vuelve a ingresar en unos segundos."
+    try:
+        result = restore_backup_archive(archive_path)
+        logger.warning(
+            "admin_restore_completed",
+            extra={
+                "event": "admin_restore_completed",
+                "user_id": current_user.id,
+                "backup_source": source_label,
+                "safety_backup": result["safety_backup"],
+            },
+        )
+    except Exception as exc:
+        logger.exception(
+            "admin_restore_failed",
+            extra={
+                "event": "admin_restore_failed",
+                "user_id": current_user.id,
+                "backup_source": source_label,
+            },
+        )
+        return redirect_with_message("/admin/respaldos", f"No se pudo restaurar el respaldo: {exc}", "error")
+    finally:
+        MAINTENANCE_STATE["active"] = False
+        MAINTENANCE_STATE["reason"] = None
+        release_backup_operation_lock()
+
+    request.session.clear()
+    return redirect_with_message(
+        "/login",
+        f"Respaldo restaurado. Backup de seguridad previo: {result['safety_backup']}. Inicia sesion nuevamente.",
+        "success",
+    )
+
+
+@app.post("/admin/respaldos/{backup_name}/restaurar")
+def admin_respaldos_restaurar_guardado(
+    backup_name: str,
+    request: Request,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    if not is_sqlite_database():
+        return redirect_with_message("/admin/respaldos", "La restauracion automatica solo soporta SQLite", "error")
+    try:
+        archive_path = resolve_backup_archive(backup_name)
+    except Exception as exc:
+        return redirect_with_message("/admin/respaldos", str(exc), "error")
+    db.close()
+    return _perform_restore(
+        request=request,
+        current_user=current_user,
+        archive_path=archive_path,
+        source_label=archive_path.name,
+    )
+
+
+@app.post("/admin/respaldos/restaurar")
+async def admin_respaldos_restaurar_subido(
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin(current_user)
+    if not is_sqlite_database():
+        return redirect_with_message("/admin/respaldos", "La restauracion automatica solo soporta SQLite", "error")
+    if not file.filename:
+        return redirect_with_message("/admin/respaldos", "Debes seleccionar un archivo ZIP", "error")
+    if not file.filename.lower().endswith(".zip"):
+        return redirect_with_message("/admin/respaldos", "Solo se aceptan archivos ZIP de respaldo", "error")
+    raw = await file.read()
+    if not raw:
+        return redirect_with_message("/admin/respaldos", "El archivo de respaldo esta vacio", "error")
+    db.close()
+    with tempfile.NamedTemporaryFile(prefix="restore-upload-", suffix=".zip", delete=False) as temp_file:
+        temp_file.write(raw)
+        temp_path = temp_file.name
+    try:
+        return _perform_restore(
+            request=request,
+            current_user=current_user,
+            archive_path=temp_path,
+            source_label=file.filename,
+        )
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 
 @app.post("/admin/usuarios/importar")

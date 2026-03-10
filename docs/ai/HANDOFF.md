@@ -133,6 +133,8 @@
 - `REQ-112A` completada: la columna visual `Ocupo` se oculto de la captura de liquidacion; la suma `Usado + No usado` sigue usandose internamente para cobertura y mensajes, pero ya no se muestra como columna para reducir confusion.
 - `REQ-113` completada: las vistas `Mis Requisiciones`, `Aprobar` y `Bodega` ya no renombran estados de forma distinta por pantalla. `status_badge` ahora normaliza etiquetas amigables (`Aprobada`, `Pendiente de aprobar`, `Liquidada en Prokey`, etc.) y las tablas consumen el estado real.
 - `REQ-113A` completada: el chip de `Contexto operativo` en liquidacion subio contraste (fondo, borde y peso tipografico) para que `Reposicion` / `Instalacion inicial` no se pierdan sobre el fondo dark.
+- `REQ-114` completada: admin ya puede generar respaldos ZIP y restaurarlos desde UI dedicada (`/admin/respaldos`). El alcance queda limitado a la DB SQLite + manifest; la restauracion crea backup previo, bloquea temporalmente requests y fuerza nuevo login.
+- `REQ-114A` completada: se corrigio el primer bug operativo de `Respaldos`; el logger ya no intenta sobrescribir el atributo reservado `filename` de `LogRecord` y ahora registra `backup_filename/backup_source/safety_backup` sin romper la generacion del ZIP.
 
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  

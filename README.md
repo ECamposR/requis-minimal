@@ -77,6 +77,7 @@ Variables principales:
 - `LOG_FILE` (default `app.log`)
 - `LOG_MAX_BYTES` (default `5242880`)
 - `LOG_BACKUP_COUNT` (default `5`)
+- `BACKUPS_DIR` (default `backups/`)
 
 ## Usuarios semilla (init_db.py)
 - `admin / admin123`
@@ -108,6 +109,20 @@ pytest -q tests/test_liquidacion.py
   - excepciones HTTP
   - login exitoso/fallido y logout
 - Opcional: archivo rotativo vía `LOG_TO_FILE=1`.
+
+## Respaldos y restauracion (solo admin)
+- Pantalla: `Respaldos`
+- Disponible solo cuando la app usa `SQLite`
+- Genera un archivo `.zip` con:
+  - copia consistente de la base de datos operativa
+  - `manifest.json` con fecha, formato y checksum
+- La restauracion:
+  - reemplaza la base actual por el respaldo seleccionado
+  - crea automaticamente un backup previo de seguridad
+  - obliga a volver a iniciar sesion
+- Alcance:
+  - recupera la data operativa de la app
+  - no restaura codigo, imagen Docker ni el archivo `.env`
 
 ## Despliegue
 ### Opción 1: local/systemd (simple)

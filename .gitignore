@@ -8,3 +8,4 @@ test_admin_users.db
 test_admin_catalog_items.db
 # Volumen de datos Docker (DB de producción)
 data/
+backups/

@@ -165,6 +165,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-112A` | `done` | UI de liquidacion: ocultar temporalmente la columna `Ocupo` para evitar confusion, manteniendo intacta la validacion interna.
 - `REQ-113` | `done` | Unificar nombres visibles de estado en `Mis Requisiciones`, `Aprobar` y `Bodega` usando la macro `status_badge` como fuente unica.
 - `REQ-113A` | `done` | UI de liquidacion: aumentar contraste visual del chip de `Contexto operativo` para mejorar legibilidad en tema dark.
+- `REQ-114` | `done` | Respaldos admin-only: generacion de ZIP con DB SQLite + manifest, listado/descarga de respaldos y restauracion segura con backup previo y bloqueo temporal de requests.
+- `REQ-114A` | `done` | Fix de logging en respaldos: el evento de generacion ya no usa la clave reservada `filename` en `LogRecord`; se reemplazo por `backup_filename` y el formatter ahora expone metadatos de backup/restore.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.
