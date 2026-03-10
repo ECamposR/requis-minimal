@@ -998,21 +998,31 @@ table td {
 
 .resultado-chip {
     display: inline-block;
-    padding: 0.18rem 0.55rem;
+    padding: 0.24rem 0.68rem;
     border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 600;
+    font-size: 0.8rem;
+    font-weight: 700;
     margin-top: 0.2rem;
+    border: 1px solid transparent;
+    letter-spacing: 0.01em;
 }
 
 .resultado-completa {
-    background: rgba(28, 118, 74, 0.35);
-    color: #9debc0;
+    background: #d8f7e5;
+    border-color: #65c48f;
+    color: #115a33;
 }
 
 .resultado-parcial {
-    background: rgba(147, 112, 35, 0.35);
-    color: #ffdc96;
+    background: #fff0c9;
+    border-color: #dca53b;
+    color: #825300;
+}
+
+.resultado-no-entregada {
+    background: #ffe1e7;
+    border-color: #e17f95;
+    color: #8e233c;
 }
 
 .resultado-no-entregada {

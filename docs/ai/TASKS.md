@@ -169,6 +169,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-114A` | `done` | Fix de logging en respaldos: el evento de generacion ya no usa la clave reservada `filename` en `LogRecord`; se reemplazo por `backup_filename` y el formatter ahora expone metadatos de backup/restore.
 - `REQ-114B` | `done` | README ampliado con procedimiento de emergencia para reconstruir `.env`: `DATABASE_URL` actual de Docker, generacion de `SECRET_KEY`, pasos de recreacion y verificacion post-reinicio.
 - `REQ-115` | `done` | Modal de detalle muestra el `receptor_designado` en la tarjeta `Informacion general`, alineado con el payload ya expuesto por la API.
+- `REQ-115A` | `done` | Mejora de contraste en `Resultado entrega` del detalle: `resultado-chip` ahora usa fondos y texto con mayor contraste para `completa`, `parcial` y `no_entregada`.
 
 ## Prioridad Baja
 - `REQ-013` | `done` | Guia breve de despliegue LAN y backup operativo.

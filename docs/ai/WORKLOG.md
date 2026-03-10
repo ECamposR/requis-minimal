@@ -3033,3 +3033,19 @@
   - sin ejecucion adicional (ajuste puntual de UI)
 - Resultado:
   - el detalle vuelve a mostrar quien fue designado para recoger/recibir el producto en la requisicion.
+
+## 2026-03-10 20:56 UTC-06:00 | tool: Codex CLI
+- Objetivo: corregir la baja legibilidad del chip `Resultado entrega` dentro del detalle de requisicion.
+- Tareas: `REQ-115A`.
+- Archivos tocados:
+  - `static/style.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios:
+  - se reforzaron los estilos de `resultado-chip` con mayor peso tipografico, borde y colores de alto contraste
+  - `completa`, `parcial` y `no_entregada` ahora usan combinaciones legibles sobre el fondo actual del dashboard
+- Comandos:
+  - `python -m compileall static`
+- Resultado:
+  - `Resultado entrega` vuelve a leerse con claridad dentro de la tarjeta `Estado liquidacion`.
