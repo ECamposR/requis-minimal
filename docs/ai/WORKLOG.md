@@ -3017,3 +3017,19 @@
   - sin ejecucion adicional (cambio documental)
 - Resultado:
   - el repo ya deja a mano el procedimiento de recuperacion de `.env` para escenarios de contingencia.
+
+## 2026-03-10 20:42 UTC-06:00 | tool: Codex CLI
+- Objetivo: hacer visible en el modal de detalle el `receptor_designado`, ya presente en el payload API pero ausente en la UI.
+- Tareas: `REQ-115`.
+- Archivos tocados:
+  - `static/app.js`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios:
+  - se renderiza `receptor_designado` (nombre + rol) en la tarjeta `Informacion general`
+  - no se tocaron backend ni permisos; el dato ya venia desde `/api/requisiciones/{id}`
+- Comandos:
+  - sin ejecucion adicional (ajuste puntual de UI)
+- Resultado:
+  - el detalle vuelve a mostrar quien fue designado para recoger/recibir el producto en la requisicion.

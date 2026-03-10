@@ -529,6 +529,9 @@ function verDetalle(id) {
                 ? escapeHtml(data.prokey_ref)
                 : `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
                    <a href="/requisiciones/${data.id}/prokey-ref" class="prokey-add-link">Agregar referencia Prokey</a>`;
+            const receptorDesignadoHtml = data.receptor_designado
+                ? `${escapeHtml(data.receptor_designado.nombre || "-")} (${escapeHtml(data.receptor_designado.rol || "-")})`
+                : "-";
             const liquidationComment = data.liquidation_comment
                 ? escapeHtml(data.liquidation_comment)
                 : "—";
@@ -618,6 +621,7 @@ function verDetalle(id) {
                         <div class="dd-kv"><div class="dd-kv-label">Código cliente</div><div class="dd-kv-value">${escapeHtml(data.cliente_codigo || "-")}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Ruta principal</div><div class="dd-kv-value">${escapeHtml(data.cliente_ruta_principal || "-")}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Solicitante</div><div class="dd-kv-value">${escapeHtml(data.solicitante || "-")}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Receptor designado</div><div class="dd-kv-value">${receptorDesignadoHtml}</div></div>
                     </article>
                     <article class="detalle-block dashboard-card dd-card">
                         <h4 class="dd-card-title">Estado liquidación</h4>
