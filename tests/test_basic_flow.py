@@ -487,6 +487,44 @@ def test_pdf_aprobada_usa_cantidad_solicitada(client: TestClient, db_session: Se
     assert response.content.startswith(b"%PDF")
 
 
+def test_pdf_incluye_receptor_designado_en_payload(client: TestClient, db_session: Session, monkeypatch):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    tecnico = db_session.query(Usuario).filter(Usuario.username == "tecnico.1").first()
+
+    req = Requisicion(
+        folio="REQ-0101A",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="PDF debe incluir receptor designado",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        cliente_codigo="C-9093",
+        cliente_nombre="Cliente PDF Receptor",
+        cliente_ruta_principal="RA03",
+        receptor_designado_id=tecnico.id,
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    captured = {}
+
+    def fake_generate(req_data):
+        captured.update(req_data)
+        return b"%PDF-TEST"
+
+    monkeypatch.setattr("app.pdf_generator.generate_requisicion_pdf", fake_generate)
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get(f"/requisiciones/{req.id}/pdf")
+    assert response.status_code == 200
+    assert response.content == b"%PDF-TEST"
+    assert captured["solicitante_nombre"] == user.nombre
+    assert captured["receptor_designado_nombre"] == tecnico.nombre
+    assert captured["receptor_designado_rol"] == tecnico.rol
+
+
 def test_aprobador_puede_aprobar_otra_area(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

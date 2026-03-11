@@ -2931,6 +2931,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
             joinedload(Requisicion.preparador),
             joinedload(Requisicion.entregador),
             joinedload(Requisicion.recibido_por),
+            joinedload(Requisicion.receptor_designado),
             joinedload(Requisicion.liquidator),
         )
         .filter(Requisicion.id == req_id)
@@ -2997,6 +2998,8 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         "codigo_cliente": req.cliente_codigo,
         "ruta": req.cliente_ruta_principal,
         "solicitante_nombre": req.solicitante.nombre if req.solicitante else None,
+        "receptor_designado_nombre": req.receptor_designado.nombre if req.receptor_designado else None,
+        "receptor_designado_rol": req.receptor_designado.rol if req.receptor_designado else None,
         "aprobador_nombre": req.aprobador.nombre if req.aprobador else None,
         "preparador_nombre": req.preparador.nombre if req.preparador else None,
         "jefe_bodega_nombre": req.entregador.nombre if req.entregador else None,

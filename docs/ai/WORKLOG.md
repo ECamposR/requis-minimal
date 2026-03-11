@@ -1,5 +1,31 @@
 # Worklog (append-only)
 
+## 2026-03-11 11:02 UTC-6 | tool: Codex CLI
+- Objetivo: reflejar en el PDF quien recibira el producto, mostrando el receptor designado justo debajo del solicitante.
+- Tareas: `REQ-120`
+- Cambios:
+  - `app/main.py`
+  - `app/pdf_generator.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "receptor_designado|solicitante|PDF|pdf" app/pdf_generator.py app/main.py tests/test_basic_flow.py tests/test_liquidacion.py`
+  - `sed -n '2965,3035p' app/main.py`
+  - `sed -n '350,430p' app/pdf_generator.py`
+  - `python -m compileall app/main.py app/pdf_generator.py tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "pdf_incluye_receptor_designado_en_payload"`
+- Resultado:
+  - El endpoint de PDF ahora carga `receptor_designado` y entrega `receptor_designado_nombre/rol` al generador.
+  - La card `Informacion general` del PDF agrega la fila `Recibe` justo debajo de `Solicitante`.
+  - Se amplio la altura de la card para conservar legibilidad del layout.
+  - Se agrego test con `monkeypatch` para validar que el payload entregado al generador incluye correctamente el receptor designado.
+  - `python -m compileall` paso sin errores.
+  - El `pytest` focal no emitio salida util antes del `timeout`, en linea con el comportamiento ambiental ya observado en este repo.
+- Proximo paso:
+  - Validar visualmente un PDF real para confirmar que la nueva fila mantiene buena jerarquia y no desborda la card.
+
 ## 2026-03-11 10:46 UTC-6 | tool: Codex CLI
 - Objetivo: corregir la vista `/bodega` para evitar que requisiciones activas aparezcan tanto en pendientes como en historial, y ajustar la nomenclatura visible del panel.
 - Tareas: `REQ-119`

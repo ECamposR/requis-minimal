@@ -300,7 +300,7 @@ def _header(cv, req, folio, top):
 # Altura fija de la card.  Calculamos: franja(3mm) + título(5mm) + sep(2mm) + 4filas×(5.5+2+8.5+4)mm
 # Cada fila label+valor: lsize=5.5 gap=2 vsize=8 padding_bajo=4 → 19.5pt ≈ 7mm
 # 4 filas = 28mm  +  título 5mm  +  franja 3mm  +  padding top 3mm = 39mm → redondeamos a 44mm
-CARD_H      = 57 * mm
+CARD_H      = 66 * mm
 CARD_FRANJA = 3 * mm    # franja de color top
 CARD_PAD    = 4 * mm    # padding horizontal interior
 
@@ -358,11 +358,16 @@ def _card_row(cv, x, top, label, value, *,
 def _card_info(cv, req, x, top, w):
     cur = _card_header(cv, x, top, w, "Información general")
     ROW_GAP = 5
+    receptor_designado = req.get("receptor_designado_nombre") or "—"
+    receptor_rol = req.get("receptor_designado_rol")
+    if receptor_rol:
+        receptor_designado = f"{receptor_designado} ({receptor_rol})"
     for lbl, val in [
         ("Cliente",        req.get("cliente") or "—"),
         ("Código cliente", str(req.get("codigo_cliente") or "—")),
         ("Ruta principal", req.get("ruta") or "—"),
         ("Solicitante",    req.get("solicitante_nombre") or "—"),
+        ("Recibe",         receptor_designado),
     ]:
         cur = _card_row(cv, x, cur, lbl, val, row_gap=ROW_GAP)
 
