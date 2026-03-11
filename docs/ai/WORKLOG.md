@@ -1,5 +1,30 @@
 # Worklog (append-only)
 
+## 2026-03-11 10:05 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la inconsistencia en `Gestionar Entrega` donde `no_entregada` seguia pidiendo PIN/firma por el receptor designado.
+- Tareas: `REQ-117`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega_gestionar.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "no_entregada|delivery_result|pin|recib" app/main.py templates/bodega_gestionar.html templates/bodega_entrega_parcial.html tests/test_basic_flow.py tests/test_liquidacion.py`
+  - `sed -n '1520,1645p' app/main.py`
+  - `sed -n '1080,1255p' tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "no_entregada or requiere_recibe or pin_incorrecto"`
+  - `python -m compileall app/main.py templates/bodega_gestionar.html tests/test_basic_flow.py`
+- Resultado:
+  - `POST /entregar/{id}` ahora ignora cualquier intento de validar firma cuando `resultado=no_entregada`; solo exige comentario y cierra el ciclo sin `recibido_por`.
+  - La vista `Gestionar Entrega` oculta receptor/PIN al elegir `No entregada` y cambia el texto de ayuda para reflejar la regla real.
+  - Se agrego test para cubrir el caso con receptor designado presente y `recibido_por_id` enviado sin PIN.
+  - `python -m compileall` paso sin errores en los archivos tocados.
+  - El `pytest` focal volvio a quedarse sin salida util y termino por `timeout`, consistente con el riesgo ya documentado para este entorno.
+- Proximo paso:
+  - Ejecutar prueba focal del flujo de entrega para confirmar que `no_entregada` guarda y que `completa` sigue exigiendo firma.
+
 ## 2026-03-11 09:20 UTC-6 | tool: Codex CLI
 - Objetivo: alinear la documentacion del proyecto con la fase real de `beta operativa en produccion`, manteniendo el principio de simplicidad y la gobernanza multi-IA agnostica al modelo/herramienta.
 - Tareas: `REQ-116`

@@ -63,13 +63,13 @@
         <form method="POST" action="/entregar/{{ req.id }}" class="gestion-form">
             <label>
                 Resultado
-                <select name="resultado" aria-label="Resultado entrega">
+                <select name="resultado" aria-label="Resultado entrega" data-delivery-result>
                     <option value="completa" {% if form_data.get('resultado') == 'completa' %}selected{% endif %}>Completa</option>
                     <option value="parcial" {% if form_data.get('resultado') == 'parcial' %}selected{% endif %}>Parcial</option>
                     <option value="no_entregada" {% if form_data.get('resultado') == 'no_entregada' %}selected{% endif %}>No entregada</option>
                 </select>
             </label>
-            <label>
+            <label data-firma-field>
                 Receptor
                 <input
                     type="text"
@@ -96,14 +96,14 @@
                     {% endfor %}
                 </select>
             </label>
-            <p>
+            <p data-firma-field>
                 <button type="button" class="secondary outline" data-unlock-receptor>Cambiar receptor</button>
             </p>
-            <div class="form-actions" data-receptor-change-actions hidden>
+            <div class="form-actions" data-receptor-change-actions hidden data-firma-field>
                 <button type="button" data-save-receptor-change>Guardar cambio</button>
                 <button type="button" class="secondary" data-cancel-receptor-change>Cancelar</button>
             </div>
-            <div class="alert alert-warning" data-receptor-warning hidden>
+            <div class="alert alert-warning" data-receptor-warning hidden data-firma-field>
                 ⚠️ Estás cambiando el receptor original. El receptor designado fue
                 <strong data-designado-text>
                     {% if req.receptor_designado %}
@@ -114,12 +114,13 @@
                 </strong>.
                 Asegúrate de que el cambio es intencional.
             </div>
-            <label>
+            <label data-firma-field>
                 PIN del receptor
                 <input
                     type="password"
                     name="pin_receptor"
                     placeholder="PIN para firma de recibido"
+                    data-pin-input
                     aria-describedby="{% if error_message %}pin-receptor-error{% endif %}"
                 >
             </label>
@@ -132,7 +133,7 @@
             </label>
             <button type="submit">Guardar resultado</button>
         </form>
-        <p class="page-subtitle">Completa y parcial requieren firma por receptor. Si seleccionas parcial, se abrira la pantalla para ajustar cantidades entregadas por item.</p>
+        <p class="page-subtitle" data-delivery-help>Completa y parcial requieren firma por receptor. Si seleccionas parcial, se abrira la pantalla para ajustar cantidades entregadas por item.</p>
         <p class="gestion-actions">
             <a href="/bodega" role="button" class="secondary outline">Volver a bodega</a>
         </p>
@@ -145,14 +146,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const errorBanner = document.querySelector("[data-delivery-error]");
     const receptorSelect = form.querySelector("[data-receptor-select]");
     const receptorSearch = form.querySelector("[data-receptor-search]");
+    const resultadoSelect = form.querySelector("[data-delivery-result]");
     const unlockButton = form.querySelector("[data-unlock-receptor]");
     const warning = form.querySelector("[data-receptor-warning]");
     const designadoText = form.querySelector("[data-designado-text]");
     const changeActions = form.querySelector("[data-receptor-change-actions]");
     const saveChangeButton = form.querySelector("[data-save-receptor-change]");
     const cancelChangeButton = form.querySelector("[data-cancel-receptor-change]");
-    if (!receptorSelect || !unlockButton || !warning || !changeActions || !saveChangeButton || !cancelChangeButton) return;
+    const pinInput = form.querySelector("[data-pin-input]");
+    const firmaFields = Array.from(form.querySelectorAll("[data-firma-field]"));
+    const helpText = form.querySelector("[data-delivery-help]");
+    if (!receptorSelect || !unlockButton || !warning || !changeActions || !saveChangeButton || !cancelChangeButton || !resultadoSelect || !pinInput) return;
     let baselineReceptorValue = receptorSelect.value || "";
+    const setFirmaDisponible = (enabled) => {
+        firmaFields.forEach((field) => {
+            field.hidden = !enabled;
+        });
+        if (!enabled) {
+            receptorSelect.disabled = true;
+            receptorSearch.disabled = true;
+            receptorSearch.value = "";
+            filterReceptores();
+            warning.hidden = true;
+            changeActions.hidden = true;
+            unlockButton.hidden = false;
+            pinInput.value = "";
+        }
+        if (helpText) {
+            helpText.textContent = enabled
+                ? "Completa y parcial requieren firma por receptor. Si seleccionas parcial, se abrira la pantalla para ajustar cantidades entregadas por item."
+                : "No entregada no requiere firma de recibido, pero si exige comentario para cerrar el ciclo de la requisicion.";
+        }
+    };
     const normalizeText = (value) => String(value || "")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -177,6 +202,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (errorBanner) {
         errorBanner.scrollIntoView({ behavior: "smooth", block: "center" });
     }
+
+    const syncByResultado = () => {
+        setFirmaDisponible(resultadoSelect.value !== "no_entregada");
+    };
 
     unlockButton.addEventListener("click", () => {
         baselineReceptorValue = receptorSelect.value || "";
@@ -213,7 +242,11 @@ document.addEventListener("DOMContentLoaded", () => {
         unlockButton.hidden = false;
     });
 
+    resultadoSelect.addEventListener("change", syncByResultado);
+    syncByResultado();
+
     form.addEventListener("submit", () => {
+        if (resultadoSelect.value === "no_entregada") return;
         if (!receptorSelect.disabled) return;
         const hidden = document.createElement("input");
         hidden.type = "hidden";

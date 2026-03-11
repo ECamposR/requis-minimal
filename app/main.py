@@ -1576,11 +1576,12 @@ def entregar(
             "error",
         )
 
+    requiere_firma = resultado in {"completa", "parcial"}
     receptor, firma_error = validar_receptor_firma(
         db,
-        recibido_por_id,
-        pin_receptor,
-        required=resultado in {"completa", "parcial"},
+        recibido_por_id if requiere_firma else "",
+        pin_receptor if requiere_firma else "",
+        required=requiere_firma,
     )
     if firma_error:
         return templates.TemplateResponse(

@@ -1135,6 +1135,48 @@ def test_bodega_puede_marcar_no_entregada(client: TestClient, db_session: Sessio
     assert req.delivery_comment == "No hay stock ni sustituto"
 
 
+def test_bodega_no_entregada_no_requiere_pin_aun_con_receptor_designado(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req = Requisicion(
+        folio="REQ-0012A",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="preparado",
+        justificacion="No entregada con receptor designado",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        prepared_by=bodega.id,
+        prepared_at=datetime.now(),
+        receptor_designado_id=user.id,
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "bodega.1", "pass123")
+    response = client.post(
+        f"/entregar/{req.id}",
+        data={
+            "resultado": "no_entregada",
+            "recibido_por_id": str(user.id),
+            "pin_receptor": "",
+            "comentario": "Cliente no estaba disponible para recibir",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+    assert req.delivery_result == "no_entregada"
+    assert req.recibido_por_id is None
+    assert req.recibido_at is None
+    assert req.delivered_to is None
+
+
 def test_bodega_entrega_completa_requiere_recibe(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
