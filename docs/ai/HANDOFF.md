@@ -3,7 +3,8 @@
 ## Estado actual
 - La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
-- Nuevo frente abierto en rama dedicada `feat/bi-dashboard` para explorar un dashboard de inteligencia de negocio orientado inicialmente a `aprobador` y `admin`, sin tocar todavia implementacion.
+- Frente activo en rama `feat/bi-dashboard`: `Dashboard de Contingencias (Fase 1)` para `admin`, `aprobador` y `jefe_bodega`.
+- Contexto de negocio clave del dashboard: esta app funciona como registro de contingencias cuando Prokey ya cerro rutas a las `14:00`. El dashboard debe explicar `por que`, `quien`, `que` y `cuando` ocurre ese uso para ayudar a reducirlo, no para medir productividad.
 - Rama de reinicio creada desde commit base pre-liquidacion: `feat/liquidacion-rework-v2` en `3d7702b`.
 - `REQ-060` completada en esta rama: ya existe estado `liquidada`, campos de liquidacion base y migracion SQLite robusta.
 - Baseline de entrega normalizado: en entrega completa, `cantidad_entregada` queda persistida por item (sin depender de fallbacks).
@@ -85,7 +86,10 @@
 - Ver `docs/ai/DECISIONS.md` ADR-004 para la justificación completa.
 
 ## En progreso
-- Definir el dashboard BI antes de programar: objetivo operativo, decisiones que debe habilitar, usuarios exactos, metricas de primera version, filtros y limites de alcance.
+- Ejecutar `EPIC-BI-01` Dashboard de Contingencias (Fase 1).
+- `REQ-118A` pendiente: backend (`GET /dashboard` + `GET /api/dashboard/basicos`) con guard de roles `admin/aprobador/jefe_bodega`.
+- `REQ-118B` pendiente: template SSR + grid 2x2 + enlace protegido por rol en navbar.
+- `REQ-118C` pendiente: `cargarDatos()` + `Chart.js` + 4 graficos base, incluyendo regla visual de alerta desde las 14:00.
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - Ejecutar smoke manual de entrega con firma y de liquidacion para validar experiencia completa de bloqueo/edicion.
 - Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
@@ -96,13 +100,13 @@
 
 ## Proximo paso exacto
 ### Frente BI / Dashboard (`REQ-118`):
-1. Definir para quien es el dashboard en V1 (`aprobador`, `admin`) y que decisiones operativas o gerenciales debe soportar.
-2. Listar las metricas candidatas y separarlas en:
-   - metricas descriptivas inmediatas
-   - metricas que requieren nuevas reglas o derivaciones
-3. Decidir filtros minimos de consulta (rango de fechas, departamento, estado, usuario, motivo).
-4. Confirmar que la primera version sera solo lectura, SSR y sin librerias pesadas de graficas salvo necesidad real.
-5. Solo despues de eso, desglosar tareas tecnicas de implementacion.
+1. Ejecutar `REQ-118A`: backend de vista/API con autorizacion estricta.
+2. Ejecutar `REQ-118B`: pantalla SSR y enlace de navegacion.
+3. Ejecutar `REQ-118C`: integracion `Chart.js` y render de las 4 metricas:
+   - Frecuencia por Motivo
+   - Top Usuarios Solicitantes
+   - Top Items Solicitados
+   - Mapa de Calor Horario con alerta visual 14:00+
 
 ### Frente despliegue (REQ-087 / REQ-088):
 1. En el servidor Docker: `docker network create proxy`
@@ -127,6 +131,7 @@
 - El entorno actual deja `TestClient` colgado incluso contra `/health`; para validar REQ-085 se usó compilación y smoke directo de modelo/auth/CRUD con DB temporal, pero falta smoke HTTP/manual real.
 
 ## Ultimo cambio cerrado
+- `REQ-118` completada: el workstream BI quedo formalmente abierto en rama dedicada y ya se descompuso en la epica `EPIC-BI-01` con tareas ejecutables `REQ-118A/B/C`.
 - `REQ-117` completada: `Gestionar Entrega` ya no exige firma/PIN cuando el resultado es `no_entregada`, incluso si existe receptor designado o el frontend envia `recibido_por_id`; backend ignora la firma en ese caso, UI oculta los campos y solo exige comentario para cerrar la requisicion.
 - `REQ-116` completada: documentacion de gobernanza y estado del producto actualizada para reflejar `beta operativa en produccion`, continuidad agnostica al LLM/herramienta y trazabilidad documental obligatoria como regla del repo.
 - `REQ-106` completada: el catalogo ahora persiste `permite_decimal` como fuente de verdad. Solo `CONCENTRADO SHF` y `LIQUIDO CONCENTRADO DESODORIZADOR` quedan habilitados para cantidades decimales; crear/editar requisicion ajusta la UX del campo cantidad y el backend rechaza decimales para cualquier otro item activo del catalogo.
