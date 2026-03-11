@@ -1,5 +1,24 @@
 # Worklog (append-only)
 
+## 2026-03-11 15:19 UTC-6 | tool: Codex CLI
+- Objetivo: alinear la terminologia del Monitor de Actividad al lenguaje operativo real, sustituyendo `fuga/fugas` por `diferencia/diferencias` sin cambiar la logica de calculo.
+- Tareas: `REQ-118D`, `REQ-118E`, `REQ-118F`
+- Cambios:
+  - `app/main.py`
+  - `templates/monitor_actividad.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "fuga|Fuga|fugas|Fugas" app templates tests docs/ai`
+- Resultado:
+  - El endpoint de auditoria ahora expone claves de payload alineadas a `diferencia`.
+  - La UI del monitor ya muestra `Diferencia/Diferencias` en titulos, estados y graficos.
+  - Las pruebas y la documentacion activa quedaron consistentes con la nueva terminologia.
+- Proximo paso:
+  - Validar visualmente el monitor con datos reales y confirmar si la siguiente iteracion agrega filtros o nuevas metricas.
+
 ## 2026-03-11 14:36 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-118E` y `REQ-118F`, completando la Fase 2 del Monitor de Actividad en frontend sin afectar la Fase 1.
 - Tareas: `REQ-118E`, `REQ-118F`
@@ -17,16 +36,16 @@
 - Resultado:
   - La vista del Monitor de Actividad ahora separa Fase 1 y Fase 2 con encabezados propios.
   - Se agregaron dos KPI cards: `Indice de Discrepancia` e `Inversion en Demos`.
-  - Se agregaron dos graficos nuevos: `Ranking de Fuga por Producto` y `Fugas por Tecnico`.
+  - Se agregaron dos graficos nuevos: `Ranking de Diferencia por Producto` y `Diferencias por Tecnico`.
   - El frontend consume `/api/dashboard/auditoria` en paralelo a `/api/dashboard/basicos`.
-  - Los graficos de fugas usan paleta de alerta (`danger` / `warning`) y cuentan con estado de carga/error igual que la Fase 1.
+  - Los graficos de diferencias usan paleta de alerta (`danger` / `warning`) y cuentan con estado de carga/error igual que la Fase 1.
   - Se reforzo el test SSR para comprobar presencia de la Fase 2, sus `canvas`, KPIs y la llamada al endpoint nuevo.
   - `REQ-118E` y `REQ-118F` pasan a `done`.
 - Proximo paso:
   - Validar visualmente la Fase 2 con datos reales y decidir la siguiente iteracion BI.
 
 ## 2026-03-11 14:18 UTC-6 | tool: Codex CLI
-- Objetivo: ejecutar `REQ-118D`, agregando backend de auditoria y fugas sin romper la Fase 1 del Monitor de Actividad.
+- Objetivo: ejecutar `REQ-118D`, agregando backend de auditoria y diferencias sin romper la Fase 1 del Monitor de Actividad.
 - Tareas: `REQ-118D`
 - Cambios:
   - `app/main.py`
@@ -43,12 +62,12 @@
 - Resultado:
   - Se agrego `GET /api/dashboard/auditoria` protegido por los mismos roles del Monitor de Actividad.
   - El endpoint procesa requisiciones cerradas (`liquidada` y `liquidada_en_prokey`) con `joinedload` de items y receptor designado.
-  - La fuga por item se calcula reutilizando `calcular_retorno_esperado`; solo diferencias positivas se acumulan como perdida.
-  - El payload devuelve KPIs (`indice_discrepancia_pct`, `requisiciones_con_fuga`, `requisiciones_cerradas`, `inversion_demos`) y datasets para `fuga_por_producto` y `fugas_por_tecnico`.
+  - La diferencia por item se calcula reutilizando `calcular_retorno_esperado`; solo diferencias positivas se acumulan como perdida.
+  - El payload devuelve KPIs (`indice_discrepancia_pct`, `requisiciones_con_diferencia`, `requisiciones_cerradas`, `inversion_demos`) y datasets para `diferencia_por_producto` y `diferencias_por_tecnico`.
   - Se agrego cobertura para acceso por rol y para el calculo agregado de auditoria, incluyendo contexto `instalacion_inicial` y demos.
   - `REQ-118D` pasa a `done`.
 - Proximo paso:
-  - Ejecutar `REQ-118E`: sumar la nueva seccion de auditoria/fugas a `monitor_actividad.html`.
+  - Ejecutar `REQ-118E`: sumar la nueva seccion de auditoria/diferencias a `monitor_actividad.html`.
 
 ## 2026-03-11 14:03 UTC-6 | tool: Codex CLI
 - Objetivo: registrar la Fase 2 del Monitor de Actividad antes de implementar backend o frontend, preservando intacta la Fase 1 ya operativa.
@@ -62,9 +81,9 @@
   - `sed -n '1,130p' docs/ai/HANDOFF.md`
   - `sed -n '1,60p' docs/ai/WORKLOG.md`
 - Resultado:
-  - Se formalizo `EPIC-BI-02` como `Monitor de Actividad (Fase 2: Auditoria y Fugas)`.
+  - Se formalizo `EPIC-BI-02` como `Monitor de Actividad (Fase 2: Auditoria y Diferencias)`.
   - La Fase 2 queda dividida en tres tareas separadas para backend, UI y JS.
-  - Quedo explicitado que la logica de fuga debe reutilizar `calcular_retorno_esperado` y que la Fase 1 no debe romperse ni reemplazarse.
+  - Quedo explicitado que la logica de diferencia debe reutilizar `calcular_retorno_esperado` y que la Fase 1 no debe romperse ni reemplazarse.
 - Proximo paso:
   - Esperar instruccion para comenzar `REQ-118D` sin adelantar implementacion de UI.
 

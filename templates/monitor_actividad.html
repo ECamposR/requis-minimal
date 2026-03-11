@@ -171,7 +171,7 @@
 
 <section class="monitor-section" aria-labelledby="monitor-fase-2">
     <header class="monitor-section-header">
-        <h2 id="monitor-fase-2">Fase 2: Auditoría y Fugas</h2>
+        <h2 id="monitor-fase-2">Fase 2: Auditoría y Diferencias</h2>
         <p>Audita mermas, discrepancias y señales de pérdida entre el retorno esperado y lo que realmente regresa a bodega.</p>
     </header>
 
@@ -188,33 +188,33 @@
         </article>
     </section>
 
-    <section class="dashboard-bi-grid" aria-label="Metricas de fugas">
+    <section class="dashboard-bi-grid" aria-label="Metricas de diferencias">
         <article class="panel view-panel dashboard-bi-card">
             <header>
                 <div>
-                    <h3>Ranking de Fuga por Producto</h3>
+                    <h3>Ranking de Diferencia por Producto</h3>
                     <p>Muestra qué ítems acumulan más unidades faltantes en requisiciones cerradas.</p>
                 </div>
                 <small>Top 10</small>
             </header>
             <div class="dashboard-bi-canvas-wrap">
-                <canvas id="chart-fuga-producto" aria-label="Grafico de fuga por producto"></canvas>
+                <canvas id="chart-diferencia-producto" aria-label="Grafico de diferencia por producto"></canvas>
             </div>
-            <p class="dashboard-bi-status" data-chart-status="fuga-producto">Cargando datos...</p>
+            <p class="dashboard-bi-status" data-chart-status="diferencia-producto">Cargando datos...</p>
         </article>
 
         <article class="panel view-panel dashboard-bi-card">
             <header>
                 <div>
-                    <h3>Fugas por Tecnico</h3>
+                    <h3>Diferencias por Tecnico</h3>
                     <p>Resalta qué receptores designados acumulan más unidades faltantes reportadas.</p>
                 </div>
                 <small>Top 5</small>
             </header>
             <div class="dashboard-bi-canvas-wrap">
-                <canvas id="chart-fuga-tecnico" aria-label="Grafico de fugas por tecnico"></canvas>
+                <canvas id="chart-diferencia-tecnico" aria-label="Grafico de diferencias por tecnico"></canvas>
             </div>
-            <p class="dashboard-bi-status" data-chart-status="fuga-tecnico">Cargando datos...</p>
+            <p class="dashboard-bi-status" data-chart-status="diferencia-tecnico">Cargando datos...</p>
         </article>
     </section>
 </section>
@@ -464,7 +464,7 @@ function renderHorarioChart(data) {
 
 function renderAuditKpis(kpis) {
     const cerradas = Number(kpis?.requisiciones_cerradas ?? 0);
-    const conFuga = Number(kpis?.requisiciones_con_fuga ?? 0);
+    const conDiferencia = Number(kpis?.requisiciones_con_diferencia ?? 0);
     const indice = Number(kpis?.indice_discrepancia_pct ?? 0);
     const inversion = Number(kpis?.inversion_demos ?? 0);
 
@@ -472,7 +472,7 @@ function renderAuditKpis(kpis) {
         "kpi-indice-discrepancia",
         `${fmtAuditNumber(indice)}%`,
         "kpi-indice-discrepancia-note",
-        `<strong>${fmtAuditNumber(conFuga)}</strong> de <strong>${fmtAuditNumber(cerradas)}</strong> requisiciones cerradas presentan al menos una fuga.`
+        `<strong>${fmtAuditNumber(conDiferencia)}</strong> de <strong>${fmtAuditNumber(cerradas)}</strong> requisiciones cerradas presentan al menos una diferencia.`
     );
     setAuditKpi(
         "kpi-inversion-demos",
@@ -482,11 +482,11 @@ function renderAuditKpis(kpis) {
     );
 }
 
-function renderFugaProductoChart(data) {
-    destroyChart("fuga-producto");
-    const canvas = document.getElementById("chart-fuga-producto");
+function renderDiferenciaProductoChart(data) {
+    destroyChart("diferencia-producto");
+    const canvas = document.getElementById("chart-diferencia-producto");
     if (!canvas) return;
-    dashboardCharts["fuga-producto"] = new Chart(canvas, {
+    dashboardCharts["diferencia-producto"] = new Chart(canvas, {
         type: "bar",
         data: {
             labels: Array.isArray(data?.labels) ? data.labels : [],
@@ -514,14 +514,14 @@ function renderFugaProductoChart(data) {
             },
         },
     });
-    clearChartStatus("fuga-producto");
+    clearChartStatus("diferencia-producto");
 }
 
-function renderFugaTecnicoChart(data) {
-    destroyChart("fuga-tecnico");
-    const canvas = document.getElementById("chart-fuga-tecnico");
+function renderDiferenciaTecnicoChart(data) {
+    destroyChart("diferencia-tecnico");
+    const canvas = document.getElementById("chart-diferencia-tecnico");
     if (!canvas) return;
-    dashboardCharts["fuga-tecnico"] = new Chart(canvas, {
+    dashboardCharts["diferencia-tecnico"] = new Chart(canvas, {
         type: "bar",
         data: {
             labels: Array.isArray(data?.labels) ? data.labels : [],
@@ -548,7 +548,7 @@ function renderFugaTecnicoChart(data) {
             },
         },
     });
-    clearChartStatus("fuga-tecnico");
+    clearChartStatus("diferencia-tecnico");
 }
 
 async function cargarDatosBasicos() {
@@ -575,7 +575,7 @@ async function cargarDatosBasicos() {
 }
 
 async function cargarDatosAuditoria() {
-    ["fuga-producto", "fuga-tecnico"].forEach((key) => setChartStatus(key, "Cargando datos..."));
+    ["diferencia-producto", "diferencia-tecnico"].forEach((key) => setChartStatus(key, "Cargando datos..."));
     setAuditKpi("kpi-indice-discrepancia", "--", "kpi-indice-discrepancia-note", "Cargando datos de auditoría...");
     setAuditKpi("kpi-inversion-demos", "--", "kpi-inversion-demos-note", "Cargando datos de auditoría...");
     try {
@@ -588,11 +588,11 @@ async function cargarDatosAuditoria() {
         }
         const payload = await response.json();
         renderAuditKpis(payload.kpis);
-        renderFugaProductoChart(payload.fuga_por_producto);
-        renderFugaTecnicoChart(payload.fugas_por_tecnico);
+        renderDiferenciaProductoChart(payload.diferencia_por_producto);
+        renderDiferenciaTecnicoChart(payload.diferencias_por_tecnico);
     } catch (error) {
         console.error("monitor_actividad_auditoria_error", error);
-        ["fuga-producto", "fuga-tecnico"].forEach((key) => {
+        ["diferencia-producto", "diferencia-tecnico"].forEach((key) => {
             setChartStatus(key, "No se pudieron cargar los datos.", true);
         });
         setAuditKpi("kpi-indice-discrepancia", "--", "kpi-indice-discrepancia-note", "No se pudieron cargar los datos de auditoría.");

@@ -950,7 +950,7 @@ def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db:
 
 @app.get("/api/dashboard/auditoria")
 def dashboard_auditoria_api(current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Datos de auditoria y fugas para el Monitor de Actividad (Fase 2).
+    # Datos de auditoria y diferencias para el Monitor de Actividad (Fase 2).
     ensure_dashboard_access(current_user)
 
     requisiciones_cerradas = (
@@ -964,13 +964,13 @@ def dashboard_auditoria_api(current_user: Usuario = Depends(get_current_user), d
     )
 
     total_requisiciones_cerradas = len(requisiciones_cerradas)
-    requisiciones_con_fuga = 0
+    requisiciones_con_diferencia = 0
     inversion_demos = 0.0
-    fugas_por_producto: dict[str, float] = {}
-    fugas_por_tecnico: dict[str, float] = {}
+    diferencias_por_producto: dict[str, float] = {}
+    diferencias_por_tecnico: dict[str, float] = {}
 
     for req in requisiciones_cerradas:
-        req_tiene_fuga = False
+        req_tiene_diferencia = False
         receptor_nombre = (
             req.receptor_designado.nombre.strip()
             if req.receptor_designado and req.receptor_designado.nombre
@@ -998,41 +998,41 @@ def dashboard_auditoria_api(current_user: Usuario = Depends(get_current_user), d
             if diferencia <= 0:
                 continue
 
-            req_tiene_fuga = True
+            req_tiene_diferencia = True
             descripcion = (item.descripcion or "Sin descripcion").strip() or "Sin descripcion"
-            fugas_por_producto[descripcion] = fugas_por_producto.get(descripcion, 0.0) + diferencia
-            fugas_por_tecnico[receptor_nombre] = fugas_por_tecnico.get(receptor_nombre, 0.0) + diferencia
+            diferencias_por_producto[descripcion] = diferencias_por_producto.get(descripcion, 0.0) + diferencia
+            diferencias_por_tecnico[receptor_nombre] = diferencias_por_tecnico.get(receptor_nombre, 0.0) + diferencia
 
-        if req_tiene_fuga:
-            requisiciones_con_fuga += 1
+        if req_tiene_diferencia:
+            requisiciones_con_diferencia += 1
 
     indice_discrepancia = (
-        round((requisiciones_con_fuga * 100.0) / total_requisiciones_cerradas, 2)
+        round((requisiciones_con_diferencia * 100.0) / total_requisiciones_cerradas, 2)
         if total_requisiciones_cerradas
         else 0.0
     )
 
     top_productos = sorted(
-        fugas_por_producto.items(),
+        diferencias_por_producto.items(),
         key=lambda item: (-item[1], item[0].lower()),
     )[:10]
     top_tecnicos = sorted(
-        fugas_por_tecnico.items(),
+        diferencias_por_tecnico.items(),
         key=lambda item: (-item[1], item[0].lower()),
     )[:5]
 
     return {
         "kpis": {
             "indice_discrepancia_pct": indice_discrepancia,
-            "requisiciones_con_fuga": requisiciones_con_fuga,
+            "requisiciones_con_diferencia": requisiciones_con_diferencia,
             "requisiciones_cerradas": total_requisiciones_cerradas,
             "inversion_demos": round(inversion_demos, 2),
         },
-        "fuga_por_producto": {
+        "diferencia_por_producto": {
             "labels": [label for label, _ in top_productos],
             "values": [round(value, 2) for _, value in top_productos],
         },
-        "fugas_por_tecnico": {
+        "diferencias_por_tecnico": {
             "labels": [label for label, _ in top_tecnicos],
             "values": [round(value, 2) for _, value in top_tecnicos],
         },

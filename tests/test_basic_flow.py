@@ -201,8 +201,8 @@ def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
     assert "chart-solicitantes" in response_page.text
     assert "chart-items" in response_page.text
     assert "chart-horario" in response_page.text
-    assert "chart-fuga-producto" in response_page.text
-    assert "chart-fuga-tecnico" in response_page.text
+    assert "chart-diferencia-producto" in response_page.text
+    assert "chart-diferencia-tecnico" in response_page.text
     assert "kpi-indice-discrepancia" in response_page.text
     assert "kpi-inversion-demos" in response_page.text
     assert response_api.status_code == 200
@@ -217,8 +217,8 @@ def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
     assert response_auditoria.status_code == 200
     payload_auditoria = response_auditoria.json()
     assert "kpis" in payload_auditoria
-    assert "fuga_por_producto" in payload_auditoria
-    assert "fugas_por_tecnico" in payload_auditoria
+    assert "diferencia_por_producto" in payload_auditoria
+    assert "diferencias_por_tecnico" in payload_auditoria
 
 
 def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: Session):
@@ -292,7 +292,7 @@ def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: 
     assert payload["horario"]["alert_from_hour"] == 14
 
 
-def test_dashboard_auditoria_agrega_kpis_y_fugas(client: TestClient, db_session: Session):
+def test_dashboard_auditoria_agrega_kpis_y_diferencias(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
     tecnico_1 = db_session.query(Usuario).filter(Usuario.username == "tecnico.1").first()
@@ -404,17 +404,17 @@ def test_dashboard_auditoria_agrega_kpis_y_fugas(client: TestClient, db_session:
     payload = response.json()
 
     assert payload["kpis"]["requisiciones_cerradas"] == 3
-    assert payload["kpis"]["requisiciones_con_fuga"] == 2
+    assert payload["kpis"]["requisiciones_con_diferencia"] == 2
     assert payload["kpis"]["indice_discrepancia_pct"] == 66.67
     assert payload["kpis"]["inversion_demos"] == 6.0
 
-    fuga_productos = dict(zip(payload["fuga_por_producto"]["labels"], payload["fuga_por_producto"]["values"]))
-    assert fuga_productos["Cable UTP Cat6"] == 2.0
-    assert fuga_productos["Conector RJ45"] == 1.0
+    diferencia_productos = dict(zip(payload["diferencia_por_producto"]["labels"], payload["diferencia_por_producto"]["values"]))
+    assert diferencia_productos["Cable UTP Cat6"] == 2.0
+    assert diferencia_productos["Conector RJ45"] == 1.0
 
-    fuga_tecnicos = dict(zip(payload["fugas_por_tecnico"]["labels"], payload["fugas_por_tecnico"]["values"]))
-    assert fuga_tecnicos["Tecnico Uno"] == 1.0
-    assert fuga_tecnicos["Tecnico Dos"] == 2.0
+    diferencia_tecnicos = dict(zip(payload["diferencias_por_tecnico"]["labels"], payload["diferencias_por_tecnico"]["values"]))
+    assert diferencia_tecnicos["Tecnico Uno"] == 1.0
+    assert diferencia_tecnicos["Tecnico Dos"] == 2.0
 
 
 def test_navbar_muestra_contingencias_solo_para_roles_autorizados(client: TestClient):
@@ -435,10 +435,10 @@ def test_monitor_renderiza_fase_2_de_auditoria(client: TestClient):
     response = client.get("/monitor")
     assert response.status_code == 200
     html = response.text
-    assert "Fase 2: Auditoría y Fugas" in html
+    assert "Fase 2: Auditoría y Diferencias" in html
     assert "/api/dashboard/auditoria" in html
-    assert "Ranking de Fuga por Producto" in html
-    assert "Fugas por Tecnico" in html
+    assert "Ranking de Diferencia por Producto" in html
+    assert "Diferencias por Tecnico" in html
 
 
 def test_home_aprobador_grafico_usa_pendientes_globales(client: TestClient, db_session: Session):
