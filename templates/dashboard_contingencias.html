@@ -19,15 +19,22 @@
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1rem;
+    padding: 0;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
 }
 .dashboard-bi-card h3 {
     margin: 0;
+    color: var(--text, var(--ui-text, #0f172a)) !important;
 }
 .dashboard-bi-card p {
     margin: 0.35rem 0 0;
+    color: var(--text, var(--ui-text, #0f172a)) !important;
 }
 .dashboard-bi-card small {
-    color: var(--muted-color);
+    color: var(--text, var(--ui-text, #0f172a)) !important;
+    opacity: 0.72;
 }
 .dashboard-bi-canvas-wrap {
     position: relative;
@@ -36,6 +43,14 @@
 .dashboard-bi-canvas-wrap canvas {
     width: 100%;
     height: 100%;
+}
+.dashboard-bi-status {
+    margin-top: 0.8rem;
+    color: var(--ui-muted, var(--muted, #475569));
+    font-size: 0.92rem;
+}
+.dashboard-bi-status.is-error {
+    color: var(--ui-danger, var(--danger, #dc2626));
 }
 @media (max-width: 960px) {
     .dashboard-bi-grid {
@@ -56,6 +71,7 @@
         <div class="dashboard-bi-canvas-wrap">
             <canvas id="chart-motivos" aria-label="Grafico de frecuencia por motivo"></canvas>
         </div>
+        <p class="dashboard-bi-status" data-chart-status="motivos">Cargando datos...</p>
     </article>
 
     <article class="panel view-panel dashboard-bi-card">
@@ -69,6 +85,7 @@
         <div class="dashboard-bi-canvas-wrap">
             <canvas id="chart-solicitantes" aria-label="Grafico de top usuarios solicitantes"></canvas>
         </div>
+        <p class="dashboard-bi-status" data-chart-status="solicitantes">Cargando datos...</p>
     </article>
 
     <article class="panel view-panel dashboard-bi-card">
@@ -82,6 +99,7 @@
         <div class="dashboard-bi-canvas-wrap">
             <canvas id="chart-items" aria-label="Grafico de top items solicitados"></canvas>
         </div>
+        <p class="dashboard-bi-status" data-chart-status="items">Cargando datos...</p>
     </article>
 
     <article class="panel view-panel dashboard-bi-card">
@@ -95,6 +113,263 @@
         <div class="dashboard-bi-canvas-wrap">
             <canvas id="chart-horario" aria-label="Grafico horario de contingencias"></canvas>
         </div>
+        <p class="dashboard-bi-status" data-chart-status="horario">Cargando datos...</p>
     </article>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const dashboardCharts = {};
+
+function getThemeToken(name, fallback) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+}
+
+function setChartStatus(key, message, isError = false) {
+    const node = document.querySelector(`[data-chart-status="${key}"]`);
+    if (!node) return;
+    node.textContent = message;
+    node.classList.toggle("is-error", Boolean(isError));
+}
+
+function clearChartStatus(key) {
+    const node = document.querySelector(`[data-chart-status="${key}"]`);
+    if (!node) return;
+    node.textContent = "";
+    node.classList.remove("is-error");
+}
+
+function destroyChart(key) {
+    if (dashboardCharts[key]) {
+        dashboardCharts[key].destroy();
+        delete dashboardCharts[key];
+    }
+}
+
+function buildBaseOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: getThemeToken("--ui-text", "#0f172a"),
+                    font: { family: "Montserrat, sans-serif", size: 12, weight: "600" },
+                },
+            },
+            tooltip: {
+                backgroundColor: "rgba(15, 23, 42, 0.92)",
+                titleColor: "#ffffff",
+                bodyColor: "#ffffff",
+                borderColor: "rgba(255,255,255,0.14)",
+                borderWidth: 1,
+            },
+        },
+        scales: {
+            x: {
+                ticks: { color: getThemeToken("--ui-text", "#0f172a") },
+                grid: { color: getThemeToken("--ui-border", "rgba(83, 119, 166, 0.22)") },
+                border: { color: getThemeToken("--ui-border", "rgba(83, 119, 166, 0.22)") },
+            },
+            y: {
+                ticks: { color: getThemeToken("--ui-text", "#0f172a") },
+                grid: { color: getThemeToken("--ui-border", "rgba(83, 119, 166, 0.18)") },
+                border: { color: getThemeToken("--ui-border", "rgba(83, 119, 166, 0.22)") },
+            },
+        },
+    };
+}
+
+function renderMotivosChart(data) {
+    destroyChart("motivos");
+    const canvas = document.getElementById("chart-motivos");
+    if (!canvas) return;
+    const labels = Array.isArray(data?.labels) ? data.labels : [];
+    const values = Array.isArray(data?.values) ? data.values : [];
+    const palette = [
+        getThemeToken("--ui-primary", "#1d7be8"),
+        getThemeToken("--ui-warning", "#d97706"),
+        getThemeToken("--ui-success", "#16a34a"),
+        getThemeToken("--ui-info", "#0284c7"),
+        getThemeToken("--ui-danger", "#dc2626"),
+        "#7c3aed",
+        "#0f766e",
+        "#ea580c",
+        "#2563eb",
+        "#be185d",
+    ];
+    dashboardCharts.motivos = new Chart(canvas, {
+        type: "doughnut",
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: labels.map((_, index) => palette[index % palette.length]),
+                borderColor: getThemeToken("--ui-surface", "#ffffff"),
+                borderWidth: 2,
+                hoverOffset: 6,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        color: getThemeToken("--ui-text", "#0f172a"),
+                        boxWidth: 12,
+                        font: { family: "Montserrat, sans-serif", size: 12, weight: "600" },
+                    },
+                },
+            },
+        },
+    });
+    clearChartStatus("motivos");
+}
+
+function renderSolicitantesChart(data) {
+    destroyChart("solicitantes");
+    const canvas = document.getElementById("chart-solicitantes");
+    if (!canvas) return;
+    dashboardCharts.solicitantes = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: Array.isArray(data?.labels) ? data.labels : [],
+            datasets: [{
+                label: "Requisiciones",
+                data: Array.isArray(data?.values) ? data.values : [],
+                backgroundColor: getThemeToken("--ui-primary", "#1d7be8"),
+                borderRadius: 8,
+                borderSkipped: false,
+            }],
+        },
+        options: {
+            ...buildBaseOptions(),
+            indexAxis: "y",
+            plugins: {
+                ...buildBaseOptions().plugins,
+                legend: { display: false },
+            },
+            scales: {
+                x: {
+                    ...buildBaseOptions().scales.x,
+                    beginAtZero: true,
+                    ticks: { ...buildBaseOptions().scales.x.ticks, precision: 0 },
+                },
+                y: buildBaseOptions().scales.y,
+            },
+        },
+    });
+    clearChartStatus("solicitantes");
+}
+
+function renderItemsChart(data) {
+    destroyChart("items");
+    const canvas = document.getElementById("chart-items");
+    if (!canvas) return;
+    dashboardCharts.items = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: Array.isArray(data?.labels) ? data.labels : [],
+            datasets: [{
+                label: "Cantidad solicitada",
+                data: Array.isArray(data?.values) ? data.values : [],
+                backgroundColor: getThemeToken("--ui-info", "#0284c7"),
+                borderRadius: 8,
+                borderSkipped: false,
+            }],
+        },
+        options: {
+            ...buildBaseOptions(),
+            indexAxis: "y",
+            plugins: {
+                ...buildBaseOptions().plugins,
+                legend: { display: false },
+            },
+            scales: {
+                x: {
+                    ...buildBaseOptions().scales.x,
+                    beginAtZero: true,
+                },
+                y: buildBaseOptions().scales.y,
+            },
+        },
+    });
+    clearChartStatus("items");
+}
+
+function renderHorarioChart(data) {
+    destroyChart("horario");
+    const canvas = document.getElementById("chart-horario");
+    if (!canvas) return;
+    const labels = Array.isArray(data?.labels) ? data.labels : [];
+    const values = Array.isArray(data?.values) ? data.values : [];
+    const alertFromHour = Number(data?.alert_from_hour ?? 14);
+    const primaryColor = getThemeToken("--ui-primary", "#1d7be8");
+    const dangerColor = getThemeToken("--ui-danger", "#dc2626");
+    dashboardCharts.horario = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [{
+                label: "Contingencias",
+                data: values,
+                backgroundColor: labels.map((label) => {
+                    const hour = Number(String(label).slice(0, 2));
+                    return hour >= alertFromHour ? dangerColor : primaryColor;
+                }),
+                borderRadius: 8,
+                borderSkipped: false,
+            }],
+        },
+        options: {
+            ...buildBaseOptions(),
+            plugins: {
+                ...buildBaseOptions().plugins,
+                legend: { display: false },
+            },
+            scales: {
+                x: buildBaseOptions().scales.x,
+                y: {
+                    ...buildBaseOptions().scales.y,
+                    beginAtZero: true,
+                    ticks: { ...buildBaseOptions().scales.y.ticks, precision: 0 },
+                },
+            },
+        },
+    });
+    clearChartStatus("horario");
+}
+
+async function cargarDatos() {
+    ["motivos", "solicitantes", "items", "horario"].forEach((key) => setChartStatus(key, "Cargando datos..."));
+    try {
+        const response = await fetch("/api/dashboard/basicos", {
+            headers: { "Accept": "application/json" },
+            credentials: "same-origin",
+        });
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar dashboard (${response.status})`);
+        }
+        const payload = await response.json();
+        renderMotivosChart(payload.motivos);
+        renderSolicitantesChart(payload.top_solicitantes);
+        renderItemsChart(payload.top_items);
+        renderHorarioChart(payload.horario);
+    } catch (error) {
+        console.error("dashboard_contingencias_error", error);
+        ["motivos", "solicitantes", "items", "horario"].forEach((key) => {
+            setChartStatus(key, "No se pudieron cargar los datos.", true);
+        });
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    cargarDatos();
+});
+</script>
 {% endblock %}

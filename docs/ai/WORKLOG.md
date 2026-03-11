@@ -1,5 +1,33 @@
 # Worklog (append-only)
 
+## 2026-03-11 13:18 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-118C`, conectando la shell SSR del dashboard a datos reales con `Chart.js`.
+- Tareas: `REQ-118C`
+- Cambios:
+  - `templates/dashboard_contingencias.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n ":root|--|chart|alert|danger|primary|muted" static/theme.css static/style.css`
+  - `sed -n '1,220p' templates/dashboard_contingencias.html`
+  - `python -m compileall tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "dashboard or contingencias"`
+- Resultado:
+  - Se agrego `Chart.js` via CDN directamente en la vista del dashboard.
+  - `cargarDatos()` ahora consume `/api/dashboard/basicos` con `fetch` y renderiza:
+    - dona por motivo
+    - barras horizontales para top solicitantes
+    - barras horizontales para top items
+    - barras verticales por hora
+  - El grafico horario aplica color de alerta desde las `14:00` en adelante usando los tokens del tema.
+  - Cada card tiene estado minimo de carga/error para no dejar el dashboard mudo si falla la API.
+  - Se reforzo el test SSR para comprobar presencia del script CDN y de `cargarDatos()`.
+  - `REQ-118C` pasa a `done`.
+- Proximo paso:
+  - Validar visualmente el dashboard con datos reales y decidir la siguiente iteracion BI (filtros o nuevas metricas).
+
 ## 2026-03-11 12:42 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-118B`, reemplazando el placeholder del dashboard por una vista SSR real y enlazandola en la navegacion protegida.
 - Tareas: `REQ-118B`

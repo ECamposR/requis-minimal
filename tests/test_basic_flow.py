@@ -183,6 +183,8 @@ def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
     response_api = client.get("/api/dashboard/basicos")
     assert response_page.status_code == 200
     assert "Dashboard de Contingencias" in response_page.text
+    assert "cdn.jsdelivr.net/npm/chart.js" in response_page.text
+    assert "async function cargarDatos()" in response_page.text
     assert "chart-motivos" in response_page.text
     assert "chart-solicitantes" in response_page.text
     assert "chart-items" in response_page.text

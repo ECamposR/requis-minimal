@@ -89,7 +89,7 @@
 - Ejecutar `EPIC-BI-01` Dashboard de Contingencias (Fase 1).
 - `REQ-118A` completada: backend base ya existe con guard de roles y API `/api/dashboard/basicos` entregando payload para motivos, top solicitantes, top items y horario con `alert_from_hour=14`.
 - `REQ-118B` completada: `/dashboard` ya renderiza `dashboard_contingencias.html` con grid SSR 2x2, cuatro `canvas` listos para Chart.js y enlace `Contingencias` visible solo para `admin`, `aprobador` y `jefe_bodega`.
-- `REQ-118C` pendiente: `cargarDatos()` + `Chart.js` + 4 graficos base, incluyendo regla visual de alerta desde las 14:00.
+- `REQ-118C` completada: el dashboard ya carga datos por Fetch API, renderiza los 4 graficos con `Chart.js` y aplica color de alerta a las barras desde las `14:00` en adelante.
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - Ejecutar smoke manual de entrega con firma y de liquidacion para validar experiencia completa de bloqueo/edicion.
 - Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
@@ -100,12 +100,8 @@
 
 ## Proximo paso exacto
 ### Frente BI / Dashboard (`REQ-118`):
-1. Ejecutar `REQ-118C`: integracion `Chart.js` y render de las 4 metricas:
-   - Frecuencia por Motivo
-   - Top Usuarios Solicitantes
-   - Top Items Solicitados
-   - Mapa de Calor Horario con alerta visual 14:00+
-2. Validar contraste, densidad visual y overflow del dashboard en laptop/desktop una vez montados los graficos.
+1. Validar contraste, densidad visual y overflow del dashboard en laptop/desktop con datos reales.
+2. Definir si la siguiente iteracion BI agrega filtros por rango/usuario/departamento o nuevas metricas operativas (`tiempos de liquidacion`, `top receptores`, `motivos por franja`).
 
 ### Frente despliegue (REQ-087 / REQ-088):
 1. En el servidor Docker: `docker network create proxy`
