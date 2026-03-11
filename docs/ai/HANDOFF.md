@@ -116,6 +116,7 @@
 - El entorno actual deja `TestClient` colgado incluso contra `/health`; para validar REQ-085 se usó compilación y smoke directo de modelo/auth/CRUD con DB temporal, pero falta smoke HTTP/manual real.
 
 ## Ultimo cambio cerrado
+- `REQ-122` completada: el PDF adopto un estilo `Eco-Ink` sin tocar layout ni datos. Se eliminaron fills solidos de secciones/cabeceras, se reforzo jerarquia con tipografia y bordes, secundarios pasaron a escala de grises y los colores corporativos quedaron reservados para lineas y textos clave.
 - `REQ-121` completada: el PDF ya pagina la tabla de items cuando excede una sola hoja. Ahora genera tantas paginas como hagan falta, repite cabecera de tabla y luego ubica justificacion/comentario/timeline en la ultima pagina con salto adicional si no caben.
 - `REQ-120` completada: el PDF ahora muestra tambien quien recibira el producto debajo del solicitante. El endpoint propaga `receptor_designado` al payload, la card `Informacion general` del PDF agrega la fila `Recibe`, y queda testeado a nivel de payload del generador.
 - `REQ-119` completada: `/bodega` ya no duplica requisiciones `entregada` completas/parciales entre pendientes e historial. `Pendientes` conserva lo procesable, `Historial` queda para cierres (`liquidada`, `liquidada_en_prokey` y `no_entregada`), y los encabezados visibles pasan a `Pendientes de Procesar` e `Historial`.

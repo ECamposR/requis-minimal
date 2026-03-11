@@ -8,6 +8,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-119` | `done` | Ajustar `/bodega` para que el historial no duplique requisiciones activas: `entregada` completa/parcial queda solo en pendientes; historial muestra solo cierres (`liquidada`, `liquidada_en_prokey` y `no_entregada`). Renombrar encabezados a `Pendientes de Procesar` e `Historial`.
 - `REQ-120` | `done` | Incluir en el PDF el receptor designado debajo del solicitante, propagando el dato al generador y ampliando la card de informacion general sin alterar el resto del layout.
 - `REQ-121` | `done` | Corregir paginacion del PDF para que la tabla de items se parta en multiples paginas cuando sea necesario, repitiendo cabecera y preservando las secciones finales en la ultima pagina disponible.
+- `REQ-122` | `done` | Refactor visual Eco-Ink del PDF: eliminar bloques de color solido, priorizar bordes y escala de grises, suavizar badges a tonos pastel minimos y mantener el color corporativo solo en textos/bordes clave, sin tocar layout ni datos.
 
 ## Reinicio Liquidacion (desde `3d7702b`)
 - `REQ-060` | `done` | Base de liquidacion implementada: estado `liquidada`, campos base en `requisiciones/items`, migracion robusta e idempotente + baseline de entrega (`cantidad_entregada`) normalizado.

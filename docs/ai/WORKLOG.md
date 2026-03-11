@@ -1,5 +1,28 @@
 # Worklog (append-only)
 
+## 2026-03-11 11:36 UTC-6 | tool: Codex CLI
+- Objetivo: refactorizar exclusivamente la capa visual del generador de PDF para un modo `Eco-Ink`, reduciendo masa de tinta sin alterar layout, datos ni funciones.
+- Tareas: `REQ-122`
+- Cambios:
+  - `app/pdf_generator.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `sed -n '1,520p' app/pdf_generator.py`
+  - `sed -n '520,760p' app/pdf_generator.py`
+  - `.venv/bin/python -m compileall app/pdf_generator.py`
+  - `.venv/bin/python - <<'PY' ... generate_requisicion_pdf(...) ... print(pdf.startswith(...), len(pdf)) ... PY`
+- Resultado:
+  - El PDF pasa a fondo blanco, elimina bloques cromaticos grandes y privilegia bordes/outlines para secciones y cabeceras.
+  - Los encabezados de tabla ya no usan fondo solido; se distinguen por tipografia y linea inferior mas marcada.
+  - Los badges conservan contraste alto con fondos pastel minimos.
+  - Metadatos, separadores y ayudas quedan en escala de grises.
+  - Se mantuvo intacto el layout, la estructura del documento y el flujo de datos.
+  - Validacion directa con `.venv/bin/python`: el PDF se sigue generando correctamente (`True`, `25196` bytes en muestra simple).
+- Proximo paso:
+  - Validar visualmente en impresion real si aun conviene adelgazar mas bordes o atenuar los tintes de estados.
+
 ## 2026-03-11 11:18 UTC-6 | tool: Codex CLI
 - Objetivo: corregir el PDF para que no corte silenciosamente items cuando la tabla excede una pagina.
 - Tareas: `REQ-121`
