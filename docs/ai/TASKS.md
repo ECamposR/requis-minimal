@@ -12,6 +12,10 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-118A` | `done` | Backend: crear la ruta de vista `GET /monitor` y el endpoint de datos `GET /api/dashboard/basicos` en `app/main.py`. Validar acceso solo para roles `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-118B` | `done` | Frontend UI: crear `templates/monitor_actividad.html` extendiendo de `base.html`, estructurando un grid de PicoCSS (2x2) y agregando el enlace `Monitor de Actividad` al `navbar.html` protegido por rol.
 - `REQ-118C` | `done` | Frontend JS: implementar la función `cargarDatos()` con Fetch API, configurar Chart.js vía CDN y renderizar los 4 gráficos con los colores de `theme.css` y la regla visual crítica de las 14:00 en adelante.
+- `EPIC-BI-02` | `todo` | Monitor de Actividad (Fase 2: Auditoria y Fugas) orientado a control de perdidas, mermas y trazabilidad de diferencias negativas entre retorno esperado y retorno real a bodega.
+- `REQ-118D` | `todo` | Backend: crear `GET /api/dashboard/auditoria` procesando requisiciones liquidadas, iterando items y reutilizando `calcular_retorno_esperado` para calcular fugas, KPIs y datasets de auditoria.
+- `REQ-118E` | `todo` | Frontend UI: actualizar `templates/monitor_actividad.html` agregando una nueva seccion debajo de Fase 1 con tarjetas KPI y un grid adicional para los 2 graficos de fugas.
+- `REQ-118F` | `todo` | Frontend JS: ampliar el script para consumir `/api/dashboard/auditoria`, renderizar KPIs y graficos de fugas usando colores de alerta (rojos/naranjas) sin romper la Fase 1 ya operativa.
 
 ## Reinicio Liquidacion (desde `3d7702b`)
 - `REQ-060` | `done` | Base de liquidacion implementada: estado `liquidada`, campos base en `requisiciones/items`, migracion robusta e idempotente + baseline de entrega (`cantidad_entregada`) normalizado.

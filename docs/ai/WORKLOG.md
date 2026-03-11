@@ -1,5 +1,23 @@
 # Worklog (append-only)
 
+## 2026-03-11 14:03 UTC-6 | tool: Codex CLI
+- Objetivo: registrar la Fase 2 del Monitor de Actividad antes de implementar backend o frontend, preservando intacta la Fase 1 ya operativa.
+- Tareas: `EPIC-BI-02`, `REQ-118D`, `REQ-118E`, `REQ-118F`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `sed -n '1,80p' docs/ai/TASKS.md`
+  - `sed -n '1,130p' docs/ai/HANDOFF.md`
+  - `sed -n '1,60p' docs/ai/WORKLOG.md`
+- Resultado:
+  - Se formalizo `EPIC-BI-02` como `Monitor de Actividad (Fase 2: Auditoria y Fugas)`.
+  - La Fase 2 queda dividida en tres tareas separadas para backend, UI y JS.
+  - Quedo explicitado que la logica de fuga debe reutilizar `calcular_retorno_esperado` y que la Fase 1 no debe romperse ni reemplazarse.
+- Proximo paso:
+  - Esperar instruccion para comenzar `REQ-118D` sin adelantar implementacion de UI.
+
 ## 2026-03-11 13:44 UTC-6 | tool: Codex CLI
 - Objetivo: institucionalizar la nomenclatura BI como `Monitor de Actividad` y limpiar ruta, template, navbar y documentacion activa.
 - Tareas: `EPIC-BI-01`, `REQ-118A`, `REQ-118B`, `REQ-118C`
