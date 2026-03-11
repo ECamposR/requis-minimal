@@ -1,5 +1,29 @@
 # Worklog (append-only)
 
+## 2026-03-11 09:20 UTC-6 | tool: Codex CLI
+- Objetivo: alinear la documentacion del proyecto con la fase real de `beta operativa en produccion`, manteniendo el principio de simplicidad y la gobernanza multi-IA agnostica al modelo/herramienta.
+- Tareas: `REQ-116`
+- Cambios:
+  - `README.md`
+  - `docs/ai/CONTRACT.md`
+  - `docs/ai/DECISIONS.md`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `sed -n '1,240p' docs/ai/CONTRACT.md`
+  - `sed -n '1,240p' docs/ai/HANDOFF.md`
+  - `sed -n '1,240p' docs/ai/DECISIONS.md`
+  - `sed -n '1,240p' docs/ai/TASKS.md`
+  - `sed -n '1,260p' README.md`
+- Resultado:
+  - La gobernanza deja de describir al sistema como MVP vigente y lo formaliza como `beta operativa en produccion controlada`.
+  - Se preserva el espiritu original: simplicidad, baja complejidad accidental y cambios incrementales.
+  - Queda explicitado que el proyecto seguira evolucionando via `vibe coding` con gobernanza agnostica al modelo LLM y a la herramienta.
+  - Se refuerza la regla de trazabilidad: cambios, bugs, decisiones y hallazgos relevantes deben quedar documentados en los archivos de continuidad del repo.
+- Proximo paso:
+  - Mantener el mismo criterio en futuras tareas funcionales y, si se desea, depurar despues otros textos historicos que aun usen `MVP` solo como herencia de versiones previas.
+
 ## 2026-03-09 10:32 UTC-6 | tool: Codex CLI
 - Objetivo: introducir estado operativo `preparado` antes de `entregada`, exigiendo preparación explícita de bodega antes de capturar la firma/PIN del receptor.
 - Tareas: `REQ-110`

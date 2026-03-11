@@ -100,3 +100,24 @@
   - Nueva ruta admin para `Respaldos`.
   - Nuevo directorio runtime `backups/` fuera de control de versiones.
   - La restauracion obliga a volver a iniciar sesion y puede invalidar sesiones activas.
+
+## ADR-007 | 2026-03-11 | Cambio formal de fase a beta operativa en produccion y continuidad agnostica al LLM
+- Contexto:
+  - La app ya no es un MVP teorico ni un prototipo local.
+  - Entro en produccion beta el `2026-03-10` dentro de la LAN, con usuarios y operacion real.
+  - El proyecto continuara evolucionando via `vibe coding`, potencialmente con distintas IAs y herramientas a lo largo del tiempo.
+- Decision:
+  - Declarar la fase actual como `beta operativa en produccion controlada`.
+  - Mantener como principio rector la solucion mas simple posible, privilegiando mantenibilidad y continuidad operativa.
+  - Tratar la gobernanza documental del repo como fuente de verdad transversal y agnostica al proveedor/modelo de IA.
+- Motivo:
+  - El lenguaje de `MVP` ya no describe correctamente el estado del producto ni el riesgo operativo actual.
+  - Con usuarios reales, cada cambio requiere mayor disciplina de trazabilidad, handoff y registro de decisiones/bugs.
+  - La continuidad del proyecto no debe depender del contexto de un chat ni de una herramienta especifica.
+- Alternativas descartadas:
+  - Mantener el lenguaje de MVP por inercia documental.
+  - Mover el conocimiento operativo a conversaciones aisladas o a una sola herramienta de IA.
+- Impacto:
+  - `CONTRACT.md` y `README.md` deben reflejar la fase beta operativa.
+  - Todo cambio relevante debe seguir registrandose en `WORKLOG`, `TASKS`, `HANDOFF` y `DECISIONS` cuando corresponda.
+  - El foco de trabajo se desplaza de construir base funcional a endurecer operacion, corregir, mantener y ampliar de forma incremental.

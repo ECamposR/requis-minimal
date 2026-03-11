@@ -1,6 +1,9 @@
-# MVP Task Board
+# Product Task Board
 
 Estados: `todo` | `in_progress` | `done` | `blocked`
+
+## Gobernanza / Continuidad
+- `REQ-116` | `done` | Actualizar la documentacion de gobernanza y estado del producto para reflejar la fase real de `beta operativa en produccion`, manteniendo simplicidad, continuidad multi-IA agnostica al LLM y trazabilidad documental obligatoria.
 
 ## Reinicio Liquidacion (desde `3d7702b`)
 - `REQ-060` | `done` | Base de liquidacion implementada: estado `liquidada`, campos base en `requisiciones/items`, migracion robusta e idempotente + baseline de entrega (`cantidad_entregada`) normalizado.
@@ -34,7 +37,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-085` | `done` | Firma de recibido con PIN por receptor: usuarios con `pin_hash`/`puede_iniciar_sesion`, rol `tecnico`, entrega completa/parcial con receptor + validación PIN, trazabilidad `recibido_por_id/recibido_at` en detalle y timeline.
 - `REQ-085A` | `done` | Ajuste de usuarios técnicos: ya no requieren contraseña al crear/editar; usan PIN obligatorio para firma y mantienen login deshabilitado.
 
-## Post-MVP
+## Evolucion Productiva
 - `REQ-089` | `done` | Admin puede eliminar cualquier requisición sin restricción de estado desde `/aprobar`, con confirmación JS y cascade delete de ítems.
 - `REQ-090` | `done` | Nuevo rol `jefe_bodega` que combina `aprobador` + `bodega`: acceso completo a aprobar, bodega y liquidación; ve historial completo de entregas; ambos ítems de nav visibles.
 - `REQ-090A` | `done` | Corrección de permisos/visibilidad de `jefe_bodega`: aprobación operativa habilitada también en backend (`puede_aprobar`) y enlaces del Home alineados con su rol mixto.

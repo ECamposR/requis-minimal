@@ -1,4 +1,4 @@
-# Sistema de Requisiciones ProHygiene (v1.x)
+# Sistema de Requisiciones ProHygiene (beta operativa v1.x)
 
 Aplicación interna LAN para gestionar requisiciones desde solicitud hasta liquidación y soporte de registro en ProKey.
 
@@ -6,7 +6,9 @@ Aplicación interna LAN para gestionar requisiciones desde solicitud hasta liqui
 - Ver `MANUAL_USUARIO.md`
 
 ## Estado actual
-- Versión operativa `v1.x` (ya no MVP base).
+- Fase actual: `beta operativa en produccion controlada`.
+- Inicio de beta productiva: `2026-03-10`.
+- Version operativa: `v1.x` (ya no MVP base).
 - Flujo implementado:
   - `pendiente` -> `aprobada` / `rechazada` -> `preparado` -> `entregada` -> `liquidada` -> `liquidada_en_prokey`
 - Funciones clave activas:
@@ -16,6 +18,16 @@ Aplicación interna LAN para gestionar requisiciones desde solicitud hasta liqui
   - liquidación por ítem con alertas y trazabilidad
   - detalle tipo dashboard con timeline
   - generación de PDF desde requisiciones aprobadas en adelante
+
+## Criterio de evolucion
+- El sistema se desarrolla y mantiene bajo un enfoque de simplicidad operativa: resolver el problema real con la menor complejidad posible.
+- El proyecto sigue creciendo mediante `vibe coding`, pero con disciplina documental estricta.
+- La gobernanza es agnostica al modelo LLM y a la herramienta usada; cualquier sesion debe dejar contexto util para la siguiente.
+- Todo cambio relevante debe quedar registrado en:
+  - `docs/ai/WORKLOG.md`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/DECISIONS.md` cuando aplique
 
 ## Stack
 - Backend: `FastAPI`
@@ -85,7 +97,7 @@ Si se pierde el archivo `.env`, en este proyecto Docker debes recrearlo con esto
 ```env
 DATABASE_URL=sqlite:////app/data/requisiciones.db
 SECRET_KEY=<SECRET_KEY_GENERADA>
-APP_NAME=Sistema de Requisiciones MVP
+APP_NAME=Sistema de Requisiciones ProHygiene
 ```
 
 Notas:
@@ -119,7 +131,7 @@ cp .env.example .env
 ```env
 DATABASE_URL=sqlite:////app/data/requisiciones.db
 SECRET_KEY=<pega_aqui_la_clave_generada>
-APP_NAME=Sistema de Requisiciones MVP
+APP_NAME=Sistema de Requisiciones ProHygiene
 ```
 3. Reiniciar la app:
 ```bash
@@ -204,3 +216,6 @@ Fuente de continuidad operativa:
 - `docs/ai/TASKS.md`
 - `docs/ai/WORKLOG.md`
 - `docs/ai/DECISIONS.md`
+
+Regla base:
+- el conocimiento del proyecto debe vivir en el repo, no depender de un chat, un modelo o una herramienta concreta

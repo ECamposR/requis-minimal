@@ -1,6 +1,8 @@
 # Handoff Activo
 
 ## Estado actual
+- La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
+- La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
 - Rama de reinicio creada desde commit base pre-liquidacion: `feat/liquidacion-rework-v2` en `3d7702b`.
 - `REQ-060` completada en esta rama: ya existe estado `liquidada`, campos de liquidacion base y migracion SQLite robusta.
 - Baseline de entrega normalizado: en entrega completa, `cantidad_entregada` queda persistida por item (sin depender de fallbacks).
@@ -114,6 +116,7 @@
 - El entorno actual deja `TestClient` colgado incluso contra `/health`; para validar REQ-085 se usó compilación y smoke directo de modelo/auth/CRUD con DB temporal, pero falta smoke HTTP/manual real.
 
 ## Ultimo cambio cerrado
+- `REQ-116` completada: documentacion de gobernanza y estado del producto actualizada para reflejar `beta operativa en produccion`, continuidad agnostica al LLM/herramienta y trazabilidad documental obligatoria como regla del repo.
 - `REQ-106` completada: el catalogo ahora persiste `permite_decimal` como fuente de verdad. Solo `CONCENTRADO SHF` y `LIQUIDO CONCENTRADO DESODORIZADOR` quedan habilitados para cantidades decimales; crear/editar requisicion ajusta la UX del campo cantidad y el backend rechaza decimales para cualquier otro item activo del catalogo.
 - `REQ-106A` completada: se corrigio la validacion JS del selector de items en crear/editar para aceptar tanto payload legado de strings como payload enriquecido de objetos, evitando falsos rechazos al enviar requisiciones.
 - `REQ-106B` completada: la misma restriccion de enteros/decimales ahora aplica en liquidacion. Solo items con `permite_decimal` en catalogo aceptan fracciones en `Regresa`, `Usado` y `No usado`; el resto se bloquea con mensaje claro en frontend y backend.
