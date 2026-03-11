@@ -1,5 +1,35 @@
 # Worklog (append-only)
 
+## 2026-03-11 12:18 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-118A`, dejando operativo el backend base del Dashboard de Contingencias.
+- Tareas: `REQ-118A`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "def template_context|TemplateResponse\\(|current_user\\.rol|No autorizado|@app.get\\(" app/main.py`
+  - `sed -n '300,520p' app/main.py`
+  - `sed -n '760,940p' app/main.py`
+  - `sed -n '1180,1465p' app/main.py`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "dashboard_backend or dashboard_basicos"`
+- Resultado:
+  - Se agrego `ensure_dashboard_access(...)` para restringir acceso a `admin`, `aprobador` y `jefe_bodega`.
+  - `GET /dashboard` ya existe en backend con respuesta temporal funcional mientras se implementa el template SSR real.
+  - `GET /api/dashboard/basicos` ya entrega payload listo para UI con:
+    - frecuencia por motivo
+    - top solicitantes
+    - top items por cantidad solicitada
+    - distribucion horaria 0-23 con `alert_from_hour=14`
+  - Se agregaron tests del backend del dashboard (acceso y agregaciones base).
+  - `python -m compileall` paso sin errores.
+  - El `pytest` focal no devolvio salida util antes del `timeout`, consistente con la limitacion ambiental ya conocida de este repo.
+- Proximo paso:
+  - Ejecutar `REQ-118B`: crear el template real `dashboard_contingencias.html` y agregar su enlace en navbar.
+
 ## 2026-03-11 12:02 UTC-6 | tool: Codex CLI
 - Objetivo: formalizar la epica `Dashboard de Contingencias (Fase 1)` y dividirla en tareas ejecutables antes de comenzar implementacion.
 - Tareas: `EPIC-BI-01`, `REQ-118A`, `REQ-118B`, `REQ-118C`

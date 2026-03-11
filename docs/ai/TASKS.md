@@ -9,7 +9,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 
 ## Dashboard de Contingencias (Fase 1)
 - `EPIC-BI-01` | `in_progress` | Dashboard de Contingencias orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.
-- `REQ-118A` | `todo` | Backend: crear la ruta de vista `GET /dashboard` y el endpoint de datos `GET /api/dashboard/basicos` en `app/main.py`. Validar acceso solo para roles `admin`, `aprobador` y `jefe_bodega`.
+- `REQ-118A` | `done` | Backend: crear la ruta de vista `GET /dashboard` y el endpoint de datos `GET /api/dashboard/basicos` en `app/main.py`. Validar acceso solo para roles `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-118B` | `todo` | Frontend UI: crear `templates/dashboard_contingencias.html` extendiendo de `base.html`, estructurando un grid de PicoCSS (2x2) y agregando el enlace al `navbar.html` protegido por rol.
 - `REQ-118C` | `todo` | Frontend JS: implementar la función `cargarDatos()` con Fetch API, configurar Chart.js vía CDN y renderizar los 4 gráficos con los colores de `theme.css` y la regla visual crítica de las 14:00 en adelante.
 

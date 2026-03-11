@@ -18,7 +18,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Upload
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, or_
+from sqlalchemy import extract, func, or_
 from sqlalchemy.orm import Session, joinedload
 from starlette.middleware.sessions import SessionMiddleware
 from urllib.parse import quote_plus
@@ -499,6 +499,11 @@ def ensure_admin(current_user: Usuario) -> None:
         raise HTTPException(status_code=403, detail="No autorizado")
 
 
+def ensure_dashboard_access(current_user: Usuario) -> None:
+    if current_user.rol not in ["admin", "aprobador", "jefe_bodega"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+
 def with_backup_operation_lock() -> bool:
     return BACKUP_OPERATION_LOCK.acquire(blocking=False)
 
@@ -820,6 +825,94 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
         if current_user.rol in ["admin", "aprobador", "bodega", "jefe_bodega"]
         else mis_aprobadas_historicas
     )
+
+
+@app.get("/dashboard")
+def dashboard_view(request: Request, current_user: Usuario = Depends(get_current_user)):
+    ensure_dashboard_access(current_user)
+    return HTMLResponse(
+        content=(
+            "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>"
+            "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+            "<title>Dashboard de Contingencias</title></head>"
+            "<body style=\"font-family: sans-serif; padding: 2rem;\">"
+            "<h1>Dashboard de Contingencias</h1>"
+            "<p>Ruta backend habilitada. La interfaz SSR se implementara en la siguiente tarea.</p>"
+            "</body></html>"
+        )
+    )
+
+
+@app.get("/api/dashboard/basicos")
+def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    ensure_dashboard_access(current_user)
+
+    motivos_rows = (
+        db.query(
+            func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").label("motivo"),
+            func.count(Requisicion.id).label("total"),
+        )
+        .group_by(func.coalesce(Requisicion.motivo_requisicion, "Sin motivo"))
+        .order_by(func.count(Requisicion.id).desc(), func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").asc())
+        .all()
+    )
+
+    solicitantes_rows = (
+        db.query(
+            Usuario.nombre.label("nombre"),
+            func.count(Requisicion.id).label("total"),
+        )
+        .join(Usuario, Usuario.id == Requisicion.solicitante_id)
+        .group_by(Usuario.id, Usuario.nombre)
+        .order_by(func.count(Requisicion.id).desc(), Usuario.nombre.asc())
+        .limit(10)
+        .all()
+    )
+
+    items_rows = (
+        db.query(
+            Item.descripcion.label("descripcion"),
+            func.sum(Item.cantidad).label("total_cantidad"),
+        )
+        .join(Requisicion, Requisicion.id == Item.requisicion_id)
+        .group_by(Item.descripcion)
+        .order_by(func.sum(Item.cantidad).desc(), Item.descripcion.asc())
+        .limit(10)
+        .all()
+    )
+
+    hourly_rows = (
+        db.query(
+            extract("hour", Requisicion.created_at).label("hora"),
+            func.count(Requisicion.id).label("total"),
+        )
+        .group_by(extract("hour", Requisicion.created_at))
+        .order_by(extract("hour", Requisicion.created_at).asc())
+        .all()
+    )
+    heatmap_counts = {int(row.hora): int(row.total) for row in hourly_rows if row.hora is not None}
+    heatmap_labels = [f"{hour:02d}:00" for hour in range(24)]
+    heatmap_values = [heatmap_counts.get(hour, 0) for hour in range(24)]
+
+    return {
+        "motivos": {
+            "labels": [str(row.motivo or "Sin motivo") for row in motivos_rows],
+            "values": [int(row.total or 0) for row in motivos_rows],
+        },
+        "top_solicitantes": {
+            "labels": [str(row.nombre or "Sin nombre") for row in solicitantes_rows],
+            "values": [int(row.total or 0) for row in solicitantes_rows],
+        },
+        "top_items": {
+            "labels": [str(row.descripcion or "Sin descripcion") for row in items_rows],
+            "values": [float(row.total_cantidad or 0) for row in items_rows],
+        },
+        "horario": {
+            "labels": heatmap_labels,
+            "values": heatmap_values,
+            "alert_from_hour": 14,
+        },
+    }
     pendientes_bodega = 0
     if current_user.rol in ["bodega", "admin", "jefe_bodega"]:
         pendientes_bodega = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()

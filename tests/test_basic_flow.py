@@ -169,6 +169,101 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
     assert "Pendientes por entregar" not in html
 
 
+def test_dashboard_backend_restringe_acceso_por_rol(client: TestClient):
+    login(client, "user.ops", "pass123")
+    response_page = client.get("/dashboard")
+    response_api = client.get("/api/dashboard/basicos")
+    assert response_page.status_code == 403
+    assert response_api.status_code == 403
+
+
+def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
+    login(client, "aprob.ops", "pass123")
+    response_page = client.get("/dashboard")
+    response_api = client.get("/api/dashboard/basicos")
+    assert response_page.status_code == 200
+    assert "Dashboard de Contingencias" in response_page.text
+    assert response_api.status_code == 200
+    payload = response_api.json()
+    assert "motivos" in payload
+    assert "top_solicitantes" in payload
+    assert "top_items" in payload
+    assert "horario" in payload
+    assert payload["horario"]["alert_from_hour"] == 14
+
+
+def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req_1 = Requisicion(
+        folio="REQ-DASH-01",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        motivo_requisicion="Demostración",
+        justificacion="Contingencia uno",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 11, 9, 5, 0),
+        created_at=datetime(2026, 3, 11, 13, 30, 0),
+    )
+    req_2 = Requisicion(
+        folio="REQ-DASH-02",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        motivo_requisicion="Servicio No Programado",
+        justificacion="Contingencia dos",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 11, 15, 5, 0),
+        created_at=datetime(2026, 3, 11, 15, 45, 0),
+    )
+    req_3 = Requisicion(
+        folio="REQ-DASH-03",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        motivo_requisicion="Demostración",
+        justificacion="Contingencia tres",
+        created_at=datetime(2026, 3, 11, 15, 10, 0),
+    )
+    db_session.add_all([req_1, req_2, req_3])
+    db_session.commit()
+    db_session.refresh(req_1)
+    db_session.refresh(req_2)
+    db_session.refresh(req_3)
+
+    db_session.add_all(
+        [
+            Item(requisicion_id=req_1.id, descripcion="Cable UTP Cat6", cantidad=3, unidad="unidad"),
+            Item(requisicion_id=req_2.id, descripcion="Cable UTP Cat6", cantidad=2, unidad="unidad"),
+            Item(requisicion_id=req_3.id, descripcion="Conector RJ45", cantidad=5, unidad="unidad"),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/api/dashboard/basicos")
+    assert response.status_code == 200
+    payload = response.json()
+
+    motivos = dict(zip(payload["motivos"]["labels"], payload["motivos"]["values"]))
+    assert motivos["Demostración"] == 2
+    assert motivos["Servicio No Programado"] == 1
+
+    solicitantes = dict(zip(payload["top_solicitantes"]["labels"], payload["top_solicitantes"]["values"]))
+    assert solicitantes[user.nombre] == 3
+
+    items = dict(zip(payload["top_items"]["labels"], payload["top_items"]["values"]))
+    assert items["Cable UTP Cat6"] == 5.0
+    assert items["Conector RJ45"] == 5.0
+
+    assert payload["horario"]["labels"][13] == "13:00"
+    assert payload["horario"]["values"][13] == 1
+    assert payload["horario"]["values"][15] == 2
+    assert payload["horario"]["alert_from_hour"] == 14
+
+
 def test_home_aprobador_grafico_usa_pendientes_globales(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     db_session.add(
