@@ -171,7 +171,7 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
 
 def test_dashboard_backend_restringe_acceso_por_rol(client: TestClient):
     login(client, "user.ops", "pass123")
-    response_page = client.get("/dashboard")
+    response_page = client.get("/monitor")
     response_api = client.get("/api/dashboard/basicos")
     assert response_page.status_code == 403
     assert response_api.status_code == 403
@@ -179,10 +179,10 @@ def test_dashboard_backend_restringe_acceso_por_rol(client: TestClient):
 
 def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
     login(client, "aprob.ops", "pass123")
-    response_page = client.get("/dashboard")
+    response_page = client.get("/monitor")
     response_api = client.get("/api/dashboard/basicos")
     assert response_page.status_code == 200
-    assert "Dashboard de Contingencias" in response_page.text
+    assert "Monitor de Actividad" in response_page.text
     assert "cdn.jsdelivr.net/npm/chart.js" in response_page.text
     assert "async function cargarDatos()" in response_page.text
     assert "chart-motivos" in response_page.text
@@ -273,13 +273,13 @@ def test_navbar_muestra_contingencias_solo_para_roles_autorizados(client: TestCl
     login(client, "aprob.ops", "pass123")
     response_aprobador = client.get("/")
     assert response_aprobador.status_code == 200
-    assert "Contingencias" in response_aprobador.text
+    assert "Monitor de Actividad" in response_aprobador.text
 
     client.post("/logout")
     login(client, "user.ops", "pass123")
     response_user = client.get("/")
     assert response_user.status_code == 200
-    assert "Contingencias" not in response_user.text
+    assert "Monitor de Actividad" not in response_user.text
 
 
 def test_home_aprobador_grafico_usa_pendientes_globales(client: TestClient, db_session: Session):

@@ -3,8 +3,8 @@
 ## Estado actual
 - La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
-- Frente activo en rama `feat/bi-dashboard`: `Dashboard de Contingencias (Fase 1)` para `admin`, `aprobador` y `jefe_bodega`.
-- Contexto de negocio clave del dashboard: esta app funciona como registro de contingencias cuando Prokey ya cerro rutas a las `14:00`. El dashboard debe explicar `por que`, `quien`, `que` y `cuando` ocurre ese uso para ayudar a reducirlo, no para medir productividad.
+- Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
+- Contexto de negocio clave del Monitor de Actividad: esta app funciona como registro de contingencias cuando Prokey ya cerro rutas a las `14:00`. El monitor debe explicar `por que`, `quien`, `que` y `cuando` ocurre ese uso para ayudar a reducirlo, no para medir productividad.
 - Rama de reinicio creada desde commit base pre-liquidacion: `feat/liquidacion-rework-v2` en `3d7702b`.
 - `REQ-060` completada en esta rama: ya existe estado `liquidada`, campos de liquidacion base y migracion SQLite robusta.
 - Baseline de entrega normalizado: en entrega completa, `cantidad_entregada` queda persistida por item (sin depender de fallbacks).
@@ -86,10 +86,10 @@
 - Ver `docs/ai/DECISIONS.md` ADR-004 para la justificación completa.
 
 ## En progreso
-- Ejecutar `EPIC-BI-01` Dashboard de Contingencias (Fase 1).
-- `REQ-118A` completada: backend base ya existe con guard de roles y API `/api/dashboard/basicos` entregando payload para motivos, top solicitantes, top items y horario con `alert_from_hour=14`.
-- `REQ-118B` completada: `/dashboard` ya renderiza `dashboard_contingencias.html` con grid SSR 2x2, cuatro `canvas` listos para Chart.js y enlace `Contingencias` visible solo para `admin`, `aprobador` y `jefe_bodega`.
-- `REQ-118C` completada: el dashboard ya carga datos por Fetch API, renderiza los 4 graficos con `Chart.js` y aplica color de alerta a las barras desde las `14:00` en adelante.
+- Fase 1 del `Monitor de Actividad` completada.
+- `REQ-118A` completada: backend base ya existe con guard de roles y API `/api/dashboard/basicos` entregando payload para motivos, top solicitantes, top items y horario con `alert_from_hour=14`; la vista institucional ahora vive en `/monitor`.
+- `REQ-118B` completada: `/monitor` ya renderiza `monitor_actividad.html` con grid SSR 2x2, cuatro `canvas` listos para Chart.js y enlace `Monitor de Actividad` visible solo para `admin`, `aprobador` y `jefe_bodega`.
+- `REQ-118C` completada: el Monitor de Actividad ya carga datos por Fetch API, renderiza los 4 graficos con `Chart.js` y aplica color de alerta a las barras desde las `14:00` en adelante.
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - Ejecutar smoke manual de entrega con firma y de liquidacion para validar experiencia completa de bloqueo/edicion.
 - Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
@@ -99,7 +99,7 @@
 - Revisar balance final de densidad visual para evitar sobrecarga en pantallas pequeñas.
 
 ## Proximo paso exacto
-### Frente BI / Dashboard (`REQ-118`):
+### Frente BI / Monitor de Actividad (`REQ-118`):
 1. Validar contraste, densidad visual y overflow del dashboard en laptop/desktop con datos reales.
 2. Definir si la siguiente iteracion BI agrega filtros por rango/usuario/departamento o nuevas metricas operativas (`tiempos de liquidacion`, `top receptores`, `motivos por franja`).
 
@@ -126,8 +126,8 @@
 - El entorno actual deja `TestClient` colgado incluso contra `/health`; para validar REQ-085 se usó compilación y smoke directo de modelo/auth/CRUD con DB temporal, pero falta smoke HTTP/manual real.
 
 ## Ultimo cambio cerrado
-- `REQ-118A` completada: backend del dashboard BI implementado. Ya existen `/dashboard` y `/api/dashboard/basicos` con autorizacion para `admin`, `aprobador` y `jefe_bodega`; la API entrega las 4 agregaciones base listas para la futura UI.
-- `REQ-118` completada: el workstream BI quedo formalmente abierto en rama dedicada y ya se descompuso en la epica `EPIC-BI-01` con tareas ejecutables `REQ-118A/B/C`.
+- `REQ-118A` completada: backend base del Monitor de Actividad implementado. Ya existen `/monitor` y `/api/dashboard/basicos` con autorizacion para `admin`, `aprobador` y `jefe_bodega`; la API entrega las 4 agregaciones base listas para la UI actual.
+- `REQ-118` completada: el workstream BI quedo formalmente abierto en rama dedicada y ya se descompuso en la epica `EPIC-BI-01` con tareas ejecutables `REQ-118A/B/C`, hoy institucionalizado como `Monitor de Actividad`.
 - `REQ-117` completada: `Gestionar Entrega` ya no exige firma/PIN cuando el resultado es `no_entregada`, incluso si existe receptor designado o el frontend envia `recibido_por_id`; backend ignora la firma en ese caso, UI oculta los campos y solo exige comentario para cerrar la requisicion.
 - `REQ-116` completada: documentacion de gobernanza y estado del producto actualizada para reflejar `beta operativa en produccion`, continuidad agnostica al LLM/herramienta y trazabilidad documental obligatoria como regla del repo.
 - `REQ-106` completada: el catalogo ahora persiste `permite_decimal` como fuente de verdad. Solo `CONCENTRADO SHF` y `LIQUIDO CONCENTRADO DESODORIZADOR` quedan habilitados para cantidades decimales; crear/editar requisicion ajusta la UX del campo cantidad y el backend rechaza decimales para cualquier otro item activo del catalogo.

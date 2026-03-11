@@ -866,17 +866,18 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
     )
 
 
-@app.get("/dashboard")
-def dashboard_view(request: Request, current_user: Usuario = Depends(get_current_user)):
+@app.get("/monitor")
+def get_monitor_actividad(request: Request, current_user: Usuario = Depends(get_current_user)):
     ensure_dashboard_access(current_user)
     return templates.TemplateResponse(
-        "dashboard_contingencias.html",
+        "monitor_actividad.html",
         template_context(request, current_user),
     )
 
 
 @app.get("/api/dashboard/basicos")
 def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Datos base para el Monitor de Actividad (Fase 1).
     ensure_dashboard_access(current_user)
 
     motivos_rows = (

@@ -1,5 +1,28 @@
 # Worklog (append-only)
 
+## 2026-03-11 13:44 UTC-6 | tool: Codex CLI
+- Objetivo: institucionalizar la nomenclatura BI como `Monitor de Actividad` y limpiar ruta, template, navbar y documentacion activa.
+- Tareas: `EPIC-BI-01`, `REQ-118A`, `REQ-118B`, `REQ-118C`
+- Cambios:
+  - `app/main.py`
+  - `templates/monitor_actividad.html`
+  - `templates/partials/navbar.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "dashboard_contingencias|Dashboard de Contingencias|Contingencias|/dashboard|monitor_actividad|Monitor de Actividad|/monitor" app templates docs/ai tests`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+- Resultado:
+  - La vista institucional pasa a llamarse `Monitor de Actividad`.
+  - El template se renombra a `templates/monitor_actividad.html`.
+  - La ruta web queda en `/monitor` con handler `get_monitor_actividad`.
+  - El navbar muestra `Monitor de Actividad` y apunta a `/monitor`.
+  - `TASKS` y `HANDOFF` quedan alineados a la nueva nomenclatura y la Fase 1 se marca completada.
+- Proximo paso:
+  - Proceder con la definicion e implementacion de metricas de la siguiente fase del Monitor de Actividad.
+
 ## 2026-03-11 13:18 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-118C`, conectando la shell SSR del dashboard a datos reales con `Chart.js`.
 - Tareas: `REQ-118C`

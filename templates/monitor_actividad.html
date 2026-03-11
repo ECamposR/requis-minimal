@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% import "macros/ui.html" as ui %}
-{% block title %}Dashboard de Contingencias{% endblock %}
+{% block title %}Monitor de Actividad{% endblock %}
 {% block content %}
-{{ ui.page_header("Dashboard de Contingencias", "Audita por que, quien, que y cuando se activan requisiciones fuera del flujo normal para reducir contingencias alrededor del cierre de Prokey.") }}
+{{ ui.page_header("Monitor de Actividad", "Audita por que, quien, que y cuando se activan requisiciones fuera del flujo normal para reducir contingencias alrededor del cierre de Prokey.") }}
 
 <style>
 .dashboard-bi-grid {
@@ -316,7 +316,7 @@ function renderHorarioChart(data) {
         data: {
             labels,
             datasets: [{
-                label: "Contingencias",
+                label: "Actividad",
                 data: values,
                 backgroundColor: labels.map((label) => {
                     const hour = Number(String(label).slice(0, 2));
@@ -353,7 +353,7 @@ async function cargarDatos() {
             credentials: "same-origin",
         });
         if (!response.ok) {
-            throw new Error(`No se pudo cargar dashboard (${response.status})`);
+            throw new Error(`No se pudo cargar el Monitor de Actividad (${response.status})`);
         }
         const payload = await response.json();
         renderMotivosChart(payload.motivos);
@@ -361,7 +361,7 @@ async function cargarDatos() {
         renderItemsChart(payload.top_items);
         renderHorarioChart(payload.horario);
     } catch (error) {
-        console.error("dashboard_contingencias_error", error);
+        console.error("monitor_actividad_error", error);
         ["motivos", "solicitantes", "items", "horario"].forEach((key) => {
             setChartStatus(key, "No se pudieron cargar los datos.", true);
         });
