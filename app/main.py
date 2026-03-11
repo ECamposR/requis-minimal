@@ -948,6 +948,97 @@ def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db:
     }
 
 
+@app.get("/api/dashboard/auditoria")
+def dashboard_auditoria_api(current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Datos de auditoria y fugas para el Monitor de Actividad (Fase 2).
+    ensure_dashboard_access(current_user)
+
+    requisiciones_cerradas = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.receptor_designado),
+        )
+        .filter(Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]))
+        .all()
+    )
+
+    total_requisiciones_cerradas = len(requisiciones_cerradas)
+    requisiciones_con_fuga = 0
+    inversion_demos = 0.0
+    fugas_por_producto: dict[str, float] = {}
+    fugas_por_tecnico: dict[str, float] = {}
+
+    for req in requisiciones_cerradas:
+        req_tiene_fuga = False
+        receptor_nombre = (
+            req.receptor_designado.nombre.strip()
+            if req.receptor_designado and req.receptor_designado.nombre
+            else "Sin receptor designado"
+        )
+
+        for item in req.items:
+            delivered = float(item.cantidad_entregada or 0)
+            used = float(item.qty_used or 0)
+            not_used = float(item.qty_left_at_client or 0)
+            returned = float(item.qty_returned_to_warehouse or 0)
+            expected_return = float(
+                calcular_retorno_esperado(
+                    item.liquidation_mode,
+                    used,
+                    not_used,
+                    item.contexto_operacion,
+                )
+            )
+            diferencia = expected_return - returned
+
+            if item.es_demo:
+                inversion_demos += delivered
+
+            if diferencia <= 0:
+                continue
+
+            req_tiene_fuga = True
+            descripcion = (item.descripcion or "Sin descripcion").strip() or "Sin descripcion"
+            fugas_por_producto[descripcion] = fugas_por_producto.get(descripcion, 0.0) + diferencia
+            fugas_por_tecnico[receptor_nombre] = fugas_por_tecnico.get(receptor_nombre, 0.0) + diferencia
+
+        if req_tiene_fuga:
+            requisiciones_con_fuga += 1
+
+    indice_discrepancia = (
+        round((requisiciones_con_fuga * 100.0) / total_requisiciones_cerradas, 2)
+        if total_requisiciones_cerradas
+        else 0.0
+    )
+
+    top_productos = sorted(
+        fugas_por_producto.items(),
+        key=lambda item: (-item[1], item[0].lower()),
+    )[:10]
+    top_tecnicos = sorted(
+        fugas_por_tecnico.items(),
+        key=lambda item: (-item[1], item[0].lower()),
+    )[:5]
+
+    return {
+        "kpis": {
+            "indice_discrepancia_pct": indice_discrepancia,
+            "requisiciones_con_fuga": requisiciones_con_fuga,
+            "requisiciones_cerradas": total_requisiciones_cerradas,
+            "inversion_demos": round(inversion_demos, 2),
+        },
+        "fuga_por_producto": {
+            "labels": [label for label, _ in top_productos],
+            "values": [round(value, 2) for _, value in top_productos],
+        },
+        "fugas_por_tecnico": {
+            "labels": [label for label, _ in top_tecnicos],
+            "values": [round(value, 2) for _, value in top_tecnicos],
+        },
+    }
+
+
 @app.get("/crear")
 def crear_form(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     restricted_redirect = redirect_if_bodega_plain_accesses_own_requests(current_user)

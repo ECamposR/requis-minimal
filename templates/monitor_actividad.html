@@ -5,10 +5,54 @@
 {{ ui.page_header("Monitor de Actividad", "Audita por que, quien, que y cuando se activan requisiciones fuera del flujo normal para reducir contingencias alrededor del cierre de Prokey.") }}
 
 <style>
+.monitor-section {
+    margin-top: 1.4rem;
+}
+.monitor-section-header {
+    margin-bottom: 1rem;
+}
+.monitor-section-header h2 {
+    margin-bottom: 0.2rem;
+    color: var(--text, var(--ui-text, #0f172a)) !important;
+}
+.monitor-section-header p {
+    margin: 0;
+}
 .dashboard-bi-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
+}
+.dashboard-bi-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.dashboard-bi-kpi-card {
+    display: grid;
+    gap: 0.45rem;
+    min-height: 9.5rem;
+}
+.dashboard-bi-kpi-label {
+    color: var(--ui-muted, var(--muted, #475569));
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.dashboard-bi-kpi-value {
+    color: var(--text, var(--ui-text, #0f172a));
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1;
+}
+.dashboard-bi-kpi-note {
+    color: var(--text, var(--ui-text, #0f172a));
+    font-size: 0.98rem;
+}
+.dashboard-bi-kpi-note strong {
+    color: var(--ui-danger, var(--danger, #dc2626));
 }
 .dashboard-bi-card {
     min-height: 22rem;
@@ -53,11 +97,18 @@
     color: var(--ui-danger, var(--danger, #dc2626));
 }
 @media (max-width: 960px) {
+    .dashboard-bi-kpi-grid,
     .dashboard-bi-grid {
         grid-template-columns: 1fr;
     }
 }
 </style>
+
+<section class="monitor-section" aria-labelledby="monitor-fase-1">
+    <header class="monitor-section-header">
+        <h2 id="monitor-fase-1">Fase 1: Demanda y Contingencia</h2>
+        <p>Explica la demanda operativa del sistema de contingencias: por qué, quién, qué y cuándo se activa.</p>
+    </header>
 
 <section class="dashboard-bi-grid" aria-label="Metricas de contingencia">
     <article class="panel view-panel dashboard-bi-card">
@@ -116,6 +167,57 @@
         <p class="dashboard-bi-status" data-chart-status="horario">Cargando datos...</p>
     </article>
 </section>
+</section>
+
+<section class="monitor-section" aria-labelledby="monitor-fase-2">
+    <header class="monitor-section-header">
+        <h2 id="monitor-fase-2">Fase 2: Auditoría y Fugas</h2>
+        <p>Audita mermas, discrepancias y señales de pérdida entre el retorno esperado y lo que realmente regresa a bodega.</p>
+    </header>
+
+    <section class="dashboard-bi-kpi-grid" aria-label="KPIs de auditoria">
+        <article class="panel view-panel dashboard-bi-kpi-card">
+            <span class="dashboard-bi-kpi-label">Indice de Discrepancia</span>
+            <strong class="dashboard-bi-kpi-value" id="kpi-indice-discrepancia">--</strong>
+            <p class="dashboard-bi-kpi-note" id="kpi-indice-discrepancia-note">Cargando datos de auditoría...</p>
+        </article>
+        <article class="panel view-panel dashboard-bi-kpi-card">
+            <span class="dashboard-bi-kpi-label">Inversion en Demos</span>
+            <strong class="dashboard-bi-kpi-value" id="kpi-inversion-demos">--</strong>
+            <p class="dashboard-bi-kpi-note" id="kpi-inversion-demos-note">Cargando datos de auditoría...</p>
+        </article>
+    </section>
+
+    <section class="dashboard-bi-grid" aria-label="Metricas de fugas">
+        <article class="panel view-panel dashboard-bi-card">
+            <header>
+                <div>
+                    <h3>Ranking de Fuga por Producto</h3>
+                    <p>Muestra qué ítems acumulan más unidades faltantes en requisiciones cerradas.</p>
+                </div>
+                <small>Top 10</small>
+            </header>
+            <div class="dashboard-bi-canvas-wrap">
+                <canvas id="chart-fuga-producto" aria-label="Grafico de fuga por producto"></canvas>
+            </div>
+            <p class="dashboard-bi-status" data-chart-status="fuga-producto">Cargando datos...</p>
+        </article>
+
+        <article class="panel view-panel dashboard-bi-card">
+            <header>
+                <div>
+                    <h3>Fugas por Tecnico</h3>
+                    <p>Resalta qué receptores designados acumulan más unidades faltantes reportadas.</p>
+                </div>
+                <small>Top 5</small>
+            </header>
+            <div class="dashboard-bi-canvas-wrap">
+                <canvas id="chart-fuga-tecnico" aria-label="Grafico de fugas por tecnico"></canvas>
+            </div>
+            <p class="dashboard-bi-status" data-chart-status="fuga-tecnico">Cargando datos...</p>
+        </article>
+    </section>
+</section>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -138,6 +240,21 @@ function clearChartStatus(key) {
     if (!node) return;
     node.textContent = "";
     node.classList.remove("is-error");
+}
+
+function fmtAuditNumber(value) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
+    return Number(value).toLocaleString("es-SV", {
+        minimumFractionDigits: Number(value) % 1 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+    });
+}
+
+function setAuditKpi(id, value, noteId, note) {
+    const valueNode = document.getElementById(id);
+    const noteNode = document.getElementById(noteId);
+    if (valueNode) valueNode.textContent = value;
+    if (noteNode) noteNode.innerHTML = note;
 }
 
 function destroyChart(key) {
@@ -345,7 +462,96 @@ function renderHorarioChart(data) {
     clearChartStatus("horario");
 }
 
-async function cargarDatos() {
+function renderAuditKpis(kpis) {
+    const cerradas = Number(kpis?.requisiciones_cerradas ?? 0);
+    const conFuga = Number(kpis?.requisiciones_con_fuga ?? 0);
+    const indice = Number(kpis?.indice_discrepancia_pct ?? 0);
+    const inversion = Number(kpis?.inversion_demos ?? 0);
+
+    setAuditKpi(
+        "kpi-indice-discrepancia",
+        `${fmtAuditNumber(indice)}%`,
+        "kpi-indice-discrepancia-note",
+        `<strong>${fmtAuditNumber(conFuga)}</strong> de <strong>${fmtAuditNumber(cerradas)}</strong> requisiciones cerradas presentan al menos una fuga.`
+    );
+    setAuditKpi(
+        "kpi-inversion-demos",
+        fmtAuditNumber(inversion),
+        "kpi-inversion-demos-note",
+        `Suma acumulada de <strong>cantidad entregada</strong> en ítems marcados como demo dentro de requisiciones cerradas.`
+    );
+}
+
+function renderFugaProductoChart(data) {
+    destroyChart("fuga-producto");
+    const canvas = document.getElementById("chart-fuga-producto");
+    if (!canvas) return;
+    dashboardCharts["fuga-producto"] = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: Array.isArray(data?.labels) ? data.labels : [],
+            datasets: [{
+                label: "Unidades faltantes",
+                data: Array.isArray(data?.values) ? data.values : [],
+                backgroundColor: getThemeToken("--ui-danger", "#dc2626"),
+                borderRadius: 8,
+                borderSkipped: false,
+            }],
+        },
+        options: {
+            ...buildBaseOptions(),
+            indexAxis: "y",
+            plugins: {
+                ...buildBaseOptions().plugins,
+                legend: { display: false },
+            },
+            scales: {
+                x: {
+                    ...buildBaseOptions().scales.x,
+                    beginAtZero: true,
+                },
+                y: buildBaseOptions().scales.y,
+            },
+        },
+    });
+    clearChartStatus("fuga-producto");
+}
+
+function renderFugaTecnicoChart(data) {
+    destroyChart("fuga-tecnico");
+    const canvas = document.getElementById("chart-fuga-tecnico");
+    if (!canvas) return;
+    dashboardCharts["fuga-tecnico"] = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: Array.isArray(data?.labels) ? data.labels : [],
+            datasets: [{
+                label: "Unidades faltantes",
+                data: Array.isArray(data?.values) ? data.values : [],
+                backgroundColor: getThemeToken("--ui-warning", "#d97706"),
+                borderRadius: 8,
+                borderSkipped: false,
+            }],
+        },
+        options: {
+            ...buildBaseOptions(),
+            plugins: {
+                ...buildBaseOptions().plugins,
+                legend: { display: false },
+            },
+            scales: {
+                x: buildBaseOptions().scales.x,
+                y: {
+                    ...buildBaseOptions().scales.y,
+                    beginAtZero: true,
+                },
+            },
+        },
+    });
+    clearChartStatus("fuga-tecnico");
+}
+
+async function cargarDatosBasicos() {
     ["motivos", "solicitantes", "items", "horario"].forEach((key) => setChartStatus(key, "Cargando datos..."));
     try {
         const response = await fetch("/api/dashboard/basicos", {
@@ -368,8 +574,35 @@ async function cargarDatos() {
     }
 }
 
+async function cargarDatosAuditoria() {
+    ["fuga-producto", "fuga-tecnico"].forEach((key) => setChartStatus(key, "Cargando datos..."));
+    setAuditKpi("kpi-indice-discrepancia", "--", "kpi-indice-discrepancia-note", "Cargando datos de auditoría...");
+    setAuditKpi("kpi-inversion-demos", "--", "kpi-inversion-demos-note", "Cargando datos de auditoría...");
+    try {
+        const response = await fetch("/api/dashboard/auditoria", {
+            headers: { "Accept": "application/json" },
+            credentials: "same-origin",
+        });
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar auditoría (${response.status})`);
+        }
+        const payload = await response.json();
+        renderAuditKpis(payload.kpis);
+        renderFugaProductoChart(payload.fuga_por_producto);
+        renderFugaTecnicoChart(payload.fugas_por_tecnico);
+    } catch (error) {
+        console.error("monitor_actividad_auditoria_error", error);
+        ["fuga-producto", "fuga-tecnico"].forEach((key) => {
+            setChartStatus(key, "No se pudieron cargar los datos.", true);
+        });
+        setAuditKpi("kpi-indice-discrepancia", "--", "kpi-indice-discrepancia-note", "No se pudieron cargar los datos de auditoría.");
+        setAuditKpi("kpi-inversion-demos", "--", "kpi-inversion-demos-note", "No se pudieron cargar los datos de auditoría.");
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    cargarDatos();
+    cargarDatosBasicos();
+    cargarDatosAuditoria();
 });
 </script>
 {% endblock %}

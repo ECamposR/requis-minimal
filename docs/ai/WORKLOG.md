@@ -1,5 +1,55 @@
 # Worklog (append-only)
 
+## 2026-03-11 14:36 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-118E` y `REQ-118F`, completando la Fase 2 del Monitor de Actividad en frontend sin afectar la Fase 1.
+- Tareas: `REQ-118E`, `REQ-118F`
+- Cambios:
+  - `templates/monitor_actividad.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `sed -n '1,520p' templates/monitor_actividad.html`
+  - `rg -n "kpi|metric-card|dashboard-bi|status-muted" static/theme.css static/style.css templates/home.html`
+  - `python -m compileall tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "dashboard or auditoria or monitor"`
+- Resultado:
+  - La vista del Monitor de Actividad ahora separa Fase 1 y Fase 2 con encabezados propios.
+  - Se agregaron dos KPI cards: `Indice de Discrepancia` e `Inversion en Demos`.
+  - Se agregaron dos graficos nuevos: `Ranking de Fuga por Producto` y `Fugas por Tecnico`.
+  - El frontend consume `/api/dashboard/auditoria` en paralelo a `/api/dashboard/basicos`.
+  - Los graficos de fugas usan paleta de alerta (`danger` / `warning`) y cuentan con estado de carga/error igual que la Fase 1.
+  - Se reforzo el test SSR para comprobar presencia de la Fase 2, sus `canvas`, KPIs y la llamada al endpoint nuevo.
+  - `REQ-118E` y `REQ-118F` pasan a `done`.
+- Proximo paso:
+  - Validar visualmente la Fase 2 con datos reales y decidir la siguiente iteracion BI.
+
+## 2026-03-11 14:18 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-118D`, agregando backend de auditoria y fugas sin romper la Fase 1 del Monitor de Actividad.
+- Tareas: `REQ-118D`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "def calcular_retorno_esperado|calcular_retorno_esperado\\(" app/crud.py app/main.py tests`
+  - `sed -n '1,260p' app/crud.py`
+  - `sed -n '1,240p' app/models.py`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "dashboard or auditoria"`
+- Resultado:
+  - Se agrego `GET /api/dashboard/auditoria` protegido por los mismos roles del Monitor de Actividad.
+  - El endpoint procesa requisiciones cerradas (`liquidada` y `liquidada_en_prokey`) con `joinedload` de items y receptor designado.
+  - La fuga por item se calcula reutilizando `calcular_retorno_esperado`; solo diferencias positivas se acumulan como perdida.
+  - El payload devuelve KPIs (`indice_discrepancia_pct`, `requisiciones_con_fuga`, `requisiciones_cerradas`, `inversion_demos`) y datasets para `fuga_por_producto` y `fugas_por_tecnico`.
+  - Se agrego cobertura para acceso por rol y para el calculo agregado de auditoria, incluyendo contexto `instalacion_inicial` y demos.
+  - `REQ-118D` pasa a `done`.
+- Proximo paso:
+  - Ejecutar `REQ-118E`: sumar la nueva seccion de auditoria/fugas a `monitor_actividad.html`.
+
 ## 2026-03-11 14:03 UTC-6 | tool: Codex CLI
 - Objetivo: registrar la Fase 2 del Monitor de Actividad antes de implementar backend o frontend, preservando intacta la Fase 1 ya operativa.
 - Tareas: `EPIC-BI-02`, `REQ-118D`, `REQ-118E`, `REQ-118F`

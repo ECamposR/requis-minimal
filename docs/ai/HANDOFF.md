@@ -91,9 +91,9 @@
 - `REQ-118B` completada: `/monitor` ya renderiza `monitor_actividad.html` con grid SSR 2x2, cuatro `canvas` listos para Chart.js y enlace `Monitor de Actividad` visible solo para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-118C` completada: el Monitor de Actividad ya carga datos por Fetch API, renderiza los 4 graficos con `Chart.js` y aplica color de alerta a las barras desde las `14:00` en adelante.
 - Fase 2 del `Monitor de Actividad` definida y pendiente de ejecucion: auditoria de fugas, discrepancias y merma usando `calcular_retorno_esperado` como fuente comun de verdad para el delta operativo.
-- `REQ-118D` pendiente: backend `GET /api/dashboard/auditoria` con KPIs de discrepancia, inversion en demos, ranking de fuga por producto y fugas por tecnico.
-- `REQ-118E` pendiente: nueva seccion UI debajo de la Fase 1 con KPIs y dos graficos adicionales de auditoria.
-- `REQ-118F` pendiente: integracion frontend para consumir auditoria y renderizar visuales en paleta de alerta sin romper Fase 1.
+- `REQ-118D` completada: backend `GET /api/dashboard/auditoria` ya procesa requisiciones cerradas (`liquidada` + `liquidada_en_prokey`), reutiliza `calcular_retorno_esperado`, entrega KPIs de discrepancia/inversion en demos y datasets para fuga por producto y fugas por tecnico.
+- `REQ-118E` completada: `monitor_actividad.html` ya incluye una segunda seccion SSR para auditoria/fugas con dos KPI cards y dos nuevos `canvas` para graficos de perdida.
+- `REQ-118F` completada: el frontend ya consume `/api/dashboard/auditoria`, renderiza KPIs y graficos de fugas en paleta de alerta sin romper los graficos de la Fase 1.
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - Ejecutar smoke manual de entrega con firma y de liquidacion para validar experiencia completa de bloqueo/edicion.
 - Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
@@ -104,9 +104,8 @@
 
 ## Proximo paso exacto
 ### Frente BI / Monitor de Actividad (`REQ-118`):
-1. Ejecutar `REQ-118D`: crear `GET /api/dashboard/auditoria` reutilizando `calcular_retorno_esperado` para computar fugas por item y por receptor.
-2. Ejecutar `REQ-118E`: extender `monitor_actividad.html` con KPIs de auditoria y grid de graficos de fugas debajo de la Fase 1.
-3. Ejecutar `REQ-118F`: consumir `/api/dashboard/auditoria` desde frontend y renderizar graficos/KPIs de alerta sin romper la Fase 1.
+1. Validar visualmente la Fase 2 del Monitor de Actividad con datos reales y ajustar densidad/etiquetas si algun grafico se satura.
+2. Definir la siguiente iteracion BI: filtros de periodo/departamento o nuevas metricas de auditoria (`tiempos de liquidacion`, `fugas por motivo`, `tendencia semanal`).
 
 ### Frente despliegue (REQ-087 / REQ-088):
 1. En el servidor Docker: `docker network create proxy`
