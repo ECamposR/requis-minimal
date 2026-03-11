@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-11 10:28 UTC-6 | tool: Codex CLI
+- Objetivo: abrir un frente de trabajo aislado para el futuro dashboard de inteligencia de negocio, sin mezclarlo con `main` ni programar aun la funcionalidad.
+- Tareas: `REQ-118`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `git branch --show-current`
+  - `git status --short`
+  - `git checkout -b feat/bi-dashboard`
+- Resultado:
+  - Se creo la rama `feat/bi-dashboard` desde `main` para desarrollar el dashboard BI sin comprometer la estabilidad de produccion en la linea principal.
+  - Se dejo documentado que este frente entra primero en fase de definicion: objetivo, usuarios, metricas, filtros y alcance, antes de escribir codigo.
+- Proximo paso:
+  - Definir el alcance funcional de V1 del dashboard y convertirlo luego en tareas tecnicas concretas.
+
 ## 2026-03-11 10:05 UTC-6 | tool: Codex CLI
 - Objetivo: corregir la inconsistencia en `Gestionar Entrega` donde `no_entregada` seguia pidiendo PIN/firma por el receptor designado.
 - Tareas: `REQ-117`

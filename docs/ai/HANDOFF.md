@@ -3,6 +3,7 @@
 ## Estado actual
 - La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
+- Nuevo frente abierto en rama dedicada `feat/bi-dashboard` para explorar un dashboard de inteligencia de negocio orientado inicialmente a `aprobador` y `admin`, sin tocar todavia implementacion.
 - Rama de reinicio creada desde commit base pre-liquidacion: `feat/liquidacion-rework-v2` en `3d7702b`.
 - `REQ-060` completada en esta rama: ya existe estado `liquidada`, campos de liquidacion base y migracion SQLite robusta.
 - Baseline de entrega normalizado: en entrega completa, `cantidad_entregada` queda persistida por item (sin depender de fallbacks).
@@ -84,6 +85,7 @@
 - Ver `docs/ai/DECISIONS.md` ADR-004 para la justificación completa.
 
 ## En progreso
+- Definir el dashboard BI antes de programar: objetivo operativo, decisiones que debe habilitar, usuarios exactos, metricas de primera version, filtros y limites de alcance.
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - Ejecutar smoke manual de entrega con firma y de liquidacion para validar experiencia completa de bloqueo/edicion.
 - Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
@@ -93,6 +95,15 @@
 - Revisar balance final de densidad visual para evitar sobrecarga en pantallas pequeñas.
 
 ## Proximo paso exacto
+### Frente BI / Dashboard (`REQ-118`):
+1. Definir para quien es el dashboard en V1 (`aprobador`, `admin`) y que decisiones operativas o gerenciales debe soportar.
+2. Listar las metricas candidatas y separarlas en:
+   - metricas descriptivas inmediatas
+   - metricas que requieren nuevas reglas o derivaciones
+3. Decidir filtros minimos de consulta (rango de fechas, departamento, estado, usuario, motivo).
+4. Confirmar que la primera version sera solo lectura, SSR y sin librerias pesadas de graficas salvo necesidad real.
+5. Solo despues de eso, desglosar tareas tecnicas de implementacion.
+
 ### Frente despliegue (REQ-087 / REQ-088):
 1. En el servidor Docker: `docker network create proxy`
 2. `cd deploy/caddy && docker compose up -d`
