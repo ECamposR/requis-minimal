@@ -1,5 +1,24 @@
 # Worklog (append-only)
 
+## 2026-03-11 15:08 UTC-6 | tool: Codex CLI
+- Objetivo: corregir el bug donde el receptor podia aparecer editable al abrir `Gestionar Entrega` sin haber pulsado `Cambiar receptor`.
+- Tareas: `REQ-123`
+- Cambios:
+  - `templates/bodega_gestionar.html`
+  - `templates/bodega_entrega_parcial.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "Cambiar receptor|receptor|disabled|unlock" templates/bodega_gestionar.html templates/bodega_entrega_parcial.html`
+  - `python -m compileall templates/bodega_gestionar.html templates/bodega_entrega_parcial.html`
+- Resultado:
+  - Ambas vistas ahora fuerzan en JS un estado inicial bloqueado para selector y buscador de receptor.
+  - El receptor solo puede editarse tras pulsar `Cambiar receptor`, incluso si el navegador preserva estado visual previo.
+  - Se mantiene intacta la logica existente de guardado/cancelacion y el caso `no_entregada`.
+- Proximo paso:
+  - Validar manualmente en UI que el selector arranca bloqueado y que el cambio de receptor sigue funcionando al habilitarlo.
+
 ## 2026-03-11 11:36 UTC-6 | tool: Codex CLI
 - Objetivo: refactorizar exclusivamente la capa visual del generador de PDF para un modo `Eco-Ink`, reduciendo masa de tinta sin alterar layout, datos ni funciones.
 - Tareas: `REQ-122`

@@ -131,6 +131,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const cancelChangeButton = form.querySelector("[data-cancel-receptor-change]");
     if (!receptorSelect || !unlockButton || !warning || !changeActions || !saveChangeButton || !cancelChangeButton) return;
     let baselineReceptorValue = receptorSelect.value || "";
+    const setReceptorLocked = () => {
+        receptorSelect.disabled = true;
+        if (receptorSearch) {
+            receptorSearch.disabled = true;
+            receptorSearch.value = "";
+        }
+        filterReceptores();
+        warning.hidden = true;
+        changeActions.hidden = true;
+        unlockButton.hidden = false;
+    };
     const normalizeText = (value) => String(value || "")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -152,6 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
         receptorSearch.addEventListener("input", filterReceptores);
         filterReceptores();
     }
+    setReceptorLocked();
 
     unlockButton.addEventListener("click", () => {
         baselineReceptorValue = receptorSelect.value || "";
