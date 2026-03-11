@@ -183,6 +183,10 @@ def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
     response_api = client.get("/api/dashboard/basicos")
     assert response_page.status_code == 200
     assert "Dashboard de Contingencias" in response_page.text
+    assert "chart-motivos" in response_page.text
+    assert "chart-solicitantes" in response_page.text
+    assert "chart-items" in response_page.text
+    assert "chart-horario" in response_page.text
     assert response_api.status_code == 200
     payload = response_api.json()
     assert "motivos" in payload
@@ -257,11 +261,23 @@ def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: 
     items = dict(zip(payload["top_items"]["labels"], payload["top_items"]["values"]))
     assert items["Cable UTP Cat6"] == 5.0
     assert items["Conector RJ45"] == 5.0
-
     assert payload["horario"]["labels"][13] == "13:00"
     assert payload["horario"]["values"][13] == 1
     assert payload["horario"]["values"][15] == 2
     assert payload["horario"]["alert_from_hour"] == 14
+
+
+def test_navbar_muestra_contingencias_solo_para_roles_autorizados(client: TestClient):
+    login(client, "aprob.ops", "pass123")
+    response_aprobador = client.get("/")
+    assert response_aprobador.status_code == 200
+    assert "Contingencias" in response_aprobador.text
+
+    client.post("/logout")
+    login(client, "user.ops", "pass123")
+    response_user = client.get("/")
+    assert response_user.status_code == 200
+    assert "Contingencias" not in response_user.text
 
 
 def test_home_aprobador_grafico_usa_pendientes_globales(client: TestClient, db_session: Session):

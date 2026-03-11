@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+{% block title %}Dashboard de Contingencias{% endblock %}
+{% block content %}
+{{ ui.page_header("Dashboard de Contingencias", "Audita por que, quien, que y cuando se activan requisiciones fuera del flujo normal para reducir contingencias alrededor del cierre de Prokey.") }}
+
+<style>
+.dashboard-bi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+.dashboard-bi-card {
+    min-height: 22rem;
+}
+.dashboard-bi-card header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.dashboard-bi-card h3 {
+    margin: 0;
+}
+.dashboard-bi-card p {
+    margin: 0.35rem 0 0;
+}
+.dashboard-bi-card small {
+    color: var(--muted-color);
+}
+.dashboard-bi-canvas-wrap {
+    position: relative;
+    min-height: 15.5rem;
+}
+.dashboard-bi-canvas-wrap canvas {
+    width: 100%;
+    height: 100%;
+}
+@media (max-width: 960px) {
+    .dashboard-bi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<section class="dashboard-bi-grid" aria-label="Metricas de contingencia">
+    <article class="panel view-panel dashboard-bi-card">
+        <header>
+            <div>
+                <h3>Frecuencia por Motivo</h3>
+                <p>Expone por que se esta usando esta app como contingencia.</p>
+            </div>
+            <small>Dona</small>
+        </header>
+        <div class="dashboard-bi-canvas-wrap">
+            <canvas id="chart-motivos" aria-label="Grafico de frecuencia por motivo"></canvas>
+        </div>
+    </article>
+
+    <article class="panel view-panel dashboard-bi-card">
+        <header>
+            <div>
+                <h3>Top Usuarios Solicitantes</h3>
+                <p>Identifica quienes generan mas requisiciones contingentes.</p>
+            </div>
+            <small>Top 10</small>
+        </header>
+        <div class="dashboard-bi-canvas-wrap">
+            <canvas id="chart-solicitantes" aria-label="Grafico de top usuarios solicitantes"></canvas>
+        </div>
+    </article>
+
+    <article class="panel view-panel dashboard-bi-card">
+        <header>
+            <div>
+                <h3>Top Itens Solicitados</h3>
+                <p>Muestra que productos activan con mayor frecuencia salidas fuera de Prokey.</p>
+            </div>
+            <small>Top 10</small>
+        </header>
+        <div class="dashboard-bi-canvas-wrap">
+            <canvas id="chart-items" aria-label="Grafico de top items solicitados"></canvas>
+        </div>
+    </article>
+
+    <article class="panel view-panel dashboard-bi-card">
+        <header>
+            <div>
+                <h3>Mapa de Calor Horario</h3>
+                <p>Visibiliza cuando ocurren las contingencias y resalta el efecto post-cierre de las 14:00.</p>
+            </div>
+            <small>0-23 horas</small>
+        </header>
+        <div class="dashboard-bi-canvas-wrap">
+            <canvas id="chart-horario" aria-label="Grafico horario de contingencias"></canvas>
+        </div>
+    </article>
+</section>
+{% endblock %}

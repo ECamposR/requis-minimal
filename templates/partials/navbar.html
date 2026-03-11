@@ -13,6 +13,7 @@
         {% endif %}
         {% if current_user.rol in ['aprobador', 'admin', 'jefe_bodega'] %}
         <li><a href="/aprobar" class="nav-item {% if request.url.path.startswith('/aprobar') %}is-active{% endif %}"><span>Aprobar</span></a></li>
+        <li><a href="/dashboard" class="nav-item {% if request.url.path.startswith('/dashboard') %}is-active{% endif %}"><span>Contingencias</span></a></li>
         {% endif %}
         {% if current_user.rol in ['bodega', 'admin', 'jefe_bodega'] %}
         <li><a href="/bodega" class="nav-item {% if request.url.path.startswith('/bodega') or request.url.path.startswith('/entregar') %}is-active{% endif %}"><span>Bodega</span></a></li>

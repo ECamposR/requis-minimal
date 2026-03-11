@@ -1,5 +1,37 @@
 # Worklog (append-only)
 
+## 2026-03-11 12:42 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-118B`, reemplazando el placeholder del dashboard por una vista SSR real y enlazandola en la navegacion protegida.
+- Tareas: `REQ-118B`
+- Cambios:
+  - `app/main.py`
+  - `templates/dashboard_contingencias.html`
+  - `templates/partials/navbar.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `git branch --show-current`
+  - `rg -n "navbar|dashboard|TemplateResponse\\(" app/main.py templates docs/ai`
+  - `sed -n '1,220p' templates/base.html`
+  - `sed -n '1,220p' templates/partials/navbar.html`
+  - `sed -n '1,220p' templates/home.html`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "dashboard or contingencias"`
+- Resultado:
+  - `/dashboard` ya renderiza el template SSR `dashboard_contingencias.html` en lugar del HTML temporal.
+  - La vista nueva mantiene el patron del proyecto: `base.html`, `page_header`, superficies `panel/view-panel` y grid responsivo 2x2.
+  - Se agregaron cuatro `canvas` con ids estables para que `REQ-118C` conecte Chart.js sin rehacer la estructura.
+  - El navbar ya muestra `Contingencias` solo para `admin`, `aprobador` y `jefe_bodega`.
+  - Se reforzaron tests para confirmar presencia del SSR del dashboard y visibilidad del enlace por rol.
+  - Se detecto y corrigio una regresion estructural en `app/main.py`: las rutas del dashboard habian quedado incrustadas dentro de `home()`, dejando codigo muerto y comportamiento inconsistente; `home`, `/dashboard` y `/api/dashboard/basicos` vuelven a quedar separados.
+  - `python -m compileall` paso sin errores.
+  - El `pytest` focal volvio a terminar por `timeout` sin salida util, consistente con la limitacion ambiental ya conocida de este repo.
+  - `REQ-118B` pasa a `done`.
+- Proximo paso:
+  - Ejecutar `REQ-118C`: fetch a `/api/dashboard/basicos`, inclusion de Chart.js y renderizado de los cuatro graficos.
+
 ## 2026-03-11 12:18 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-118A`, dejando operativo el backend base del Dashboard de Contingencias.
 - Tareas: `REQ-118A`

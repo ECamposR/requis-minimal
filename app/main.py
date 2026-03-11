@@ -825,21 +825,53 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
         if current_user.rol in ["admin", "aprobador", "bodega", "jefe_bodega"]
         else mis_aprobadas_historicas
     )
+    pendientes_bodega = 0
+    if current_user.rol in ["bodega", "admin", "jefe_bodega"]:
+        pendientes_bodega = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
+    pendientes_entregar_panel = pendientes_bodega if current_user.rol in ["bodega", "admin", "jefe_bodega"] else aprobadas_panel
+    rechazadas_panel = (
+        db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
+        if current_user.rol in ["admin", "aprobador", "bodega", "jefe_bodega"]
+        else mis_rechazadas
+    )
+    escala_metricas_home = max(
+        1,
+        mis_creadas_mes,
+        pendientes_aprobar_panel,
+        pendientes_entregar_panel,
+        rechazadas_panel,
+        mis_entregadas_30d,
+    )
+
+    return templates.TemplateResponse(
+        "home.html",
+        template_context(
+            request,
+            current_user,
+            mis_requisiciones=mis_requisiciones,
+            mis_pendientes=mis_pendientes,
+            mis_aprobadas=mis_aprobadas,
+            aprobadas_panel=aprobadas_panel,
+            mis_rechazadas=mis_rechazadas,
+            mis_entregadas=mis_entregadas,
+            mis_creadas_mes=mis_creadas_mes,
+            mis_entregadas_30d=mis_entregadas_30d,
+            pendientes_aprobar_panel=pendientes_aprobar_panel,
+            pendientes_entregar_panel=pendientes_entregar_panel,
+            rechazadas_panel=rechazadas_panel,
+            escala_metricas_home=escala_metricas_home,
+            pendientes_aprobar=pendientes_aprobar,
+            pendientes_bodega=pendientes_bodega,
+        ),
+    )
 
 
 @app.get("/dashboard")
 def dashboard_view(request: Request, current_user: Usuario = Depends(get_current_user)):
     ensure_dashboard_access(current_user)
-    return HTMLResponse(
-        content=(
-            "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>"
-            "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-            "<title>Dashboard de Contingencias</title></head>"
-            "<body style=\"font-family: sans-serif; padding: 2rem;\">"
-            "<h1>Dashboard de Contingencias</h1>"
-            "<p>Ruta backend habilitada. La interfaz SSR se implementara en la siguiente tarea.</p>"
-            "</body></html>"
-        )
+    return templates.TemplateResponse(
+        "dashboard_contingencias.html",
+        template_context(request, current_user),
     )
 
 
@@ -913,45 +945,6 @@ def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db:
             "alert_from_hour": 14,
         },
     }
-    pendientes_bodega = 0
-    if current_user.rol in ["bodega", "admin", "jefe_bodega"]:
-        pendientes_bodega = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
-    pendientes_entregar_panel = pendientes_bodega if current_user.rol in ["bodega", "admin", "jefe_bodega"] else aprobadas_panel
-    rechazadas_panel = (
-        db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
-        if current_user.rol in ["admin", "aprobador", "bodega", "jefe_bodega"]
-        else mis_rechazadas
-    )
-    escala_metricas_home = max(
-        1,
-        mis_creadas_mes,
-        pendientes_aprobar_panel,
-        pendientes_entregar_panel,
-        rechazadas_panel,
-        mis_entregadas_30d,
-    )
-
-    return templates.TemplateResponse(
-        "home.html",
-        template_context(
-            request,
-            current_user,
-            mis_requisiciones=mis_requisiciones,
-            mis_pendientes=mis_pendientes,
-            mis_aprobadas=mis_aprobadas,
-            aprobadas_panel=aprobadas_panel,
-            mis_rechazadas=mis_rechazadas,
-            mis_entregadas=mis_entregadas,
-            mis_creadas_mes=mis_creadas_mes,
-            mis_entregadas_30d=mis_entregadas_30d,
-            pendientes_aprobar_panel=pendientes_aprobar_panel,
-            pendientes_entregar_panel=pendientes_entregar_panel,
-            rechazadas_panel=rechazadas_panel,
-            escala_metricas_home=escala_metricas_home,
-            pendientes_aprobar=pendientes_aprobar,
-            pendientes_bodega=pendientes_bodega,
-        ),
-    )
 
 
 @app.get("/crear")

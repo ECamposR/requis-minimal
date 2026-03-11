@@ -87,8 +87,8 @@
 
 ## En progreso
 - Ejecutar `EPIC-BI-01` Dashboard de Contingencias (Fase 1).
-- `REQ-118A` completada: backend base ya existe con guard de roles, vista `/dashboard` temporal y API `/api/dashboard/basicos` entregando payload para motivos, top solicitantes, top items y horario con `alert_from_hour=14`.
-- `REQ-118B` pendiente: template SSR + grid 2x2 + enlace protegido por rol en navbar.
+- `REQ-118A` completada: backend base ya existe con guard de roles y API `/api/dashboard/basicos` entregando payload para motivos, top solicitantes, top items y horario con `alert_from_hour=14`.
+- `REQ-118B` completada: `/dashboard` ya renderiza `dashboard_contingencias.html` con grid SSR 2x2, cuatro `canvas` listos para Chart.js y enlace `Contingencias` visible solo para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-118C` pendiente: `cargarDatos()` + `Chart.js` + 4 graficos base, incluyendo regla visual de alerta desde las 14:00.
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - Ejecutar smoke manual de entrega con firma y de liquidacion para validar experiencia completa de bloqueo/edicion.
@@ -100,13 +100,12 @@
 
 ## Proximo paso exacto
 ### Frente BI / Dashboard (`REQ-118`):
-1. Ejecutar `REQ-118B`: pantalla SSR y enlace de navegacion.
-2. Ejecutar `REQ-118C`: integracion `Chart.js` y render de las 4 metricas:
+1. Ejecutar `REQ-118C`: integracion `Chart.js` y render de las 4 metricas:
    - Frecuencia por Motivo
    - Top Usuarios Solicitantes
    - Top Items Solicitados
    - Mapa de Calor Horario con alerta visual 14:00+
-3. Reemplazar la respuesta HTML temporal de `/dashboard` por `dashboard_contingencias.html` cuando exista el template.
+2. Validar contraste, densidad visual y overflow del dashboard en laptop/desktop una vez montados los graficos.
 
 ### Frente despliegue (REQ-087 / REQ-088):
 1. En el servidor Docker: `docker network create proxy`
