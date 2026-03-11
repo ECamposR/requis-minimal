@@ -32,6 +32,7 @@ MR  = 14 * mm
 MT  = 12 * mm
 MB  = 12 * mm
 UW  = PW - ML - MR       # ≈ 533 pt
+PAGE_BOTTOM_LIMIT = MB + 12 * mm
 
 GAP = 5 * mm             # separación vertical entre secciones
 LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "static", "branding", "logo-prohygiene-es.png")
@@ -230,14 +231,30 @@ def generate_requisicion_pdf(req: dict) -> bytes:
 
     top = _header(cv, req, folio, top)  ;  top -= GAP
     top = _cards(cv, req, top)          ;  top -= GAP
-    top = _items_table(cv, req, top)    ;  top -= GAP
+    top = _items_table(cv, req, top, folio)    ;  top -= GAP
+    just_h = _just_com_height(req)
+    top = _ensure_space(cv, top, just_h, folio)
     top = _just_com(cv, req, top)       ;  top -= GAP
+    top = _ensure_space(cv, top, TL_H, folio)
     top = _timeline(cv, req, top)
 
     _footer(cv, folio)
     cv.save()
     buf.seek(0)
     return buf.read()
+
+
+def _advance_page(cv, folio):
+    _footer(cv, folio)
+    cv.showPage()
+    _box(cv, 0, PH, PW, PH, fill=C_PAGE_BG)
+    return PH - MT
+
+
+def _ensure_space(cv, top, needed_height, folio):
+    if top - needed_height < PAGE_BOTTOM_LIMIT:
+        return _advance_page(cv, folio)
+    return top
 
 
 # ─── 1. HEADER ───────────────────────────────────────────────────────────────
@@ -474,8 +491,7 @@ def _row_height(item):
     return ROW_H + extra_l + nota_h
 
 
-def _items_table(cv, req, top):
-    items   = req.get("items", [])
+def _draw_items_table_chunk(cv, req, items, top):
     cols    = _table_columns(req)
     widths  = [UW * f for _, f, _ in cols]
     x0      = ML
@@ -608,6 +624,42 @@ def _items_table(cv, req, top):
     return cur_top
 
 
+def _items_table(cv, req, top, folio):
+    items = req.get("items", [])
+    if not items:
+        return top
+
+    index = 0
+    total = len(items)
+    while index < total:
+        available_h = top - PAGE_BOTTOM_LIMIT
+        if available_h <= HDR_H + ROW_H:
+            top = _advance_page(cv, folio)
+            available_h = top - PAGE_BOTTOM_LIMIT
+
+        chunk = []
+        used_h = HDR_H
+        while index < total:
+            row_h = _row_height(items[index])
+            if chunk and used_h + row_h > available_h:
+                break
+            chunk.append(items[index])
+            used_h += row_h
+            index += 1
+            if used_h >= available_h:
+                break
+
+        if not chunk:
+            chunk.append(items[index])
+            index += 1
+
+        top = _draw_items_table_chunk(cv, req, chunk, top)
+        if index < total:
+            top = _advance_page(cv, folio)
+
+    return top
+
+
 # ─── 4. JUSTIFICACIÓN + COMENTARIO ──────────────────────────────────────────
 
 JUST_HDR_H = 8  * mm
@@ -622,6 +674,15 @@ def _just_height(text):
     lines = _wrap(str(text), max_ch=50)
     n = min(len(lines), JUST_MAX_LINES) if lines else 1
     return JUST_HDR_H + JUST_PAD + n * JUST_LINE_H + JUST_PAD
+
+
+def _just_com_height(req):
+    texts = [
+        req.get("justificacion") or "—",
+        req.get("comentario_liquidacion") or "—",
+    ]
+    h = max(_just_height(text) for text in texts)
+    return max(h, JUST_MIN_H)
 
 
 def _just_com(cv, req, top):

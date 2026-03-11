@@ -116,6 +116,7 @@
 - El entorno actual deja `TestClient` colgado incluso contra `/health`; para validar REQ-085 se usó compilación y smoke directo de modelo/auth/CRUD con DB temporal, pero falta smoke HTTP/manual real.
 
 ## Ultimo cambio cerrado
+- `REQ-121` completada: el PDF ya pagina la tabla de items cuando excede una sola hoja. Ahora genera tantas paginas como hagan falta, repite cabecera de tabla y luego ubica justificacion/comentario/timeline en la ultima pagina con salto adicional si no caben.
 - `REQ-120` completada: el PDF ahora muestra tambien quien recibira el producto debajo del solicitante. El endpoint propaga `receptor_designado` al payload, la card `Informacion general` del PDF agrega la fila `Recibe`, y queda testeado a nivel de payload del generador.
 - `REQ-119` completada: `/bodega` ya no duplica requisiciones `entregada` completas/parciales entre pendientes e historial. `Pendientes` conserva lo procesable, `Historial` queda para cierres (`liquidada`, `liquidada_en_prokey` y `no_entregada`), y los encabezados visibles pasan a `Pendientes de Procesar` e `Historial`.
 - `REQ-117` completada: `Gestionar Entrega` ya no exige firma/PIN cuando el resultado es `no_entregada`, incluso si existe receptor designado o el frontend envia `recibido_por_id`; backend ignora la firma en ese caso, UI oculta los campos y solo exige comentario para cerrar la requisicion.

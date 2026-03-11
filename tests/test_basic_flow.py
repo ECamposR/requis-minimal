@@ -10,6 +10,7 @@ from app.auth import hash_password
 from app.database import get_db
 from app.main import app
 from app.models import Base, CatalogoItem, Item, Requisicion, Usuario
+from app.pdf_generator import generate_requisicion_pdf
 
 TEST_DB_URL = "sqlite:///./test_requisiciones.db"
 
@@ -523,6 +524,55 @@ def test_pdf_incluye_receptor_designado_en_payload(client: TestClient, db_sessio
     assert captured["solicitante_nombre"] == user.nombre
     assert captured["receptor_designado_nombre"] == tecnico.nombre
     assert captured["receptor_designado_rol"] == tecnico.rol
+
+
+def test_pdf_multipagina_muestra_todos_los_items():
+    req_data = {
+        "id": 999,
+        "folio": "REQ-0999",
+        "estado": "liquidada",
+        "created_at": "2026-03-11 11:00:00",
+        "approved_at": "2026-03-11 11:05:00",
+        "prepared_at": "2026-03-11 11:10:00",
+        "delivered_at": "2026-03-11 11:15:00",
+        "recibido_at": "2026-03-11 11:15:00",
+        "liquidated_at": "2026-03-11 11:30:00",
+        "cliente": "Cliente Multipagina",
+        "codigo_cliente": "C-9999",
+        "ruta": "RA09",
+        "solicitante_nombre": "Usuario Ops",
+        "receptor_designado_nombre": "Tecnico Uno",
+        "receptor_designado_rol": "tecnico",
+        "aprobador_nombre": "Aprobador Ops",
+        "preparador_nombre": "Bodega Uno",
+        "jefe_bodega_nombre": "Bodega Uno",
+        "liquidado_por_nombre": "Bodega Uno",
+        "recibido_por_nombre": "Tecnico Uno",
+        "prokey_ref": "PK-999",
+        "justificacion": "Prueba de paginacion de PDF",
+        "comentario_liquidacion": "Todos los items deben aparecer en el PDF aunque ocupen varias paginas.",
+        "items": [
+            {
+                "descripcion": f"Item de prueba numero {index} con descripcion larga para forzar paginacion",
+                "cantidad_solicitada": 1,
+                "cantidad_entregada": 1,
+                "cantidad_usada": 1,
+                "cantidad_no_usada": 0,
+                "cantidad_retorna": 1,
+                "liquidation_mode": "RETORNABLE",
+                "contexto_operacion": "reposicion",
+                "es_demo": False,
+                "pk_ingreso_qty": 1,
+                "liquidation_alerts": [],
+                "nota_liquidacion": "Nota breve" if index % 3 == 0 else None,
+            }
+            for index in range(1, 45)
+        ],
+    }
+
+    pdf_bytes = generate_requisicion_pdf(req_data)
+    assert pdf_bytes.startswith(b"%PDF")
+    assert len(re.findall(rb"/Type /Page(?!s)", pdf_bytes)) >= 2
 
 
 def test_aprobador_puede_aprobar_otra_area(client: TestClient, db_session: Session):

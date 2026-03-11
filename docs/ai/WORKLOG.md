@@ -1,5 +1,28 @@
 # Worklog (append-only)
 
+## 2026-03-11 11:18 UTC-6 | tool: Codex CLI
+- Objetivo: corregir el PDF para que no corte silenciosamente items cuando la tabla excede una pagina.
+- Tareas: `REQ-121`
+- Cambios:
+  - `app/pdf_generator.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "def _items_table|def _just_com|def _timeline|showPage|top = _items_table|return top - T_H|ROW_H|HDR_H" app/pdf_generator.py`
+  - `sed -n '520,860p' app/pdf_generator.py`
+  - `.venv/bin/python -m compileall app/pdf_generator.py tests/test_basic_flow.py`
+  - `.venv/bin/python - <<'PY' ... generate_requisicion_pdf(...) ... print(pages) ... PY`
+- Resultado:
+  - La tabla de items del PDF ya se parte en multiples paginas cuando no cabe completa en una sola.
+  - Cada pagina adicional repite la cabecera de la tabla y conserva footer.
+  - `Justificacion`, `Comentario de liquidacion` y `Timeline` se mueven a la pagina actual o a una nueva si ya no hay espacio suficiente.
+  - Se agrego test directo del generador para validar que un caso con muchos items produzca un PDF multipagina.
+  - Validacion directa con `.venv/bin/python`: un caso sintético de 44 items genero `pages=5`.
+- Proximo paso:
+  - Validar visualmente un PDF real con muchas filas para ajustar densidad o cortes si hiciera falta.
+
 ## 2026-03-11 11:02 UTC-6 | tool: Codex CLI
 - Objetivo: reflejar en el PDF quien recibira el producto, mostrando el receptor designado justo debajo del solicitante.
 - Tareas: `REQ-120`
