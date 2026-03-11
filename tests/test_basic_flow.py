@@ -1456,3 +1456,56 @@ def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_s
     assert response.status_code == 200
     assert "REQ-0302" in response.text
     assert "REQ-0301" not in response.text
+
+
+def test_bodega_no_duplica_entregadas_activas_en_historial(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req_entregada = Requisicion(
+        folio="REQ-0303",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="entregada",
+        justificacion="Pendiente de liquidar",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivery_result="completa",
+        delivered_to="Juan Perez",
+    )
+    req_liquidada = Requisicion(
+        folio="REQ-0304",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        justificacion="Ya liquidada",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivery_result="completa",
+        delivered_to="Juan Perez",
+        liquidated_by=bodega.id,
+        liquidated_at=datetime.now(),
+    )
+    db_session.add_all([req_entregada, req_liquidada])
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega")
+    assert response.status_code == 200
+    html = response.text
+
+    assert "Pendientes de Procesar" in html
+    assert "Historial" in html
+    assert "REQ-0303" in html
+    assert "REQ-0304" in html
+
+    response_historial = client.get("/bodega?vista=historial")
+    assert response_historial.status_code == 200
+    html_historial = response_historial.text
+    assert "REQ-0304" in html_historial
+    assert "REQ-0303" not in html_historial

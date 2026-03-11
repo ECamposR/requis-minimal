@@ -1381,7 +1381,12 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             joinedload(Requisicion.preparador),
             joinedload(Requisicion.entregador),
         )
-        .filter(Requisicion.estado.in_(["entregada", "liquidada", "liquidada_en_prokey"]))
+        .filter(
+            or_(
+                Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]),
+                Requisicion.delivery_result == "no_entregada",
+            )
+        )
     )
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(

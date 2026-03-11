@@ -1,5 +1,32 @@
 # Worklog (append-only)
 
+## 2026-03-11 10:46 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la vista `/bodega` para evitar que requisiciones activas aparezcan tanto en pendientes como en historial, y ajustar la nomenclatura visible del panel.
+- Tareas: `REQ-119`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "Pendientes de bodega|Historial propio de bodega|historial.*bodega|vista=historial|delivery_result|liquidada" app/main.py templates/bodega.html tests/test_basic_flow.py`
+  - `sed -n '1330,1415p' app/main.py`
+  - `sed -n '1,180p' templates/bodega.html`
+  - `sed -n '1400,1475p' tests/test_basic_flow.py`
+  - `python -m compileall app/main.py templates/bodega.html tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "bodega_permita_filtrar_historial_por_resultado or bodega_no_duplica_entregadas_activas_en_historial"`
+- Resultado:
+  - El historial de `/bodega` deja de incluir requisiciones `entregada` con resultado `completa/parcial`, evitando duplicacion con el panel de pendientes.
+  - `Historial` conserva cierres reales: `liquidada`, `liquidada_en_prokey` y `no_entregada`.
+  - Se renombraron los encabezados visibles a `Pendientes de Procesar` e `Historial`.
+  - Se agrego test para validar que una requisicion `entregada` activa no aparezca en `vista=historial`, mientras una `liquidada` si aparezca.
+  - `python -m compileall` paso sin errores en los archivos tocados.
+  - El `pytest` focal no devolvio salida util antes del `timeout`, consistente con el problema ambiental ya documentado en este repo.
+- Proximo paso:
+  - Ejecutar validacion focal de `/bodega` para confirmar que los filtros de historial siguen comportandose bien con `no_entregada`.
+
 ## 2026-03-11 10:05 UTC-6 | tool: Codex CLI
 - Objetivo: corregir la inconsistencia en `Gestionar Entrega` donde `no_entregada` seguia pidiendo PIN/firma por el receptor designado.
 - Tareas: `REQ-117`

@@ -23,7 +23,7 @@
 <p class="page-subtitle">Filtro aplicado en historial por resultado de entrega.</p>
 {% endif %}
 {% if filtro_vista != 'historial' %}
-<h3>Pendientes de bodega</h3>
+<h3>Pendientes de Procesar</h3>
 {% if pendientes_entrega %}
 <section class="panel view-panel table-wrap">
 <table class="table-compact">
@@ -78,12 +78,12 @@
 </table>
 </section>
 {% else %}
-<p>No hay requisiciones pendientes de preparar o liquidar.</p>
+<p>No hay requisiciones pendientes de procesar.</p>
 {% endif %}
 {% endif %}
 
 {% if filtro_vista != 'pendientes' %}
-<h3>Historial propio de bodega</h3>
+<h3>Historial</h3>
 {% if historial_entregadas %}
 <section class="panel view-panel table-wrap">
 <table class="table-compact">
