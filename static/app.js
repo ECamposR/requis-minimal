@@ -487,7 +487,7 @@ function verDetalle(id) {
                         <td class="qty-col td-num">${fmtQty(i.returned ?? i.qty_returned_to_warehouse)}</td>
                         <td class="qty-col td-num"><span class="${differenceCls}" title="Diferencia de retorno: esperado ${fmtQty(i.expected_return ?? 0)}, regresó ${fmtQty(i.returned ?? i.qty_returned_to_warehouse ?? 0)}">${differenceText}</span></td>
                         <td class="qty-col td-num">
-                            <span class="pk-help" title="Pendiente de ingresar en Prokey por bodega (solo retornables)">${ingresoPk}</span>
+                            <span class="pk-help" title="Cantidad aplicable para ingreso en Prokey por bodega. En instalación inicial no genera ingreso PK.">${ingresoPk}</span>
                         </td>
                         <td>${alertBadges}</td>
                     </tr>`;
@@ -550,7 +550,7 @@ function verDetalle(id) {
                                 <th class="qty-col">No usado</th>
                                 <th class="qty-col">Regresa</th>
                                 <th class="qty-col" title="Diferencia de retorno: si falta equipo por regresar muestra 'Falta'; si regresó de más muestra 'Extra'">DIF</th>
-                                <th class="qty-col" title="Retornables usados que regresaron, mas excedentes recibidos en bodega">Ingreso PK (Bodega)</th>
+                                <th class="qty-col" title="Retornables en reposición usados que regresaron, más excedentes recibidos en bodega. Instalación inicial no genera ingreso PK.">Ingreso PK (Bodega)</th>
                                 <th>Alertas</th>
                             </tr></thead>
                             <tbody>

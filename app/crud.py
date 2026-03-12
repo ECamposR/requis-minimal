@@ -42,9 +42,12 @@ def calcular_ingreso_pk_bodega(
     delivered: float,
     used: float,
     returned: float,
+    contexto_operacion: str | None = None,
 ) -> float:
     normalized_mode = str(mode or "RETORNABLE").upper().strip()
-    if normalized_mode != "RETORNABLE":
+    normalized_contexto = str(contexto_operacion or "").strip().lower() or "reposicion"
+
+    if normalized_mode != "RETORNABLE" or normalized_contexto == "instalacion_inicial":
         return 0.0
 
     delivered = float(delivered or 0)

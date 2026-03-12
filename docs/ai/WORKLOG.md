@@ -1,5 +1,27 @@
 # Worklog (append-only)
 
+## 2026-03-12 09:06 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la columna `Ingreso PK (Bodega)` para que el contexto operativo `instalacion_inicial` no genere ingreso a Prokey, manteniendo intacta la formula actual para `reposicion`.
+- Tareas: `REQ-124`
+- Cambios:
+  - `app/crud.py`
+  - `app/main.py`
+  - `static/app.js`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "calcular_ingreso_pk_bodega|pk_ingreso_qty|Ingreso PK \\(Bodega\\)|instalacion_inicial" tests app/main.py app/crud.py static/app.js`
+  - `python -m compileall app/crud.py app/main.py tests/test_liquidacion.py`
+- Resultado:
+  - `calcular_ingreso_pk_bodega` ahora acepta `contexto_operacion` y devuelve `0` para `instalacion_inicial`.
+  - El detalle y el PDF ya propagan el contexto al calculo de `pk_ingreso_qty`.
+  - Se ajusto el tooltip de la columna para reflejar la nueva regla operativa.
+  - Se agrego una prueba especifica que valida `pk_ingreso_qty == 0` en retornable + `instalacion_inicial`.
+- Proximo paso:
+  - Validar manualmente un caso mixto en UI para confirmar que `reposicion` mantiene ingreso PK y `instalacion_inicial` muestra `0`.
+
 ## 2026-03-11 15:08 UTC-6 | tool: Codex CLI
 - Objetivo: corregir el bug donde el receptor podia aparecer editable al abrir `Gestionar Entrega` sin haber pulsado `Cambiar receptor`.
 - Tareas: `REQ-123`

@@ -2829,7 +2829,13 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             contexto_operacion = normalize_contexto_operacion(item.contexto_operacion)
             expected_return = calcular_retorno_esperado(mode, qty_used, qty_not_used, contexto_operacion)
             difference = expected_return - qty_returned
-            pk_ingreso_qty = calcular_ingreso_pk_bodega(mode, delivered, qty_used, qty_returned)
+            pk_ingreso_qty = calcular_ingreso_pk_bodega(
+                mode,
+                delivered,
+                qty_used,
+                qty_returned,
+                contexto_operacion,
+            )
 
             parsed_alerts: list[dict[str, object]] = []
             if item.liquidation_alerts:
@@ -2978,6 +2984,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
                     item.cantidad_entregada or 0,
                     item.qty_used or 0,
                     item.qty_returned_to_warehouse or 0,
+                    item.contexto_operacion,
                 ),
                 "liquidation_alerts": alert_types,
                 "nota_liquidacion": item.item_liquidation_note,
