@@ -1,5 +1,36 @@
 # Worklog (append-only)
 
+## 2026-03-12 10:02 UTC-6 | tool: Codex CLI
+- Objetivo: introducir el rol `logistica` con visibilidad global de requisiciones y permiso controlado para registrar `prokey_ref` en requisiciones liquidadas, dejando trazabilidad del actor.
+- Tareas: `REQ-126`
+- Cambios:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/crud.py`
+  - `app/main.py`
+  - `templates/partials/navbar.html`
+  - `templates/mis_requisiciones.html`
+  - `templates/home.html`
+  - `static/app.js`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `tests/test_liquidacion.py`
+  - `tests/test_admin_users.py`
+  - `docs/ai/CONTRACT.md`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "rol|can_view_requisicion|puede_editar_prokey_ref|mis-requisiciones|prokey_ref" app templates tests docs/ai`
+  - `python -m compileall app/models.py app/database.py app/crud.py app/main.py tests/test_basic_flow.py tests/test_liquidacion.py tests/test_admin_users.py`
+- Resultado:
+  - `logistica` ya puede iniciar sesion, ver todas las requisiciones en `/mis-requisiciones` y consultar detalle/PDF sin aprobar ni operar bodega.
+  - `prokey_ref` ahora registra actor/fecha de ultima actualizacion y el detalle muestra la nota con nombre/rol del usuario que la registró.
+  - El enlace `Agregar referencia Prokey` solo aparece en el modal cuando el usuario realmente tiene permiso para completarla.
+  - Se agrego cobertura para rol `logistica` en listado global, alta de usuario admin y actualizacion auditada de `prokey_ref`.
+- Proximo paso:
+  - Validar manualmente con un usuario `logistica` el listado global, la apertura del detalle de terceros y el alta de referencia Prokey desde una requisicion `liquidada`.
+
 ## 2026-03-12 09:24 UTC-6 | tool: Codex CLI
 - Objetivo: corregir la trazabilidad del detalle de requisicion cuando bodega cambia el receptor al firmar recibido, mostrando tanto el designado original como quien realmente recibe.
 - Tareas: `REQ-125`

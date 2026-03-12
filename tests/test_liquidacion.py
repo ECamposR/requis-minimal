@@ -58,6 +58,13 @@ def test_engine():
                     departamento="Operaciones",
                 ),
                 Usuario(
+                    username="logistica.1",
+                    password=hash_password("pass123"),
+                    nombre="Logistica Uno",
+                    rol="logistica",
+                    departamento="Admon",
+                ),
+                Usuario(
                     username="bodega.1",
                     password=hash_password("pass123"),
                     nombre="Bodega Uno",
@@ -1107,6 +1114,39 @@ async def test_update_prokey_ref_permite_propietario(db_session: Session):
 
 
 @pytest.mark.anyio
+async def test_update_prokey_ref_permite_logistica_y_registra_actor(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=4)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    logistica = db_session.query(Usuario).filter(Usuario.username == "logistica.1").first()
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "1",
+                f"qty_used_{item.id}": "2",
+                f"qty_left_{item.id}": "2",
+                f"mode_{item.id}": "RETORNABLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    response = await editar_prokey_ref_guardar(
+        req.id,
+        DummyRequest({"prokey_ref": "PK-AUD-001"}),
+        current_user=logistica,
+        db=db_session,
+    )
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.prokey_ref == "PK-AUD-001"
+    assert req.prokey_ref_actualizada_por == logistica.id
+    assert req.prokey_ref_actualizada_at is not None
+
+
+@pytest.mark.anyio
 async def test_update_prokey_ref_bloquea_no_propietario(db_session: Session):
     req = create_req_entregada(db_session, cantidad=3)
     item = get_item(db_session, req)
@@ -1212,6 +1252,9 @@ async def test_api_detalle_refleja_prokey_ref_actualizado(db_session: Session):
     )
     payload = detalle_requisicion(req.id, current_user=admin, db=db_session)
     assert payload["prokey_ref"] == "PK-API-001"
+    assert payload["prokey_ref_actualizada_por_nombre"] == admin.nombre
+    assert payload["prokey_ref_actualizada_por_rol"] == admin.rol
+    assert payload["prokey_ref_actualizada_at"] is not None
 
 
 def test_update_prokey_ref_get_form_permitido(db_session: Session):

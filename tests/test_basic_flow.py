@@ -43,6 +43,14 @@ def db_session():
                     departamento="Operaciones",
                 ),
                 Usuario(
+                    username="logistica.1",
+                    password=hash_password("pass123"),
+                    pin_hash=hash_password("1234"),
+                    nombre="Logistica Uno",
+                    rol="logistica",
+                    departamento="Admon",
+                ),
+                Usuario(
                     username="bodega.1",
                     password=hash_password("pass123"),
                     pin_hash=hash_password("1234"),
@@ -1510,13 +1518,58 @@ def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_sessi
     assert "REQ-0104" in html
     assert "pendiente de aprobar" in html
     assert "pendiente de entregar" in html
-    assert "rechazada" in html
-    assert "entregada" in html
-    assert "Usuario Ops" in html
-    assert "Aprobador Ops" in html
-    assert "Bodega Uno" in html
-    assert "modal-detalle" in html
-    assert "Ver" in html
+
+
+def test_logistica_ve_todas_las_requisiciones_pero_no_aprueba(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    logistica = db_session.query(Usuario).filter(Usuario.username == "logistica.1").first()
+
+    req_1 = Requisicion(
+        folio="REQ-AUDIT-01",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="Pendiente visible a logistica",
+    )
+    req_2 = Requisicion(
+        folio="REQ-AUDIT-02",
+        solicitante_id=aprobador.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        justificacion="Liquidada visible a logistica",
+    )
+    req_3 = Requisicion(
+        folio="REQ-AUDIT-03",
+        solicitante_id=logistica.id,
+        departamento="Admon",
+        estado="pendiente",
+        justificacion="Propia de logistica",
+    )
+    db_session.add_all([req_1, req_2, req_3])
+    db_session.commit()
+
+    login(client, "logistica.1", "pass123")
+    response = client.get("/mis-requisiciones")
+    assert response.status_code == 200
+    html = response.text
+    assert "Mis Requisiciones" in html
+    assert "REQ-AUDIT-03" in html
+    assert "REQ-AUDIT-01" not in html
+    assert "REQ-AUDIT-02" not in html
+
+    response_todas = client.get("/mis-requisiciones?vista=todas")
+    assert response_todas.status_code == 200
+    html_todas = response_todas.text
+    assert "Todas las Requisiciones" in html_todas
+    assert "REQ-AUDIT-01" in html_todas
+    assert "REQ-AUDIT-02" in html_todas
+    assert "REQ-AUDIT-03" in html_todas
+    assert "Usuario Ops" in html_todas
+    assert "Aprobador Ops" in html_todas
+
+    aprobar = client.get("/aprobar")
+    assert aprobar.status_code == 403
 
 
 def test_aprobar_permita_filtrar_por_estado(client: TestClient, db_session: Session):

@@ -248,6 +248,7 @@ def run_migrations() -> None:
                 conn.execute(text("ALTER TABLE usuarios ADD COLUMN pin_hash TEXT"))
             if "puede_iniciar_sesion" not in user_columns:
                 conn.execute(text("ALTER TABLE usuarios ADD COLUMN puede_iniciar_sesion INTEGER NOT NULL DEFAULT 1"))
+            conn.execute(text("UPDATE usuarios SET rol = 'logistica' WHERE rol = 'auditor'"))
 
         if "requisiciones" in tables:
             columns = {
@@ -305,6 +306,8 @@ def run_migrations() -> None:
             }
             req_migrations = {
                 "prokey_ref": "ALTER TABLE requisiciones ADD COLUMN prokey_ref TEXT",
+                "prokey_ref_actualizada_at": "ALTER TABLE requisiciones ADD COLUMN prokey_ref_actualizada_at TIMESTAMP",
+                "prokey_ref_actualizada_por": "ALTER TABLE requisiciones ADD COLUMN prokey_ref_actualizada_por INTEGER REFERENCES usuarios(id)",
                 "liquidation_comment": "ALTER TABLE requisiciones ADD COLUMN liquidation_comment TEXT",
                 "liquidated_by": "ALTER TABLE requisiciones ADD COLUMN liquidated_by INTEGER REFERENCES usuarios(id)",
                 "liquidated_at": "ALTER TABLE requisiciones ADD COLUMN liquidated_at TIMESTAMP",
@@ -366,6 +369,8 @@ def run_migrations() -> None:
                                 delivery_comment TEXT,
                                 receptor_designado_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
                                 prokey_ref TEXT,
+                                prokey_ref_actualizada_at TIMESTAMP,
+                                prokey_ref_actualizada_por INTEGER REFERENCES usuarios(id),
                                 liquidation_comment TEXT,
                                 liquidated_by INTEGER REFERENCES usuarios(id),
                                 liquidated_at TIMESTAMP,
@@ -390,7 +395,7 @@ def run_migrations() -> None:
                                 estado, motivo_requisicion, justificacion, created_at, approved_at, approved_by, approval_comment,
                                 prepared_at, prepared_by,
                                 delivered_at, delivered_by, recibido_por_id, delivered_to, recibido_at, delivery_result,
-                                delivery_comment, receptor_designado_id, prokey_ref, liquidation_comment, liquidated_by,
+                                delivery_comment, receptor_designado_id, prokey_ref, prokey_ref_actualizada_at, prokey_ref_actualizada_por, liquidation_comment, liquidated_by,
                                 liquidated_at, prokey_liquidada_at, prokey_liquidada_por, rejected_at, rejected_by,
                                 rejection_reason, rejection_comment
                             )
@@ -399,7 +404,7 @@ def run_migrations() -> None:
                                 estado, motivo_requisicion, justificacion, created_at, approved_at, approved_by, approval_comment,
                                 prepared_at, prepared_by,
                                 delivered_at, delivered_by, recibido_por_id, delivered_to, recibido_at, delivery_result,
-                                delivery_comment, receptor_designado_id, prokey_ref, liquidation_comment, liquidated_by,
+                                delivery_comment, receptor_designado_id, prokey_ref, prokey_ref_actualizada_at, prokey_ref_actualizada_por, liquidation_comment, liquidated_by,
                                 liquidated_at, prokey_liquidada_at, prokey_liquidada_por, rejected_at, rejected_by,
                                 rejection_reason, rejection_comment
                             FROM requisiciones_old

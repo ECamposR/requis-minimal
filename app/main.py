@@ -72,7 +72,7 @@ templates = Jinja2Templates(directory="templates")
 
 DEPARTAMENTOS_VALIDOS = ["Cuentas", "Ventas", "Bodega", "Admon", "Logistica"]
 CATALOGO_HEADERS = {"nombre", "item", "producto", "descripcion"}
-ROLES_VALIDOS = ["user", "aprobador", "bodega", "jefe_bodega", "admin", "tecnico"]
+ROLES_VALIDOS = ["user", "logistica", "aprobador", "bodega", "jefe_bodega", "admin", "tecnico"]
 PASSWORD_MIN_LENGTH = 8
 USUARIOS_IMPORT_HEADERS = {"nombre", "puesto"}
 TEMP_IMPORT_PASSWORD = "Temp@2026"
@@ -451,7 +451,7 @@ def can_view_requisicion(req: Requisicion, current_user: Usuario) -> bool:
     return (
         current_user.rol == "admin"
         or current_user.id == req.solicitante_id
-        or current_user.rol in ["aprobador", "jefe_bodega"]
+        or current_user.rol in ["aprobador", "jefe_bodega", "logistica"]
         or (
             current_user.rol == "bodega"
             and req.estado in ["aprobada", "preparado", "entregada", "liquidada", "liquidada_en_prokey"]
@@ -477,11 +477,17 @@ def redirect_with_message(url: str, message: str, level: str = "success") -> Red
 
 
 def puede_editar_prokey_ref(req: Requisicion, current_user: Usuario) -> bool:
-    return req.estado == "liquidada" and (current_user.rol == "admin" or req.solicitante_id == current_user.id)
+    return req.estado == "liquidada" and (
+        current_user.rol in ("admin", "logistica") or req.solicitante_id == current_user.id
+    )
 
 
 def es_bodega_plano(current_user: Usuario) -> bool:
     return current_user.rol == "bodega"
+
+
+def puede_ver_todas_las_requisiciones(current_user: Usuario) -> bool:
+    return current_user.rol == "logistica"
 
 
 def redirect_if_bodega_plain_accesses_own_requests(current_user: Usuario) -> RedirectResponse | None:
@@ -973,14 +979,19 @@ def mis_requisiciones(
     restricted_redirect = redirect_if_bodega_plain_accesses_own_requests(current_user)
     if restricted_redirect:
         return restricted_redirect
+    vista_param = request.query_params.get("vista", "mias").strip().lower()
+    vista_global = puede_ver_todas_las_requisiciones(current_user) and vista_param == "todas"
+    query = db.query(Requisicion).options(joinedload(Requisicion.solicitante))
+    if not vista_global:
+        query = query.filter(Requisicion.solicitante_id == current_user.id)
     requisiciones = (
-        db.query(Requisicion)
-        .filter(Requisicion.solicitante_id == current_user.id)
+        query
         .order_by(Requisicion.created_at.desc())
         .all()
     )
     return templates.TemplateResponse(
-        "mis_requisiciones.html", template_context(request, current_user, requisiciones=requisiciones)
+        "mis_requisiciones.html",
+        template_context(request, current_user, requisiciones=requisiciones, vista_global=vista_global),
     )
 
 
@@ -2012,6 +2023,8 @@ async def editar_prokey_ref_guardar(
         return redirect_with_message(f"/requisiciones/{req_id}/prokey-ref", "La referencia Prokey es obligatoria", "error")
 
     req.prokey_ref = prokey_ref
+    req.prokey_ref_actualizada_at = now_sv()
+    req.prokey_ref_actualizada_por = current_user.id
     db.commit()
 
     target = "/bodega" if current_user.rol in ["admin", "jefe_bodega"] else "/mis-requisiciones"
@@ -2715,6 +2728,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         joinedload(Requisicion.recibido_por),
         joinedload(Requisicion.receptor_designado),
         joinedload(Requisicion.liquidator),
+        joinedload(Requisicion.prokey_ref_editor),
     ]
     maybe_prokey_liquidator = safe_joinedload(Requisicion, "prokey_liquidator")
     if maybe_prokey_liquidator is not None:
@@ -2805,6 +2819,16 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                 "evento": "Liquidada en Prokey",
                 "actor": prokey_liquidator.nombre if prokey_liquidator else None,
                 "fecha_hora": prokey_liquidada_at,
+            }
+        )
+    prokey_ref_editor = getattr(req, "prokey_ref_editor", None)
+    prokey_ref_actualizada_at = getattr(req, "prokey_ref_actualizada_at", None)
+    if req.prokey_ref and prokey_ref_actualizada_at:
+        timeline.append(
+            {
+                "evento": "Referencia Prokey registrada",
+                "actor": prokey_ref_editor.nombre if prokey_ref_editor else None,
+                "fecha_hora": prokey_ref_actualizada_at,
             }
         )
 
@@ -2918,6 +2942,10 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "delivered_at": req.delivered_at,
         "prokey_ref": req.prokey_ref,
         "prokey_pending": not bool(req.prokey_ref),
+        "prokey_ref_actualizada_at": prokey_ref_actualizada_at,
+        "prokey_ref_actualizada_por_nombre": prokey_ref_editor.nombre if prokey_ref_editor else None,
+        "prokey_ref_actualizada_por_rol": prokey_ref_editor.rol if prokey_ref_editor else None,
+        "puede_editar_prokey_ref": puede_editar_prokey_ref(req, current_user),
         "liquidation_comment": normalize_optional_text(req.liquidation_comment),
         "liquidated_by_name": req.liquidator.nombre if req.liquidator else None,
         "liquidated_at": req.liquidated_at,

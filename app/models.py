@@ -76,6 +76,8 @@ class Requisicion(Base):
         nullable=True,
     )
     prokey_ref: Mapped[str | None] = mapped_column(String, nullable=True)
+    prokey_ref_actualizada_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
+    prokey_ref_actualizada_por: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     liquidation_comment: Mapped[str | None] = mapped_column(String, nullable=True)
     liquidated_by: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     liquidated_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
@@ -126,6 +128,10 @@ class Requisicion(Base):
     prokey_liquidator: Mapped["Usuario | None"] = relationship(
         "Usuario",
         foreign_keys=[prokey_liquidada_por],
+    )
+    prokey_ref_editor: Mapped["Usuario | None"] = relationship(
+        "Usuario",
+        foreign_keys=[prokey_ref_actualizada_por],
     )
     items: Mapped[list["Item"]] = relationship(
         "Item",

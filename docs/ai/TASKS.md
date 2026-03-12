@@ -12,6 +12,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-123` | `done` | Forzar estado inicial bloqueado del receptor en `Gestionar Entrega` y `Entrega Parcial`; el selector solo debe habilitarse tras pulsar `Cambiar receptor`.
 - `REQ-124` | `done` | Ajustar `Ingreso PK (Bodega)` para que respete `contexto_operacion`: en `instalacion_inicial` debe ser `0` aunque el item sea retornable; en `reposicion` conserva la formula operativa actual.
 - `REQ-125` | `done` | Ajustar detalle de requisicion para mostrar ambos receptores cuando bodega cambia el firmante: conservar `receptor designado` original y exponer tambien quien realmente `recibio / firmo`.
+- `REQ-126` | `done` | Agregar rol `logistica`: conserva capacidades base de `user`, pero puede ver todas las requisiciones, consultar detalle/PDF globalmente y completar `prokey_ref` en requisiciones `liquidada` con trazabilidad del actor que registró la referencia.
 
 ## Reinicio Liquidacion (desde `3d7702b`)
 - `REQ-060` | `done` | Base de liquidacion implementada: estado `liquidada`, campos base en `requisiciones/items`, migracion robusta e idempotente + baseline de entrega (`cantidad_entregada`) normalizado.

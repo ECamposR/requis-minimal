@@ -346,6 +346,8 @@ def ejecutar_liquidacion(
 
     requisicion.estado = "liquidada"
     requisicion.prokey_ref = prokey_ref or None
+    requisicion.prokey_ref_actualizada_at = now_sv() if prokey_ref else None
+    requisicion.prokey_ref_actualizada_por = usuario.id if prokey_ref else None
     requisicion.liquidation_comment = liquidation_comment or None
     requisicion.liquidated_by = usuario.id
     requisicion.liquidated_at = now_sv()

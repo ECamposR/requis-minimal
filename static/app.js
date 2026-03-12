@@ -525,10 +525,15 @@ function verDetalle(id) {
                 ? topAlertEntries.map(([label, count]) => `${escapeHtml(label)} (${count})`).join(", ")
                 : "Ninguno";
             const alertCardClass = highAlerts > 0 ? "dd-card--alert dd-card--alert-high" : allAlerts.length > 0 ? "dd-card--alert" : "";
+            const prokeyEditorNote = data.prokey_ref_actualizada_por_nombre
+                ? `<div class="dd-kv-note">Registrada por ${escapeHtml(data.prokey_ref_actualizada_por_nombre)}${data.prokey_ref_actualizada_por_rol ? ` (${escapeHtml(data.prokey_ref_actualizada_por_rol)})` : ""}</div>`
+                : "";
             const prokeyRefHtml = data.prokey_ref
-                ? escapeHtml(data.prokey_ref)
-                : `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
-                   <a href="/requisiciones/${data.id}/prokey-ref" class="prokey-add-link">Agregar referencia Prokey</a>`;
+                ? `${escapeHtml(data.prokey_ref)}${prokeyEditorNote}`
+                : data.puede_editar_prokey_ref
+                    ? `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
+                       <a href="/requisiciones/${data.id}/prokey-ref" class="prokey-add-link">Agregar referencia Prokey</a>`
+                    : 'Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>';
             const receptorDesignadoHtml = data.receptor_designado
                 ? `${escapeHtml(data.receptor_designado.nombre || "-")} (${escapeHtml(data.receptor_designado.rol || "-")})`
                 : "-";

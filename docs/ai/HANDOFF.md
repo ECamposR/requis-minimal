@@ -88,6 +88,7 @@
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - `REQ-124` completada: `Ingreso PK (Bodega)` ahora respeta `contexto_operacion`; si el item se liquida como `instalacion_inicial` no genera ingreso PK aunque sea `RETORNABLE`, mientras que en `reposicion` conserva la formula previa.
 - `REQ-125` completada: el detalle de requisicion ahora conserva el `receptor designado` original y muestra aparte quien realmente `recibio / firmo`, usando el receptor validado por PIN cuando hubo cambio en bodega.
+- `REQ-126` completada: se agrega rol `logistica` con visibilidad global en `/mis-requisiciones` y permiso para completar `prokey_ref` en estado `liquidada`; el detalle registra nombre/rol/fecha del actor que grabó la referencia y solo ese rol adicional puede hacerlo sin ser solicitante.
 - Ejecutar smoke manual de entrega con firma y de liquidacion para validar experiencia completa de bloqueo/edicion.
 - Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
 - Validar UX del comentario y notas en modal (saltos de linea y legibilidad en resoluciones medias).

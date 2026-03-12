@@ -121,3 +121,22 @@
   - `CONTRACT.md` y `README.md` deben reflejar la fase beta operativa.
   - Todo cambio relevante debe seguir registrandose en `WORKLOG`, `TASKS`, `HANDOFF` y `DECISIONS` cuando corresponda.
   - El foco de trabajo se desplaza de construir base funcional a endurecer operacion, corregir, mantener y ampliar de forma incremental.
+
+## ADR-008 | 2026-03-12 | Rol `logistica` con consulta global y trazabilidad de referencia Prokey
+- Contexto:
+  - Se necesita un perfil de consulta que pueda revisar todas las requisiciones sin asumir capacidades de aprobacion, bodega o administracion.
+  - Tambien se requiere que ese perfil pueda completar `prokey_ref` en requisiciones `liquidada`, dejando claro quien hizo el registro.
+- Decision:
+  - Agregar el rol `logistica` como extension de `user` con visibilidad global en `/mis-requisiciones` y acceso de solo consulta al detalle/PDF de cualquier requisicion.
+  - Permitir que `logistica` complete `prokey_ref` en requisiciones `liquidada`, sin abrir permisos de aprobacion o bodega.
+  - Persistir actor y fecha de la ultima actualizacion de `prokey_ref` dentro de la requisicion.
+- Motivo:
+  - Evita usar roles mas poderosos solo para consulta transversal.
+  - Mantiene trazabilidad clara de cierres administrativos sin tocar cantidades ni flujo operativo.
+- Alternativas descartadas:
+  - Reutilizar `aprobador` o `admin` para funciones de auditoria.
+  - Permitir a cualquier `user` editar `prokey_ref` de requisiciones ajenas.
+- Impacto:
+  - Nuevo rol disponible en administracion de usuarios.
+  - `/mis-requisiciones` muestra vista global solo para `logistica`.
+  - El detalle registra nombre/rol/fecha del usuario que actualizo la referencia Prokey.
