@@ -1,5 +1,26 @@
 # Worklog (append-only)
 
+## 2026-03-12 09:24 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la trazabilidad del detalle de requisicion cuando bodega cambia el receptor al firmar recibido, mostrando tanto el designado original como quien realmente recibe.
+- Tareas: `REQ-125`
+- Cambios:
+  - `app/main.py`
+  - `static/app.js`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "receptor_designado|recibido_por|delivered_to|Cambiar receptor|Gestionar Entrega" app/main.py app/crud.py templates static/app.js tests`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+- Resultado:
+  - La API de detalle ahora incluye `recibido_por_detalle` con `id/nombre/rol`.
+  - El modal muestra dos campos separados: `Receptor designado` y `Recibió / firmó`.
+  - Se mantiene intacta la trazabilidad previa y se mejora la auditoria cuando el receptor real no coincide con el designado.
+  - Se agrego prueba para validar que ambos nombres quedan disponibles despues del cambio de receptor.
+- Proximo paso:
+  - Validar manualmente en UI un caso donde bodega cambie el receptor y confirmar que el modal refleje ambos campos correctamente.
+
 ## 2026-03-12 09:06 UTC-6 | tool: Codex CLI
 - Objetivo: corregir la columna `Ingreso PK (Bodega)` para que el contexto operativo `instalacion_inicial` no genere ingreso a Prokey, manteniendo intacta la formula actual para `reposicion`.
 - Tareas: `REQ-124`

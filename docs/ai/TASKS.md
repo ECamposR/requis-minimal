@@ -11,6 +11,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-122` | `done` | Refactor visual Eco-Ink del PDF: eliminar bloques de color solido, priorizar bordes y escala de grises, suavizar badges a tonos pastel minimos y mantener el color corporativo solo en textos/bordes clave, sin tocar layout ni datos.
 - `REQ-123` | `done` | Forzar estado inicial bloqueado del receptor en `Gestionar Entrega` y `Entrega Parcial`; el selector solo debe habilitarse tras pulsar `Cambiar receptor`.
 - `REQ-124` | `done` | Ajustar `Ingreso PK (Bodega)` para que respete `contexto_operacion`: en `instalacion_inicial` debe ser `0` aunque el item sea retornable; en `reposicion` conserva la formula operativa actual.
+- `REQ-125` | `done` | Ajustar detalle de requisicion para mostrar ambos receptores cuando bodega cambia el firmante: conservar `receptor designado` original y exponer tambien quien realmente `recibio / firmo`.
 
 ## Reinicio Liquidacion (desde `3d7702b`)
 - `REQ-060` | `done` | Base de liquidacion implementada: estado `liquidada`, campos base en `requisiciones/items`, migracion robusta e idempotente + baseline de entrega (`cantidad_entregada`) normalizado.

@@ -1059,6 +1059,51 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
     assert "Ver" in html
 
 
+def test_detalle_conserva_receptor_designado_y_receptor_real(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    otro = db_session.query(Usuario).filter(Usuario.username == "user.otro").first()
+
+    req = Requisicion(
+        folio="REQ-0001B",
+        solicitante_id=user.id,
+        receptor_designado_id=otro.id,
+        departamento="Operaciones",
+        estado="preparado",
+        justificacion="Cambio de receptor en entrega",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        prepared_by=bodega.id,
+        prepared_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "bodega.1", "pass123")
+    response = client.post(
+        f"/entregar/{req.id}",
+        data={
+            "resultado": "completa",
+            "recibido_por_id": str(user.id),
+            "pin_receptor": "1234",
+            "comentario": "Recibio otra persona autorizada",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    detail = client.get(f"/api/requisiciones/{req.id}")
+    assert detail.status_code == 200
+    payload = detail.json()
+    assert payload["receptor_designado"]["nombre"] == otro.nombre
+    assert payload["receptor_designado"]["rol"] == otro.rol
+    assert payload["recibido_por"] == user.nombre
+    assert payload["recibido_por_detalle"]["nombre"] == user.nombre
+    assert payload["recibido_por_detalle"]["rol"] == user.rol
+
+
 def test_bodega_puede_marcar_entrega_parcial(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

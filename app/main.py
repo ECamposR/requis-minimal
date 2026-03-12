@@ -2889,6 +2889,15 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "delivered_by": req.entregador.nombre if req.entregador else None,
         "delivered_to": req.delivered_to,
         "recibido_por": req.recibido_por.nombre if req.recibido_por else None,
+        "recibido_por_detalle": (
+            {
+                "id": req.recibido_por.id,
+                "nombre": req.recibido_por.nombre,
+                "rol": req.recibido_por.rol,
+            }
+            if req.recibido_por
+            else None
+        ),
         "recibido_at": req.recibido_at,
         "receptor_designado": (
             {
