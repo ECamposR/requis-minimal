@@ -62,8 +62,8 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1rem;
-    padding: 0;
+    margin-bottom: 0.95rem;
+    padding: 0.65rem 0 0 0.55rem;
     background: transparent !important;
     border: 0 !important;
     box-shadow: none !important;
@@ -106,7 +106,7 @@
 
 <section class="monitor-section" aria-labelledby="monitor-fase-1">
     <header class="monitor-section-header">
-        <h2 id="monitor-fase-1">Fase 1: Demanda y Contingencia</h2>
+        <h2 id="monitor-fase-1">Métricas de Uso</h2>
         <p>Explica la demanda operativa del sistema de contingencias: por qué, quién, qué y cuándo se activa.</p>
     </header>
 
@@ -117,7 +117,6 @@
                 <h3>Frecuencia por Motivo</h3>
                 <p>Expone por que se esta usando esta app como contingencia.</p>
             </div>
-            <small>Dona</small>
         </header>
         <div class="dashboard-bi-canvas-wrap">
             <canvas id="chart-motivos" aria-label="Grafico de frecuencia por motivo"></canvas>
@@ -131,7 +130,6 @@
                 <h3>Top Usuarios Solicitantes</h3>
                 <p>Identifica quienes generan mas requisiciones contingentes.</p>
             </div>
-            <small>Top 10</small>
         </header>
         <div class="dashboard-bi-canvas-wrap">
             <canvas id="chart-solicitantes" aria-label="Grafico de top usuarios solicitantes"></canvas>
@@ -145,7 +143,6 @@
                 <h3>Top Itens Solicitados</h3>
                 <p>Muestra que productos activan con mayor frecuencia salidas fuera de Prokey.</p>
             </div>
-            <small>Top 10</small>
         </header>
         <div class="dashboard-bi-canvas-wrap">
             <canvas id="chart-items" aria-label="Grafico de top items solicitados"></canvas>
@@ -159,7 +156,6 @@
                 <h3>Mapa de Calor Horario</h3>
                 <p>Visibiliza cuando ocurren las contingencias y resalta el efecto post-cierre de las 14:00.</p>
             </div>
-            <small>0-23 horas</small>
         </header>
         <div class="dashboard-bi-canvas-wrap">
             <canvas id="chart-horario" aria-label="Grafico horario de contingencias"></canvas>
@@ -171,7 +167,7 @@
 
 <section class="monitor-section" aria-labelledby="monitor-fase-2">
     <header class="monitor-section-header">
-        <h2 id="monitor-fase-2">Fase 2: Auditoría y Diferencias</h2>
+        <h2 id="monitor-fase-2">Auditoría y Diferencias</h2>
         <p>Audita mermas, discrepancias y señales de pérdida entre el retorno esperado y lo que realmente regresa a bodega.</p>
     </header>
 
@@ -195,7 +191,6 @@
                     <h3>Ranking de Diferencia por Producto</h3>
                     <p>Muestra qué ítems acumulan más unidades faltantes en requisiciones cerradas.</p>
                 </div>
-                <small>Top 10</small>
             </header>
             <div class="dashboard-bi-canvas-wrap">
                 <canvas id="chart-diferencia-producto" aria-label="Grafico de diferencia por producto"></canvas>
@@ -209,7 +204,6 @@
                     <h3>Diferencias por Tecnico</h3>
                     <p>Resalta qué receptores designados acumulan más unidades faltantes reportadas.</p>
                 </div>
-                <small>Top 5</small>
             </header>
             <div class="dashboard-bi-canvas-wrap">
                 <canvas id="chart-diferencia-tecnico" aria-label="Grafico de diferencias por tecnico"></canvas>
