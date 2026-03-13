@@ -1464,6 +1464,7 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
         db.query(Requisicion)
         .options(
             joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.receptor_designado),
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.rechazador),
             joinedload(Requisicion.preparador),
