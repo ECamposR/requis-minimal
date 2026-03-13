@@ -1,5 +1,4 @@
 from datetime import datetime
-import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -172,6 +171,15 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
                 delivered_at=datetime.now(),
                 delivered_to="Usuario Ops",
             ),
+            Requisicion(
+                folio="REQ-2005",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada_en_prokey",
+                justificacion="Cerrada usuario",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
         ]
     )
     db_session.commit()
@@ -181,18 +189,73 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
     assert response.status_code == 200
 
     html = response.text
-    assert "Mis requisiciones" in html
-    assert "Mis pendientes" in html
-    assert "Aprobadas historicas" in html
-    assert "Rechazadas" in html
-    assert "Mis entregadas" in html
-    assert "Creadas este mes" in html
-    assert "Pendientes de aprobar" in html
-    assert "Pendientes de entregar" in html
-    assert "Rechazadas" in html
-    assert "Entregadas (30 dias)" in html
+    assert "Mis Requisiciones" in html
+    assert "Mis Requisiciones Pendientes" in html
+    assert "Mis Cerradas" in html
+    assert "Creadas Este Mes" in html
+    assert "Mis Rechazadas" in html
+    assert "Requieren Seguimiento" in html
+    assert "Acciones Rápidas" in html
+    assert "Indicadores Rápidos" not in html
+    assert "Aprobadas Históricas" not in html
+    assert "Mis Entregadas" not in html
     assert "Pendientes por aprobar" not in html
-    assert "Pendientes por entregar" not in html
+    assert "Pendientes de entregar" not in html
+
+
+def test_mis_requisiciones_filtra_abiertas_para_alinear_cards_home(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-2010",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente visible",
+            ),
+            Requisicion(
+                folio="REQ-2011",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Seguimiento visible",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-2012",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="rechazada",
+                justificacion="Rechazada oculta",
+            ),
+            Requisicion(
+                folio="REQ-2013",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada_en_prokey",
+                justificacion="Cerrada oculta",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "user.ops", "pass123")
+    response = client.get("/mis-requisiciones?estado=abiertas")
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-2010" in html
+    assert "REQ-2011" in html
+    assert "REQ-2012" not in html
+    assert "REQ-2013" not in html
+    assert 'name="estado"' in html
+    assert 'value="abiertas"' in html
 
 
 def test_dashboard_backend_restringe_acceso_por_rol(client: TestClient):
@@ -491,7 +554,7 @@ def test_monitor_renderiza_fase_2_de_auditoria(client: TestClient):
     assert "Diferencias por Tecnico" in html
 
 
-def test_home_aprobador_grafico_usa_pendientes_globales(client: TestClient, db_session: Session):
+def test_home_aprobador_muestra_cards_operativas_globales(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     db_session.add(
         Requisicion(
@@ -508,15 +571,12 @@ def test_home_aprobador_grafico_usa_pendientes_globales(client: TestClient, db_s
     response = client.get("/")
     assert response.status_code == 200
     html = response.text
-    assert "Pendientes por aprobar" in html
-
-    row_match = re.search(
-        r"Pendientes de aprobar.*?<strong class=\"value\">(\d+)</strong>",
-        html,
-        re.DOTALL,
-    )
-    assert row_match is not None
-    assert row_match.group(1) == "1"
+    assert "Pendientes por Aprobar" in html
+    assert "Pendientes de Entregar" in html
+    assert "Rechazadas" in html
+    assert "Aprobadas Históricas" not in html
+    assert "/aprobar" in html
+    assert "/todas-requisiciones?estado=pendiente_entregar" in html
 
 
 def test_bodega_no_ve_accesos_de_creacion_ni_mis_requisiciones(client: TestClient):
@@ -993,9 +1053,11 @@ def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
 
     assert response.status_code == 200
     html = response.text
-    assert '/todas-requisiciones?estado=pendiente_entregar' in html
-    assert '/todas-requisiciones?estado=rechazada' in html
+    assert 'Pendientes de Procesar' in html
+    assert 'Entregadas Pendientes de Liquidar' in html
+    assert 'Liquidadas en Prokey' in html
     assert '/aprobar' in html
+    assert '/bodega' in html
     assert '/bodega?vista=historial' in html
 
 

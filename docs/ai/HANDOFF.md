@@ -10,6 +10,8 @@
 - `REQ-130` completada en esta rama: el buscador de `Todas las Requisiciones` ya no se limita a folio/cliente/justificacion; ahora tambien cubre motivo, receptor designado, referencia Prokey y actores de la columna `Gestionado por`.
 - `REQ-131` completada en esta rama: los labels largos del navbar ahora se parten en dos lineas para ahorrar ancho horizontal sin cambiar roles, orden de menus ni comportamiento del dropdown.
 - `REQ-132` completada en esta rama: el label `Administración` vuelve a mostrarse como una sola palabra para no romper lectura en el dropdown del rol `admin`.
+- `REQ-133` completada en esta rama: el home `/` deja de mezclar metricas personales/globales con semantica ambigua; ahora las 6 cards se construyen por rol desde backend, desaparece `Aprobadas Históricas`, se elimina `Indicadores Rápidos` y `Acciones Rápidas` queda alineado al rol actual.
+- `REQ-134` completada en esta rama: las cards personales del home ya no caen todas en el mismo listado indistinto; `/mis-requisiciones` ahora admite filtro SSR por estado y el home enlaza a subconjuntos reales (`abiertas`, `cerradas`, `rechazada`, `seguimiento`), incluyendo el rename a `Mis Requisiciones Pendientes`.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-119` completada: el navbar ya agrupa los accesos `admin` bajo un dropdown `Administracion` y el bloque de usuario ahora despliega `Cambiar contrasena` + `Salir`, reduciendo ancho horizontal sin introducir JS adicional.
 - `REQ-123` completada en `main`: `Gestionar Entrega` y `Entrega Parcial` ahora fuerzan en JS el estado inicial bloqueado del receptor; el selector solo se habilita tras pulsar `Cambiar receptor`.

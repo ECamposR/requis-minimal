@@ -16,153 +16,73 @@
     </header>
 
     <section class="home-kpi-grid">
+        {% for card in home_cards %}
         <article class="home-kpi-card">
-            {% if current_user.rol != 'bodega' %}
-            <a href="/mis-requisiciones" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
-            {% endif %}
+            <a href="{{ card.href }}" class="kpi-detail-link">Ver detalle &gt;</a>
             <span class="kpi-icon" aria-hidden="true">
+                {% if card.icon == 'list' %}
                 <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            </span>
-            <span class="kpi-label">Mis Requisiciones</span>
-            <strong class="kpi-value">{{ mis_requisiciones }}</strong>
-        </article>
-
-        <article class="home-kpi-card">
-            {% if current_user.rol != 'bodega' %}
-            <a href="/mis-requisiciones" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
-            {% endif %}
-            <span class="kpi-icon" aria-hidden="true">
+                {% elif card.icon == 'pending' %}
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            </span>
-            <span class="kpi-label">Mis Pendientes</span>
-            <strong class="kpi-value">{{ mis_pendientes }}</strong>
-        </article>
-
-        <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/todas-requisiciones?estado=pendiente_entregar" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
-            {% endif %}
-            <span class="kpi-icon" aria-hidden="true">
+                {% elif card.icon == 'closed' %}
                 <svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            <span class="kpi-label">Aprobadas Históricas</span>
-            <strong class="kpi-value">{{ aprobadas_panel }}</strong>
-        </article>
-
-        <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/todas-requisiciones?estado=rechazada" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
-            {% endif %}
-            <span class="kpi-icon" aria-hidden="true">
+                {% elif card.icon == 'month' %}
+                <svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M5 8h14M6 5h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                {% elif card.icon == 'rejected' %}
                 <svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            </span>
-            <span class="kpi-label">Rechazadas</span>
-            <strong class="kpi-value">{{ rechazadas_panel }}</strong>
-        </article>
-
-        <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'bodega', 'jefe_bodega'] %}
-            <a href="/bodega?vista=historial" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <a href="/mis-requisiciones" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% endif %}
-            <span class="kpi-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M3 8.5 12 4l9 4.5-9 4.5zM3 8.5V16l9 4 9-4V8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-            </span>
-            <span class="kpi-label">Mis Entregadas</span>
-            <strong class="kpi-value">{{ mis_entregadas }}</strong>
-        </article>
-
-        <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/aprobar" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
-            {% endif %}
-            <span class="kpi-icon" aria-hidden="true">
+                {% elif card.icon == 'followup' %}
                 <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                {% elif card.icon == 'all' %}
+                <svg viewBox="0 0 24 24"><path d="M4 5h7v6H4zM13 5h7v6h-7zM4 13h7v6H4zM13 13h7v6h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'prokey_pending' %}
+                <svg viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12v10H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 14v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                {% elif card.icon == 'prokey_done' %}
+                <svg viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12v10H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m9.5 15 1.8 1.8 3.7-4.1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'approve' %}
+                <svg viewBox="0 0 24 24"><path d="M4 12h6l2-7 3 14 2-7h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'deliver' %}
+                <svg viewBox="0 0 24 24"><path d="M3 8.5 12 4l9 4.5-9 4.5zM3 8.5V16l9 4 9-4V8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'warehouse' %}
+                <svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6v9a1 1 0 0 1-1 1h-3v-6H7v6H4a1 1 0 0 1-1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'prepared' %}
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M5 7h14M5 17h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m16 17 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'liquidate' %}
+                <svg viewBox="0 0 24 24"><path d="M12 3v10M12 13c-2.6 0-4.5 1.4-4.5 3.3S9.4 20 12 20s4.5-1.4 4.5-3.7S14.6 13 12 13Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                {% endif %}
             </span>
-            <span class="kpi-label">Pendientes por Aprobar</span>
-            <strong class="kpi-value">{{ pendientes_aprobar }}</strong>
+            <span class="kpi-label">{{ card.label }}</span>
+            <strong class="kpi-value">{{ card.value }}</strong>
         </article>
+        {% endfor %}
     </section>
 
-    <section class="home-bottom-grid">
-        <article class="home-panel indicators-panel">
+    <section class="home-bottom-grid home-bottom-grid--single">
+        <article class="home-panel quick-actions-panel">
             <header class="home-panel-header">
                 <div>
-                    <h3>Indicadores Rápidos</h3>
-                    <p>Vista resumida de actividad reciente</p>
-                </div>
-                <div class="period-tabs" role="tablist" aria-label="Periodo">
-                    <button type="button" class="period-tab is-active" aria-selected="true">30 días</button>
-                    <button type="button" class="period-tab" aria-selected="false" disabled title="Vista demostrativa">90 días</button>
+                    <h3>Acciones Rápidas</h3>
+                    <p>Accesos directos alineados a tu rol actual.</p>
                 </div>
             </header>
-            <div class="mini-chart-clean" aria-hidden="true">
-                <div class="mini-chart-track">
-                    <span class="chart-label">Creadas</span>
-                    <span class="chart-bar chart-bar-1" style="width: {{ (mis_creadas_mes * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
-                    <strong>{{ mis_creadas_mes }}</strong>
-                </div>
-                <div class="mini-chart-track">
-                    <span class="chart-label">Pend. aprobar</span>
-                    <span class="chart-bar chart-bar-2" style="width: {{ (pendientes_aprobar_panel * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
-                    <strong>{{ pendientes_aprobar_panel }}</strong>
-                </div>
-                <div class="mini-chart-track">
-                    <span class="chart-label">Pend. entregar</span>
-                    <span class="chart-bar chart-bar-3" style="width: {{ (pendientes_entregar_panel * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
-                    <strong>{{ pendientes_entregar_panel }}</strong>
-                </div>
-                <div class="mini-chart-track">
-                    <span class="chart-label">Rechazadas</span>
-                    <span class="chart-bar chart-bar-4" style="width: {{ (rechazadas_panel * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
-                    <strong>{{ rechazadas_panel }}</strong>
-                </div>
-                <div class="mini-chart-track">
-                    <span class="chart-label">Entregadas</span>
-                    <span class="chart-bar chart-bar-5" style="width: {{ (mis_entregadas_30d * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
-                    <strong>{{ mis_entregadas_30d }}</strong>
-                </div>
-            </div>
-        </article>
-
-        <article class="home-panel quick-actions-panel">
-            <h3>Acciones Rápidas</h3>
-            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega', 'logistica'] %}
-            {% set buscar_href = '/todas-requisiciones' %}
-            {% elif current_user.rol in ['bodega', 'jefe_bodega'] %}
-            {% set buscar_href = '/bodega' %}
-            {% else %}
-            {% set buscar_href = '/mis-requisiciones' %}
-            {% endif %}
-
-            <a href="{{ buscar_href }}" class="quick-action-item">
+            {% for action in home_actions %}
+            <a href="{{ action.href }}" class="quick-action-item">
                 <span class="qa-icon" aria-hidden="true">
+                    {% if action.icon == 'new' %}
+                    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    {% elif action.icon == 'search' %}
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                </span>
-                <span class="qa-text">Buscar Requisición</span>
-                <span class="qa-arrow" aria-hidden="true">&gt;</span>
-            </a>
-
-            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/aprobar" class="quick-action-item">
-                <span class="qa-icon" aria-hidden="true">
+                    {% elif action.icon == 'approve' %}
                     <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    {% elif action.icon == 'monitor' %}
+                    <svg viewBox="0 0 24 24"><path d="M4 5h16v10H4zM8 19h8M12 15v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    {% elif action.icon == 'warehouse' %}
+                    <svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6v9a1 1 0 0 1-1 1h-3v-6H7v6H4a1 1 0 0 1-1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                    {% endif %}
                 </span>
-                <span class="qa-text">Aprobación Masiva</span>
+                <span class="qa-text">{{ action.label }}</span>
                 <span class="qa-arrow" aria-hidden="true">&gt;</span>
             </a>
-            {% endif %}
+            {% endfor %}
         </article>
     </section>
 </section>

@@ -510,6 +510,193 @@ def ensure_admin(current_user: Usuario) -> None:
         raise HTTPException(status_code=403, detail="No autorizado")
 
 
+def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, object]]:
+    ahora = now_sv()
+    inicio_mes = datetime(ahora.year, ahora.month, 1)
+    mis_query = db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id)
+
+    mis_requisiciones = mis_query.count()
+    mis_abiertas = mis_query.filter(
+        Requisicion.estado.in_(["pendiente", "aprobada", "preparado", "entregada", "liquidada"]),
+        or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+    ).count()
+    mis_cerradas = mis_query.filter(
+        or_(
+            Requisicion.estado == "liquidada_en_prokey",
+            Requisicion.delivery_result == "no_entregada",
+        )
+    ).count()
+    mis_creadas_mes = mis_query.filter(Requisicion.created_at >= inicio_mes).count()
+    mis_rechazadas = mis_query.filter(Requisicion.estado == "rechazada").count()
+    mis_seguimiento = mis_query.filter(
+        Requisicion.estado.in_(["aprobada", "preparado", "entregada", "liquidada"]),
+        or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+    ).count()
+
+    pendientes_aprobar = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
+    pendientes_entregar = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
+    preparadas = db.query(Requisicion).filter(Requisicion.estado == "preparado").count()
+    pendientes_liquidar = db.query(Requisicion).filter(Requisicion.estado == "entregada").count()
+    liquidadas = db.query(Requisicion).filter(Requisicion.estado == "liquidada").count()
+    liquidadas_en_prokey = db.query(Requisicion).filter(Requisicion.estado == "liquidada_en_prokey").count()
+    rechazadas = db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
+    no_entregadas = db.query(Requisicion).filter(Requisicion.delivery_result == "no_entregada").count()
+    pendientes_ref_prokey = db.query(Requisicion).filter(
+        Requisicion.estado == "liquidada",
+        or_(Requisicion.prokey_ref.is_(None), Requisicion.prokey_ref == ""),
+    ).count()
+    todas_requisiciones = db.query(Requisicion).count()
+
+    cards_by_role = {
+        "user": [
+            {"label": "Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {
+                "label": "Mis Requisiciones Pendientes",
+                "value": mis_abiertas,
+                "href": "/mis-requisiciones?estado=abiertas",
+                "icon": "pending",
+            },
+            {"label": "Mis Cerradas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
+            {"label": "Creadas Este Mes", "value": mis_creadas_mes, "href": "/mis-requisiciones", "icon": "month"},
+            {"label": "Mis Rechazadas", "value": mis_rechazadas, "href": "/mis-requisiciones?estado=rechazada", "icon": "rejected"},
+            {
+                "label": "Requieren Seguimiento",
+                "value": mis_seguimiento,
+                "href": "/mis-requisiciones?estado=seguimiento",
+                "icon": "followup",
+            },
+        ],
+        "logistica": [
+            {"label": "Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {
+                "label": "Mis Requisiciones Pendientes",
+                "value": mis_abiertas,
+                "href": "/mis-requisiciones?estado=abiertas",
+                "icon": "pending",
+            },
+            {"label": "Mis Cerradas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
+            {"label": "Todas las Requisiciones", "value": todas_requisiciones, "href": "/todas-requisiciones", "icon": "all"},
+            {
+                "label": "Pendientes de Referencia Prokey",
+                "value": pendientes_ref_prokey,
+                "href": "/todas-requisiciones?estado=liquidada",
+                "icon": "prokey_pending",
+            },
+            {
+                "label": "Liquidadas en Prokey",
+                "value": liquidadas_en_prokey,
+                "href": "/todas-requisiciones?estado=liquidada_en_prokey",
+                "icon": "prokey_done",
+            },
+        ],
+        "aprobador": [
+            {"label": "Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {
+                "label": "Mis Requisiciones Pendientes",
+                "value": mis_abiertas,
+                "href": "/mis-requisiciones?estado=abiertas",
+                "icon": "pending",
+            },
+            {"label": "Mis Cerradas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
+            {"label": "Pendientes por Aprobar", "value": pendientes_aprobar, "href": "/aprobar", "icon": "approve"},
+            {
+                "label": "Pendientes de Entregar",
+                "value": pendientes_entregar,
+                "href": "/todas-requisiciones?estado=pendiente_entregar",
+                "icon": "deliver",
+            },
+            {"label": "Rechazadas", "value": rechazadas, "href": "/todas-requisiciones?estado=rechazada", "icon": "rejected"},
+        ],
+        "bodega": [
+            {"label": "Pendientes de Procesar", "value": pendientes_entregar, "href": "/bodega", "icon": "warehouse"},
+            {"label": "Preparadas", "value": preparadas, "href": "/bodega", "icon": "prepared"},
+            {
+                "label": "Entregadas Pendientes de Liquidar",
+                "value": pendientes_liquidar,
+                "href": "/bodega",
+                "icon": "liquidate",
+            },
+            {"label": "Liquidadas", "value": liquidadas, "href": "/bodega?vista=historial", "icon": "closed"},
+            {
+                "label": "Liquidadas en Prokey",
+                "value": liquidadas_en_prokey,
+                "href": "/bodega?vista=historial",
+                "icon": "prokey_done",
+            },
+            {
+                "label": "No Entregadas",
+                "value": no_entregadas,
+                "href": "/bodega?vista=historial&resultado=no_entregada",
+                "icon": "rejected",
+            },
+        ],
+        "jefe_bodega": [
+            {"label": "Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {"label": "Pendientes por Aprobar", "value": pendientes_aprobar, "href": "/aprobar", "icon": "approve"},
+            {"label": "Pendientes de Procesar", "value": pendientes_entregar, "href": "/bodega", "icon": "warehouse"},
+            {
+                "label": "Entregadas Pendientes de Liquidar",
+                "value": pendientes_liquidar,
+                "href": "/bodega",
+                "icon": "liquidate",
+            },
+            {"label": "Liquidadas", "value": liquidadas, "href": "/bodega?vista=historial", "icon": "closed"},
+            {
+                "label": "Liquidadas en Prokey",
+                "value": liquidadas_en_prokey,
+                "href": "/bodega?vista=historial",
+                "icon": "prokey_done",
+            },
+        ],
+        "admin": [
+            {"label": "Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {"label": "Pendientes por Aprobar", "value": pendientes_aprobar, "href": "/aprobar", "icon": "approve"},
+            {
+                "label": "Pendientes de Entregar",
+                "value": pendientes_entregar,
+                "href": "/todas-requisiciones?estado=pendiente_entregar",
+                "icon": "deliver",
+            },
+            {
+                "label": "Pendientes de Liquidar",
+                "value": pendientes_liquidar,
+                "href": "/todas-requisiciones?estado=entregada",
+                "icon": "liquidate",
+            },
+            {"label": "Liquidadas", "value": liquidadas, "href": "/todas-requisiciones?estado=liquidada", "icon": "closed"},
+            {
+                "label": "Liquidadas en Prokey",
+                "value": liquidadas_en_prokey,
+                "href": "/todas-requisiciones?estado=liquidada_en_prokey",
+                "icon": "prokey_done",
+            },
+        ],
+    }
+    return cards_by_role.get(current_user.rol, cards_by_role["user"])
+
+
+def build_home_actions(current_user: Usuario) -> list[dict[str, str]]:
+    actions: list[dict[str, str]] = []
+    if current_user.rol != "bodega":
+        actions.append({"label": "Nueva Requisición", "href": "/crear", "icon": "new"})
+
+    if current_user.rol in ["admin", "aprobador", "jefe_bodega", "logistica"]:
+        actions.append({"label": "Todas las Requisiciones", "href": "/todas-requisiciones", "icon": "search"})
+    elif current_user.rol == "bodega":
+        actions.append({"label": "Bodega", "href": "/bodega", "icon": "warehouse"})
+    else:
+        actions.append({"label": "Mis Requisiciones", "href": "/mis-requisiciones", "icon": "search"})
+
+    if current_user.rol in ["admin", "aprobador", "jefe_bodega"]:
+        actions.append({"label": "Aprobar", "href": "/aprobar", "icon": "approve"})
+        actions.append({"label": "Monitor de Actividad", "href": "/monitor", "icon": "monitor"})
+
+    if current_user.rol in ["admin", "bodega", "jefe_bodega"]:
+        actions.append({"label": "Bodega", "href": "/bodega", "icon": "warehouse"})
+
+    return actions
+
+
 def ensure_dashboard_access(current_user: Usuario) -> None:
     if current_user.rol not in ["admin", "aprobador", "jefe_bodega"]:
         raise HTTPException(status_code=403, detail="No autorizado")
@@ -812,67 +999,16 @@ def cambiar_password_guardar(
 
 @app.get("/")
 def home(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
-    mis_requisiciones_query = db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id)
-    ahora = now_sv()
-    inicio_mes = datetime(ahora.year, ahora.month, 1)
-    hace_30_dias = ahora - timedelta(days=30)
-
-    mis_requisiciones = mis_requisiciones_query.count()
-    mis_pendientes = mis_requisiciones_query.filter(Requisicion.estado == "pendiente").count()
-    mis_aprobadas = mis_requisiciones_query.filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
-    mis_rechazadas = mis_requisiciones_query.filter(Requisicion.estado == "rechazada").count()
-    mis_entregadas = mis_requisiciones_query.filter(Requisicion.estado == "entregada").count()
-    mis_creadas_mes = mis_requisiciones_query.filter(Requisicion.created_at >= inicio_mes).count()
-    mis_entregadas_30d = mis_requisiciones_query.filter(
-        Requisicion.estado == "entregada", Requisicion.delivered_at >= hace_30_dias
-    ).count()
-    pendientes_aprobar = 0
-    if current_user.rol in ["aprobador", "admin", "jefe_bodega"]:
-        pendientes_aprobar = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
-    pendientes_aprobar_panel = pendientes_aprobar if current_user.rol in ["aprobador", "admin", "jefe_bodega"] else mis_pendientes
-    mis_aprobadas_historicas = mis_requisiciones_query.filter(Requisicion.approved_by.isnot(None)).count()
-    aprobadas_panel = (
-        db.query(Requisicion).filter(Requisicion.approved_by.isnot(None)).count()
-        if current_user.rol in ["admin", "aprobador", "bodega", "jefe_bodega"]
-        else mis_aprobadas_historicas
-    )
-    pendientes_bodega = 0
-    if current_user.rol in ["bodega", "admin", "jefe_bodega"]:
-        pendientes_bodega = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
-    pendientes_entregar_panel = pendientes_bodega if current_user.rol in ["bodega", "admin", "jefe_bodega"] else aprobadas_panel
-    rechazadas_panel = (
-        db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
-        if current_user.rol in ["admin", "aprobador", "bodega", "jefe_bodega"]
-        else mis_rechazadas
-    )
-    escala_metricas_home = max(
-        1,
-        mis_creadas_mes,
-        pendientes_aprobar_panel,
-        pendientes_entregar_panel,
-        rechazadas_panel,
-        mis_entregadas_30d,
-    )
+    home_cards = build_home_cards(current_user, db)
+    home_actions = build_home_actions(current_user)
 
     return templates.TemplateResponse(
         "home.html",
         template_context(
             request,
             current_user,
-            mis_requisiciones=mis_requisiciones,
-            mis_pendientes=mis_pendientes,
-            mis_aprobadas=mis_aprobadas,
-            aprobadas_panel=aprobadas_panel,
-            mis_rechazadas=mis_rechazadas,
-            mis_entregadas=mis_entregadas,
-            mis_creadas_mes=mis_creadas_mes,
-            mis_entregadas_30d=mis_entregadas_30d,
-            pendientes_aprobar_panel=pendientes_aprobar_panel,
-            pendientes_entregar_panel=pendientes_entregar_panel,
-            rechazadas_panel=rechazadas_panel,
-            escala_metricas_home=escala_metricas_home,
-            pendientes_aprobar=pendientes_aprobar,
-            pendientes_bodega=pendientes_bodega,
+            home_cards=home_cards,
+            home_actions=home_actions,
         ),
     )
 
@@ -1258,10 +1394,33 @@ def mis_requisiciones(
     if restricted_redirect:
         return restricted_redirect
     vista_param = request.query_params.get("vista", "mias").strip().lower()
+    estado = request.query_params.get("estado", "todas").strip().lower()
     vista_global = puede_ver_todas_las_requisiciones(current_user) and vista_param == "todas"
     query = db.query(Requisicion).options(joinedload(Requisicion.solicitante))
     if not vista_global:
         query = query.filter(Requisicion.solicitante_id == current_user.id)
+
+    estados_validos = {"pendiente", "aprobada", "preparado", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"}
+    if estado == "abiertas":
+        query = query.filter(
+            Requisicion.estado.in_(["pendiente", "aprobada", "preparado", "entregada", "liquidada"]),
+            or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+        )
+    elif estado == "seguimiento":
+        query = query.filter(
+            Requisicion.estado.in_(["aprobada", "preparado", "entregada", "liquidada"]),
+            or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+        )
+    elif estado == "cerradas":
+        query = query.filter(
+            or_(
+                Requisicion.estado == "liquidada_en_prokey",
+                Requisicion.delivery_result == "no_entregada",
+            )
+        )
+    elif estado in estados_validos:
+        query = query.filter(Requisicion.estado == estado)
+
     requisiciones = (
         query
         .order_by(Requisicion.created_at.desc())
@@ -1269,7 +1428,13 @@ def mis_requisiciones(
     )
     return templates.TemplateResponse(
         "mis_requisiciones.html",
-        template_context(request, current_user, requisiciones=requisiciones, vista_global=vista_global),
+        template_context(
+            request,
+            current_user,
+            requisiciones=requisiciones,
+            vista_global=vista_global,
+            filtro_estado=estado,
+        ),
     )
 
 

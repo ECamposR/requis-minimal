@@ -1,5 +1,40 @@
 # Worklog (append-only)
 
+## 2026-03-13 20:18 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la inconsistencia entre las cards personales del home y el detalle real de `Mis Requisiciones`.
+- Tareas: `REQ-134`
+- Cambios:
+  - `app/main.py`
+  - `templates/mis_requisiciones.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `Pendientes de Mis Requisiciones` se renombra a `Mis Requisiciones Pendientes`.
+  - `/mis-requisiciones` agrega filtro SSR por `estado` y la vista incorpora un selector simple con auto-submit.
+  - Las cards personales del home apuntan ahora a subconjuntos reales del historial (`abiertas`, `cerradas`, `rechazada`, `seguimiento`) en vez de caer todas en el mismo listado completo.
+- Proximo paso:
+  - Validar visualmente si conviene agregar mas adelante filtros equivalentes por fecha o motivo en `Mis Requisiciones`, manteniendo la vista mas ligera que `Todas las Requisiciones`.
+
+## 2026-03-13 20:02 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la semantica del home para que las cards representen trabajo personal u operativo por rol sin mezclar historico/global en el mismo indicador.
+- Tareas: `REQ-133`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - La ruta `/` ahora construye `home_cards` y `home_actions` explicitamente por rol (`user`, `logistica`, `aprobador`, `bodega`, `jefe_bodega`, `admin`).
+  - El template del home ya no hardcodea seis KPI ambiguos; renderiza cards consistentes por rol y elimina el bloque `Indicadores Rápidos`.
+  - `Acciones Rápidas` queda como unico panel inferior y se alimenta tambien desde backend para mantener coherencia semantica.
+- Proximo paso:
+  - Validar visualmente la densidad del home por rol, especialmente `admin`, `bodega` y `jefe_bodega`, para confirmar que los labels nuevos caben bien sin romper el grid.
+
 ## 2026-03-13 19:08 UTC-6 | tool: Codex CLI
 - Objetivo: corregir la legibilidad del label `Administración` en el navbar admin tras el compactado en dos lineas.
 - Tareas: `REQ-132`
