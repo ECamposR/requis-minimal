@@ -1,5 +1,25 @@
 # Worklog (append-only)
 
+## 2026-03-13 09:48 UTC-6 | tool: Codex CLI
+- Objetivo: ampliar el Monitor de Actividad para que los KPI de auditoria permitan bajar de agregado a caso concreto, listando requisiciones relacionadas sin salir de la vista.
+- Tareas: `REQ-118G`, `REQ-118H`
+- Cambios:
+  - `app/main.py`
+  - `templates/monitor_actividad.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "dashboard/auditoria|renderAuditKpis|kpi-indice-discrepancia|kpi-inversion-demos" app/main.py templates/monitor_actividad.html tests/test_basic_flow.py`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+- Resultado:
+  - Se agregan endpoints de detalle para requisiciones con diferencia y requisiciones con demo.
+  - Los KPI de auditoria muestran botones `Ver detalle` y un panel inline reutilizable que lista folio, cierre, solicitante, motivo, receptor y resumen del caso.
+  - El monitor ya permite bajar de KPI a listado relacionado sin abrir una pagina nueva.
+- Proximo paso:
+  - Validar visualmente el drill-down con datos reales y decidir si hace falta una segunda iteracion con filtros por fecha, export o apertura directa del modal detalle por fila.
+
 ## 2026-03-12 13:05 UTC-6 | tool: Codex CLI
 - Objetivo: reducir el ancho horizontal del navbar agrupando accesos secundarios sin cambiar permisos ni rutas, usando menus desplegables simples y mantenibles.
 - Tareas: `REQ-119`

@@ -213,6 +213,10 @@ def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
     assert "chart-diferencia-tecnico" in response_page.text
     assert "kpi-indice-discrepancia" in response_page.text
     assert "kpi-inversion-demos" in response_page.text
+    assert 'data-drilldown-kind="discrepancias"' in response_page.text
+    assert 'data-drilldown-kind="demos"' in response_page.text
+    assert "/api/dashboard/auditoria/discrepancias" in response_page.text
+    assert "/api/dashboard/auditoria/demos" in response_page.text
     assert response_api.status_code == 200
     payload = response_api.json()
     assert "motivos" in payload
@@ -424,6 +428,20 @@ def test_dashboard_auditoria_agrega_kpis_y_diferencias(client: TestClient, db_se
     assert diferencia_tecnicos["Tecnico Uno"] == 1.0
     assert diferencia_tecnicos["Tecnico Dos"] == 2.0
 
+    response_drilldown_diferencias = client.get("/api/dashboard/auditoria/discrepancias")
+    assert response_drilldown_diferencias.status_code == 200
+    payload_drilldown_diferencias = response_drilldown_diferencias.json()
+    assert payload_drilldown_diferencias["kind"] == "discrepancias"
+    assert payload_drilldown_diferencias["total"] == 2
+    assert {item["folio"] for item in payload_drilldown_diferencias["items"]} == {"REQ-AUD-01", "REQ-AUD-02"}
+
+    response_drilldown_demos = client.get("/api/dashboard/auditoria/demos")
+    assert response_drilldown_demos.status_code == 200
+    payload_drilldown_demos = response_drilldown_demos.json()
+    assert payload_drilldown_demos["kind"] == "demos"
+    assert payload_drilldown_demos["total"] == 2
+    assert {item["folio"] for item in payload_drilldown_demos["items"]} == {"REQ-AUD-01", "REQ-AUD-02"}
+
 
 def test_navbar_muestra_contingencias_solo_para_roles_autorizados(client: TestClient):
     login(client, "aprob.ops", "pass123")
@@ -457,8 +475,9 @@ def test_monitor_renderiza_fase_2_de_auditoria(client: TestClient):
     response = client.get("/monitor")
     assert response.status_code == 200
     html = response.text
-    assert "Fase 2: Auditoría y Diferencias" in html
+    assert "Auditoría y Diferencias" in html
     assert "/api/dashboard/auditoria" in html
+    assert "dashboard-bi-drilldown" in html
     assert "Ranking de Diferencia por Producto" in html
     assert "Diferencias por Tecnico" in html
 

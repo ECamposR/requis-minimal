@@ -953,10 +953,20 @@ def dashboard_auditoria_api(current_user: Usuario = Depends(get_current_user), d
     # Datos de auditoria y diferencias para el Monitor de Actividad (Fase 2).
     ensure_dashboard_access(current_user)
 
+    auditoria = build_dashboard_auditoria_snapshot(db)
+    return {
+        "kpis": auditoria["kpis"],
+        "diferencia_por_producto": auditoria["diferencia_por_producto"],
+        "diferencias_por_tecnico": auditoria["diferencias_por_tecnico"],
+    }
+
+
+def build_dashboard_auditoria_snapshot(db: Session) -> dict[str, object]:
     requisiciones_cerradas = (
         db.query(Requisicion)
         .options(
             joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
             joinedload(Requisicion.receptor_designado),
         )
         .filter(Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]))
@@ -968,9 +978,15 @@ def dashboard_auditoria_api(current_user: Usuario = Depends(get_current_user), d
     inversion_demos = 0.0
     diferencias_por_producto: dict[str, float] = {}
     diferencias_por_tecnico: dict[str, float] = {}
+    drilldown_diferencias: list[dict[str, object]] = []
+    drilldown_demos: list[dict[str, object]] = []
 
     for req in requisiciones_cerradas:
         req_tiene_diferencia = False
+        total_diferencia_requisicion = 0.0
+        items_con_diferencia = 0
+        total_demo_requisicion = 0.0
+        items_demo = 0
         receptor_nombre = (
             req.receptor_designado.nombre.strip()
             if req.receptor_designado and req.receptor_designado.nombre
@@ -992,19 +1008,51 @@ def dashboard_auditoria_api(current_user: Usuario = Depends(get_current_user), d
             )
             diferencia = expected_return - returned
 
-            if item.es_demo:
+            if item.es_demo and delivered > 0:
                 inversion_demos += delivered
+                total_demo_requisicion += delivered
+                items_demo += 1
 
             if diferencia <= 0:
                 continue
 
             req_tiene_diferencia = True
+            total_diferencia_requisicion += diferencia
+            items_con_diferencia += 1
             descripcion = (item.descripcion or "Sin descripcion").strip() or "Sin descripcion"
             diferencias_por_producto[descripcion] = diferencias_por_producto.get(descripcion, 0.0) + diferencia
             diferencias_por_tecnico[receptor_nombre] = diferencias_por_tecnico.get(receptor_nombre, 0.0) + diferencia
 
         if req_tiene_diferencia:
             requisiciones_con_diferencia += 1
+            drilldown_diferencias.append(
+                {
+                    "id": req.id,
+                    "folio": req.folio,
+                    "estado": req.estado,
+                    "motivo_requisicion": req.motivo_requisicion,
+                    "solicitante_nombre": req.solicitante.nombre if req.solicitante else "Sin solicitante",
+                    "receptor_designado_nombre": receptor_nombre,
+                    "liquidated_at": req.liquidated_at or req.prokey_liquidada_at or req.created_at,
+                    "items_con_diferencia": items_con_diferencia,
+                    "total_diferencia": round(total_diferencia_requisicion, 2),
+                }
+            )
+
+        if items_demo > 0 and total_demo_requisicion > 0:
+            drilldown_demos.append(
+                {
+                    "id": req.id,
+                    "folio": req.folio,
+                    "estado": req.estado,
+                    "motivo_requisicion": req.motivo_requisicion,
+                    "solicitante_nombre": req.solicitante.nombre if req.solicitante else "Sin solicitante",
+                    "receptor_designado_nombre": receptor_nombre,
+                    "liquidated_at": req.liquidated_at or req.prokey_liquidada_at or req.created_at,
+                    "items_demo": items_demo,
+                    "total_demo_entregado": round(total_demo_requisicion, 2),
+                }
+            )
 
     indice_discrepancia = (
         round((requisiciones_con_diferencia * 100.0) / total_requisiciones_cerradas, 2)
@@ -1021,6 +1069,21 @@ def dashboard_auditoria_api(current_user: Usuario = Depends(get_current_user), d
         key=lambda item: (-item[1], item[0].lower()),
     )[:5]
 
+    drilldown_diferencias.sort(
+        key=lambda item: (
+            -float(item["total_diferencia"]),
+            str(item["liquidated_at"] or ""),
+            str(item["folio"]),
+        )
+    )
+    drilldown_demos.sort(
+        key=lambda item: (
+            -float(item["total_demo_entregado"]),
+            str(item["liquidated_at"] or ""),
+            str(item["folio"]),
+        )
+    )
+
     return {
         "kpis": {
             "indice_discrepancia_pct": indice_discrepancia,
@@ -1036,6 +1099,38 @@ def dashboard_auditoria_api(current_user: Usuario = Depends(get_current_user), d
             "labels": [label for label, _ in top_tecnicos],
             "values": [round(value, 2) for _, value in top_tecnicos],
         },
+        "requisiciones_con_diferencia_detalle": drilldown_diferencias,
+        "requisiciones_demo_detalle": drilldown_demos,
+    }
+
+
+@app.get("/api/dashboard/auditoria/discrepancias")
+def dashboard_auditoria_discrepancias_api(
+    current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    ensure_dashboard_access(current_user)
+    auditoria = build_dashboard_auditoria_snapshot(db)
+    items = auditoria["requisiciones_con_diferencia_detalle"]
+    return {
+        "kind": "discrepancias",
+        "title": "Requisiciones con diferencia",
+        "description": "Requisiciones cerradas que presentan al menos un item con diferencia positiva.",
+        "total": len(items),
+        "items": items,
+    }
+
+
+@app.get("/api/dashboard/auditoria/demos")
+def dashboard_auditoria_demos_api(current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    ensure_dashboard_access(current_user)
+    auditoria = build_dashboard_auditoria_snapshot(db)
+    items = auditoria["requisiciones_demo_detalle"]
+    return {
+        "kind": "demos",
+        "title": "Requisiciones con demo",
+        "description": "Requisiciones cerradas con al menos un item marcado para demo y cantidad entregada mayor a cero.",
+        "total": len(items),
+        "items": items,
     }
 
 

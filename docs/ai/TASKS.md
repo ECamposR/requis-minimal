@@ -17,6 +17,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-118D` | `done` | Backend: crear `GET /api/dashboard/auditoria` procesando requisiciones liquidadas, iterando items y reutilizando `calcular_retorno_esperado` para calcular diferencias, KPIs y datasets de auditoria.
 - `REQ-118E` | `done` | Frontend UI: actualizar `templates/monitor_actividad.html` agregando una nueva seccion debajo de Fase 1 con tarjetas KPI y un grid adicional para los 2 graficos de diferencias.
 - `REQ-118F` | `done` | Frontend JS: ampliar el script para consumir `/api/dashboard/auditoria`, renderizar KPIs y graficos de diferencias usando colores de alerta (rojos/naranjas) sin romper la Fase 1 ya operativa.
+- `REQ-118G` | `done` | Backend drill-down: agregar endpoints de detalle para KPIs de auditoria (`/api/dashboard/auditoria/discrepancias` y `/api/dashboard/auditoria/demos`) devolviendo requisiciones cerradas relacionadas a cada indicador.
+- `REQ-118H` | `done` | Frontend drill-down: agregar botones `Ver detalle` en los KPI de auditoria y un panel inline en `monitor_actividad.html` para listar las requisiciones relacionadas sin salir del monitor.
 
 ## Reinicio Liquidacion (desde `3d7702b`)
 - `REQ-060` | `done` | Base de liquidacion implementada: estado `liquidada`, campos base en `requisiciones/items`, migracion robusta e idempotente + baseline de entrega (`cantidad_entregada`) normalizado.

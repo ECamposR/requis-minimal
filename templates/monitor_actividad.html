@@ -54,6 +54,14 @@
 .dashboard-bi-kpi-note strong {
     color: var(--ui-danger, var(--danger, #dc2626));
 }
+.dashboard-bi-kpi-actions {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+}
+.dashboard-bi-kpi-actions button {
+    margin: 0;
+}
 .dashboard-bi-card {
     min-height: 22rem;
 }
@@ -97,10 +105,47 @@
 .dashboard-bi-status.is-error {
     color: var(--ui-danger, var(--danger, #dc2626));
 }
+.dashboard-bi-drilldown {
+    margin-top: 1rem;
+}
+.dashboard-bi-drilldown[hidden] {
+    display: none;
+}
+.dashboard-bi-drilldown-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+}
+.dashboard-bi-drilldown-header h3 {
+    margin: 0;
+}
+.dashboard-bi-drilldown-header p {
+    margin: 0.2rem 0 0;
+}
+.dashboard-bi-drilldown-table-wrap {
+    overflow-x: auto;
+}
+.dashboard-bi-drilldown-table {
+    width: 100%;
+    margin-bottom: 0;
+}
+.dashboard-bi-drilldown-table th,
+.dashboard-bi-drilldown-table td {
+    vertical-align: top;
+}
+.dashboard-bi-drilldown-empty {
+    margin: 0;
+    color: var(--ui-muted, var(--muted, #475569));
+}
 @media (max-width: 960px) {
     .dashboard-bi-kpi-grid,
     .dashboard-bi-grid {
         grid-template-columns: 1fr;
+    }
+    .dashboard-bi-drilldown-header {
+        flex-direction: column;
     }
 }
 </style>
@@ -177,12 +222,30 @@
             <span class="dashboard-bi-kpi-label">Indice de Discrepancia</span>
             <strong class="dashboard-bi-kpi-value" id="kpi-indice-discrepancia">--</strong>
             <p class="dashboard-bi-kpi-note" id="kpi-indice-discrepancia-note">Cargando datos de auditoría...</p>
+            <div class="dashboard-bi-kpi-actions">
+                <button type="button" class="secondary" data-drilldown-kind="discrepancias">Ver detalle</button>
+            </div>
         </article>
         <article class="panel view-panel dashboard-bi-kpi-card">
             <span class="dashboard-bi-kpi-label">Inversion en Demos</span>
             <strong class="dashboard-bi-kpi-value" id="kpi-inversion-demos">--</strong>
             <p class="dashboard-bi-kpi-note" id="kpi-inversion-demos-note">Cargando datos de auditoría...</p>
+            <div class="dashboard-bi-kpi-actions">
+                <button type="button" class="secondary" data-drilldown-kind="demos">Ver detalle</button>
+            </div>
         </article>
+    </section>
+
+    <section class="panel view-panel dashboard-bi-drilldown" id="dashboard-bi-drilldown" hidden aria-live="polite">
+        <header class="dashboard-bi-drilldown-header">
+            <div>
+                <h3 id="dashboard-bi-drilldown-title">Detalle relacionado</h3>
+                <p id="dashboard-bi-drilldown-description">Selecciona un KPI para ver las requisiciones relacionadas.</p>
+            </div>
+            <button type="button" class="secondary" id="dashboard-bi-drilldown-close">Cerrar</button>
+        </header>
+        <p class="dashboard-bi-status" id="dashboard-bi-drilldown-status"></p>
+        <div class="dashboard-bi-drilldown-table-wrap" id="dashboard-bi-drilldown-content"></div>
     </section>
 
     <section class="dashboard-bi-grid" aria-label="Metricas de diferencias">
@@ -237,6 +300,11 @@ function clearChartStatus(key) {
     node.classList.remove("is-error");
 }
 
+function fmtAuditDateTime(value) {
+    if (!value) return "—";
+    return String(value).replace("T", " ").replace(/\.\d+$/, "");
+}
+
 function fmtAuditNumber(value) {
     if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
     return Number(value).toLocaleString("es-SV", {
@@ -250,6 +318,97 @@ function setAuditKpi(id, value, noteId, note) {
     const noteNode = document.getElementById(noteId);
     if (valueNode) valueNode.textContent = value;
     if (noteNode) noteNode.innerHTML = note;
+}
+
+function setDrilldownStatus(message, isError = false) {
+    const node = document.getElementById("dashboard-bi-drilldown-status");
+    if (!node) return;
+    node.textContent = message;
+    node.classList.toggle("is-error", Boolean(isError));
+}
+
+function renderDrilldownRows(kind, items) {
+    const container = document.getElementById("dashboard-bi-drilldown-content");
+    if (!container) return;
+    if (!Array.isArray(items) || items.length === 0) {
+        container.innerHTML = '<p class="dashboard-bi-drilldown-empty">No hay requisiciones relacionadas para este indicador.</p>';
+        return;
+    }
+    const rows = items.map((item) => {
+        const resumen = kind === "discrepancias"
+            ? `${item.items_con_diferencia || 0} items con diferencia / total ${fmtAuditNumber(item.total_diferencia || 0)}`
+            : `${item.items_demo || 0} items demo / total ${fmtAuditNumber(item.total_demo_entregado || 0)}`;
+        return `
+            <tr>
+                <td><strong>${item.folio || "—"}</strong></td>
+                <td>${fmtAuditDateTime(item.liquidated_at)}</td>
+                <td>${item.solicitante_nombre || "—"}</td>
+                <td>${item.motivo_requisicion || "Sin motivo"}</td>
+                <td>${item.receptor_designado_nombre || "—"}</td>
+                <td>${resumen}</td>
+            </tr>
+        `;
+    }).join("");
+    container.innerHTML = `
+        <table class="dashboard-bi-drilldown-table">
+            <thead>
+                <tr>
+                    <th>Folio</th>
+                    <th>Cierre</th>
+                    <th>Solicitante</th>
+                    <th>Motivo</th>
+                    <th>Receptor</th>
+                    <th>Resumen</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+    `;
+}
+
+async function cargarDrilldownAuditoria(kind) {
+    const panel = document.getElementById("dashboard-bi-drilldown");
+    const title = document.getElementById("dashboard-bi-drilldown-title");
+    const description = document.getElementById("dashboard-bi-drilldown-description");
+    const content = document.getElementById("dashboard-bi-drilldown-content");
+    if (!panel || !title || !description || !content) return;
+
+    const config = {
+        discrepancias: {
+            url: "/api/dashboard/auditoria/discrepancias",
+            fallbackTitle: "Requisiciones con diferencia",
+        },
+        demos: {
+            url: "/api/dashboard/auditoria/demos",
+            fallbackTitle: "Requisiciones con demo",
+        },
+    }[kind];
+    if (!config) return;
+
+    panel.hidden = false;
+    title.textContent = config.fallbackTitle;
+    description.textContent = "Cargando detalle relacionado...";
+    content.innerHTML = "";
+    setDrilldownStatus("Cargando requisiciones relacionadas...");
+
+    try {
+        const response = await fetch(config.url, {
+            headers: { "Accept": "application/json" },
+            credentials: "same-origin",
+        });
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar el detalle (${response.status})`);
+        }
+        const payload = await response.json();
+        title.textContent = payload.title || config.fallbackTitle;
+        description.textContent = payload.description || "";
+        renderDrilldownRows(kind, payload.items || []);
+        setDrilldownStatus(`${fmtAuditNumber(payload.total || 0)} requisiciones relacionadas.`);
+    } catch (error) {
+        console.error("monitor_actividad_drilldown_error", error);
+        content.innerHTML = "";
+        setDrilldownStatus("No se pudo cargar el detalle relacionado.", true);
+    }
 }
 
 function destroyChart(key) {
@@ -598,6 +757,16 @@ async function cargarDatosAuditoria() {
 document.addEventListener("DOMContentLoaded", () => {
     cargarDatosBasicos();
     cargarDatosAuditoria();
+    document.querySelectorAll("[data-drilldown-kind]").forEach((button) => {
+        button.addEventListener("click", () => cargarDrilldownAuditoria(button.dataset.drilldownKind));
+    });
+    document.getElementById("dashboard-bi-drilldown-close")?.addEventListener("click", () => {
+        const panel = document.getElementById("dashboard-bi-drilldown");
+        const content = document.getElementById("dashboard-bi-drilldown-content");
+        if (panel) panel.hidden = true;
+        if (content) content.innerHTML = "";
+        setDrilldownStatus("");
+    });
 });
 </script>
 {% endblock %}

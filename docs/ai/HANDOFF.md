@@ -95,6 +95,8 @@
 - `REQ-118D` completada: backend `GET /api/dashboard/auditoria` ya procesa requisiciones cerradas (`liquidada` + `liquidada_en_prokey`), reutiliza `calcular_retorno_esperado`, entrega KPIs de discrepancia/inversion en demos y datasets para diferencia por producto y diferencias por tecnico.
 - `REQ-118E` completada: `monitor_actividad.html` ya incluye una segunda seccion SSR para auditoria/diferencias con dos KPI cards y dos nuevos `canvas` para graficos de perdida.
 - `REQ-118F` completada: el frontend ya consume `/api/dashboard/auditoria`, renderiza KPIs y graficos de diferencias en paleta de alerta sin romper los graficos de la Fase 1.
+- `REQ-118G` completada: se agregan endpoints de drill-down para los KPI de auditoria, permitiendo listar requisiciones cerradas con diferencia y requisiciones cerradas con demo.
+- `REQ-118H` completada: los KPI `Indice de Discrepancia` e `Inversion en Demos` ahora muestran boton `Ver detalle` y un panel inline con las requisiciones relacionadas dentro del mismo monitor.
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
 - Ejecutar smoke manual de entrega con firma y de liquidacion para validar experiencia completa de bloqueo/edicion.
 - Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
