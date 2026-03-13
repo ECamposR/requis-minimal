@@ -1018,6 +1018,8 @@ h4 {
 
 .nav-item:hover {
     background: rgba(29, 123, 232, 0.16) !important;
+    border-color: rgba(29, 123, 232, 0.18) !important;
+    color: var(--ui-text) !important;
 }
 
 .nav-item.is-active {
