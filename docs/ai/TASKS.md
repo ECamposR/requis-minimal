@@ -15,6 +15,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-125` | `done` | Ajustar detalle de requisicion para mostrar ambos receptores cuando bodega cambia el firmante: conservar `receptor designado` original y exponer tambien quien realmente `recibio / firmo`.
 - `REQ-126` | `done` | Agregar rol `logistica`: conserva capacidades base de `user`, pero puede ver todas las requisiciones, consultar detalle/PDF globalmente y completar `prokey_ref` en requisiciones `liquidada` con trazabilidad del actor que registró la referencia.
 - `REQ-127` | `done` | Separar `Aprobar` de la consulta global: la vista de aprobacion queda solo para pendientes y se crea `Todas las Requisiciones` con filtros de estado/departamento/fecha para `admin`, `aprobador`, `jefe_bodega` y `logistica`, sin tocar la logica de negocio.
+- `REQ-128` | `done` | Mejorar UX de filtros SSR: en `Aprobar` y `Todas las Requisiciones`, los selectores aplican el filtro automaticamente al cambiar, manteniendo `Buscar` para texto libre y fechas.
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

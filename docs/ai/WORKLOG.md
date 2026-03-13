@@ -1,5 +1,25 @@
 # Worklog (append-only)
 
+## 2026-03-13 18:10 UTC-6 | tool: Codex CLI
+- Objetivo: reducir friccion en listados SSR haciendo que los filtros por selector se apliquen sin clic extra, sin tocar logica de negocio.
+- Tareas: `REQ-128`
+- Cambios:
+  - `templates/aprobar.html`
+  - `templates/todas_requisiciones.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall tests/test_basic_flow.py`
+  - `python -m py_compile app/main.py`
+- Resultado:
+  - Los selectores de `Aprobar` y `Todas las Requisiciones` ahora envian el formulario automaticamente al cambiar.
+  - `Buscar` se mantiene como accion explicita para texto libre y fechas, evitando recargas innecesarias mientras el usuario escribe o arma un rango.
+  - Se agrego una cobertura SSR minima para confirmar presencia de los hooks de auto-submit.
+- Proximo paso:
+  - Validar manualmente si el mismo patron conviene extenderse a otras vistas filtradas como `Bodega`.
+
 ## 2026-03-13 17:35 UTC-6 | tool: Codex CLI
 - Objetivo: separar la bandeja operativa de aprobacion del historial/consulta global, manteniendo intacta la logica de negocio.
 - Tareas: `REQ-127`

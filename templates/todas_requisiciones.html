@@ -3,9 +3,9 @@
 {% block title %}Todas las Requisiciones{% endblock %}
 {% block content %}
 {{ ui.page_header("Todas las Requisiciones", "Consulta global con filtros por estado, fechas y datos base de la solicitud.") }}
-<form method="GET" class="filters-bar panel">
+<form method="GET" class="filters-bar panel js-autosubmit-filters">
     <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante...">
-    <select name="estado">
+    <select name="estado" data-autosubmit-select>
         <option value="todos" {% if filtro_estado == 'todos' %}selected{% endif %}>Todos los estados</option>
         <option value="pendiente_aprobar" {% if filtro_estado == 'pendiente_aprobar' or filtro_estado == 'pendiente' %}selected{% endif %}>Pendiente de aprobar</option>
         <option value="pendiente_entregar" {% if filtro_estado == 'pendiente_entregar' or filtro_estado == 'aprobada' %}selected{% endif %}>Pendiente de entregar</option>
@@ -15,7 +15,7 @@
         <option value="liquidada" {% if filtro_estado == 'liquidada' %}selected{% endif %}>Liquidada</option>
         <option value="liquidada_en_prokey" {% if filtro_estado == 'liquidada_en_prokey' %}selected{% endif %}>Liquidada en Prokey</option>
     </select>
-    <select name="departamento">
+    <select name="departamento" data-autosubmit-select>
         <option value="todos" {% if filtro_departamento == 'todos' %}selected{% endif %}>Todos los departamentos</option>
         {% for d in departamentos %}
         <option value="{{ d }}" {% if filtro_departamento == d %}selected{% endif %}>{{ d }}</option>
@@ -102,5 +102,20 @@
     </article>
 </dialog>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".js-autosubmit-filters [data-autosubmit-select]").forEach((select) => {
+        select.addEventListener("change", () => {
+            if (select.form) {
+                if (typeof select.form.requestSubmit === "function") {
+                    select.form.requestSubmit();
+                } else {
+                    select.form.submit();
+                }
+            }
+        });
+    });
+});
+</script>
 <script src="/static/app.js"></script>
 {% endblock %}

@@ -971,6 +971,20 @@ def test_aprobar_view_muestra_gestion_para_jefe_bodega(client: TestClient, db_se
     assert f"/aprobar/{req.id}/gestionar" in response.text
 
 
+def test_listados_con_filtros_exponen_autosubmit_en_selectores(client: TestClient):
+    login(client, "jefe.bodega", "pass123")
+
+    aprobar = client.get("/aprobar")
+    assert aprobar.status_code == 200
+    assert "js-autosubmit-filters" in aprobar.text
+    assert "data-autosubmit-select" in aprobar.text
+
+    todas = client.get("/todas-requisiciones")
+    assert todas.status_code == 200
+    assert "js-autosubmit-filters" in todas.text
+    assert "data-autosubmit-select" in todas.text
+
+
 def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
     login(client, "jefe.bodega", "pass123")
     response = client.get("/")
