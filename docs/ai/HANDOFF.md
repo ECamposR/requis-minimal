@@ -8,6 +8,8 @@
 - `REQ-128` completada en esta rama: los filtros basados en selectores (`estado`/`departamento`) ahora se autoaplican en `Aprobar` y `Todas las Requisiciones`; el boton `Buscar` se conserva para texto libre y fechas.
 - `REQ-129` completada en esta rama: los filtros de fecha en `Todas las Requisiciones` mantienen el `input[type=date]` nativo, pero ahora intentan abrir el calendario con `showPicker()` en navegadores compatibles como mejora progresiva.
 - `REQ-130` completada en esta rama: el buscador de `Todas las Requisiciones` ya no se limita a folio/cliente/justificacion; ahora tambien cubre motivo, receptor designado, referencia Prokey y actores de la columna `Gestionado por`.
+- `REQ-131` completada en esta rama: los labels largos del navbar ahora se parten en dos lineas para ahorrar ancho horizontal sin cambiar roles, orden de menus ni comportamiento del dropdown.
+- `REQ-132` completada en esta rama: el label `Administración` vuelve a mostrarse como una sola palabra para no romper lectura en el dropdown del rol `admin`.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-119` completada: el navbar ya agrupa los accesos `admin` bajo un dropdown `Administracion` y el bloque de usuario ahora despliega `Cambiar contrasena` + `Salir`, reduciendo ancho horizontal sin introducir JS adicional.
 - `REQ-123` completada en `main`: `Gestionar Entrega` y `Entrega Parcial` ahora fuerzan en JS el estado inicial bloqueado del receptor; el selector solo se habilita tras pulsar `Cambiar receptor`.

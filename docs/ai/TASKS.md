@@ -18,6 +18,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-128` | `done` | Mejorar UX de filtros SSR: en `Aprobar` y `Todas las Requisiciones`, los selectores aplican el filtro automaticamente al cambiar, manteniendo `Buscar` para texto libre y fechas.
 - `REQ-129` | `done` | Mejorar UX del filtro de fechas en `Todas las Requisiciones`: mantener `input[type=date]` nativo y abrir el picker con `showPicker()` cuando el navegador lo soporte, sin perder captura manual como fallback.
 - `REQ-130` | `done` | Ampliar el buscador `q` de `Todas las Requisiciones` para cubrir `motivo_requisicion`, `receptor designado`, `prokey_ref` y nombres de actores mostrados en `Gestionado por`, sin cambiar permisos ni comportamiento del resto de filtros.
+- `REQ-131` | `done` | Compactar labels largos del navbar partiendolos en dos lineas para reducir ancho horizontal sin cambiar rutas, permisos ni estructura general de navegacion.
+- `REQ-132` | `done` | Ajuste puntual del navbar: `Administración` deja de partirse en dos lineas como si fueran dos palabras; se mantiene como una sola etiqueta para preservar legibilidad en el dropdown admin.
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

@@ -1,5 +1,37 @@
 # Worklog (append-only)
 
+## 2026-03-13 19:08 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la legibilidad del label `Administración` en el navbar admin tras el compactado en dos lineas.
+- Tareas: `REQ-132`
+- Cambios:
+  - `templates/partials/navbar.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `Administración` deja de partirse como si fueran dos palabras y vuelve a mostrarse como una sola etiqueta.
+  - El resto del compactado del navbar se mantiene intacto.
+- Proximo paso:
+  - Validar visualmente si `Administración` sigue cabiendo bien en admin o si conviene una abreviatura deliberada distinta en otra iteracion.
+
+## 2026-03-13 19:02 UTC-6 | tool: Codex CLI
+- Objetivo: reducir el ancho percibido del navbar compactando los labels largos sin cambiar el mapa de navegacion.
+- Tareas: `REQ-131`
+- Cambios:
+  - `templates/partials/navbar.html`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `sed -n '1,120p' templates/partials/navbar.html`
+  - `rg -n "nav-item|menu-links" static/theme.css static/style.css`
+- Resultado:
+  - Los labels largos del navbar ahora se renderizan en dos lineas (`Nueva Requisicion`, `Mis Requisiciones`, `Todas las Requisiciones`, `Monitor de Actividad` y el agrupador de administracion).
+  - El ahorro de ancho se obtiene sin mover menus, sin introducir JS y sin tocar permisos.
+- Proximo paso:
+  - Validar visualmente el navbar con `admin` y `logistica` para confirmar que la densidad mejora sin sacrificar legibilidad.
+
 ## 2026-03-13 18:40 UTC-6 | tool: Codex CLI
 - Objetivo: ampliar la cobertura del buscador de `Todas las Requisiciones` para alinearlo a las columnas y datos operativos realmente visibles en la tabla.
 - Tareas: `REQ-130`

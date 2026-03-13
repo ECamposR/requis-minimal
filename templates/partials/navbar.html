@@ -8,15 +8,15 @@
     <ul class="menu-links nav-pill">
         <li><a href="/" class="nav-item {% if request.url.path == '/' %}is-active{% endif %}"><span>Inicio</span></a></li>
         {% if current_user.rol != 'bodega' %}
-        <li><a href="/crear" class="nav-item {% if request.url.path.startswith('/crear') %}is-active{% endif %}"><span>Nueva Requisicion</span></a></li>
-        <li><a href="/mis-requisiciones" class="nav-item {% if request.url.path.startswith('/mis-requisiciones') and request.query_params.get('vista') != 'todas' %}is-active{% endif %}"><span>Mis Requisiciones</span></a></li>
+        <li><a href="/crear" class="nav-item {% if request.url.path.startswith('/crear') %}is-active{% endif %}"><span class="nav-label-stack"><span>Nueva</span><span>Requisicion</span></span></a></li>
+        <li><a href="/mis-requisiciones" class="nav-item {% if request.url.path.startswith('/mis-requisiciones') and request.query_params.get('vista') != 'todas' %}is-active{% endif %}"><span class="nav-label-stack"><span>Mis</span><span>Requisiciones</span></span></a></li>
         {% endif %}
         {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega', 'logistica'] %}
-        <li><a href="/todas-requisiciones" class="nav-item {% if request.url.path.startswith('/todas-requisiciones') %}is-active{% endif %}"><span>Todas las Requisiciones</span></a></li>
+        <li><a href="/todas-requisiciones" class="nav-item {% if request.url.path.startswith('/todas-requisiciones') %}is-active{% endif %}"><span class="nav-label-stack"><span>Todas las</span><span>Requisiciones</span></span></a></li>
         {% endif %}
         {% if current_user.rol in ['aprobador', 'admin', 'jefe_bodega'] %}
         <li><a href="/aprobar" class="nav-item {% if request.url.path.startswith('/aprobar') %}is-active{% endif %}"><span>Aprobar</span></a></li>
-        <li><a href="/monitor" class="nav-item {% if request.url.path.startswith('/monitor') %}is-active{% endif %}"><span>Monitor de Actividad</span></a></li>
+        <li><a href="/monitor" class="nav-item {% if request.url.path.startswith('/monitor') %}is-active{% endif %}"><span class="nav-label-stack"><span>Monitor de</span><span>Actividad</span></span></a></li>
         {% endif %}
         {% if current_user.rol in ['bodega', 'admin', 'jefe_bodega'] %}
         <li><a href="/bodega" class="nav-item {% if request.url.path.startswith('/bodega') or request.url.path.startswith('/entregar') %}is-active{% endif %}"><span>Bodega</span></a></li>
