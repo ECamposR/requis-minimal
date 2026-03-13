@@ -1,196 +1,282 @@
 # Worklog (append-only)
 
-## 2026-03-12 10:02 UTC-6 | tool: Codex CLI
-- Objetivo: introducir el rol `logistica` con visibilidad global de requisiciones y permiso controlado para registrar `prokey_ref` en requisiciones liquidadas, dejando trazabilidad del actor.
-- Tareas: `REQ-126`
-- Cambios:
-  - `app/models.py`
-  - `app/database.py`
-  - `app/crud.py`
-  - `app/main.py`
-  - `templates/partials/navbar.html`
-  - `templates/mis_requisiciones.html`
-  - `templates/home.html`
-  - `static/app.js`
-  - `static/theme.css`
-  - `tests/test_basic_flow.py`
-  - `tests/test_liquidacion.py`
-  - `tests/test_admin_users.py`
-  - `docs/ai/CONTRACT.md`
-  - `docs/ai/TASKS.md`
-  - `docs/ai/HANDOFF.md`
-  - `docs/ai/WORKLOG.md`
-- Comandos:
-  - `rg -n "rol|can_view_requisicion|puede_editar_prokey_ref|mis-requisiciones|prokey_ref" app templates tests docs/ai`
-  - `python -m compileall app/models.py app/database.py app/crud.py app/main.py tests/test_basic_flow.py tests/test_liquidacion.py tests/test_admin_users.py`
-- Resultado:
-  - `logistica` ya puede iniciar sesion, ver todas las requisiciones en `/mis-requisiciones` y consultar detalle/PDF sin aprobar ni operar bodega.
-  - `prokey_ref` ahora registra actor/fecha de ultima actualizacion y el detalle muestra la nota con nombre/rol del usuario que la registró.
-  - El enlace `Agregar referencia Prokey` solo aparece en el modal cuando el usuario realmente tiene permiso para completarla.
-  - Se agrego cobertura para rol `logistica` en listado global, alta de usuario admin y actualizacion auditada de `prokey_ref`.
-- Proximo paso:
-  - Validar manualmente con un usuario `logistica` el listado global, la apertura del detalle de terceros y el alta de referencia Prokey desde una requisicion `liquidada`.
-
-## 2026-03-12 09:24 UTC-6 | tool: Codex CLI
-- Objetivo: corregir la trazabilidad del detalle de requisicion cuando bodega cambia el receptor al firmar recibido, mostrando tanto el designado original como quien realmente recibe.
-- Tareas: `REQ-125`
+## 2026-03-13 09:48 UTC-6 | tool: Codex CLI
+- Objetivo: ampliar el Monitor de Actividad para que los KPI de auditoria permitan bajar de agregado a caso concreto, listando requisiciones relacionadas sin salir de la vista.
+- Tareas: `REQ-118G`, `REQ-118H`
 - Cambios:
   - `app/main.py`
-  - `static/app.js`
+  - `templates/monitor_actividad.html`
   - `tests/test_basic_flow.py`
   - `docs/ai/TASKS.md`
   - `docs/ai/HANDOFF.md`
   - `docs/ai/WORKLOG.md`
 - Comandos:
-  - `rg -n "receptor_designado|recibido_por|delivered_to|Cambiar receptor|Gestionar Entrega" app/main.py app/crud.py templates static/app.js tests`
+  - `rg -n "dashboard/auditoria|renderAuditKpis|kpi-indice-discrepancia|kpi-inversion-demos" app/main.py templates/monitor_actividad.html tests/test_basic_flow.py`
   - `python -m compileall app/main.py tests/test_basic_flow.py`
 - Resultado:
-  - La API de detalle ahora incluye `recibido_por_detalle` con `id/nombre/rol`.
-  - El modal muestra dos campos separados: `Receptor designado` y `Recibió / firmó`.
-  - Se mantiene intacta la trazabilidad previa y se mejora la auditoria cuando el receptor real no coincide con el designado.
-  - Se agrego prueba para validar que ambos nombres quedan disponibles despues del cambio de receptor.
+  - Se agregan endpoints de detalle para requisiciones con diferencia y requisiciones con demo.
+  - Los KPI de auditoria muestran botones `Ver detalle` y un panel inline reutilizable que lista folio, cierre, solicitante, motivo, receptor y resumen del caso.
+  - El monitor ya permite bajar de KPI a listado relacionado sin abrir una pagina nueva.
 - Proximo paso:
-  - Validar manualmente en UI un caso donde bodega cambie el receptor y confirmar que el modal refleje ambos campos correctamente.
+  - Validar visualmente el drill-down con datos reales y decidir si hace falta una segunda iteracion con filtros por fecha, export o apertura directa del modal detalle por fila.
 
-## 2026-03-12 09:06 UTC-6 | tool: Codex CLI
-- Objetivo: corregir la columna `Ingreso PK (Bodega)` para que el contexto operativo `instalacion_inicial` no genere ingreso a Prokey, manteniendo intacta la formula actual para `reposicion`.
-- Tareas: `REQ-124`
-- Cambios:
-  - `app/crud.py`
-  - `app/main.py`
-  - `static/app.js`
-  - `tests/test_liquidacion.py`
-  - `docs/ai/TASKS.md`
-  - `docs/ai/HANDOFF.md`
-  - `docs/ai/WORKLOG.md`
-- Comandos:
-  - `rg -n "calcular_ingreso_pk_bodega|pk_ingreso_qty|Ingreso PK \\(Bodega\\)|instalacion_inicial" tests app/main.py app/crud.py static/app.js`
-  - `python -m compileall app/crud.py app/main.py tests/test_liquidacion.py`
-- Resultado:
-  - `calcular_ingreso_pk_bodega` ahora acepta `contexto_operacion` y devuelve `0` para `instalacion_inicial`.
-  - El detalle y el PDF ya propagan el contexto al calculo de `pk_ingreso_qty`.
-  - Se ajusto el tooltip de la columna para reflejar la nueva regla operativa.
-  - Se agrego una prueba especifica que valida `pk_ingreso_qty == 0` en retornable + `instalacion_inicial`.
-- Proximo paso:
-  - Validar manualmente un caso mixto en UI para confirmar que `reposicion` mantiene ingreso PK y `instalacion_inicial` muestra `0`.
-
-## 2026-03-11 15:08 UTC-6 | tool: Codex CLI
-- Objetivo: corregir el bug donde el receptor podia aparecer editable al abrir `Gestionar Entrega` sin haber pulsado `Cambiar receptor`.
-- Tareas: `REQ-123`
-- Cambios:
-  - `templates/bodega_gestionar.html`
-  - `templates/bodega_entrega_parcial.html`
-  - `docs/ai/TASKS.md`
-  - `docs/ai/HANDOFF.md`
-  - `docs/ai/WORKLOG.md`
-- Comandos:
-  - `rg -n "Cambiar receptor|receptor|disabled|unlock" templates/bodega_gestionar.html templates/bodega_entrega_parcial.html`
-  - `python -m compileall templates/bodega_gestionar.html templates/bodega_entrega_parcial.html`
-- Resultado:
-  - Ambas vistas ahora fuerzan en JS un estado inicial bloqueado para selector y buscador de receptor.
-  - El receptor solo puede editarse tras pulsar `Cambiar receptor`, incluso si el navegador preserva estado visual previo.
-  - Se mantiene intacta la logica existente de guardado/cancelacion y el caso `no_entregada`.
-- Proximo paso:
-  - Validar manualmente en UI que el selector arranca bloqueado y que el cambio de receptor sigue funcionando al habilitarlo.
-
-## 2026-03-11 11:36 UTC-6 | tool: Codex CLI
-- Objetivo: refactorizar exclusivamente la capa visual del generador de PDF para un modo `Eco-Ink`, reduciendo masa de tinta sin alterar layout, datos ni funciones.
-- Tareas: `REQ-122`
-- Cambios:
-  - `app/pdf_generator.py`
-  - `docs/ai/TASKS.md`
-  - `docs/ai/HANDOFF.md`
-  - `docs/ai/WORKLOG.md`
-- Comandos:
-  - `sed -n '1,520p' app/pdf_generator.py`
-  - `sed -n '520,760p' app/pdf_generator.py`
-  - `.venv/bin/python -m compileall app/pdf_generator.py`
-  - `.venv/bin/python - <<'PY' ... generate_requisicion_pdf(...) ... print(pdf.startswith(...), len(pdf)) ... PY`
-- Resultado:
-  - El PDF pasa a fondo blanco, elimina bloques cromaticos grandes y privilegia bordes/outlines para secciones y cabeceras.
-  - Los encabezados de tabla ya no usan fondo solido; se distinguen por tipografia y linea inferior mas marcada.
-  - Los badges conservan contraste alto con fondos pastel minimos.
-  - Metadatos, separadores y ayudas quedan en escala de grises.
-  - Se mantuvo intacto el layout, la estructura del documento y el flujo de datos.
-  - Validacion directa con `.venv/bin/python`: el PDF se sigue generando correctamente (`True`, `25196` bytes en muestra simple).
-- Proximo paso:
-  - Validar visualmente en impresion real si aun conviene adelgazar mas bordes o atenuar los tintes de estados.
-
-## 2026-03-11 11:18 UTC-6 | tool: Codex CLI
-- Objetivo: corregir el PDF para que no corte silenciosamente items cuando la tabla excede una pagina.
-- Tareas: `REQ-121`
-- Cambios:
-  - `app/pdf_generator.py`
-  - `tests/test_basic_flow.py`
-  - `docs/ai/TASKS.md`
-  - `docs/ai/HANDOFF.md`
-  - `docs/ai/WORKLOG.md`
-- Comandos:
-  - `rg -n "def _items_table|def _just_com|def _timeline|showPage|top = _items_table|return top - T_H|ROW_H|HDR_H" app/pdf_generator.py`
-  - `sed -n '520,860p' app/pdf_generator.py`
-  - `.venv/bin/python -m compileall app/pdf_generator.py tests/test_basic_flow.py`
-  - `.venv/bin/python - <<'PY' ... generate_requisicion_pdf(...) ... print(pages) ... PY`
-- Resultado:
-  - La tabla de items del PDF ya se parte en multiples paginas cuando no cabe completa en una sola.
-  - Cada pagina adicional repite la cabecera de la tabla y conserva footer.
-  - `Justificacion`, `Comentario de liquidacion` y `Timeline` se mueven a la pagina actual o a una nueva si ya no hay espacio suficiente.
-  - Se agrego test directo del generador para validar que un caso con muchos items produzca un PDF multipagina.
-  - Validacion directa con `.venv/bin/python`: un caso sintético de 44 items genero `pages=5`.
-- Proximo paso:
-  - Validar visualmente un PDF real con muchas filas para ajustar densidad o cortes si hiciera falta.
-
-## 2026-03-11 11:02 UTC-6 | tool: Codex CLI
-- Objetivo: reflejar en el PDF quien recibira el producto, mostrando el receptor designado justo debajo del solicitante.
-- Tareas: `REQ-120`
-- Cambios:
-  - `app/main.py`
-  - `app/pdf_generator.py`
-  - `tests/test_basic_flow.py`
-  - `docs/ai/TASKS.md`
-  - `docs/ai/HANDOFF.md`
-  - `docs/ai/WORKLOG.md`
-- Comandos:
-  - `rg -n "receptor_designado|solicitante|PDF|pdf" app/pdf_generator.py app/main.py tests/test_basic_flow.py tests/test_liquidacion.py`
-  - `sed -n '2965,3035p' app/main.py`
-  - `sed -n '350,430p' app/pdf_generator.py`
-  - `python -m compileall app/main.py app/pdf_generator.py tests/test_basic_flow.py`
-  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "pdf_incluye_receptor_designado_en_payload"`
-- Resultado:
-  - El endpoint de PDF ahora carga `receptor_designado` y entrega `receptor_designado_nombre/rol` al generador.
-  - La card `Informacion general` del PDF agrega la fila `Recibe` justo debajo de `Solicitante`.
-  - Se amplio la altura de la card para conservar legibilidad del layout.
-  - Se agrego test con `monkeypatch` para validar que el payload entregado al generador incluye correctamente el receptor designado.
-  - `python -m compileall` paso sin errores.
-  - El `pytest` focal no emitio salida util antes del `timeout`, en linea con el comportamiento ambiental ya observado en este repo.
-- Proximo paso:
-  - Validar visualmente un PDF real para confirmar que la nueva fila mantiene buena jerarquia y no desborda la card.
-
-## 2026-03-11 10:46 UTC-6 | tool: Codex CLI
-- Objetivo: corregir la vista `/bodega` para evitar que requisiciones activas aparezcan tanto en pendientes como en historial, y ajustar la nomenclatura visible del panel.
+## 2026-03-12 13:05 UTC-6 | tool: Codex CLI
+- Objetivo: reducir el ancho horizontal del navbar agrupando accesos secundarios sin cambiar permisos ni rutas, usando menus desplegables simples y mantenibles.
 - Tareas: `REQ-119`
 - Cambios:
-  - `app/main.py`
-  - `templates/bodega.html`
+  - `templates/partials/navbar.html`
+  - `static/style.css`
+  - `static/theme.css`
   - `tests/test_basic_flow.py`
   - `docs/ai/TASKS.md`
   - `docs/ai/HANDOFF.md`
   - `docs/ai/WORKLOG.md`
 - Comandos:
-  - `rg -n "Pendientes de bodega|Historial propio de bodega|historial.*bodega|vista=historial|delivery_result|liquidada" app/main.py templates/bodega.html tests/test_basic_flow.py`
-  - `sed -n '1330,1415p' app/main.py`
-  - `sed -n '1,180p' templates/bodega.html`
-  - `sed -n '1400,1475p' tests/test_basic_flow.py`
-  - `python -m compileall app/main.py templates/bodega.html tests/test_basic_flow.py`
-  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "bodega_permita_filtrar_historial_por_resultado or bodega_no_duplica_entregadas_activas_en_historial"`
+  - `sed -n '1,220p' templates/partials/navbar.html`
+  - `rg -n "main-nav|nav-pill|menu-links|logout-form|avatar-chip|topbar" static/style.css static/theme.css templates`
+  - `python -m compileall tests/test_basic_flow.py`
 - Resultado:
-  - El historial de `/bodega` deja de incluir requisiciones `entregada` con resultado `completa/parcial`, evitando duplicacion con el panel de pendientes.
-  - `Historial` conserva cierres reales: `liquidada`, `liquidada_en_prokey` y `no_entregada`.
-  - Se renombraron los encabezados visibles a `Pendientes de Procesar` e `Historial`.
-  - Se agrego test para validar que una requisicion `entregada` activa no aparezca en `vista=historial`, mientras una `liquidada` si aparezca.
-  - `python -m compileall` paso sin errores en los archivos tocados.
-  - El `pytest` focal no devolvio salida util antes del `timeout`, consistente con el problema ambiental ya documentado en este repo.
+  - Los accesos `Usuarios/Catalogo/Respaldos` de `admin` ahora viven bajo un dropdown `Administracion`.
+  - `Cambiar contrasena` deja de consumir ancho en la barra principal y pasa al menu desplegable del usuario junto a `Salir`.
+  - La implementacion usa `details/summary`, evitando JS adicional y conservando una navegacion SSR simple.
 - Proximo paso:
-  - Ejecutar validacion focal de `/bodega` para confirmar que los filtros de historial siguen comportandose bien con `no_entregada`.
+  - Validar visualmente el navbar en `admin`, `aprobador`, `jefe_bodega` y `bodega` para confirmar densidad, foco y comportamiento en resoluciones medias.
+
+## 2026-03-11 15:19 UTC-6 | tool: Codex CLI
+- Objetivo: alinear la terminologia del Monitor de Actividad al lenguaje operativo real, sustituyendo `fuga/fugas` por `diferencia/diferencias` sin cambiar la logica de calculo.
+- Tareas: `REQ-118D`, `REQ-118E`, `REQ-118F`
+- Cambios:
+  - `app/main.py`
+  - `templates/monitor_actividad.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "fuga|Fuga|fugas|Fugas" app templates tests docs/ai`
+- Resultado:
+  - El endpoint de auditoria ahora expone claves de payload alineadas a `diferencia`.
+  - La UI del monitor ya muestra `Diferencia/Diferencias` en titulos, estados y graficos.
+  - Las pruebas y la documentacion activa quedaron consistentes con la nueva terminologia.
+- Proximo paso:
+  - Validar visualmente el monitor con datos reales y confirmar si la siguiente iteracion agrega filtros o nuevas metricas.
+
+## 2026-03-11 14:36 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-118E` y `REQ-118F`, completando la Fase 2 del Monitor de Actividad en frontend sin afectar la Fase 1.
+- Tareas: `REQ-118E`, `REQ-118F`
+- Cambios:
+  - `templates/monitor_actividad.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `sed -n '1,520p' templates/monitor_actividad.html`
+  - `rg -n "kpi|metric-card|dashboard-bi|status-muted" static/theme.css static/style.css templates/home.html`
+  - `python -m compileall tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "dashboard or auditoria or monitor"`
+- Resultado:
+  - La vista del Monitor de Actividad ahora separa Fase 1 y Fase 2 con encabezados propios.
+  - Se agregaron dos KPI cards: `Indice de Discrepancia` e `Inversion en Demos`.
+  - Se agregaron dos graficos nuevos: `Ranking de Diferencia por Producto` y `Diferencias por Tecnico`.
+  - El frontend consume `/api/dashboard/auditoria` en paralelo a `/api/dashboard/basicos`.
+  - Los graficos de diferencias usan paleta de alerta (`danger` / `warning`) y cuentan con estado de carga/error igual que la Fase 1.
+  - Se reforzo el test SSR para comprobar presencia de la Fase 2, sus `canvas`, KPIs y la llamada al endpoint nuevo.
+  - `REQ-118E` y `REQ-118F` pasan a `done`.
+- Proximo paso:
+  - Validar visualmente la Fase 2 con datos reales y decidir la siguiente iteracion BI.
+
+## 2026-03-11 14:18 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-118D`, agregando backend de auditoria y diferencias sin romper la Fase 1 del Monitor de Actividad.
+- Tareas: `REQ-118D`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "def calcular_retorno_esperado|calcular_retorno_esperado\\(" app/crud.py app/main.py tests`
+  - `sed -n '1,260p' app/crud.py`
+  - `sed -n '1,240p' app/models.py`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "dashboard or auditoria"`
+- Resultado:
+  - Se agrego `GET /api/dashboard/auditoria` protegido por los mismos roles del Monitor de Actividad.
+  - El endpoint procesa requisiciones cerradas (`liquidada` y `liquidada_en_prokey`) con `joinedload` de items y receptor designado.
+  - La diferencia por item se calcula reutilizando `calcular_retorno_esperado`; solo diferencias positivas se acumulan como perdida.
+  - El payload devuelve KPIs (`indice_discrepancia_pct`, `requisiciones_con_diferencia`, `requisiciones_cerradas`, `inversion_demos`) y datasets para `diferencia_por_producto` y `diferencias_por_tecnico`.
+  - Se agrego cobertura para acceso por rol y para el calculo agregado de auditoria, incluyendo contexto `instalacion_inicial` y demos.
+  - `REQ-118D` pasa a `done`.
+- Proximo paso:
+  - Ejecutar `REQ-118E`: sumar la nueva seccion de auditoria/diferencias a `monitor_actividad.html`.
+
+## 2026-03-11 14:03 UTC-6 | tool: Codex CLI
+- Objetivo: registrar la Fase 2 del Monitor de Actividad antes de implementar backend o frontend, preservando intacta la Fase 1 ya operativa.
+- Tareas: `EPIC-BI-02`, `REQ-118D`, `REQ-118E`, `REQ-118F`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `sed -n '1,80p' docs/ai/TASKS.md`
+  - `sed -n '1,130p' docs/ai/HANDOFF.md`
+  - `sed -n '1,60p' docs/ai/WORKLOG.md`
+- Resultado:
+  - Se formalizo `EPIC-BI-02` como `Monitor de Actividad (Fase 2: Auditoria y Diferencias)`.
+  - La Fase 2 queda dividida en tres tareas separadas para backend, UI y JS.
+  - Quedo explicitado que la logica de diferencia debe reutilizar `calcular_retorno_esperado` y que la Fase 1 no debe romperse ni reemplazarse.
+- Proximo paso:
+  - Esperar instruccion para comenzar `REQ-118D` sin adelantar implementacion de UI.
+
+## 2026-03-11 13:44 UTC-6 | tool: Codex CLI
+- Objetivo: institucionalizar la nomenclatura BI como `Monitor de Actividad` y limpiar ruta, template, navbar y documentacion activa.
+- Tareas: `EPIC-BI-01`, `REQ-118A`, `REQ-118B`, `REQ-118C`
+- Cambios:
+  - `app/main.py`
+  - `templates/monitor_actividad.html`
+  - `templates/partials/navbar.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "dashboard_contingencias|Dashboard de Contingencias|Contingencias|/dashboard|monitor_actividad|Monitor de Actividad|/monitor" app templates docs/ai tests`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+- Resultado:
+  - La vista institucional pasa a llamarse `Monitor de Actividad`.
+  - El template se renombra a `templates/monitor_actividad.html`.
+  - La ruta web queda en `/monitor` con handler `get_monitor_actividad`.
+  - El navbar muestra `Monitor de Actividad` y apunta a `/monitor`.
+  - `TASKS` y `HANDOFF` quedan alineados a la nueva nomenclatura y la Fase 1 se marca completada.
+- Proximo paso:
+  - Proceder con la definicion e implementacion de metricas de la siguiente fase del Monitor de Actividad.
+
+## 2026-03-11 13:18 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-118C`, conectando la shell SSR del dashboard a datos reales con `Chart.js`.
+- Tareas: `REQ-118C`
+- Cambios:
+  - `templates/dashboard_contingencias.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n ":root|--|chart|alert|danger|primary|muted" static/theme.css static/style.css`
+  - `sed -n '1,220p' templates/dashboard_contingencias.html`
+  - `python -m compileall tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "dashboard or contingencias"`
+- Resultado:
+  - Se agrego `Chart.js` via CDN directamente en la vista del dashboard.
+  - `cargarDatos()` ahora consume `/api/dashboard/basicos` con `fetch` y renderiza:
+    - dona por motivo
+    - barras horizontales para top solicitantes
+    - barras horizontales para top items
+    - barras verticales por hora
+  - El grafico horario aplica color de alerta desde las `14:00` en adelante usando los tokens del tema.
+  - Cada card tiene estado minimo de carga/error para no dejar el dashboard mudo si falla la API.
+  - Se reforzo el test SSR para comprobar presencia del script CDN y de `cargarDatos()`.
+  - `REQ-118C` pasa a `done`.
+- Proximo paso:
+  - Validar visualmente el dashboard con datos reales y decidir la siguiente iteracion BI (filtros o nuevas metricas).
+
+## 2026-03-11 12:42 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-118B`, reemplazando el placeholder del dashboard por una vista SSR real y enlazandola en la navegacion protegida.
+- Tareas: `REQ-118B`
+- Cambios:
+  - `app/main.py`
+  - `templates/dashboard_contingencias.html`
+  - `templates/partials/navbar.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `git branch --show-current`
+  - `rg -n "navbar|dashboard|TemplateResponse\\(" app/main.py templates docs/ai`
+  - `sed -n '1,220p' templates/base.html`
+  - `sed -n '1,220p' templates/partials/navbar.html`
+  - `sed -n '1,220p' templates/home.html`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "dashboard or contingencias"`
+- Resultado:
+  - `/dashboard` ya renderiza el template SSR `dashboard_contingencias.html` en lugar del HTML temporal.
+  - La vista nueva mantiene el patron del proyecto: `base.html`, `page_header`, superficies `panel/view-panel` y grid responsivo 2x2.
+  - Se agregaron cuatro `canvas` con ids estables para que `REQ-118C` conecte Chart.js sin rehacer la estructura.
+  - El navbar ya muestra `Contingencias` solo para `admin`, `aprobador` y `jefe_bodega`.
+  - Se reforzaron tests para confirmar presencia del SSR del dashboard y visibilidad del enlace por rol.
+  - Se detecto y corrigio una regresion estructural en `app/main.py`: las rutas del dashboard habian quedado incrustadas dentro de `home()`, dejando codigo muerto y comportamiento inconsistente; `home`, `/dashboard` y `/api/dashboard/basicos` vuelven a quedar separados.
+  - `python -m compileall` paso sin errores.
+  - El `pytest` focal volvio a terminar por `timeout` sin salida util, consistente con la limitacion ambiental ya conocida de este repo.
+  - `REQ-118B` pasa a `done`.
+- Proximo paso:
+  - Ejecutar `REQ-118C`: fetch a `/api/dashboard/basicos`, inclusion de Chart.js y renderizado de los cuatro graficos.
+
+## 2026-03-11 12:18 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-118A`, dejando operativo el backend base del Dashboard de Contingencias.
+- Tareas: `REQ-118A`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "def template_context|TemplateResponse\\(|current_user\\.rol|No autorizado|@app.get\\(" app/main.py`
+  - `sed -n '300,520p' app/main.py`
+  - `sed -n '760,940p' app/main.py`
+  - `sed -n '1180,1465p' app/main.py`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+  - `timeout 20s .venv/bin/python -m pytest -q tests/test_basic_flow.py -k "dashboard_backend or dashboard_basicos"`
+- Resultado:
+  - Se agrego `ensure_dashboard_access(...)` para restringir acceso a `admin`, `aprobador` y `jefe_bodega`.
+  - `GET /dashboard` ya existe en backend con respuesta temporal funcional mientras se implementa el template SSR real.
+  - `GET /api/dashboard/basicos` ya entrega payload listo para UI con:
+    - frecuencia por motivo
+    - top solicitantes
+    - top items por cantidad solicitada
+    - distribucion horaria 0-23 con `alert_from_hour=14`
+  - Se agregaron tests del backend del dashboard (acceso y agregaciones base).
+  - `python -m compileall` paso sin errores.
+  - El `pytest` focal no devolvio salida util antes del `timeout`, consistente con la limitacion ambiental ya conocida de este repo.
+- Proximo paso:
+  - Ejecutar `REQ-118B`: crear el template real `dashboard_contingencias.html` y agregar su enlace en navbar.
+
+## 2026-03-11 12:02 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar la epica `Dashboard de Contingencias (Fase 1)` y dividirla en tareas ejecutables antes de comenzar implementacion.
+- Tareas: `EPIC-BI-01`, `REQ-118A`, `REQ-118B`, `REQ-118C`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `git checkout feat/bi-dashboard`
+  - `sed -n '1,80p' docs/ai/TASKS.md`
+  - `sed -n '1,80p' docs/ai/HANDOFF.md`
+- Resultado:
+  - Se registro formalmente la epica `Dashboard de Contingencias (Fase 1)` en el tablero.
+  - Se crearon las tres tareas iniciales separadas para backend, UI SSR y JS/Chart.js.
+  - Quedo explicitado el contexto de negocio: esta app actua como registro de contingencias frente al cierre de Prokey a las 14:00; el dashboard debe ayudar a auditar y reducir ese uso.
+  - `REQ-118` pasa a `done` porque la apertura del frente ya quedo resuelta; la ejecucion comienza con `REQ-118A`.
+- Proximo paso:
+  - Esperar instruccion para empezar `REQ-118A` sin adelantar implementacion de UI/JS.
+
+## 2026-03-11 10:28 UTC-6 | tool: Codex CLI
+- Objetivo: abrir un frente de trabajo aislado para el futuro dashboard de inteligencia de negocio, sin mezclarlo con `main` ni programar aun la funcionalidad.
+- Tareas: `REQ-118`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `git branch --show-current`
+  - `git status --short`
+  - `git checkout -b feat/bi-dashboard`
+- Resultado:
+  - Se creo la rama `feat/bi-dashboard` desde `main` para desarrollar el dashboard BI sin comprometer la estabilidad de produccion en la linea principal.
+  - Se dejo documentado que este frente entra primero en fase de definicion: objetivo, usuarios, metricas, filtros y alcance, antes de escribir codigo.
+- Proximo paso:
+  - Definir el alcance funcional de V1 del dashboard y convertirlo luego en tareas tecnicas concretas.
 
 ## 2026-03-11 10:05 UTC-6 | tool: Codex CLI
 - Objetivo: corregir la inconsistencia en `Gestionar Entrega` donde `no_entregada` seguia pidiendo PIN/firma por el receptor designado.

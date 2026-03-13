@@ -59,10 +59,27 @@ def db_session():
                     departamento="Bodega",
                 ),
                 Usuario(
+                    username="admin.1",
+                    password=hash_password("pass123"),
+                    pin_hash=hash_password("1234"),
+                    nombre="Admin Uno",
+                    rol="admin",
+                    departamento="Admon",
+                ),
+                Usuario(
                     username="tecnico.1",
                     password=hash_password("pass123"),
                     pin_hash=hash_password("4321"),
                     nombre="Tecnico Uno",
+                    rol="tecnico",
+                    departamento="Logistica",
+                    puede_iniciar_sesion=False,
+                ),
+                Usuario(
+                    username="tecnico.2",
+                    password=hash_password("pass123"),
+                    pin_hash=hash_password("8765"),
+                    nombre="Tecnico Dos",
                     rol="tecnico",
                     departamento="Logistica",
                     puede_iniciar_sesion=False,
@@ -176,6 +193,302 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
     assert "Entregadas (30 dias)" in html
     assert "Pendientes por aprobar" not in html
     assert "Pendientes por entregar" not in html
+
+
+def test_dashboard_backend_restringe_acceso_por_rol(client: TestClient):
+    login(client, "user.ops", "pass123")
+    response_page = client.get("/monitor")
+    response_api = client.get("/api/dashboard/basicos")
+    response_auditoria = client.get("/api/dashboard/auditoria")
+    assert response_page.status_code == 403
+    assert response_api.status_code == 403
+    assert response_auditoria.status_code == 403
+
+
+def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
+    login(client, "aprob.ops", "pass123")
+    response_page = client.get("/monitor")
+    response_api = client.get("/api/dashboard/basicos")
+    assert response_page.status_code == 200
+    assert "Monitor de Actividad" in response_page.text
+    assert "cdn.jsdelivr.net/npm/chart.js" in response_page.text
+    assert "async function cargarDatosBasicos()" in response_page.text
+    assert "async function cargarDatosAuditoria()" in response_page.text
+    assert "chart-motivos" in response_page.text
+    assert "chart-solicitantes" in response_page.text
+    assert "chart-items" in response_page.text
+    assert "chart-horario" in response_page.text
+    assert "chart-diferencia-producto" in response_page.text
+    assert "chart-diferencia-tecnico" in response_page.text
+    assert "kpi-indice-discrepancia" in response_page.text
+    assert "kpi-inversion-demos" in response_page.text
+    assert 'data-drilldown-kind="discrepancias"' in response_page.text
+    assert 'data-drilldown-kind="demos"' in response_page.text
+    assert "/api/dashboard/auditoria/discrepancias" in response_page.text
+    assert "/api/dashboard/auditoria/demos" in response_page.text
+    assert response_api.status_code == 200
+    payload = response_api.json()
+    assert "motivos" in payload
+    assert "top_solicitantes" in payload
+    assert "top_items" in payload
+    assert "horario" in payload
+    assert payload["horario"]["alert_from_hour"] == 14
+
+    response_auditoria = client.get("/api/dashboard/auditoria")
+    assert response_auditoria.status_code == 200
+    payload_auditoria = response_auditoria.json()
+    assert "kpis" in payload_auditoria
+    assert "diferencia_por_producto" in payload_auditoria
+    assert "diferencias_por_tecnico" in payload_auditoria
+
+
+def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req_1 = Requisicion(
+        folio="REQ-DASH-01",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        motivo_requisicion="Demostración",
+        justificacion="Contingencia uno",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 11, 9, 5, 0),
+        created_at=datetime(2026, 3, 11, 13, 30, 0),
+    )
+    req_2 = Requisicion(
+        folio="REQ-DASH-02",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        motivo_requisicion="Servicio No Programado",
+        justificacion="Contingencia dos",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 11, 15, 5, 0),
+        created_at=datetime(2026, 3, 11, 15, 45, 0),
+    )
+    req_3 = Requisicion(
+        folio="REQ-DASH-03",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        motivo_requisicion="Demostración",
+        justificacion="Contingencia tres",
+        created_at=datetime(2026, 3, 11, 15, 10, 0),
+    )
+    db_session.add_all([req_1, req_2, req_3])
+    db_session.commit()
+    db_session.refresh(req_1)
+    db_session.refresh(req_2)
+    db_session.refresh(req_3)
+
+    db_session.add_all(
+        [
+            Item(requisicion_id=req_1.id, descripcion="Cable UTP Cat6", cantidad=3, unidad="unidad"),
+            Item(requisicion_id=req_2.id, descripcion="Cable UTP Cat6", cantidad=2, unidad="unidad"),
+            Item(requisicion_id=req_3.id, descripcion="Conector RJ45", cantidad=5, unidad="unidad"),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/api/dashboard/basicos")
+    assert response.status_code == 200
+    payload = response.json()
+
+    motivos = dict(zip(payload["motivos"]["labels"], payload["motivos"]["values"]))
+    assert motivos["Demostración"] == 2
+    assert motivos["Servicio No Programado"] == 1
+
+    solicitantes = dict(zip(payload["top_solicitantes"]["labels"], payload["top_solicitantes"]["values"]))
+    assert solicitantes[user.nombre] == 3
+
+    items = dict(zip(payload["top_items"]["labels"], payload["top_items"]["values"]))
+    assert items["Cable UTP Cat6"] == 5.0
+    assert items["Conector RJ45"] == 5.0
+    assert payload["horario"]["labels"][13] == "13:00"
+    assert payload["horario"]["values"][13] == 1
+    assert payload["horario"]["values"][15] == 2
+    assert payload["horario"]["alert_from_hour"] == 14
+
+
+def test_dashboard_auditoria_agrega_kpis_y_diferencias(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    tecnico_1 = db_session.query(Usuario).filter(Usuario.username == "tecnico.1").first()
+    tecnico_2 = db_session.query(Usuario).filter(Usuario.username == "tecnico.2").first()
+
+    req_1 = Requisicion(
+        folio="REQ-AUD-01",
+        solicitante_id=user.id,
+        receptor_designado_id=tecnico_1.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        motivo_requisicion="Demostración",
+        justificacion="Auditoria uno",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 11, 10, 0, 0),
+        liquidated_at=datetime(2026, 3, 11, 16, 0, 0),
+    )
+    req_2 = Requisicion(
+        folio="REQ-AUD-02",
+        solicitante_id=user.id,
+        receptor_designado_id=tecnico_2.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Servicio No Programado",
+        justificacion="Auditoria dos",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 11, 11, 0, 0),
+        liquidated_at=datetime(2026, 3, 11, 17, 0, 0),
+    )
+    req_3 = Requisicion(
+        folio="REQ-AUD-03",
+        solicitante_id=user.id,
+        receptor_designado_id=tecnico_1.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        motivo_requisicion="Otros",
+        justificacion="Auditoria tres",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 11, 12, 0, 0),
+        liquidated_at=datetime(2026, 3, 11, 18, 0, 0),
+    )
+    db_session.add_all([req_1, req_2, req_3])
+    db_session.commit()
+    db_session.refresh(req_1)
+    db_session.refresh(req_2)
+    db_session.refresh(req_3)
+
+    db_session.add_all(
+        [
+            Item(
+                requisicion_id=req_1.id,
+                descripcion="Cable UTP Cat6",
+                cantidad=5,
+                cantidad_entregada=5,
+                qty_used=3,
+                qty_left_at_client=1,
+                qty_returned_to_warehouse=2,
+                liquidation_mode="RETORNABLE",
+                contexto_operacion="reposicion",
+                unidad="unidad",
+                es_demo=False,
+            ),
+            Item(
+                requisicion_id=req_1.id,
+                descripcion="Conector RJ45",
+                cantidad=4,
+                cantidad_entregada=4,
+                qty_used=1,
+                qty_left_at_client=1,
+                qty_returned_to_warehouse=2,
+                liquidation_mode="CONSUMIBLE",
+                contexto_operacion="reposicion",
+                unidad="unidad",
+                es_demo=True,
+            ),
+            Item(
+                requisicion_id=req_2.id,
+                descripcion="Cable UTP Cat6",
+                cantidad=2,
+                cantidad_entregada=2,
+                qty_used=1,
+                qty_left_at_client=0,
+                qty_returned_to_warehouse=0,
+                liquidation_mode="RETORNABLE",
+                contexto_operacion="reposicion",
+                unidad="unidad",
+                es_demo=True,
+            ),
+            Item(
+                requisicion_id=req_3.id,
+                descripcion="Conector RJ45",
+                cantidad=3,
+                cantidad_entregada=3,
+                qty_used=1,
+                qty_left_at_client=2,
+                qty_returned_to_warehouse=2,
+                liquidation_mode="RETORNABLE",
+                contexto_operacion="instalacion_inicial",
+                unidad="unidad",
+                es_demo=False,
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/api/dashboard/auditoria")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["kpis"]["requisiciones_cerradas"] == 3
+    assert payload["kpis"]["requisiciones_con_diferencia"] == 2
+    assert payload["kpis"]["indice_discrepancia_pct"] == 66.67
+    assert payload["kpis"]["inversion_demos"] == 6.0
+
+    diferencia_productos = dict(zip(payload["diferencia_por_producto"]["labels"], payload["diferencia_por_producto"]["values"]))
+    assert diferencia_productos["Cable UTP Cat6"] == 2.0
+    assert diferencia_productos["Conector RJ45"] == 1.0
+
+    diferencia_tecnicos = dict(zip(payload["diferencias_por_tecnico"]["labels"], payload["diferencias_por_tecnico"]["values"]))
+    assert diferencia_tecnicos["Tecnico Uno"] == 1.0
+    assert diferencia_tecnicos["Tecnico Dos"] == 2.0
+
+    response_drilldown_diferencias = client.get("/api/dashboard/auditoria/discrepancias")
+    assert response_drilldown_diferencias.status_code == 200
+    payload_drilldown_diferencias = response_drilldown_diferencias.json()
+    assert payload_drilldown_diferencias["kind"] == "discrepancias"
+    assert payload_drilldown_diferencias["total"] == 2
+    assert {item["folio"] for item in payload_drilldown_diferencias["items"]} == {"REQ-AUD-01", "REQ-AUD-02"}
+
+    response_drilldown_demos = client.get("/api/dashboard/auditoria/demos")
+    assert response_drilldown_demos.status_code == 200
+    payload_drilldown_demos = response_drilldown_demos.json()
+    assert payload_drilldown_demos["kind"] == "demos"
+    assert payload_drilldown_demos["total"] == 2
+    assert {item["folio"] for item in payload_drilldown_demos["items"]} == {"REQ-AUD-01", "REQ-AUD-02"}
+
+
+def test_navbar_muestra_contingencias_solo_para_roles_autorizados(client: TestClient):
+    login(client, "aprob.ops", "pass123")
+    response_aprobador = client.get("/")
+    assert response_aprobador.status_code == 200
+    assert "Monitor de Actividad" in response_aprobador.text
+
+    client.post("/logout")
+    login(client, "user.ops", "pass123")
+    response_user = client.get("/")
+    assert response_user.status_code == 200
+    assert "Monitor de Actividad" not in response_user.text
+
+
+def test_navbar_admin_agrupa_administracion_y_menu_usuario(client: TestClient):
+    login(client, "admin.1", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Administración" in html
+    assert "/admin/usuarios" in html
+    assert "/admin/catalogo-items" in html
+    assert "/admin/respaldos" in html
+    assert 'class="user-trigger' in html
+    assert "Cambiar contrasena" in html
+
+
+def test_monitor_renderiza_fase_2_de_auditoria(client: TestClient):
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/monitor")
+    assert response.status_code == 200
+    html = response.text
+    assert "Auditoría y Diferencias" in html
+    assert "/api/dashboard/auditoria" in html
+    assert "dashboard-bi-drilldown" in html
+    assert "Ranking de Diferencia por Producto" in html
+    assert "Diferencias por Tecnico" in html
 
 
 def test_home_aprobador_grafico_usa_pendientes_globales(client: TestClient, db_session: Session):

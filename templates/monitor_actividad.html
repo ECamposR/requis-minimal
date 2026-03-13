@@ -1,0 +1,772 @@
+{% extends "base.html" %}
+{% import "macros/ui.html" as ui %}
+{% block title %}Monitor de Actividad{% endblock %}
+{% block content %}
+{{ ui.page_header("Monitor de Actividad", "Audita por que, quien, que y cuando se activan requisiciones fuera del flujo normal para reducir contingencias alrededor del cierre de Prokey.") }}
+
+<style>
+.monitor-section {
+    margin-top: 1.4rem;
+}
+.monitor-section-header {
+    margin-bottom: 1rem;
+}
+.monitor-section-header h2 {
+    margin-bottom: 0.2rem;
+    color: var(--text, var(--ui-text, #0f172a)) !important;
+}
+.monitor-section-header p {
+    margin: 0;
+}
+.dashboard-bi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+.dashboard-bi-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.dashboard-bi-kpi-card {
+    display: grid;
+    gap: 0.45rem;
+    min-height: 9.5rem;
+}
+.dashboard-bi-kpi-label {
+    color: var(--ui-muted, var(--muted, #475569));
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.dashboard-bi-kpi-value {
+    color: var(--text, var(--ui-text, #0f172a));
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1;
+}
+.dashboard-bi-kpi-note {
+    color: var(--text, var(--ui-text, #0f172a));
+    font-size: 0.98rem;
+}
+.dashboard-bi-kpi-note strong {
+    color: var(--ui-danger, var(--danger, #dc2626));
+}
+.dashboard-bi-kpi-actions {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+}
+.dashboard-bi-kpi-actions button {
+    margin: 0;
+}
+.dashboard-bi-card {
+    min-height: 22rem;
+}
+.dashboard-bi-card header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.95rem;
+    padding: 0.65rem 0 0 0.55rem;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+.dashboard-bi-card h3 {
+    margin: 0;
+    color: var(--text, var(--ui-text, #0f172a)) !important;
+}
+.dashboard-bi-card p {
+    margin: 0.35rem 0 0;
+    color: var(--text, var(--ui-text, #0f172a)) !important;
+}
+.dashboard-bi-card small {
+    color: var(--text, var(--ui-text, #0f172a)) !important;
+    opacity: 0.72;
+}
+.dashboard-bi-canvas-wrap {
+    position: relative;
+    height: 14rem;
+    min-height: 14rem;
+}
+.dashboard-bi-canvas-wrap canvas {
+    width: 100%;
+    height: 100%;
+}
+.dashboard-bi-status {
+    margin-top: 0.8rem;
+    color: var(--ui-muted, var(--muted, #475569));
+    font-size: 0.92rem;
+}
+.dashboard-bi-status.is-error {
+    color: var(--ui-danger, var(--danger, #dc2626));
+}
+.dashboard-bi-drilldown {
+    margin-top: 1rem;
+}
+.dashboard-bi-drilldown[hidden] {
+    display: none;
+}
+.dashboard-bi-drilldown-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+}
+.dashboard-bi-drilldown-header h3 {
+    margin: 0;
+}
+.dashboard-bi-drilldown-header p {
+    margin: 0.2rem 0 0;
+}
+.dashboard-bi-drilldown-table-wrap {
+    overflow-x: auto;
+}
+.dashboard-bi-drilldown-table {
+    width: 100%;
+    margin-bottom: 0;
+}
+.dashboard-bi-drilldown-table th,
+.dashboard-bi-drilldown-table td {
+    vertical-align: top;
+}
+.dashboard-bi-drilldown-empty {
+    margin: 0;
+    color: var(--ui-muted, var(--muted, #475569));
+}
+@media (max-width: 960px) {
+    .dashboard-bi-kpi-grid,
+    .dashboard-bi-grid {
+        grid-template-columns: 1fr;
+    }
+    .dashboard-bi-drilldown-header {
+        flex-direction: column;
+    }
+}
+</style>
+
+<section class="monitor-section" aria-labelledby="monitor-fase-1">
+    <header class="monitor-section-header">
+        <h2 id="monitor-fase-1">Métricas de Uso</h2>
+        <p>Explica la demanda operativa del sistema de contingencias: por qué, quién, qué y cuándo se activa.</p>
+    </header>
+
+<section class="dashboard-bi-grid" aria-label="Metricas de contingencia">
+    <article class="panel view-panel dashboard-bi-card">
+        <header>
+            <div>
+                <h3>Frecuencia por Motivo</h3>
+                <p>Expone por que se esta usando esta app como contingencia.</p>
+            </div>
+        </header>
+        <div class="dashboard-bi-canvas-wrap">
+            <canvas id="chart-motivos" aria-label="Grafico de frecuencia por motivo"></canvas>
+        </div>
+        <p class="dashboard-bi-status" data-chart-status="motivos">Cargando datos...</p>
+    </article>
+
+    <article class="panel view-panel dashboard-bi-card">
+        <header>
+            <div>
+                <h3>Top Usuarios Solicitantes</h3>
+                <p>Identifica quienes generan mas requisiciones contingentes.</p>
+            </div>
+        </header>
+        <div class="dashboard-bi-canvas-wrap">
+            <canvas id="chart-solicitantes" aria-label="Grafico de top usuarios solicitantes"></canvas>
+        </div>
+        <p class="dashboard-bi-status" data-chart-status="solicitantes">Cargando datos...</p>
+    </article>
+
+    <article class="panel view-panel dashboard-bi-card">
+        <header>
+            <div>
+                <h3>Top Itens Solicitados</h3>
+                <p>Muestra que productos activan con mayor frecuencia salidas fuera de Prokey.</p>
+            </div>
+        </header>
+        <div class="dashboard-bi-canvas-wrap">
+            <canvas id="chart-items" aria-label="Grafico de top items solicitados"></canvas>
+        </div>
+        <p class="dashboard-bi-status" data-chart-status="items">Cargando datos...</p>
+    </article>
+
+    <article class="panel view-panel dashboard-bi-card">
+        <header>
+            <div>
+                <h3>Mapa de Calor Horario</h3>
+                <p>Visibiliza cuando ocurren las contingencias y resalta el efecto post-cierre de las 14:00.</p>
+            </div>
+        </header>
+        <div class="dashboard-bi-canvas-wrap">
+            <canvas id="chart-horario" aria-label="Grafico horario de contingencias"></canvas>
+        </div>
+        <p class="dashboard-bi-status" data-chart-status="horario">Cargando datos...</p>
+    </article>
+</section>
+</section>
+
+<section class="monitor-section" aria-labelledby="monitor-fase-2">
+    <header class="monitor-section-header">
+        <h2 id="monitor-fase-2">Auditoría y Diferencias</h2>
+        <p>Audita mermas, discrepancias y señales de pérdida entre el retorno esperado y lo que realmente regresa a bodega.</p>
+    </header>
+
+    <section class="dashboard-bi-kpi-grid" aria-label="KPIs de auditoria">
+        <article class="panel view-panel dashboard-bi-kpi-card">
+            <span class="dashboard-bi-kpi-label">Indice de Discrepancia</span>
+            <strong class="dashboard-bi-kpi-value" id="kpi-indice-discrepancia">--</strong>
+            <p class="dashboard-bi-kpi-note" id="kpi-indice-discrepancia-note">Cargando datos de auditoría...</p>
+            <div class="dashboard-bi-kpi-actions">
+                <button type="button" class="secondary" data-drilldown-kind="discrepancias">Ver detalle</button>
+            </div>
+        </article>
+        <article class="panel view-panel dashboard-bi-kpi-card">
+            <span class="dashboard-bi-kpi-label">Inversion en Demos</span>
+            <strong class="dashboard-bi-kpi-value" id="kpi-inversion-demos">--</strong>
+            <p class="dashboard-bi-kpi-note" id="kpi-inversion-demos-note">Cargando datos de auditoría...</p>
+            <div class="dashboard-bi-kpi-actions">
+                <button type="button" class="secondary" data-drilldown-kind="demos">Ver detalle</button>
+            </div>
+        </article>
+    </section>
+
+    <section class="panel view-panel dashboard-bi-drilldown" id="dashboard-bi-drilldown" hidden aria-live="polite">
+        <header class="dashboard-bi-drilldown-header">
+            <div>
+                <h3 id="dashboard-bi-drilldown-title">Detalle relacionado</h3>
+                <p id="dashboard-bi-drilldown-description">Selecciona un KPI para ver las requisiciones relacionadas.</p>
+            </div>
+            <button type="button" class="secondary" id="dashboard-bi-drilldown-close">Cerrar</button>
+        </header>
+        <p class="dashboard-bi-status" id="dashboard-bi-drilldown-status"></p>
+        <div class="dashboard-bi-drilldown-table-wrap" id="dashboard-bi-drilldown-content"></div>
+    </section>
+
+    <section class="dashboard-bi-grid" aria-label="Metricas de diferencias">
+        <article class="panel view-panel dashboard-bi-card">
+            <header>
+                <div>
+                    <h3>Ranking de Diferencia por Producto</h3>
+                    <p>Muestra qué ítems acumulan más unidades faltantes en requisiciones cerradas.</p>
+                </div>
+            </header>
+            <div class="dashboard-bi-canvas-wrap">
+                <canvas id="chart-diferencia-producto" aria-label="Grafico de diferencia por producto"></canvas>
+            </div>
+            <p class="dashboard-bi-status" data-chart-status="diferencia-producto">Cargando datos...</p>
+        </article>
+
+        <article class="panel view-panel dashboard-bi-card">
+            <header>
+                <div>
+                    <h3>Diferencias por Tecnico</h3>
+                    <p>Resalta qué receptores designados acumulan más unidades faltantes reportadas.</p>
+                </div>
+            </header>
+            <div class="dashboard-bi-canvas-wrap">
+                <canvas id="chart-diferencia-tecnico" aria-label="Grafico de diferencias por tecnico"></canvas>
+            </div>
+            <p class="dashboard-bi-status" data-chart-status="diferencia-tecnico">Cargando datos...</p>
+        </article>
+    </section>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const dashboardCharts = {};
+
+function getThemeToken(name, fallback) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+}
+
+function setChartStatus(key, message, isError = false) {
+    const node = document.querySelector(`[data-chart-status="${key}"]`);
+    if (!node) return;
+    node.textContent = message;
+    node.classList.toggle("is-error", Boolean(isError));
+}
+
+function clearChartStatus(key) {
+    const node = document.querySelector(`[data-chart-status="${key}"]`);
+    if (!node) return;
+    node.textContent = "";
+    node.classList.remove("is-error");
+}
+
+function fmtAuditDateTime(value) {
+    if (!value) return "—";
+    return String(value).replace("T", " ").replace(/\.\d+$/, "");
+}
+
+function fmtAuditNumber(value) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
+    return Number(value).toLocaleString("es-SV", {
+        minimumFractionDigits: Number(value) % 1 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+    });
+}
+
+function setAuditKpi(id, value, noteId, note) {
+    const valueNode = document.getElementById(id);
+    const noteNode = document.getElementById(noteId);
+    if (valueNode) valueNode.textContent = value;
+    if (noteNode) noteNode.innerHTML = note;
+}
+
+function setDrilldownStatus(message, isError = false) {
+    const node = document.getElementById("dashboard-bi-drilldown-status");
+    if (!node) return;
+    node.textContent = message;
+    node.classList.toggle("is-error", Boolean(isError));
+}
+
+function renderDrilldownRows(kind, items) {
+    const container = document.getElementById("dashboard-bi-drilldown-content");
+    if (!container) return;
+    if (!Array.isArray(items) || items.length === 0) {
+        container.innerHTML = '<p class="dashboard-bi-drilldown-empty">No hay requisiciones relacionadas para este indicador.</p>';
+        return;
+    }
+    const rows = items.map((item) => {
+        const resumen = kind === "discrepancias"
+            ? `${item.items_con_diferencia || 0} items con diferencia / total ${fmtAuditNumber(item.total_diferencia || 0)}`
+            : `${item.items_demo || 0} items demo / total ${fmtAuditNumber(item.total_demo_entregado || 0)}`;
+        return `
+            <tr>
+                <td><strong>${item.folio || "—"}</strong></td>
+                <td>${fmtAuditDateTime(item.liquidated_at)}</td>
+                <td>${item.solicitante_nombre || "—"}</td>
+                <td>${item.motivo_requisicion || "Sin motivo"}</td>
+                <td>${item.receptor_designado_nombre || "—"}</td>
+                <td>${resumen}</td>
+            </tr>
+        `;
+    }).join("");
+    container.innerHTML = `
+        <table class="dashboard-bi-drilldown-table">
+            <thead>
+                <tr>
+                    <th># Req</th>
+                    <th>Cierre</th>
+                    <th>Solicitante</th>
+                    <th>Motivo</th>
+                    <th>Receptor</th>
+                    <th>Resumen</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+    `;
+}
+
+async function cargarDrilldownAuditoria(kind) {
+    const panel = document.getElementById("dashboard-bi-drilldown");
+    const title = document.getElementById("dashboard-bi-drilldown-title");
+    const description = document.getElementById("dashboard-bi-drilldown-description");
+    const content = document.getElementById("dashboard-bi-drilldown-content");
+    if (!panel || !title || !description || !content) return;
+
+    const config = {
+        discrepancias: {
+            url: "/api/dashboard/auditoria/discrepancias",
+            fallbackTitle: "Requisiciones con diferencia",
+        },
+        demos: {
+            url: "/api/dashboard/auditoria/demos",
+            fallbackTitle: "Requisiciones con demo",
+        },
+    }[kind];
+    if (!config) return;
+
+    panel.hidden = false;
+    title.textContent = config.fallbackTitle;
+    description.textContent = "Cargando detalle relacionado...";
+    content.innerHTML = "";
+    setDrilldownStatus("Cargando requisiciones relacionadas...");
+
+    try {
+        const response = await fetch(config.url, {
+            headers: { "Accept": "application/json" },
+            credentials: "same-origin",
+        });
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar el detalle (${response.status})`);
+        }
+        const payload = await response.json();
+        title.textContent = payload.title || config.fallbackTitle;
+        description.textContent = payload.description || "";
+        renderDrilldownRows(kind, payload.items || []);
+        setDrilldownStatus(`${fmtAuditNumber(payload.total || 0)} requisiciones relacionadas.`);
+    } catch (error) {
+        console.error("monitor_actividad_drilldown_error", error);
+        content.innerHTML = "";
+        setDrilldownStatus("No se pudo cargar el detalle relacionado.", true);
+    }
+}
+
+function destroyChart(key) {
+    if (dashboardCharts[key]) {
+        dashboardCharts[key].destroy();
+        delete dashboardCharts[key];
+    }
+}
+
+function buildBaseOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: getThemeToken("--ui-text", "#0f172a"),
+                    font: { family: "Montserrat, sans-serif", size: 12, weight: "600" },
+                },
+            },
+            tooltip: {
+                backgroundColor: "rgba(15, 23, 42, 0.92)",
+                titleColor: "#ffffff",
+                bodyColor: "#ffffff",
+                borderColor: "rgba(255,255,255,0.14)",
+                borderWidth: 1,
+            },
+        },
+        scales: {
+            x: {
+                ticks: { color: getThemeToken("--ui-text", "#0f172a") },
+                grid: { color: getThemeToken("--ui-border", "rgba(83, 119, 166, 0.22)") },
+                border: { color: getThemeToken("--ui-border", "rgba(83, 119, 166, 0.22)") },
+            },
+            y: {
+                ticks: { color: getThemeToken("--ui-text", "#0f172a") },
+                grid: { color: getThemeToken("--ui-border", "rgba(83, 119, 166, 0.18)") },
+                border: { color: getThemeToken("--ui-border", "rgba(83, 119, 166, 0.22)") },
+            },
+        },
+    };
+}
+
+function renderMotivosChart(data) {
+    destroyChart("motivos");
+    const canvas = document.getElementById("chart-motivos");
+    if (!canvas) return;
+    const labels = Array.isArray(data?.labels) ? data.labels : [];
+    const values = Array.isArray(data?.values) ? data.values : [];
+    const palette = [
+        getThemeToken("--ui-primary", "#1d7be8"),
+        getThemeToken("--ui-warning", "#d97706"),
+        getThemeToken("--ui-success", "#16a34a"),
+        getThemeToken("--ui-info", "#0284c7"),
+        getThemeToken("--ui-danger", "#dc2626"),
+        "#7c3aed",
+        "#0f766e",
+        "#ea580c",
+        "#2563eb",
+        "#be185d",
+    ];
+    dashboardCharts.motivos = new Chart(canvas, {
+        type: "doughnut",
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: labels.map((_, index) => palette[index % palette.length]),
+                borderColor: getThemeToken("--ui-surface", "#ffffff"),
+                borderWidth: 2,
+                hoverOffset: 6,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        color: getThemeToken("--ui-text", "#0f172a"),
+                        boxWidth: 12,
+                        font: { family: "Montserrat, sans-serif", size: 12, weight: "600" },
+                    },
+                },
+            },
+        },
+    });
+    clearChartStatus("motivos");
+}
+
+function renderSolicitantesChart(data) {
+    destroyChart("solicitantes");
+    const canvas = document.getElementById("chart-solicitantes");
+    if (!canvas) return;
+    dashboardCharts.solicitantes = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: Array.isArray(data?.labels) ? data.labels : [],
+            datasets: [{
+                label: "Requisiciones",
+                data: Array.isArray(data?.values) ? data.values : [],
+                backgroundColor: getThemeToken("--ui-primary", "#1d7be8"),
+                borderRadius: 8,
+                borderSkipped: false,
+            }],
+        },
+        options: {
+            ...buildBaseOptions(),
+            indexAxis: "y",
+            plugins: {
+                ...buildBaseOptions().plugins,
+                legend: { display: false },
+            },
+            scales: {
+                x: {
+                    ...buildBaseOptions().scales.x,
+                    beginAtZero: true,
+                    ticks: { ...buildBaseOptions().scales.x.ticks, precision: 0 },
+                },
+                y: buildBaseOptions().scales.y,
+            },
+        },
+    });
+    clearChartStatus("solicitantes");
+}
+
+function renderItemsChart(data) {
+    destroyChart("items");
+    const canvas = document.getElementById("chart-items");
+    if (!canvas) return;
+    dashboardCharts.items = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: Array.isArray(data?.labels) ? data.labels : [],
+            datasets: [{
+                label: "Cantidad solicitada",
+                data: Array.isArray(data?.values) ? data.values : [],
+                backgroundColor: getThemeToken("--ui-info", "#0284c7"),
+                borderRadius: 8,
+                borderSkipped: false,
+            }],
+        },
+        options: {
+            ...buildBaseOptions(),
+            indexAxis: "y",
+            plugins: {
+                ...buildBaseOptions().plugins,
+                legend: { display: false },
+            },
+            scales: {
+                x: {
+                    ...buildBaseOptions().scales.x,
+                    beginAtZero: true,
+                },
+                y: buildBaseOptions().scales.y,
+            },
+        },
+    });
+    clearChartStatus("items");
+}
+
+function renderHorarioChart(data) {
+    destroyChart("horario");
+    const canvas = document.getElementById("chart-horario");
+    if (!canvas) return;
+    const labels = Array.isArray(data?.labels) ? data.labels : [];
+    const values = Array.isArray(data?.values) ? data.values : [];
+    const alertFromHour = Number(data?.alert_from_hour ?? 14);
+    const primaryColor = getThemeToken("--ui-primary", "#1d7be8");
+    const dangerColor = getThemeToken("--ui-danger", "#dc2626");
+    dashboardCharts.horario = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [{
+                label: "Actividad",
+                data: values,
+                backgroundColor: labels.map((label) => {
+                    const hour = Number(String(label).slice(0, 2));
+                    return hour >= alertFromHour ? dangerColor : primaryColor;
+                }),
+                borderRadius: 8,
+                borderSkipped: false,
+            }],
+        },
+        options: {
+            ...buildBaseOptions(),
+            plugins: {
+                ...buildBaseOptions().plugins,
+                legend: { display: false },
+            },
+            scales: {
+                x: buildBaseOptions().scales.x,
+                y: {
+                    ...buildBaseOptions().scales.y,
+                    beginAtZero: true,
+                    ticks: { ...buildBaseOptions().scales.y.ticks, precision: 0 },
+                },
+            },
+        },
+    });
+    clearChartStatus("horario");
+}
+
+function renderAuditKpis(kpis) {
+    const cerradas = Number(kpis?.requisiciones_cerradas ?? 0);
+    const conDiferencia = Number(kpis?.requisiciones_con_diferencia ?? 0);
+    const indice = Number(kpis?.indice_discrepancia_pct ?? 0);
+    const inversion = Number(kpis?.inversion_demos ?? 0);
+
+    setAuditKpi(
+        "kpi-indice-discrepancia",
+        `${fmtAuditNumber(indice)}%`,
+        "kpi-indice-discrepancia-note",
+        `<strong>${fmtAuditNumber(conDiferencia)}</strong> de <strong>${fmtAuditNumber(cerradas)}</strong> requisiciones cerradas presentan al menos una diferencia.`
+    );
+    setAuditKpi(
+        "kpi-inversion-demos",
+        fmtAuditNumber(inversion),
+        "kpi-inversion-demos-note",
+        `Suma acumulada de <strong>cantidad entregada</strong> en ítems marcados como demo dentro de requisiciones cerradas.`
+    );
+}
+
+function renderDiferenciaProductoChart(data) {
+    destroyChart("diferencia-producto");
+    const canvas = document.getElementById("chart-diferencia-producto");
+    if (!canvas) return;
+    dashboardCharts["diferencia-producto"] = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: Array.isArray(data?.labels) ? data.labels : [],
+            datasets: [{
+                label: "Unidades faltantes",
+                data: Array.isArray(data?.values) ? data.values : [],
+                backgroundColor: getThemeToken("--ui-danger", "#dc2626"),
+                borderRadius: 8,
+                borderSkipped: false,
+            }],
+        },
+        options: {
+            ...buildBaseOptions(),
+            indexAxis: "y",
+            plugins: {
+                ...buildBaseOptions().plugins,
+                legend: { display: false },
+            },
+            scales: {
+                x: {
+                    ...buildBaseOptions().scales.x,
+                    beginAtZero: true,
+                },
+                y: buildBaseOptions().scales.y,
+            },
+        },
+    });
+    clearChartStatus("diferencia-producto");
+}
+
+function renderDiferenciaTecnicoChart(data) {
+    destroyChart("diferencia-tecnico");
+    const canvas = document.getElementById("chart-diferencia-tecnico");
+    if (!canvas) return;
+    dashboardCharts["diferencia-tecnico"] = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: Array.isArray(data?.labels) ? data.labels : [],
+            datasets: [{
+                label: "Unidades faltantes",
+                data: Array.isArray(data?.values) ? data.values : [],
+                backgroundColor: getThemeToken("--ui-warning", "#d97706"),
+                borderRadius: 8,
+                borderSkipped: false,
+            }],
+        },
+        options: {
+            ...buildBaseOptions(),
+            plugins: {
+                ...buildBaseOptions().plugins,
+                legend: { display: false },
+            },
+            scales: {
+                x: buildBaseOptions().scales.x,
+                y: {
+                    ...buildBaseOptions().scales.y,
+                    beginAtZero: true,
+                },
+            },
+        },
+    });
+    clearChartStatus("diferencia-tecnico");
+}
+
+async function cargarDatosBasicos() {
+    ["motivos", "solicitantes", "items", "horario"].forEach((key) => setChartStatus(key, "Cargando datos..."));
+    try {
+        const response = await fetch("/api/dashboard/basicos", {
+            headers: { "Accept": "application/json" },
+            credentials: "same-origin",
+        });
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar el Monitor de Actividad (${response.status})`);
+        }
+        const payload = await response.json();
+        renderMotivosChart(payload.motivos);
+        renderSolicitantesChart(payload.top_solicitantes);
+        renderItemsChart(payload.top_items);
+        renderHorarioChart(payload.horario);
+    } catch (error) {
+        console.error("monitor_actividad_error", error);
+        ["motivos", "solicitantes", "items", "horario"].forEach((key) => {
+            setChartStatus(key, "No se pudieron cargar los datos.", true);
+        });
+    }
+}
+
+async function cargarDatosAuditoria() {
+    ["diferencia-producto", "diferencia-tecnico"].forEach((key) => setChartStatus(key, "Cargando datos..."));
+    setAuditKpi("kpi-indice-discrepancia", "--", "kpi-indice-discrepancia-note", "Cargando datos de auditoría...");
+    setAuditKpi("kpi-inversion-demos", "--", "kpi-inversion-demos-note", "Cargando datos de auditoría...");
+    try {
+        const response = await fetch("/api/dashboard/auditoria", {
+            headers: { "Accept": "application/json" },
+            credentials: "same-origin",
+        });
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar auditoría (${response.status})`);
+        }
+        const payload = await response.json();
+        renderAuditKpis(payload.kpis);
+        renderDiferenciaProductoChart(payload.diferencia_por_producto);
+        renderDiferenciaTecnicoChart(payload.diferencias_por_tecnico);
+    } catch (error) {
+        console.error("monitor_actividad_auditoria_error", error);
+        ["diferencia-producto", "diferencia-tecnico"].forEach((key) => {
+            setChartStatus(key, "No se pudieron cargar los datos.", true);
+        });
+        setAuditKpi("kpi-indice-discrepancia", "--", "kpi-indice-discrepancia-note", "No se pudieron cargar los datos de auditoría.");
+        setAuditKpi("kpi-inversion-demos", "--", "kpi-inversion-demos-note", "No se pudieron cargar los datos de auditoría.");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    cargarDatosBasicos();
+    cargarDatosAuditoria();
+    document.querySelectorAll("[data-drilldown-kind]").forEach((button) => {
+        button.addEventListener("click", () => cargarDrilldownAuditoria(button.dataset.drilldownKind));
+    });
+    document.getElementById("dashboard-bi-drilldown-close")?.addEventListener("click", () => {
+        const panel = document.getElementById("dashboard-bi-drilldown");
+        const content = document.getElementById("dashboard-bi-drilldown-content");
+        if (panel) panel.hidden = true;
+        if (content) content.innerHTML = "";
+        setDrilldownStatus("");
+    });
+});
+</script>
+{% endblock %}

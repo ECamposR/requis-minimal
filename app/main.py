@@ -18,7 +18,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Upload
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, or_
+from sqlalchemy import extract, func, or_
 from sqlalchemy.orm import Session, joinedload
 from starlette.middleware.sessions import SessionMiddleware
 from urllib.parse import quote_plus
@@ -505,6 +505,11 @@ def ensure_admin(current_user: Usuario) -> None:
         raise HTTPException(status_code=403, detail="No autorizado")
 
 
+def ensure_dashboard_access(current_user: Usuario) -> None:
+    if current_user.rol not in ["admin", "aprobador", "jefe_bodega"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+
 def with_backup_operation_lock() -> bool:
     return BACKUP_OPERATION_LOCK.acquire(blocking=False)
 
@@ -865,6 +870,274 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
             pendientes_bodega=pendientes_bodega,
         ),
     )
+
+
+@app.get("/monitor")
+def get_monitor_actividad(request: Request, current_user: Usuario = Depends(get_current_user)):
+    ensure_dashboard_access(current_user)
+    return templates.TemplateResponse(
+        "monitor_actividad.html",
+        template_context(request, current_user),
+    )
+
+
+@app.get("/api/dashboard/basicos")
+def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Datos base para el Monitor de Actividad (Fase 1).
+    ensure_dashboard_access(current_user)
+
+    motivos_rows = (
+        db.query(
+            func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").label("motivo"),
+            func.count(Requisicion.id).label("total"),
+        )
+        .group_by(func.coalesce(Requisicion.motivo_requisicion, "Sin motivo"))
+        .order_by(func.count(Requisicion.id).desc(), func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").asc())
+        .all()
+    )
+
+    solicitantes_rows = (
+        db.query(
+            Usuario.nombre.label("nombre"),
+            func.count(Requisicion.id).label("total"),
+        )
+        .join(Usuario, Usuario.id == Requisicion.solicitante_id)
+        .group_by(Usuario.id, Usuario.nombre)
+        .order_by(func.count(Requisicion.id).desc(), Usuario.nombre.asc())
+        .limit(10)
+        .all()
+    )
+
+    items_rows = (
+        db.query(
+            Item.descripcion.label("descripcion"),
+            func.sum(Item.cantidad).label("total_cantidad"),
+        )
+        .join(Requisicion, Requisicion.id == Item.requisicion_id)
+        .group_by(Item.descripcion)
+        .order_by(func.sum(Item.cantidad).desc(), Item.descripcion.asc())
+        .limit(10)
+        .all()
+    )
+
+    hourly_rows = (
+        db.query(
+            extract("hour", Requisicion.created_at).label("hora"),
+            func.count(Requisicion.id).label("total"),
+        )
+        .group_by(extract("hour", Requisicion.created_at))
+        .order_by(extract("hour", Requisicion.created_at).asc())
+        .all()
+    )
+    heatmap_counts = {int(row.hora): int(row.total) for row in hourly_rows if row.hora is not None}
+    heatmap_labels = [f"{hour:02d}:00" for hour in range(24)]
+    heatmap_values = [heatmap_counts.get(hour, 0) for hour in range(24)]
+
+    return {
+        "motivos": {
+            "labels": [str(row.motivo or "Sin motivo") for row in motivos_rows],
+            "values": [int(row.total or 0) for row in motivos_rows],
+        },
+        "top_solicitantes": {
+            "labels": [str(row.nombre or "Sin nombre") for row in solicitantes_rows],
+            "values": [int(row.total or 0) for row in solicitantes_rows],
+        },
+        "top_items": {
+            "labels": [str(row.descripcion or "Sin descripcion") for row in items_rows],
+            "values": [float(row.total_cantidad or 0) for row in items_rows],
+        },
+        "horario": {
+            "labels": heatmap_labels,
+            "values": heatmap_values,
+            "alert_from_hour": 14,
+        },
+    }
+
+
+@app.get("/api/dashboard/auditoria")
+def dashboard_auditoria_api(current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Datos de auditoria y diferencias para el Monitor de Actividad (Fase 2).
+    ensure_dashboard_access(current_user)
+
+    auditoria = build_dashboard_auditoria_snapshot(db)
+    return {
+        "kpis": auditoria["kpis"],
+        "diferencia_por_producto": auditoria["diferencia_por_producto"],
+        "diferencias_por_tecnico": auditoria["diferencias_por_tecnico"],
+    }
+
+
+def build_dashboard_auditoria_snapshot(db: Session) -> dict[str, object]:
+    requisiciones_cerradas = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.receptor_designado),
+        )
+        .filter(Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]))
+        .all()
+    )
+
+    total_requisiciones_cerradas = len(requisiciones_cerradas)
+    requisiciones_con_diferencia = 0
+    inversion_demos = 0.0
+    diferencias_por_producto: dict[str, float] = {}
+    diferencias_por_tecnico: dict[str, float] = {}
+    drilldown_diferencias: list[dict[str, object]] = []
+    drilldown_demos: list[dict[str, object]] = []
+
+    for req in requisiciones_cerradas:
+        req_tiene_diferencia = False
+        total_diferencia_requisicion = 0.0
+        items_con_diferencia = 0
+        total_demo_requisicion = 0.0
+        items_demo = 0
+        receptor_nombre = (
+            req.receptor_designado.nombre.strip()
+            if req.receptor_designado and req.receptor_designado.nombre
+            else "Sin receptor designado"
+        )
+
+        for item in req.items:
+            delivered = float(item.cantidad_entregada or 0)
+            used = float(item.qty_used or 0)
+            not_used = float(item.qty_left_at_client or 0)
+            returned = float(item.qty_returned_to_warehouse or 0)
+            expected_return = float(
+                calcular_retorno_esperado(
+                    item.liquidation_mode,
+                    used,
+                    not_used,
+                    item.contexto_operacion,
+                )
+            )
+            diferencia = expected_return - returned
+
+            if item.es_demo and delivered > 0:
+                inversion_demos += delivered
+                total_demo_requisicion += delivered
+                items_demo += 1
+
+            if diferencia <= 0:
+                continue
+
+            req_tiene_diferencia = True
+            total_diferencia_requisicion += diferencia
+            items_con_diferencia += 1
+            descripcion = (item.descripcion or "Sin descripcion").strip() or "Sin descripcion"
+            diferencias_por_producto[descripcion] = diferencias_por_producto.get(descripcion, 0.0) + diferencia
+            diferencias_por_tecnico[receptor_nombre] = diferencias_por_tecnico.get(receptor_nombre, 0.0) + diferencia
+
+        if req_tiene_diferencia:
+            requisiciones_con_diferencia += 1
+            drilldown_diferencias.append(
+                {
+                    "id": req.id,
+                    "folio": req.folio,
+                    "estado": req.estado,
+                    "motivo_requisicion": req.motivo_requisicion,
+                    "solicitante_nombre": req.solicitante.nombre if req.solicitante else "Sin solicitante",
+                    "receptor_designado_nombre": receptor_nombre,
+                    "liquidated_at": req.liquidated_at or req.prokey_liquidada_at or req.created_at,
+                    "items_con_diferencia": items_con_diferencia,
+                    "total_diferencia": round(total_diferencia_requisicion, 2),
+                }
+            )
+
+        if items_demo > 0 and total_demo_requisicion > 0:
+            drilldown_demos.append(
+                {
+                    "id": req.id,
+                    "folio": req.folio,
+                    "estado": req.estado,
+                    "motivo_requisicion": req.motivo_requisicion,
+                    "solicitante_nombre": req.solicitante.nombre if req.solicitante else "Sin solicitante",
+                    "receptor_designado_nombre": receptor_nombre,
+                    "liquidated_at": req.liquidated_at or req.prokey_liquidada_at or req.created_at,
+                    "items_demo": items_demo,
+                    "total_demo_entregado": round(total_demo_requisicion, 2),
+                }
+            )
+
+    indice_discrepancia = (
+        round((requisiciones_con_diferencia * 100.0) / total_requisiciones_cerradas, 2)
+        if total_requisiciones_cerradas
+        else 0.0
+    )
+
+    top_productos = sorted(
+        diferencias_por_producto.items(),
+        key=lambda item: (-item[1], item[0].lower()),
+    )[:10]
+    top_tecnicos = sorted(
+        diferencias_por_tecnico.items(),
+        key=lambda item: (-item[1], item[0].lower()),
+    )[:5]
+
+    drilldown_diferencias.sort(
+        key=lambda item: (
+            -float(item["total_diferencia"]),
+            str(item["liquidated_at"] or ""),
+            str(item["folio"]),
+        )
+    )
+    drilldown_demos.sort(
+        key=lambda item: (
+            -float(item["total_demo_entregado"]),
+            str(item["liquidated_at"] or ""),
+            str(item["folio"]),
+        )
+    )
+
+    return {
+        "kpis": {
+            "indice_discrepancia_pct": indice_discrepancia,
+            "requisiciones_con_diferencia": requisiciones_con_diferencia,
+            "requisiciones_cerradas": total_requisiciones_cerradas,
+            "inversion_demos": round(inversion_demos, 2),
+        },
+        "diferencia_por_producto": {
+            "labels": [label for label, _ in top_productos],
+            "values": [round(value, 2) for _, value in top_productos],
+        },
+        "diferencias_por_tecnico": {
+            "labels": [label for label, _ in top_tecnicos],
+            "values": [round(value, 2) for _, value in top_tecnicos],
+        },
+        "requisiciones_con_diferencia_detalle": drilldown_diferencias,
+        "requisiciones_demo_detalle": drilldown_demos,
+    }
+
+
+@app.get("/api/dashboard/auditoria/discrepancias")
+def dashboard_auditoria_discrepancias_api(
+    current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    ensure_dashboard_access(current_user)
+    auditoria = build_dashboard_auditoria_snapshot(db)
+    items = auditoria["requisiciones_con_diferencia_detalle"]
+    return {
+        "kind": "discrepancias",
+        "title": "Requisiciones con diferencia",
+        "description": "Requisiciones cerradas que presentan al menos un item con diferencia positiva.",
+        "total": len(items),
+        "items": items,
+    }
+
+
+@app.get("/api/dashboard/auditoria/demos")
+def dashboard_auditoria_demos_api(current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    ensure_dashboard_access(current_user)
+    auditoria = build_dashboard_auditoria_snapshot(db)
+    items = auditoria["requisiciones_demo_detalle"]
+    return {
+        "kind": "demos",
+        "title": "Requisiciones con demo",
+        "description": "Requisiciones cerradas con al menos un item marcado para demo y cantidad entregada mayor a cero.",
+        "total": len(items),
+        "items": items,
+    }
 
 
 @app.get("/crear")

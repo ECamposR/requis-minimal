@@ -5,7 +5,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 ## Gobernanza / Continuidad
 - `REQ-116` | `done` | Actualizar la documentacion de gobernanza y estado del producto para reflejar la fase real de `beta operativa en produccion`, manteniendo simplicidad, continuidad multi-IA agnostica al LLM y trazabilidad documental obligatoria.
 - `REQ-117` | `done` | Corregir `Gestionar Entrega` para que `No entregada` no exija firma/PIN aunque exista receptor designado; en ese caso solo debe exigir comentario y cerrar el ciclo sin receptor recibido.
-- `REQ-119` | `done` | Ajustar `/bodega` para que el historial no duplique requisiciones activas: `entregada` completa/parcial queda solo en pendientes; historial muestra solo cierres (`liquidada`, `liquidada_en_prokey` y `no_entregada`). Renombrar encabezados a `Pendientes de Procesar` e `Historial`.
+- `REQ-118` | `done` | Abrir frente de trabajo aislado para dashboard de inteligencia de negocio (`feat/bi-dashboard`), definiendo primero objetivos, usuarios, metricas y alcance antes de implementar.
+- `REQ-119` | `done` | Reorganizar el navbar para reducir ancho horizontal: agrupar accesos `admin` bajo `Administracion` y mover `Cambiar contrasena`/`Salir` a un menu desplegable del usuario, sin tocar permisos ni rutas existentes.
 - `REQ-120` | `done` | Incluir en el PDF el receptor designado debajo del solicitante, propagando el dato al generador y ampliando la card de informacion general sin alterar el resto del layout.
 - `REQ-121` | `done` | Corregir paginacion del PDF para que la tabla de items se parta en multiples paginas cuando sea necesario, repitiendo cabecera y preservando las secciones finales en la ultima pagina disponible.
 - `REQ-122` | `done` | Refactor visual Eco-Ink del PDF: eliminar bloques de color solido, priorizar bordes y escala de grises, suavizar badges a tonos pastel minimos y mantener el color corporativo solo en textos/bordes clave, sin tocar layout ni datos.
@@ -13,6 +14,18 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-124` | `done` | Ajustar `Ingreso PK (Bodega)` para que respete `contexto_operacion`: en `instalacion_inicial` debe ser `0` aunque el item sea retornable; en `reposicion` conserva la formula operativa actual.
 - `REQ-125` | `done` | Ajustar detalle de requisicion para mostrar ambos receptores cuando bodega cambia el firmante: conservar `receptor designado` original y exponer tambien quien realmente `recibio / firmo`.
 - `REQ-126` | `done` | Agregar rol `logistica`: conserva capacidades base de `user`, pero puede ver todas las requisiciones, consultar detalle/PDF globalmente y completar `prokey_ref` en requisiciones `liquidada` con trazabilidad del actor que registró la referencia.
+
+## Monitor de Actividad
+- `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.
+- `REQ-118A` | `done` | Backend: crear la ruta de vista `GET /monitor` y el endpoint de datos `GET /api/dashboard/basicos` en `app/main.py`. Validar acceso solo para roles `admin`, `aprobador` y `jefe_bodega`.
+- `REQ-118B` | `done` | Frontend UI: crear `templates/monitor_actividad.html` extendiendo de `base.html`, estructurando un grid de PicoCSS (2x2) y agregando el enlace `Monitor de Actividad` al `navbar.html` protegido por rol.
+- `REQ-118C` | `done` | Frontend JS: implementar la función `cargarDatos()` con Fetch API, configurar Chart.js vía CDN y renderizar los 4 gráficos con los colores de `theme.css` y la regla visual crítica de las 14:00 en adelante.
+- `EPIC-BI-02` | `in_progress` | Monitor de Actividad (Fase 2: Auditoria y Diferencias) orientado a control de perdidas, mermas y trazabilidad de diferencias negativas entre retorno esperado y retorno real a bodega.
+- `REQ-118D` | `done` | Backend: crear `GET /api/dashboard/auditoria` procesando requisiciones liquidadas, iterando items y reutilizando `calcular_retorno_esperado` para calcular diferencias, KPIs y datasets de auditoria.
+- `REQ-118E` | `done` | Frontend UI: actualizar `templates/monitor_actividad.html` agregando una nueva seccion debajo de Fase 1 con tarjetas KPI y un grid adicional para los 2 graficos de diferencias.
+- `REQ-118F` | `done` | Frontend JS: ampliar el script para consumir `/api/dashboard/auditoria`, renderizar KPIs y graficos de diferencias usando colores de alerta (rojos/naranjas) sin romper la Fase 1 ya operativa.
+- `REQ-118G` | `done` | Backend drill-down: agregar endpoints de detalle para KPIs de auditoria (`/api/dashboard/auditoria/discrepancias` y `/api/dashboard/auditoria/demos`) devolviendo requisiciones cerradas relacionadas a cada indicador.
+- `REQ-118H` | `done` | Frontend drill-down: agregar botones `Ver detalle` en los KPI de auditoria y un panel inline en `monitor_actividad.html` para listar las requisiciones relacionadas sin salir del monitor.
 
 ## Reinicio Liquidacion (desde `3d7702b`)
 - `REQ-060` | `done` | Base de liquidacion implementada: estado `liquidada`, campos base en `requisiciones/items`, migracion robusta e idempotente + baseline de entrega (`cantidad_entregada`) normalizado.

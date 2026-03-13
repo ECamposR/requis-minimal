@@ -3,7 +3,10 @@
 ## Estado actual
 - La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
+- Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
+- `REQ-119` completada: el navbar ya agrupa los accesos `admin` bajo un dropdown `Administracion` y el bloque de usuario ahora despliega `Cambiar contrasena` + `Salir`, reduciendo ancho horizontal sin introducir JS adicional.
 - `REQ-123` completada en `main`: `Gestionar Entrega` y `Entrega Parcial` ahora fuerzan en JS el estado inicial bloqueado del receptor; el selector solo se habilita tras pulsar `Cambiar receptor`.
+- Contexto de negocio clave del Monitor de Actividad: esta app funciona como registro de contingencias cuando Prokey ya cerro rutas a las `14:00`. El monitor debe explicar `por que`, `quien`, `que` y `cuando` ocurre ese uso para ayudar a reducirlo, no para medir productividad.
 - Rama de reinicio creada desde commit base pre-liquidacion: `feat/liquidacion-rework-v2` en `3d7702b`.
 - `REQ-060` completada en esta rama: ya existe estado `liquidada`, campos de liquidacion base y migracion SQLite robusta.
 - Baseline de entrega normalizado: en entrega completa, `cantidad_entregada` queda persistida por item (sin depender de fallbacks).
@@ -85,10 +88,17 @@
 - Ver `docs/ai/DECISIONS.md` ADR-004 para la justificación completa.
 
 ## En progreso
+- Fase 1 del `Monitor de Actividad` completada.
+- `REQ-118A` completada: backend base ya existe con guard de roles y API `/api/dashboard/basicos` entregando payload para motivos, top solicitantes, top items y horario con `alert_from_hour=14`; la vista institucional ahora vive en `/monitor`.
+- `REQ-118B` completada: `/monitor` ya renderiza `monitor_actividad.html` con grid SSR 2x2, cuatro `canvas` listos para Chart.js y enlace `Monitor de Actividad` visible solo para `admin`, `aprobador` y `jefe_bodega`.
+- `REQ-118C` completada: el Monitor de Actividad ya carga datos por Fetch API, renderiza los 4 graficos con `Chart.js` y aplica color de alerta a las barras desde las `14:00` en adelante.
+- Fase 2 del `Monitor de Actividad` definida y pendiente de ejecucion: auditoria de diferencias, discrepancias y merma usando `calcular_retorno_esperado` como fuente comun de verdad para el delta operativo.
+- `REQ-118D` completada: backend `GET /api/dashboard/auditoria` ya procesa requisiciones cerradas (`liquidada` + `liquidada_en_prokey`), reutiliza `calcular_retorno_esperado`, entrega KPIs de discrepancia/inversion en demos y datasets para diferencia por producto y diferencias por tecnico.
+- `REQ-118E` completada: `monitor_actividad.html` ya incluye una segunda seccion SSR para auditoria/diferencias con dos KPI cards y dos nuevos `canvas` para graficos de perdida.
+- `REQ-118F` completada: el frontend ya consume `/api/dashboard/auditoria`, renderiza KPIs y graficos de diferencias en paleta de alerta sin romper los graficos de la Fase 1.
+- `REQ-118G` completada: se agregan endpoints de drill-down para los KPI de auditoria, permitiendo listar requisiciones cerradas con diferencia y requisiciones cerradas con demo.
+- `REQ-118H` completada: los KPI `Indice de Discrepancia` e `Inversion en Demos` ahora muestran boton `Ver detalle` y un panel inline con las requisiciones relacionadas dentro del mismo monitor.
 - Definir siguiente incremento funcional post-liquidacion (reporteria minima y/o export operativo).
-- `REQ-124` completada: `Ingreso PK (Bodega)` ahora respeta `contexto_operacion`; si el item se liquida como `instalacion_inicial` no genera ingreso PK aunque sea `RETORNABLE`, mientras que en `reposicion` conserva la formula previa.
-- `REQ-125` completada: el detalle de requisicion ahora conserva el `receptor designado` original y muestra aparte quien realmente `recibio / firmo`, usando el receptor validado por PIN cuando hubo cambio en bodega.
-- `REQ-126` completada: se agrega rol `logistica` con visibilidad global en `/mis-requisiciones` y permiso para completar `prokey_ref` en estado `liquidada`; el detalle registra nombre/rol/fecha del actor que grabó la referencia y solo ese rol adicional puede hacerlo sin ser solicitante.
 - Ejecutar smoke manual de entrega con firma y de liquidacion para validar experiencia completa de bloqueo/edicion.
 - Validar UX final de alertas en modal (copys, tooltips y consistencia de colores en distintos navegadores).
 - Validar UX del comentario y notas en modal (saltos de linea y legibilidad en resoluciones medias).
@@ -97,6 +107,10 @@
 - Revisar balance final de densidad visual para evitar sobrecarga en pantallas pequeñas.
 
 ## Proximo paso exacto
+### Frente BI / Monitor de Actividad (`REQ-118`):
+1. Validar visualmente la Fase 2 del Monitor de Actividad con datos reales y ajustar densidad/etiquetas si algun grafico se satura.
+2. Definir la siguiente iteracion BI: filtros de periodo/departamento o nuevas metricas de auditoria (`tiempos de liquidacion`, `diferencias por motivo`, `tendencia semanal`).
+
 ### Frente despliegue (REQ-087 / REQ-088):
 1. En el servidor Docker: `docker network create proxy`
 2. `cd deploy/caddy && docker compose up -d`
@@ -120,10 +134,8 @@
 - El entorno actual deja `TestClient` colgado incluso contra `/health`; para validar REQ-085 se usó compilación y smoke directo de modelo/auth/CRUD con DB temporal, pero falta smoke HTTP/manual real.
 
 ## Ultimo cambio cerrado
-- `REQ-122` completada: el PDF adopto un estilo `Eco-Ink` sin tocar layout ni datos. Se eliminaron fills solidos de secciones/cabeceras, se reforzo jerarquia con tipografia y bordes, secundarios pasaron a escala de grises y los colores corporativos quedaron reservados para lineas y textos clave.
-- `REQ-121` completada: el PDF ya pagina la tabla de items cuando excede una sola hoja. Ahora genera tantas paginas como hagan falta, repite cabecera de tabla y luego ubica justificacion/comentario/timeline en la ultima pagina con salto adicional si no caben.
-- `REQ-120` completada: el PDF ahora muestra tambien quien recibira el producto debajo del solicitante. El endpoint propaga `receptor_designado` al payload, la card `Informacion general` del PDF agrega la fila `Recibe`, y queda testeado a nivel de payload del generador.
-- `REQ-119` completada: `/bodega` ya no duplica requisiciones `entregada` completas/parciales entre pendientes e historial. `Pendientes` conserva lo procesable, `Historial` queda para cierres (`liquidada`, `liquidada_en_prokey` y `no_entregada`), y los encabezados visibles pasan a `Pendientes de Procesar` e `Historial`.
+- `REQ-118A` completada: backend base del Monitor de Actividad implementado. Ya existen `/monitor` y `/api/dashboard/basicos` con autorizacion para `admin`, `aprobador` y `jefe_bodega`; la API entrega las 4 agregaciones base listas para la UI actual.
+- `REQ-118` completada: el workstream BI quedo formalmente abierto en rama dedicada y ya se descompuso en la epica `EPIC-BI-01` con tareas ejecutables `REQ-118A/B/C`, hoy institucionalizado como `Monitor de Actividad`.
 - `REQ-117` completada: `Gestionar Entrega` ya no exige firma/PIN cuando el resultado es `no_entregada`, incluso si existe receptor designado o el frontend envia `recibido_por_id`; backend ignora la firma en ese caso, UI oculta los campos y solo exige comentario para cerrar la requisicion.
 - `REQ-116` completada: documentacion de gobernanza y estado del producto actualizada para reflejar `beta operativa en produccion`, continuidad agnostica al LLM/herramienta y trazabilidad documental obligatoria como regla del repo.
 - `REQ-106` completada: el catalogo ahora persiste `permite_decimal` como fuente de verdad. Solo `CONCENTRADO SHF` y `LIQUIDO CONCENTRADO DESODORIZADOR` quedan habilitados para cantidades decimales; crear/editar requisicion ajusta la UX del campo cantidad y el backend rechaza decimales para cualquier otro item activo del catalogo.
