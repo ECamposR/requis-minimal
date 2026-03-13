@@ -983,6 +983,8 @@ def test_listados_con_filtros_exponen_autosubmit_en_selectores(client: TestClien
     assert todas.status_code == 200
     assert "js-autosubmit-filters" in todas.text
     assert "data-autosubmit-select" in todas.text
+    assert "data-date-picker" in todas.text
+    assert "showPicker" in todas.text
 
 
 def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
@@ -1927,6 +1929,49 @@ def test_todas_requisiciones_permita_filtrar_por_estado(client: TestClient, db_s
     assert response.status_code == 200
     assert "REQ-0202" in response.text
     assert "REQ-0201" not in response.text
+
+
+def test_todas_requisiciones_permita_buscar_por_motivo_receptor_actor_y_prokey(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    jefe_bodega = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
+
+    req = Requisicion(
+        folio="REQ-0203",
+        solicitante_id=user.id,
+        receptor_designado_id=jefe_bodega.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Queja de ultima hora",
+        justificacion="Busqueda ampliada",
+        prokey_ref="PK-7788",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        liquidated_by=jefe_bodega.id,
+        liquidated_at=datetime.now(),
+        prokey_liquidada_por=aprobador.id,
+        prokey_liquidada_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+
+    response_motivo = client.get("/todas-requisiciones?q=Queja")
+    assert response_motivo.status_code == 200
+    assert "REQ-0203" in response_motivo.text
+
+    response_receptor = client.get("/todas-requisiciones?q=Jefe")
+    assert response_receptor.status_code == 200
+    assert "REQ-0203" in response_receptor.text
+
+    response_actor = client.get("/todas-requisiciones?q=Aprobador")
+    assert response_actor.status_code == 200
+    assert "REQ-0203" in response_actor.text
+
+    response_prokey = client.get("/todas-requisiciones?q=PK-7788")
+    assert response_prokey.status_code == 200
+    assert "REQ-0203" in response_prokey.text
 
 
 def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_session: Session):

@@ -140,6 +140,41 @@ body {
     margin-bottom: 0.8rem;
 }
 
+.all-requests-filters {
+    grid-template-columns: minmax(12rem, 1.4fr) minmax(10rem, 0.95fr) minmax(10rem, 0.95fr) minmax(8.5rem, 0.8fr) minmax(8.5rem, 0.8fr) auto auto;
+}
+
+.all-requests-filters input[name="q"] {
+    min-width: 0;
+}
+
+.all-requests-filters button[type="submit"],
+.all-requests-filters a[role="button"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.2rem;
+    min-height: 2.2rem;
+    margin: 0;
+    line-height: 1.2;
+    min-width: 6.2rem;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+    .all-requests-filters {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .all-requests-filters {
+        grid-template-columns: 1fr;
+    }
+}
+
 input,
 select,
 textarea {
@@ -1496,6 +1531,15 @@ textarea,
 input::placeholder,
 textarea::placeholder {
     color: #64748b !important;
+}
+
+.filters-bar input[type="date"] {
+    cursor: pointer;
+}
+
+.filters-bar input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.9;
 }
 
 input:focus,

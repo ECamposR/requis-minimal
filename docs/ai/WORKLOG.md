@@ -1,5 +1,43 @@
 # Worklog (append-only)
 
+## 2026-03-13 18:40 UTC-6 | tool: Codex CLI
+- Objetivo: ampliar la cobertura del buscador de `Todas las Requisiciones` para alinearlo a las columnas y datos operativos realmente visibles en la tabla.
+- Tareas: `REQ-130`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m py_compile app/main.py`
+  - `python -m compileall tests/test_basic_flow.py`
+- Resultado:
+  - `q` ahora busca tambien por `motivo_requisicion`, `prokey_ref`, `receptor_designado.nombre` y por nombres de actores operativos (`aprobador`, `rechazador`, `preparador`, `entregador`, `liquidador`, `liquidada en Prokey`).
+  - Se agrega cobertura de prueba para motivo, receptor, actor y referencia Prokey.
+- Proximo paso:
+  - Validar manualmente si conviene sumar tambien busqueda por comentarios de aprobacion/rechazo/entrega o si eso ya seria demasiado ruido para un solo campo.
+
+## 2026-03-13 18:28 UTC-6 | tool: Codex CLI
+- Objetivo: mejorar la usabilidad del filtro de fechas en la vista global sin introducir datepickers externos ni romper el fallback nativo/manual.
+- Tareas: `REQ-129`
+- Cambios:
+  - `templates/todas_requisiciones.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "type=\\\"date\\\"|appearance|calendar-picker|showPicker" templates static`
+  - `python -m compileall tests/test_basic_flow.py`
+- Resultado:
+  - Los inputs de fecha siguen siendo nativos (`type=date`) y aceptan escritura manual.
+  - En navegadores compatibles, un clic sobre el campo ahora intenta abrir el picker con `showPicker()`.
+  - El control gana affordance visual ligera mediante cursor/indicador del picker.
+- Proximo paso:
+  - Validar manualmente en Chrome si el calendario ya abre al clic y decidir si conviene extender el mismo patron a otros filtros de fecha futuros.
+
 ## 2026-03-13 18:10 UTC-6 | tool: Codex CLI
 - Objetivo: reducir friccion en listados SSR haciendo que los filtros por selector se apliquen sin clic extra, sin tocar logica de negocio.
 - Tareas: `REQ-128`

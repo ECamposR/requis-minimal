@@ -1529,11 +1529,13 @@ def todas_requisiciones_view(
         db.query(Requisicion)
         .options(
             joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.receptor_designado),
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.rechazador),
             joinedload(Requisicion.preparador),
             joinedload(Requisicion.entregador),
             joinedload(Requisicion.liquidator),
+            joinedload(Requisicion.prokey_liquidator),
         )
         .filter(
             Requisicion.estado.in_(
@@ -1565,10 +1567,19 @@ def todas_requisiciones_view(
             or_(
                 Requisicion.folio.ilike(patron),
                 Requisicion.departamento.ilike(patron),
+                Requisicion.motivo_requisicion.ilike(patron),
                 Requisicion.justificacion.ilike(patron),
                 Requisicion.cliente_codigo.ilike(patron),
                 Requisicion.cliente_nombre.ilike(patron),
+                Requisicion.prokey_ref.ilike(patron),
                 Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
+                Requisicion.receptor_designado.has(Usuario.nombre.ilike(patron)),
+                Requisicion.aprobador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.rechazador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.preparador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.entregador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.liquidator.has(Usuario.nombre.ilike(patron)),
+                Requisicion.prokey_liquidator.has(Usuario.nombre.ilike(patron)),
             )
         )
 
