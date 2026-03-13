@@ -6,6 +6,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-116` | `done` | Actualizar la documentacion de gobernanza y estado del producto para reflejar la fase real de `beta operativa en produccion`, manteniendo simplicidad, continuidad multi-IA agnostica al LLM y trazabilidad documental obligatoria.
 - `REQ-117` | `done` | Corregir `Gestionar Entrega` para que `No entregada` no exija firma/PIN aunque exista receptor designado; en ese caso solo debe exigir comentario y cerrar el ciclo sin receptor recibido.
 - `REQ-118` | `done` | Abrir frente de trabajo aislado para dashboard de inteligencia de negocio (`feat/bi-dashboard`), definiendo primero objetivos, usuarios, metricas y alcance antes de implementar.
+- `REQ-119` | `done` | Reorganizar el navbar para reducir ancho horizontal: agrupar accesos `admin` bajo `Administracion` y mover `Cambiar contrasena`/`Salir` a un menu desplegable del usuario, sin tocar permisos ni rutas existentes.
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

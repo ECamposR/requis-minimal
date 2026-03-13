@@ -50,6 +50,14 @@ def db_session():
                     departamento="Bodega",
                 ),
                 Usuario(
+                    username="admin.1",
+                    password=hash_password("pass123"),
+                    pin_hash=hash_password("1234"),
+                    nombre="Admin Uno",
+                    rol="admin",
+                    departamento="Admon",
+                ),
+                Usuario(
                     username="tecnico.1",
                     password=hash_password("pass123"),
                     pin_hash=hash_password("4321"),
@@ -428,6 +436,20 @@ def test_navbar_muestra_contingencias_solo_para_roles_autorizados(client: TestCl
     response_user = client.get("/")
     assert response_user.status_code == 200
     assert "Monitor de Actividad" not in response_user.text
+
+
+def test_navbar_admin_agrupa_administracion_y_menu_usuario(client: TestClient):
+    login(client, "admin.1", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Administración" in html
+    assert "/admin/usuarios" in html
+    assert "/admin/catalogo-items" in html
+    assert "/admin/respaldos" in html
+    assert 'class="user-trigger' in html
+    assert "Cambiar contrasena" in html
 
 
 def test_monitor_renderiza_fase_2_de_auditoria(client: TestClient):

@@ -1,5 +1,27 @@
 # Worklog (append-only)
 
+## 2026-03-12 13:05 UTC-6 | tool: Codex CLI
+- Objetivo: reducir el ancho horizontal del navbar agrupando accesos secundarios sin cambiar permisos ni rutas, usando menus desplegables simples y mantenibles.
+- Tareas: `REQ-119`
+- Cambios:
+  - `templates/partials/navbar.html`
+  - `static/style.css`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `sed -n '1,220p' templates/partials/navbar.html`
+  - `rg -n "main-nav|nav-pill|menu-links|logout-form|avatar-chip|topbar" static/style.css static/theme.css templates`
+  - `python -m compileall tests/test_basic_flow.py`
+- Resultado:
+  - Los accesos `Usuarios/Catalogo/Respaldos` de `admin` ahora viven bajo un dropdown `Administracion`.
+  - `Cambiar contrasena` deja de consumir ancho en la barra principal y pasa al menu desplegable del usuario junto a `Salir`.
+  - La implementacion usa `details/summary`, evitando JS adicional y conservando una navegacion SSR simple.
+- Proximo paso:
+  - Validar visualmente el navbar en `admin`, `aprobador`, `jefe_bodega` y `bodega` para confirmar densidad, foco y comportamiento en resoluciones medias.
+
 ## 2026-03-11 15:19 UTC-6 | tool: Codex CLI
 - Objetivo: alinear la terminologia del Monitor de Actividad al lenguaje operativo real, sustituyendo `fuga/fugas` por `diferencia/diferencias` sin cambiar la logica de calculo.
 - Tareas: `REQ-118D`, `REQ-118E`, `REQ-118F`

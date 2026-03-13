@@ -19,16 +19,33 @@
         <li><a href="/bodega" class="nav-item {% if request.url.path.startswith('/bodega') or request.url.path.startswith('/entregar') %}is-active{% endif %}"><span>Bodega</span></a></li>
         {% endif %}
         {% if current_user.rol == 'admin' %}
-        <li><a href="/admin/usuarios" class="nav-item {% if request.url.path.startswith('/admin/usuarios') %}is-active{% endif %}"><span>Usuarios</span></a></li>
-        <li><a href="/admin/catalogo-items" class="nav-item {% if request.url.path.startswith('/admin/catalogo-items') %}is-active{% endif %}"><span>Catalogo</span></a></li>
-        <li><a href="/admin/respaldos" class="nav-item {% if request.url.path.startswith('/admin/respaldos') %}is-active{% endif %}"><span>Respaldos</span></a></li>
+        <li class="nav-dropdown">
+            <button type="button" class="nav-item dropdown-toggle {% if request.url.path.startswith('/admin/usuarios') or request.url.path.startswith('/admin/catalogo-items') or request.url.path.startswith('/admin/respaldos') %}is-active{% endif %}" aria-haspopup="true">
+                <span>Administración</span>
+                <span class="dropdown-caret" aria-hidden="true">▼</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a href="/admin/usuarios" class="dropdown-item {% if request.url.path.startswith('/admin/usuarios') %}is-active{% endif %}">Usuarios</a></li>
+                <li><a href="/admin/catalogo-items" class="dropdown-item {% if request.url.path.startswith('/admin/catalogo-items') %}is-active{% endif %}">Catalogo</a></li>
+                <li><a href="/admin/respaldos" class="dropdown-item {% if request.url.path.startswith('/admin/respaldos') %}is-active{% endif %}">Respaldos</a></li>
+            </ul>
+        </li>
         {% endif %}
-        <li><a href="/mi-cuenta/password" class="nav-item {% if request.url.path.startswith('/mi-cuenta/password') %}is-active{% endif %}"><span>Cambiar contrasena</span></a></li>
     </ul>
-    <form method="POST" action="/logout" class="logout-form topbar-right">
-        <span class="avatar-chip" title="{{ current_user.nombre }}">{{ avatar_text }}</span>
-        <span class="logout-user">{{ current_user.nombre }}</span>
-        <button type="submit" class="logout-btn">Salir</button>
-    </form>
+    <div class="user-dropdown topbar-right">
+        <button type="button" class="user-trigger {% if request.url.path.startswith('/mi-cuenta/password') %}is-active{% endif %}" aria-haspopup="true">
+            <span class="avatar-chip" title="{{ current_user.nombre }}">{{ avatar_text }}</span>
+            <span class="logout-user">{{ current_user.nombre }}</span>
+            <span class="dropdown-caret" aria-hidden="true">▼</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-right">
+            <li><a href="/mi-cuenta/password" class="dropdown-item {% if request.url.path.startswith('/mi-cuenta/password') %}is-active{% endif %}">Cambiar contrasena</a></li>
+            <li>
+                <form method="POST" action="/logout">
+                    <button type="submit" class="dropdown-item dropdown-action">Salir</button>
+                </form>
+            </li>
+        </ul>
+    </div>
 </nav>
 {% endif %}

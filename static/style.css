@@ -148,10 +148,6 @@ main.container {
     gap: 0.55rem;
 }
 
-.topbar-right {
-    gap: 0.45rem;
-}
-
 .avatar-chip {
     width: 2.05rem;
     height: 2.05rem;
@@ -1096,10 +1092,6 @@ table td {
         border-radius: 1.1rem;
         padding: 0.55rem 0.7rem;
         gap: 0.55rem;
-    }
-
-    .logout-form {
-        margin-left: auto;
     }
 
     .brand {
