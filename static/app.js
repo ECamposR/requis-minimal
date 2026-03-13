@@ -487,7 +487,7 @@ function verDetalle(id) {
                         <td class="qty-col td-num">${fmtQty(i.returned ?? i.qty_returned_to_warehouse)}</td>
                         <td class="qty-col td-num"><span class="${differenceCls}" title="Diferencia de retorno: esperado ${fmtQty(i.expected_return ?? 0)}, regresó ${fmtQty(i.returned ?? i.qty_returned_to_warehouse ?? 0)}">${differenceText}</span></td>
                         <td class="qty-col td-num">
-                            <span class="pk-help" title="Pendiente de ingresar en Prokey por bodega (solo retornables)">${ingresoPk}</span>
+                            <span class="pk-help" title="Cantidad aplicable para ingreso en Prokey por bodega. En instalación inicial no genera ingreso PK.">${ingresoPk}</span>
                         </td>
                         <td>${alertBadges}</td>
                     </tr>`;
@@ -525,13 +525,23 @@ function verDetalle(id) {
                 ? topAlertEntries.map(([label, count]) => `${escapeHtml(label)} (${count})`).join(", ")
                 : "Ninguno";
             const alertCardClass = highAlerts > 0 ? "dd-card--alert dd-card--alert-high" : allAlerts.length > 0 ? "dd-card--alert" : "";
+            const prokeyEditorNote = data.prokey_ref_actualizada_por_nombre
+                ? `<div class="dd-kv-note">Registrada por ${escapeHtml(data.prokey_ref_actualizada_por_nombre)}${data.prokey_ref_actualizada_por_rol ? ` (${escapeHtml(data.prokey_ref_actualizada_por_rol)})` : ""}</div>`
+                : "";
             const prokeyRefHtml = data.prokey_ref
-                ? escapeHtml(data.prokey_ref)
-                : `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
-                   <a href="/requisiciones/${data.id}/prokey-ref" class="prokey-add-link">Agregar referencia Prokey</a>`;
+                ? `${escapeHtml(data.prokey_ref)}${prokeyEditorNote}`
+                : data.puede_editar_prokey_ref
+                    ? `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
+                       <a href="/requisiciones/${data.id}/prokey-ref" class="prokey-add-link">Agregar referencia Prokey</a>`
+                    : 'Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>';
             const receptorDesignadoHtml = data.receptor_designado
                 ? `${escapeHtml(data.receptor_designado.nombre || "-")} (${escapeHtml(data.receptor_designado.rol || "-")})`
                 : "-";
+            const receptorRealHtml = data.recibido_por_detalle
+                ? `${escapeHtml(data.recibido_por_detalle.nombre || "-")} (${escapeHtml(data.recibido_por_detalle.rol || "-")})`
+                : data.delivered_to
+                    ? escapeHtml(data.delivered_to)
+                    : "Pendiente";
             const liquidationComment = data.liquidation_comment
                 ? escapeHtml(data.liquidation_comment)
                 : "—";
@@ -550,7 +560,7 @@ function verDetalle(id) {
                                 <th class="qty-col">No usado</th>
                                 <th class="qty-col">Regresa</th>
                                 <th class="qty-col" title="Diferencia de retorno: si falta equipo por regresar muestra 'Falta'; si regresó de más muestra 'Extra'">DIF</th>
-                                <th class="qty-col" title="Retornables usados que regresaron, mas excedentes recibidos en bodega">Ingreso PK (Bodega)</th>
+                                <th class="qty-col" title="Retornables en reposición usados que regresaron, más excedentes recibidos en bodega. Instalación inicial no genera ingreso PK.">Ingreso PK (Bodega)</th>
                                 <th>Alertas</th>
                             </tr></thead>
                             <tbody>
@@ -622,6 +632,7 @@ function verDetalle(id) {
                         <div class="dd-kv"><div class="dd-kv-label">Ruta principal</div><div class="dd-kv-value">${escapeHtml(data.cliente_ruta_principal || "-")}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Solicitante</div><div class="dd-kv-value">${escapeHtml(data.solicitante || "-")}</div></div>
                         <div class="dd-kv"><div class="dd-kv-label">Receptor designado</div><div class="dd-kv-value">${receptorDesignadoHtml}</div></div>
+                        <div class="dd-kv"><div class="dd-kv-label">Recibió / firmó</div><div class="dd-kv-value">${receptorRealHtml}</div></div>
                     </article>
                     <article class="detalle-block dashboard-card dd-card">
                         <h4 class="dd-card-title">Estado liquidación</h4>

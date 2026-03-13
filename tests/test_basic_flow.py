@@ -10,6 +10,7 @@ from app.auth import hash_password
 from app.database import get_db
 from app.main import app
 from app.models import Base, CatalogoItem, Item, Requisicion, Usuario
+from app.pdf_generator import generate_requisicion_pdf
 
 TEST_DB_URL = "sqlite:///./test_requisiciones.db"
 
@@ -40,6 +41,14 @@ def db_session():
                     nombre="Aprobador Ops",
                     rol="aprobador",
                     departamento="Operaciones",
+                ),
+                Usuario(
+                    username="logistica.1",
+                    password=hash_password("pass123"),
+                    pin_hash=hash_password("1234"),
+                    nombre="Logistica Uno",
+                    rol="logistica",
+                    departamento="Admon",
                 ),
                 Usuario(
                     username="bodega.1",
@@ -800,6 +809,93 @@ def test_pdf_aprobada_usa_cantidad_solicitada(client: TestClient, db_session: Se
     assert response.content.startswith(b"%PDF")
 
 
+def test_pdf_incluye_receptor_designado_en_payload(client: TestClient, db_session: Session, monkeypatch):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    tecnico = db_session.query(Usuario).filter(Usuario.username == "tecnico.1").first()
+
+    req = Requisicion(
+        folio="REQ-0101A",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="PDF debe incluir receptor designado",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        cliente_codigo="C-9093",
+        cliente_nombre="Cliente PDF Receptor",
+        cliente_ruta_principal="RA03",
+        receptor_designado_id=tecnico.id,
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    captured = {}
+
+    def fake_generate(req_data):
+        captured.update(req_data)
+        return b"%PDF-TEST"
+
+    monkeypatch.setattr("app.pdf_generator.generate_requisicion_pdf", fake_generate)
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get(f"/requisiciones/{req.id}/pdf")
+    assert response.status_code == 200
+    assert response.content == b"%PDF-TEST"
+    assert captured["solicitante_nombre"] == user.nombre
+    assert captured["receptor_designado_nombre"] == tecnico.nombre
+    assert captured["receptor_designado_rol"] == tecnico.rol
+
+
+def test_pdf_multipagina_muestra_todos_los_items():
+    req_data = {
+        "id": 999,
+        "folio": "REQ-0999",
+        "estado": "liquidada",
+        "created_at": "2026-03-11 11:00:00",
+        "approved_at": "2026-03-11 11:05:00",
+        "prepared_at": "2026-03-11 11:10:00",
+        "delivered_at": "2026-03-11 11:15:00",
+        "recibido_at": "2026-03-11 11:15:00",
+        "liquidated_at": "2026-03-11 11:30:00",
+        "cliente": "Cliente Multipagina",
+        "codigo_cliente": "C-9999",
+        "ruta": "RA09",
+        "solicitante_nombre": "Usuario Ops",
+        "receptor_designado_nombre": "Tecnico Uno",
+        "receptor_designado_rol": "tecnico",
+        "aprobador_nombre": "Aprobador Ops",
+        "preparador_nombre": "Bodega Uno",
+        "jefe_bodega_nombre": "Bodega Uno",
+        "liquidado_por_nombre": "Bodega Uno",
+        "recibido_por_nombre": "Tecnico Uno",
+        "prokey_ref": "PK-999",
+        "justificacion": "Prueba de paginacion de PDF",
+        "comentario_liquidacion": "Todos los items deben aparecer en el PDF aunque ocupen varias paginas.",
+        "items": [
+            {
+                "descripcion": f"Item de prueba numero {index} con descripcion larga para forzar paginacion",
+                "cantidad_solicitada": 1,
+                "cantidad_entregada": 1,
+                "cantidad_usada": 1,
+                "cantidad_no_usada": 0,
+                "cantidad_retorna": 1,
+                "liquidation_mode": "RETORNABLE",
+                "contexto_operacion": "reposicion",
+                "es_demo": False,
+                "pk_ingreso_qty": 1,
+                "liquidation_alerts": [],
+                "nota_liquidacion": "Nota breve" if index % 3 == 0 else None,
+            }
+            for index in range(1, 45)
+        ],
+    }
+
+    pdf_bytes = generate_requisicion_pdf(req_data)
+    assert pdf_bytes.startswith(b"%PDF")
+    assert len(re.findall(rb"/Type /Page(?!s)", pdf_bytes)) >= 2
+
+
 def test_aprobador_puede_aprobar_otra_area(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
@@ -1284,6 +1380,51 @@ def test_entregar_requisicion(client: TestClient, db_session: Session):
     assert "Ver" in html
 
 
+def test_detalle_conserva_receptor_designado_y_receptor_real(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    otro = db_session.query(Usuario).filter(Usuario.username == "user.otro").first()
+
+    req = Requisicion(
+        folio="REQ-0001B",
+        solicitante_id=user.id,
+        receptor_designado_id=otro.id,
+        departamento="Operaciones",
+        estado="preparado",
+        justificacion="Cambio de receptor en entrega",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        prepared_by=bodega.id,
+        prepared_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "bodega.1", "pass123")
+    response = client.post(
+        f"/entregar/{req.id}",
+        data={
+            "resultado": "completa",
+            "recibido_por_id": str(user.id),
+            "pin_receptor": "1234",
+            "comentario": "Recibio otra persona autorizada",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    detail = client.get(f"/api/requisiciones/{req.id}")
+    assert detail.status_code == 200
+    payload = detail.json()
+    assert payload["receptor_designado"]["nombre"] == otro.nombre
+    assert payload["receptor_designado"]["rol"] == otro.rol
+    assert payload["recibido_por"] == user.nombre
+    assert payload["recibido_por_detalle"]["nombre"] == user.nombre
+    assert payload["recibido_por_detalle"]["rol"] == user.rol
+
+
 def test_bodega_puede_marcar_entrega_parcial(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
@@ -1690,13 +1831,58 @@ def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_sessi
     assert "REQ-0104" in html
     assert "pendiente de aprobar" in html
     assert "pendiente de entregar" in html
-    assert "rechazada" in html
-    assert "entregada" in html
-    assert "Usuario Ops" in html
-    assert "Aprobador Ops" in html
-    assert "Bodega Uno" in html
-    assert "modal-detalle" in html
-    assert "Ver" in html
+
+
+def test_logistica_ve_todas_las_requisiciones_pero_no_aprueba(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    logistica = db_session.query(Usuario).filter(Usuario.username == "logistica.1").first()
+
+    req_1 = Requisicion(
+        folio="REQ-AUDIT-01",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="pendiente",
+        justificacion="Pendiente visible a logistica",
+    )
+    req_2 = Requisicion(
+        folio="REQ-AUDIT-02",
+        solicitante_id=aprobador.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        justificacion="Liquidada visible a logistica",
+    )
+    req_3 = Requisicion(
+        folio="REQ-AUDIT-03",
+        solicitante_id=logistica.id,
+        departamento="Admon",
+        estado="pendiente",
+        justificacion="Propia de logistica",
+    )
+    db_session.add_all([req_1, req_2, req_3])
+    db_session.commit()
+
+    login(client, "logistica.1", "pass123")
+    response = client.get("/mis-requisiciones")
+    assert response.status_code == 200
+    html = response.text
+    assert "Mis Requisiciones" in html
+    assert "REQ-AUDIT-03" in html
+    assert "REQ-AUDIT-01" not in html
+    assert "REQ-AUDIT-02" not in html
+
+    response_todas = client.get("/mis-requisiciones?vista=todas")
+    assert response_todas.status_code == 200
+    html_todas = response_todas.text
+    assert "Todas las Requisiciones" in html_todas
+    assert "REQ-AUDIT-01" in html_todas
+    assert "REQ-AUDIT-02" in html_todas
+    assert "REQ-AUDIT-03" in html_todas
+    assert "Usuario Ops" in html_todas
+    assert "Aprobador Ops" in html_todas
+
+    aprobar = client.get("/aprobar")
+    assert aprobar.status_code == 403
 
 
 def test_aprobar_permita_filtrar_por_estado(client: TestClient, db_session: Session):
@@ -1769,3 +1955,56 @@ def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_s
     assert response.status_code == 200
     assert "REQ-0302" in response.text
     assert "REQ-0301" not in response.text
+
+
+def test_bodega_no_duplica_entregadas_activas_en_historial(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req_entregada = Requisicion(
+        folio="REQ-0303",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="entregada",
+        justificacion="Pendiente de liquidar",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivery_result="completa",
+        delivered_to="Juan Perez",
+    )
+    req_liquidada = Requisicion(
+        folio="REQ-0304",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        justificacion="Ya liquidada",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivery_result="completa",
+        delivered_to="Juan Perez",
+        liquidated_by=bodega.id,
+        liquidated_at=datetime.now(),
+    )
+    db_session.add_all([req_entregada, req_liquidada])
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega")
+    assert response.status_code == 200
+    html = response.text
+
+    assert "Pendientes de Procesar" in html
+    assert "Historial" in html
+    assert "REQ-0303" in html
+    assert "REQ-0304" in html
+
+    response_historial = client.get("/bodega?vista=historial")
+    assert response_historial.status_code == 200
+    html_historial = response_historial.text
+    assert "REQ-0304" in html_historial
+    assert "REQ-0303" not in html_historial

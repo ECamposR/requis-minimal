@@ -158,18 +158,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const helpText = form.querySelector("[data-delivery-help]");
     if (!receptorSelect || !unlockButton || !warning || !changeActions || !saveChangeButton || !cancelChangeButton || !resultadoSelect || !pinInput) return;
     let baselineReceptorValue = receptorSelect.value || "";
+    const setReceptorLocked = () => {
+        receptorSelect.disabled = true;
+        if (receptorSearch) {
+            receptorSearch.disabled = true;
+            receptorSearch.value = "";
+        }
+        filterReceptores();
+        warning.hidden = true;
+        changeActions.hidden = true;
+        unlockButton.hidden = false;
+    };
     const setFirmaDisponible = (enabled) => {
         firmaFields.forEach((field) => {
             field.hidden = !enabled;
         });
         if (!enabled) {
-            receptorSelect.disabled = true;
-            receptorSearch.disabled = true;
-            receptorSearch.value = "";
-            filterReceptores();
-            warning.hidden = true;
-            changeActions.hidden = true;
-            unlockButton.hidden = false;
+            setReceptorLocked();
             pinInput.value = "";
         }
         if (helpText) {
@@ -205,6 +210,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const syncByResultado = () => {
         setFirmaDisponible(resultadoSelect.value !== "no_entregada");
+        if (resultadoSelect.value !== "no_entregada") {
+            setReceptorLocked();
+        }
     };
 
     unlockButton.addEventListener("click", () => {
@@ -243,6 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     resultadoSelect.addEventListener("change", syncByResultado);
+    setReceptorLocked();
     syncByResultado();
 
     form.addEventListener("submit", () => {

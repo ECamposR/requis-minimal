@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% import "macros/ui.html" as ui %}
-{% block title %}Mis Requisiciones{% endblock %}
+{% block title %}{{ "Todas las Requisiciones" if vista_global else "Mis Requisiciones" }}{% endblock %}
 {% block content %}
-{{ ui.page_header("Mis Requisiciones", "Historial de solicitudes creadas por tu usuario.") }}
+{{ ui.page_header("Todas las Requisiciones" if vista_global else "Mis Requisiciones", "Vista global de requisiciones creadas en la app." if vista_global else "Historial de solicitudes creadas por tu usuario.") }}
 
 {% if requisiciones %}
 <section class="panel view-panel table-wrap">
@@ -10,6 +10,7 @@
     <thead>
     <tr>
         <th class="col-folio"># Req</th>
+        {% if vista_global %}<th>Solicitante</th>{% endif %}
         <th>Departamento</th>
         <th class="col-estado">Estado</th>
         <th class="col-fecha">Fecha</th>
@@ -20,6 +21,7 @@
     {% for req in requisiciones %}
     <tr>
         <td>{{ req.folio }}</td>
+        {% if vista_global %}<td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>{% endif %}
         <td>{{ req.departamento }}</td>
         <td>
             {{ ui.status_badge(req.estado) }}
@@ -27,7 +29,7 @@
         <td>{{ req.created_at | fmt_dt }}</td>
         <td class="table-actions">
             <button type="button" onclick="verDetalle({{ req.id }})">Ver</button>
-            {% if req.estado == 'pendiente' %}
+            {% if req.estado == 'pendiente' and req.solicitante_id == current_user.id %}
             <a href="/mis-requisiciones/{{ req.id }}/editar" role="button" class="secondary">Editar</a>
             <form method="POST" action="/mis-requisiciones/{{ req.id }}/eliminar" class="inline">
                 <button type="submit" class="danger">Eliminar</button>
@@ -40,7 +42,7 @@
 </table>
 </section>
 {% else %}
-<p>No tienes requisiciones aun.</p>
+<p>{% if vista_global %}No hay requisiciones registradas aun.{% else %}No tienes requisiciones aun.{% endif %}</p>
 {% endif %}
 
 <dialog id="modal-detalle">

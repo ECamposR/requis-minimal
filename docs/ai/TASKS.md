@@ -7,6 +7,13 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-117` | `done` | Corregir `Gestionar Entrega` para que `No entregada` no exija firma/PIN aunque exista receptor designado; en ese caso solo debe exigir comentario y cerrar el ciclo sin receptor recibido.
 - `REQ-118` | `done` | Abrir frente de trabajo aislado para dashboard de inteligencia de negocio (`feat/bi-dashboard`), definiendo primero objetivos, usuarios, metricas y alcance antes de implementar.
 - `REQ-119` | `done` | Reorganizar el navbar para reducir ancho horizontal: agrupar accesos `admin` bajo `Administracion` y mover `Cambiar contrasena`/`Salir` a un menu desplegable del usuario, sin tocar permisos ni rutas existentes.
+- `REQ-120` | `done` | Incluir en el PDF el receptor designado debajo del solicitante, propagando el dato al generador y ampliando la card de informacion general sin alterar el resto del layout.
+- `REQ-121` | `done` | Corregir paginacion del PDF para que la tabla de items se parta en multiples paginas cuando sea necesario, repitiendo cabecera y preservando las secciones finales en la ultima pagina disponible.
+- `REQ-122` | `done` | Refactor visual Eco-Ink del PDF: eliminar bloques de color solido, priorizar bordes y escala de grises, suavizar badges a tonos pastel minimos y mantener el color corporativo solo en textos/bordes clave, sin tocar layout ni datos.
+- `REQ-123` | `done` | Forzar estado inicial bloqueado del receptor en `Gestionar Entrega` y `Entrega Parcial`; el selector solo debe habilitarse tras pulsar `Cambiar receptor`.
+- `REQ-124` | `done` | Ajustar `Ingreso PK (Bodega)` para que respete `contexto_operacion`: en `instalacion_inicial` debe ser `0` aunque el item sea retornable; en `reposicion` conserva la formula operativa actual.
+- `REQ-125` | `done` | Ajustar detalle de requisicion para mostrar ambos receptores cuando bodega cambia el firmante: conservar `receptor designado` original y exponer tambien quien realmente `recibio / firmo`.
+- `REQ-126` | `done` | Agregar rol `logistica`: conserva capacidades base de `user`, pero puede ver todas las requisiciones, consultar detalle/PDF globalmente y completar `prokey_ref` en requisiciones `liquidada` con trazabilidad del actor que registró la referencia.
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

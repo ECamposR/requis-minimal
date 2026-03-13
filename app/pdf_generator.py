@@ -32,34 +32,35 @@ MR  = 14 * mm
 MT  = 12 * mm
 MB  = 12 * mm
 UW  = PW - ML - MR       # ≈ 533 pt
+PAGE_BOTTOM_LIMIT = MB + 12 * mm
 
 GAP = 5 * mm             # separación vertical entre secciones
 LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "static", "branding", "logo-prohygiene-es.png")
 
-# ─── Paleta (Arctic Glass, fiel a la app) ────────────────────────────────────
-C_PAGE_BG   = colors.HexColor("#e8f0fe")   # fondo página
-C_HDR_BG    = colors.HexColor("#1e3a5f")   # header azul oscuro
-C_PRI       = colors.HexColor("#1d4ed8")   # azul primario (botones, nodos)
-C_PRI_LIGHT = colors.HexColor("#dbeafe")   # azul muy claro (fondos)
-C_PRI_BORDER= colors.HexColor("#bfdbfe")   # borde azul claro
-C_CARD_TOP  = colors.HexColor("#1d4ed8")   # franja superior de cards
+# ─── Paleta (Eco-Ink: bordes + grises + acentos mínimos) ───────────────────
+C_PAGE_BG   = colors.white                 # fondo pagina blanco
+C_HDR_BG    = colors.HexColor("#1e3a5f")  # azul corporativo solo en textos/bordes clave
+C_PRI       = colors.HexColor("#1d4ed8")  # azul primario para lineas y acentos
+C_PRI_LIGHT = colors.HexColor("#f8fbff")  # tinte azul casi blanco (~5%)
+C_PRI_BORDER= colors.HexColor("#1d4ed8")  # borde corporativo
+C_CARD_TOP  = colors.HexColor("#1d4ed8")
 C_WHITE     = colors.white
-C_CARD_BG   = colors.HexColor("#f8faff")   # fondo card
-C_TBL_ALT   = colors.HexColor("#f0f6ff")   # fila par tabla
-C_BLACK     = colors.HexColor("#111827")
-C_GRAY1     = colors.HexColor("#374151")   # texto normal
-C_GRAY2     = colors.HexColor("#6b7280")   # labels / secundario
-C_SEP       = colors.HexColor("#e2e8f0")   # separadores
+C_CARD_BG   = colors.HexColor("#fafafa")  # gris muy tenue
+C_TBL_ALT   = colors.HexColor("#f6f6f6")  # gris 5% aprox
+C_BLACK     = colors.HexColor("#111111")
+C_GRAY1     = colors.HexColor("#303030")  # texto normal
+C_GRAY2     = colors.HexColor("#707070")  # labels / secundario
+C_SEP       = colors.HexColor("#d9d9d9")  # separadores tenues
 
-C_GREEN     = colors.HexColor("#16a34a")
-C_GREEN_BG  = colors.HexColor("#dcfce7")
-C_GREEN_BD  = colors.HexColor("#86efac")
-C_AMBER     = colors.HexColor("#d97706")
-C_AMBER_BG  = colors.HexColor("#fef9c3")
-C_AMBER_BD  = colors.HexColor("#fcd34d")
-C_RED       = colors.HexColor("#dc2626")
-C_RED_BG    = colors.HexColor("#fee2e2")
-C_RED_BD    = colors.HexColor("#fca5a5")
+C_GREEN     = colors.HexColor("#166534")
+C_GREEN_BG  = colors.HexColor("#fbfefb")
+C_GREEN_BD  = colors.HexColor("#9fc8ab")
+C_AMBER     = colors.HexColor("#92400e")
+C_AMBER_BG  = colors.HexColor("#fffdfa")
+C_AMBER_BD  = colors.HexColor("#d6b58f")
+C_RED       = colors.HexColor("#991b1b")
+C_RED_BG    = colors.HexColor("#fffafa")
+C_RED_BD    = colors.HexColor("#d8aaaa")
 
 ALERT_MAP = {
     "ALERTA_FALTANTE":           "Faltante",
@@ -230,8 +231,11 @@ def generate_requisicion_pdf(req: dict) -> bytes:
 
     top = _header(cv, req, folio, top)  ;  top -= GAP
     top = _cards(cv, req, top)          ;  top -= GAP
-    top = _items_table(cv, req, top)    ;  top -= GAP
+    top = _items_table(cv, req, top, folio)    ;  top -= GAP
+    just_h = _just_com_height(req)
+    top = _ensure_space(cv, top, just_h, folio)
     top = _just_com(cv, req, top)       ;  top -= GAP
+    top = _ensure_space(cv, top, TL_H, folio)
     top = _timeline(cv, req, top)
 
     _footer(cv, folio)
@@ -240,11 +244,24 @@ def generate_requisicion_pdf(req: dict) -> bytes:
     return buf.read()
 
 
+def _advance_page(cv, folio):
+    _footer(cv, folio)
+    cv.showPage()
+    _box(cv, 0, PH, PW, PH, fill=C_PAGE_BG)
+    return PH - MT
+
+
+def _ensure_space(cv, top, needed_height, folio):
+    if top - needed_height < PAGE_BOTTOM_LIMIT:
+        return _advance_page(cv, folio)
+    return top
+
+
 # ─── 1. HEADER ───────────────────────────────────────────────────────────────
 
 def _header(cv, req, folio, top):
     H = 19 * mm
-    _box(cv, ML, top, UW, H, fill=C_HDR_BG, r=5)
+    _box(cv, ML, top, UW, H, stroke=C_HDR_BG, lw=1.1, r=5)
 
     # Empresa (izquierda)
     logo_x = ML + 6
@@ -263,23 +280,23 @@ def _header(cv, req, folio, top):
         )
     except Exception:
         _str(cv, logo_x, top - 3, "ProHygiene",
-             font="Helvetica-Bold", size=13, color=C_WHITE)
+             font="Helvetica-Bold", size=13, color=C_HDR_BG)
     _str(cv, ML + 14, top - 29, "ENMANUEL, S.A. DE C.V.",
          font="Helvetica", size=6.5,
-         color=colors.HexColor("#93c5fd"))
+         color=C_GRAY2)
     _str(cv, ML + 14, top - 36,
          "Sistema interno de requisiciones",
          font="Helvetica", size=5.5,
-         color=colors.HexColor("#bfdbfe"))
+         color=C_GRAY2)
 
     # Folio (centro)
     cx = ML + UW / 2
     _str(cv, cx, top - 4, "REQUISICIÓN",
          font="Helvetica", size=6.5,
-         color=colors.HexColor("#93c5fd"), align="center")
+         color=C_HDR_BG, align="center")
     _str(cv, cx, top - 4 - 6.5 - 2, folio,
          font="Helvetica-Bold", size=15,
-         color=C_WHITE, align="center")
+         color=C_BLACK, align="center")
 
     # Badge estado (derecha)
     estado = str(req.get("estado", "liquidada")).lower()
@@ -300,7 +317,7 @@ def _header(cv, req, folio, top):
 # Altura fija de la card.  Calculamos: franja(3mm) + título(5mm) + sep(2mm) + 4filas×(5.5+2+8.5+4)mm
 # Cada fila label+valor: lsize=5.5 gap=2 vsize=8 padding_bajo=4 → 19.5pt ≈ 7mm
 # 4 filas = 28mm  +  título 5mm  +  franja 3mm  +  padding top 3mm = 39mm → redondeamos a 44mm
-CARD_H      = 57 * mm
+CARD_H      = 66 * mm
 CARD_FRANJA = 3 * mm    # franja de color top
 CARD_PAD    = 4 * mm    # padding horizontal interior
 
@@ -314,14 +331,8 @@ def _cards(cv, req, top):
 
         # Sombra/card blanca
         _box(cv, cx, top, CW, CARD_H,
-             fill=C_WHITE, stroke=C_PRI_BORDER, lw=0.7, r=4)
-
-        # Franja de color en el tope (con esquinas redondeadas arriba)
-        # Truco: dibujamos rect redondeado encima y luego tapamos la mitad inferior
-        _box(cv, cx, top, CW, CARD_FRANJA,
-             fill=C_PRI, r=4)
-        _box(cv, cx, top - CARD_FRANJA / 2, CW, CARD_FRANJA / 2,
-             fill=C_PRI, r=0)
+             fill=C_WHITE, stroke=C_SEP, lw=0.7, r=4)
+        _hline(cv, cx + 3, top - CARD_FRANJA / 2, CW - 6, color=C_PRI, lw=1.0)
 
         # Contenido de la card: top del contenido = top - franja - padding
         content_top = top - CARD_FRANJA - CARD_PAD
@@ -335,7 +346,7 @@ def _card_header(cv, x, top, w, title):
     _str(cv, x, top, title,
          font="Helvetica-Bold", size=7.5, color=C_HDR_BG)
     sep_y = top - 7.5 - 2          # 2pt bajo la baseline del título
-    _hline(cv, x, sep_y, w, color=C_PRI_BORDER, lw=0.6)
+    _hline(cv, x, sep_y, w, color=C_SEP, lw=0.8)
     return sep_y - 3               # 3pt de aire bajo el separador
 
 
@@ -358,11 +369,16 @@ def _card_row(cv, x, top, label, value, *,
 def _card_info(cv, req, x, top, w):
     cur = _card_header(cv, x, top, w, "Información general")
     ROW_GAP = 5
+    receptor_designado = req.get("receptor_designado_nombre") or "—"
+    receptor_rol = req.get("receptor_designado_rol")
+    if receptor_rol:
+        receptor_designado = f"{receptor_designado} ({receptor_rol})"
     for lbl, val in [
         ("Cliente",        req.get("cliente") or "—"),
         ("Código cliente", str(req.get("codigo_cliente") or "—")),
         ("Ruta principal", req.get("ruta") or "—"),
         ("Solicitante",    req.get("solicitante_nombre") or "—"),
+        ("Recibe",         receptor_designado),
     ]:
         cur = _card_row(cv, x, cur, lbl, val, row_gap=ROW_GAP)
 
@@ -469,8 +485,7 @@ def _row_height(item):
     return ROW_H + extra_l + nota_h
 
 
-def _items_table(cv, req, top):
-    items   = req.get("items", [])
+def _draw_items_table_chunk(cv, req, items, top):
     cols    = _table_columns(req)
     widths  = [UW * f for _, f, _ in cols]
     x0      = ML
@@ -480,18 +495,17 @@ def _items_table(cv, req, top):
 
     # Fondo blanco de toda la tabla
     _box(cv, x0, top, UW, T_H,
-         fill=C_WHITE, stroke=C_PRI_BORDER, lw=0.8, r=4)
+         fill=C_WHITE, stroke=C_SEP, lw=0.8, r=4)
 
     # ── Cabecera ──
-    _box(cv, x0, top, UW, HDR_H, fill=C_HDR_BG, r=4)
-    _box(cv, x0, top - HDR_H / 2, UW, HDR_H / 2, fill=C_HDR_BG, r=0)
+    _hline(cv, x0 + 1, top - HDR_H, UW - 2, color=C_GRAY2, lw=1.1)
 
     cx = x0
     for (lbl, _, align), w in zip(cols, widths):
         tx = cx + w / 2 if align == "center" else cx + 3
         _str(cv, tx, top - (HDR_H - 7) / 2,
              lbl, font="Helvetica-Bold", size=6.5,
-             color=C_WHITE, align=align)
+             color=C_BLACK, align=align)
         cx += w
 
     cur_top = top - HDR_H
@@ -556,7 +570,7 @@ def _items_table(cv, req, top):
             elif j == 7: # DIF chip
                 cw, ch = w - 6, 5 * mm
                 _box(cv, cx + 3, row_mid + ch / 2, cw, ch,
-                     fill=dif_bg, stroke=dif_bd, lw=0.5, r=2)
+                     fill=dif_bg, stroke=dif_bd, lw=0.8, r=2)
                 _str(cv, mid_x, row_mid + ch / 2 - (ch - 7) / 2,
                      dif_lbl, font="Helvetica-Bold",
                      size=7, color=dif_fc, align="center")
@@ -564,12 +578,12 @@ def _items_table(cv, req, top):
             elif j == 9: # Alertas
                 _str(cv, mid_x, row_mid + 3,
                      al_txt, font="Helvetica", size=6,
-                     color=al_col, align="center", max_ch=20)
+                     color=C_BLACK, align="center", max_ch=20)
 
             elif j == 3: # Contexto
                 _str(cv, mid_x, row_mid + 3,
                      str(val), font="Helvetica", size=6,
-                     color=C_GRAY2, align="center", max_ch=14)
+                     color=C_BLACK, align="center", max_ch=14)
 
             elif j == 2: # Tipo
                 _str(cv, mid_x, row_mid + 3,
@@ -603,6 +617,42 @@ def _items_table(cv, req, top):
     return cur_top
 
 
+def _items_table(cv, req, top, folio):
+    items = req.get("items", [])
+    if not items:
+        return top
+
+    index = 0
+    total = len(items)
+    while index < total:
+        available_h = top - PAGE_BOTTOM_LIMIT
+        if available_h <= HDR_H + ROW_H:
+            top = _advance_page(cv, folio)
+            available_h = top - PAGE_BOTTOM_LIMIT
+
+        chunk = []
+        used_h = HDR_H
+        while index < total:
+            row_h = _row_height(items[index])
+            if chunk and used_h + row_h > available_h:
+                break
+            chunk.append(items[index])
+            used_h += row_h
+            index += 1
+            if used_h >= available_h:
+                break
+
+        if not chunk:
+            chunk.append(items[index])
+            index += 1
+
+        top = _draw_items_table_chunk(cv, req, chunk, top)
+        if index < total:
+            top = _advance_page(cv, folio)
+
+    return top
+
+
 # ─── 4. JUSTIFICACIÓN + COMENTARIO ──────────────────────────────────────────
 
 JUST_HDR_H = 8  * mm
@@ -619,6 +669,15 @@ def _just_height(text):
     return JUST_HDR_H + JUST_PAD + n * JUST_LINE_H + JUST_PAD
 
 
+def _just_com_height(req):
+    texts = [
+        req.get("justificacion") or "—",
+        req.get("comentario_liquidacion") or "—",
+    ]
+    h = max(_just_height(text) for text in texts)
+    return max(h, JUST_MIN_H)
+
+
 def _just_com(cv, req, top):
     HALF = (UW - 3 * mm) / 2
 
@@ -633,16 +692,11 @@ def _just_com(cv, req, top):
     for (label, text), rx in zip(texts, [ML, ML + HALF + 3 * mm]):
         # Card blanca
         _box(cv, rx, top, HALF, h,
-             fill=C_WHITE, stroke=C_PRI_BORDER, lw=0.7, r=4)
-
-        # Franja título
-        _box(cv, rx, top, HALF, JUST_HDR_H, fill=C_CARD_BG, r=4)
-        _box(cv, rx, top - JUST_HDR_H / 2, HALF, JUST_HDR_H / 2,
-             fill=C_CARD_BG, r=0)
+             fill=C_WHITE, stroke=C_SEP, lw=0.7, r=4)
         _str(cv, rx + JUST_PAD, top - (JUST_HDR_H - 7.5) / 2,
              label, font="Helvetica-Bold", size=7.5, color=C_HDR_BG)
         _hline(cv, rx + JUST_PAD, top - JUST_HDR_H,
-               HALF - JUST_PAD * 2, color=C_PRI_BORDER, lw=0.5)
+               HALF - JUST_PAD * 2, color=C_SEP, lw=0.8)
 
         # Texto con wrap dinámico
         is_empty = str(text).strip() in ("", "—")
@@ -686,16 +740,13 @@ def _timeline(cv, req, top):
         return top
 
     _box(cv, ML, top, UW, TL_H,
-         fill=C_WHITE, stroke=C_PRI_BORDER, lw=0.7, r=4)
+         fill=C_WHITE, stroke=C_SEP, lw=0.7, r=4)
 
-    # Franja/título
-    _box(cv, ML, top, UW, TL_HDR_H, fill=C_CARD_BG, r=4)
-    _box(cv, ML, top - TL_HDR_H / 2, UW, TL_HDR_H / 2, fill=C_CARD_BG, r=0)
     _str(cv, ML + TL_PAD, top - (TL_HDR_H - 7.5) / 2,
          "Línea de tiempo del flujo",
          font="Helvetica-Bold", size=7.5, color=C_HDR_BG)
     _hline(cv, ML + TL_PAD, top - TL_HDR_H,
-           UW - TL_PAD * 2, color=C_PRI_BORDER, lw=0.5)
+           UW - TL_PAD * 2, color=C_SEP, lw=0.8)
 
     # Zona del timeline
     tz_top = top - TL_HDR_H    # top de la zona gráfica
@@ -719,10 +770,10 @@ def _timeline(cv, req, top):
 
         # Nodo
         _box(cv, nx - R, line_y + R, R * 2, R * 2,
-             fill=C_PRI, r=R)
+             fill=C_WHITE, stroke=C_PRI, lw=0.9, r=R)
         _str(cv, nx, line_y + R - (R * 2 - 7) / 2,
              str(i + 1), font="Helvetica-Bold",
-             size=6, color=C_WHITE, align="center")
+             size=6, color=C_PRI, align="center")
 
         # Texto encima del nodo: label
         lbl_top = line_y + R + 3 + 6    # 3pt sobre el nodo, texto size 6
@@ -740,7 +791,7 @@ def _timeline(cv, req, top):
         fecha_top = actor_top - 5 - 2    # size 5, luego 2pt gap
         _str(cv, nx, fecha_top, _fmt(ts),
              font="Helvetica", size=5,
-             color=C_GRAY2, align="center")
+             color=C_BLACK, align="center")
 
     return top - TL_H
 

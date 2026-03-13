@@ -5,6 +5,7 @@
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-119` completada: el navbar ya agrupa los accesos `admin` bajo un dropdown `Administracion` y el bloque de usuario ahora despliega `Cambiar contrasena` + `Salir`, reduciendo ancho horizontal sin introducir JS adicional.
+- `REQ-123` completada en `main`: `Gestionar Entrega` y `Entrega Parcial` ahora fuerzan en JS el estado inicial bloqueado del receptor; el selector solo se habilita tras pulsar `Cambiar receptor`.
 - Contexto de negocio clave del Monitor de Actividad: esta app funciona como registro de contingencias cuando Prokey ya cerro rutas a las `14:00`. El monitor debe explicar `por que`, `quien`, `que` y `cuando` ocurre ese uso para ayudar a reducirlo, no para medir productividad.
 - Rama de reinicio creada desde commit base pre-liquidacion: `feat/liquidacion-rework-v2` en `3d7702b`.
 - `REQ-060` completada en esta rama: ya existe estado `liquidada`, campos de liquidacion base y migracion SQLite robusta.

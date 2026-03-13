@@ -157,6 +157,34 @@ def test_admin_no_puede_crear_usuario_con_departamento_invalido():
         app.dependency_overrides.clear()
 
 
+def test_admin_puede_crear_usuario_logistica():
+    client, db, engine = _build_client()
+    try:
+        _login(client, "admin", "admin123")
+        response = client.post(
+            "/admin/usuarios",
+            data={
+                "username": "logistica.nuevo",
+                "nombre": "Logistica Nuevo",
+                "rol": "logistica",
+                "departamento": "Admon",
+                "password": "logistica123",
+                "pin": "",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        logistica = db.query(Usuario).filter(Usuario.username == "logistica.nuevo").first()
+        assert logistica is not None
+        assert logistica.rol == "logistica"
+        assert logistica.puede_iniciar_sesion is True
+    finally:
+        client.close()
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+        app.dependency_overrides.clear()
+
+
 def test_admin_no_puede_eliminar_usuario_con_historial():
     client, db, engine = _build_client()
     try:

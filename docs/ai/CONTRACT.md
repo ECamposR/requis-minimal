@@ -31,7 +31,7 @@ Notas:
 - Se usara `login por formulario` + `cookie de sesion firmada`.
 - No se usara `HTTP Basic` porque el sistema es SSR con navegacion de menu y `logout`.
 - Passwords siempre hasheados con `bcrypt`.
-- Roles permitidos: `user`, `aprobador`, `bodega`, `jefe_bodega`, `admin`, `tecnico`.
+- Roles permitidos: `user`, `logistica`, `aprobador`, `bodega`, `jefe_bodega`, `admin`, `tecnico`.
 
 ## 4) Reglas de Implementacion
 - Mantener funciones y archivos pequenos, con nombres descriptivos.

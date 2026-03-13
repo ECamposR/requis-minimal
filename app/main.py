@@ -72,7 +72,7 @@ templates = Jinja2Templates(directory="templates")
 
 DEPARTAMENTOS_VALIDOS = ["Cuentas", "Ventas", "Bodega", "Admon", "Logistica"]
 CATALOGO_HEADERS = {"nombre", "item", "producto", "descripcion"}
-ROLES_VALIDOS = ["user", "aprobador", "bodega", "jefe_bodega", "admin", "tecnico"]
+ROLES_VALIDOS = ["user", "logistica", "aprobador", "bodega", "jefe_bodega", "admin", "tecnico"]
 PASSWORD_MIN_LENGTH = 8
 USUARIOS_IMPORT_HEADERS = {"nombre", "puesto"}
 TEMP_IMPORT_PASSWORD = "Temp@2026"
@@ -451,7 +451,7 @@ def can_view_requisicion(req: Requisicion, current_user: Usuario) -> bool:
     return (
         current_user.rol == "admin"
         or current_user.id == req.solicitante_id
-        or current_user.rol in ["aprobador", "jefe_bodega"]
+        or current_user.rol in ["aprobador", "jefe_bodega", "logistica"]
         or (
             current_user.rol == "bodega"
             and req.estado in ["aprobada", "preparado", "entregada", "liquidada", "liquidada_en_prokey"]
@@ -477,11 +477,17 @@ def redirect_with_message(url: str, message: str, level: str = "success") -> Red
 
 
 def puede_editar_prokey_ref(req: Requisicion, current_user: Usuario) -> bool:
-    return req.estado == "liquidada" and (current_user.rol == "admin" or req.solicitante_id == current_user.id)
+    return req.estado == "liquidada" and (
+        current_user.rol in ("admin", "logistica") or req.solicitante_id == current_user.id
+    )
 
 
 def es_bodega_plano(current_user: Usuario) -> bool:
     return current_user.rol == "bodega"
+
+
+def puede_ver_todas_las_requisiciones(current_user: Usuario) -> bool:
+    return current_user.rol == "logistica"
 
 
 def redirect_if_bodega_plain_accesses_own_requests(current_user: Usuario) -> RedirectResponse | None:
@@ -1246,14 +1252,19 @@ def mis_requisiciones(
     restricted_redirect = redirect_if_bodega_plain_accesses_own_requests(current_user)
     if restricted_redirect:
         return restricted_redirect
+    vista_param = request.query_params.get("vista", "mias").strip().lower()
+    vista_global = puede_ver_todas_las_requisiciones(current_user) and vista_param == "todas"
+    query = db.query(Requisicion).options(joinedload(Requisicion.solicitante))
+    if not vista_global:
+        query = query.filter(Requisicion.solicitante_id == current_user.id)
     requisiciones = (
-        db.query(Requisicion)
-        .filter(Requisicion.solicitante_id == current_user.id)
+        query
         .order_by(Requisicion.created_at.desc())
         .all()
     )
     return templates.TemplateResponse(
-        "mis_requisiciones.html", template_context(request, current_user, requisiciones=requisiciones)
+        "mis_requisiciones.html",
+        template_context(request, current_user, requisiciones=requisiciones, vista_global=vista_global),
     )
 
 
@@ -1654,7 +1665,12 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             joinedload(Requisicion.preparador),
             joinedload(Requisicion.entregador),
         )
-        .filter(Requisicion.estado.in_(["entregada", "liquidada", "liquidada_en_prokey"]))
+        .filter(
+            or_(
+                Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]),
+                Requisicion.delivery_result == "no_entregada",
+            )
+        )
     )
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(
@@ -2280,6 +2296,8 @@ async def editar_prokey_ref_guardar(
         return redirect_with_message(f"/requisiciones/{req_id}/prokey-ref", "La referencia Prokey es obligatoria", "error")
 
     req.prokey_ref = prokey_ref
+    req.prokey_ref_actualizada_at = now_sv()
+    req.prokey_ref_actualizada_por = current_user.id
     db.commit()
 
     target = "/bodega" if current_user.rol in ["admin", "jefe_bodega"] else "/mis-requisiciones"
@@ -2983,6 +3001,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         joinedload(Requisicion.recibido_por),
         joinedload(Requisicion.receptor_designado),
         joinedload(Requisicion.liquidator),
+        joinedload(Requisicion.prokey_ref_editor),
     ]
     maybe_prokey_liquidator = safe_joinedload(Requisicion, "prokey_liquidator")
     if maybe_prokey_liquidator is not None:
@@ -3075,6 +3094,16 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                 "fecha_hora": prokey_liquidada_at,
             }
         )
+    prokey_ref_editor = getattr(req, "prokey_ref_editor", None)
+    prokey_ref_actualizada_at = getattr(req, "prokey_ref_actualizada_at", None)
+    if req.prokey_ref and prokey_ref_actualizada_at:
+        timeline.append(
+            {
+                "evento": "Referencia Prokey registrada",
+                "actor": prokey_ref_editor.nombre if prokey_ref_editor else None,
+                "fecha_hora": prokey_ref_actualizada_at,
+            }
+        )
 
     items_payload: list[dict[str, object]] = []
     for item in req.items:
@@ -3097,7 +3126,13 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             contexto_operacion = normalize_contexto_operacion(item.contexto_operacion)
             expected_return = calcular_retorno_esperado(mode, qty_used, qty_not_used, contexto_operacion)
             difference = expected_return - qty_returned
-            pk_ingreso_qty = calcular_ingreso_pk_bodega(mode, delivered, qty_used, qty_returned)
+            pk_ingreso_qty = calcular_ingreso_pk_bodega(
+                mode,
+                delivered,
+                qty_used,
+                qty_returned,
+                contexto_operacion,
+            )
 
             parsed_alerts: list[dict[str, object]] = []
             if item.liquidation_alerts:
@@ -3151,6 +3186,15 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "delivered_by": req.entregador.nombre if req.entregador else None,
         "delivered_to": req.delivered_to,
         "recibido_por": req.recibido_por.nombre if req.recibido_por else None,
+        "recibido_por_detalle": (
+            {
+                "id": req.recibido_por.id,
+                "nombre": req.recibido_por.nombre,
+                "rol": req.recibido_por.rol,
+            }
+            if req.recibido_por
+            else None
+        ),
         "recibido_at": req.recibido_at,
         "receptor_designado": (
             {
@@ -3171,6 +3215,10 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "delivered_at": req.delivered_at,
         "prokey_ref": req.prokey_ref,
         "prokey_pending": not bool(req.prokey_ref),
+        "prokey_ref_actualizada_at": prokey_ref_actualizada_at,
+        "prokey_ref_actualizada_por_nombre": prokey_ref_editor.nombre if prokey_ref_editor else None,
+        "prokey_ref_actualizada_por_rol": prokey_ref_editor.rol if prokey_ref_editor else None,
+        "puede_editar_prokey_ref": puede_editar_prokey_ref(req, current_user),
         "liquidation_comment": normalize_optional_text(req.liquidation_comment),
         "liquidated_by_name": req.liquidator.nombre if req.liquidator else None,
         "liquidated_at": req.liquidated_at,
@@ -3199,6 +3247,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
             joinedload(Requisicion.preparador),
             joinedload(Requisicion.entregador),
             joinedload(Requisicion.recibido_por),
+            joinedload(Requisicion.receptor_designado),
             joinedload(Requisicion.liquidator),
         )
         .filter(Requisicion.id == req_id)
@@ -3245,6 +3294,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
                     item.cantidad_entregada or 0,
                     item.qty_used or 0,
                     item.qty_returned_to_warehouse or 0,
+                    item.contexto_operacion,
                 ),
                 "liquidation_alerts": alert_types,
                 "nota_liquidacion": item.item_liquidation_note,
@@ -3265,6 +3315,8 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         "codigo_cliente": req.cliente_codigo,
         "ruta": req.cliente_ruta_principal,
         "solicitante_nombre": req.solicitante.nombre if req.solicitante else None,
+        "receptor_designado_nombre": req.receptor_designado.nombre if req.receptor_designado else None,
+        "receptor_designado_rol": req.receptor_designado.rol if req.receptor_designado else None,
         "aprobador_nombre": req.aprobador.nombre if req.aprobador else None,
         "preparador_nombre": req.preparador.nombre if req.preparador else None,
         "jefe_bodega_nombre": req.entregador.nombre if req.entregador else None,
