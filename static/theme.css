@@ -1551,6 +1551,7 @@ table thead th,
     background: var(--table-header-bg) !important;
     color: #15345f !important;
     border-color: var(--table-border) !important;
+    vertical-align: middle !important;
 }
 
 table tbody tr td,
