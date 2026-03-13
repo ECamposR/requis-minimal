@@ -977,9 +977,9 @@ def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
 
     assert response.status_code == 200
     html = response.text
-    assert '/aprobar?estado=aprobada' in html
-    assert '/aprobar?estado=rechazada' in html
-    assert '/aprobar?estado=pendiente_aprobar' in html
+    assert '/todas-requisiciones?estado=pendiente_entregar' in html
+    assert '/todas-requisiciones?estado=rechazada' in html
+    assert '/aprobar' in html
     assert '/bodega?vista=historial' in html
 
 
@@ -1826,11 +1826,10 @@ def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_sessi
     assert response.status_code == 200
     html = response.text
     assert "REQ-0101" in html
-    assert "REQ-0102" in html
-    assert "REQ-0103" in html
-    assert "REQ-0104" in html
+    assert "REQ-0102" not in html
+    assert "REQ-0103" not in html
+    assert "REQ-0104" not in html
     assert "pendiente de aprobar" in html
-    assert "pendiente de entregar" in html
 
 
 def test_logistica_ve_todas_las_requisiciones_pero_no_aprueba(client: TestClient, db_session: Session):
@@ -1871,7 +1870,7 @@ def test_logistica_ve_todas_las_requisiciones_pero_no_aprueba(client: TestClient
     assert "REQ-AUDIT-01" not in html
     assert "REQ-AUDIT-02" not in html
 
-    response_todas = client.get("/mis-requisiciones?vista=todas")
+    response_todas = client.get("/todas-requisiciones")
     assert response_todas.status_code == 200
     html_todas = response_todas.text
     assert "Todas las Requisiciones" in html_todas
@@ -1885,7 +1884,7 @@ def test_logistica_ve_todas_las_requisiciones_pero_no_aprueba(client: TestClient
     assert aprobar.status_code == 403
 
 
-def test_aprobar_permita_filtrar_por_estado(client: TestClient, db_session: Session):
+def test_todas_requisiciones_permita_filtrar_por_estado(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
 
@@ -1910,7 +1909,7 @@ def test_aprobar_permita_filtrar_por_estado(client: TestClient, db_session: Sess
     db_session.commit()
 
     login(client, "aprob.ops", "pass123")
-    response = client.get("/aprobar?estado=rechazada")
+    response = client.get("/todas-requisiciones?estado=rechazada")
     assert response.status_code == 200
     assert "REQ-0202" in response.text
     assert "REQ-0201" not in response.text

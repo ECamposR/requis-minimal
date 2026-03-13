@@ -490,6 +490,11 @@ def puede_ver_todas_las_requisiciones(current_user: Usuario) -> bool:
     return current_user.rol == "logistica"
 
 
+def ensure_all_requests_access(current_user: Usuario) -> None:
+    if current_user.rol not in ["admin", "aprobador", "jefe_bodega", "logistica"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+
 def redirect_if_bodega_plain_accesses_own_requests(current_user: Usuario) -> RedirectResponse | None:
     if es_bodega_plano(current_user):
         return redirect_with_message(
@@ -1454,8 +1459,64 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
         raise HTTPException(status_code=403, detail="No autorizado")
 
     q = request.query_params.get("q", "").strip()
+    departamento = request.query_params.get("departamento", "todos").strip()
+    query = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.rechazador),
+            joinedload(Requisicion.preparador),
+            joinedload(Requisicion.entregador),
+            joinedload(Requisicion.liquidator),
+        )
+        .filter(Requisicion.estado == "pendiente")
+    )
+    if departamento and departamento != "todos":
+        query = query.filter(Requisicion.departamento == departamento)
+    if q:
+        patron = f"%{q}%"
+        query = query.filter(
+            or_(
+                Requisicion.folio.ilike(patron),
+                Requisicion.departamento.ilike(patron),
+                Requisicion.justificacion.ilike(patron),
+                Requisicion.cliente_codigo.ilike(patron),
+                Requisicion.cliente_nombre.ilike(patron),
+                Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
+            )
+        )
+
+    requisiciones = query.order_by(Requisicion.created_at.desc()).all()
+    departamentos = [
+        row[0]
+        for row in db.query(Requisicion.departamento).distinct().order_by(Requisicion.departamento.asc()).all()
+        if row[0]
+    ]
+    return templates.TemplateResponse(
+        "aprobar.html",
+        template_context(
+            request,
+            current_user,
+            requisiciones=requisiciones,
+            filtro_q=q,
+            filtro_departamento=departamento,
+            departamentos=departamentos,
+        ),
+    )
+
+
+@app.get("/todas-requisiciones")
+def todas_requisiciones_view(
+    request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    ensure_all_requests_access(current_user)
+
+    q = request.query_params.get("q", "").strip()
     estado = request.query_params.get("estado", "todos").strip().lower()
     departamento = request.query_params.get("departamento", "todos").strip()
+    fecha_desde_raw = request.query_params.get("fecha_desde", "").strip()
+    fecha_hasta_raw = request.query_params.get("fecha_hasta", "").strip()
 
     alias_estado = {
         "pendiente_aprobar": "pendiente",
@@ -1485,6 +1546,18 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
         query = query.filter(Requisicion.estado == estado_real)
     if departamento and departamento != "todos":
         query = query.filter(Requisicion.departamento == departamento)
+    if fecha_desde_raw:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde_raw, "%Y-%m-%d")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha desde invalida") from exc
+        query = query.filter(Requisicion.created_at >= fecha_desde)
+    if fecha_hasta_raw:
+        try:
+            fecha_hasta = datetime.strptime(fecha_hasta_raw, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha hasta invalida") from exc
+        query = query.filter(Requisicion.created_at < fecha_hasta)
     if q:
         patron = f"%{q}%"
         query = query.filter(
@@ -1505,7 +1578,7 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
         if row[0]
     ]
     return templates.TemplateResponse(
-        "aprobar.html",
+        "todas_requisiciones.html",
         template_context(
             request,
             current_user,
@@ -1513,6 +1586,8 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
             filtro_q=q,
             filtro_estado=estado,
             filtro_departamento=departamento,
+            filtro_fecha_desde=fecha_desde_raw,
+            filtro_fecha_hasta=fecha_hasta_raw,
             departamentos=departamentos,
         ),
     )

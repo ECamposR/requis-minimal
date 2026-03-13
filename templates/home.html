@@ -44,7 +44,7 @@
 
         <article class="home-kpi-card">
             {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/aprobar?estado=aprobada" class="kpi-detail-link">Ver detalle &gt;</a>
+            <a href="/todas-requisiciones?estado=pendiente_entregar" class="kpi-detail-link">Ver detalle &gt;</a>
             {% else %}
             <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
             {% endif %}
@@ -57,7 +57,7 @@
 
         <article class="home-kpi-card">
             {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/aprobar?estado=rechazada" class="kpi-detail-link">Ver detalle &gt;</a>
+            <a href="/todas-requisiciones?estado=rechazada" class="kpi-detail-link">Ver detalle &gt;</a>
             {% else %}
             <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
             {% endif %}
@@ -83,7 +83,7 @@
 
         <article class="home-kpi-card">
             {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/aprobar?estado=pendiente_aprobar" class="kpi-detail-link">Ver detalle &gt;</a>
+            <a href="/aprobar" class="kpi-detail-link">Ver detalle &gt;</a>
             {% else %}
             <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
             {% endif %}
@@ -138,8 +138,8 @@
 
         <article class="home-panel quick-actions-panel">
             <h3>Acciones Rápidas</h3>
-            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            {% set buscar_href = '/aprobar' %}
+            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega', 'logistica'] %}
+            {% set buscar_href = '/todas-requisiciones' %}
             {% elif current_user.rol in ['bodega', 'jefe_bodega'] %}
             {% set buscar_href = '/bodega' %}
             {% else %}
@@ -155,7 +155,7 @@
             </a>
 
             {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/aprobar?estado=pendiente_aprobar" class="quick-action-item">
+            <a href="/aprobar" class="quick-action-item">
                 <span class="qa-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                 </span>

@@ -10,9 +10,9 @@
         {% if current_user.rol != 'bodega' %}
         <li><a href="/crear" class="nav-item {% if request.url.path.startswith('/crear') %}is-active{% endif %}"><span>Nueva Requisicion</span></a></li>
         <li><a href="/mis-requisiciones" class="nav-item {% if request.url.path.startswith('/mis-requisiciones') and request.query_params.get('vista') != 'todas' %}is-active{% endif %}"><span>Mis Requisiciones</span></a></li>
-        {% if current_user.rol == 'logistica' %}
-        <li><a href="/mis-requisiciones?vista=todas" class="nav-item {% if request.url.path.startswith('/mis-requisiciones') and request.query_params.get('vista') == 'todas' %}is-active{% endif %}"><span>Todas las Requisiciones</span></a></li>
         {% endif %}
+        {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega', 'logistica'] %}
+        <li><a href="/todas-requisiciones" class="nav-item {% if request.url.path.startswith('/todas-requisiciones') %}is-active{% endif %}"><span>Todas las Requisiciones</span></a></li>
         {% endif %}
         {% if current_user.rol in ['aprobador', 'admin', 'jefe_bodega'] %}
         <li><a href="/aprobar" class="nav-item {% if request.url.path.startswith('/aprobar') %}is-active{% endif %}"><span>Aprobar</span></a></li>

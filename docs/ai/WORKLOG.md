@@ -1,5 +1,28 @@
 # Worklog (append-only)
 
+## 2026-03-13 17:35 UTC-6 | tool: Codex CLI
+- Objetivo: separar la bandeja operativa de aprobacion del historial/consulta global, manteniendo intacta la logica de negocio.
+- Tareas: `REQ-127`
+- Cambios:
+  - `app/main.py`
+  - `templates/aprobar.html`
+  - `templates/todas_requisiciones.html`
+  - `templates/partials/navbar.html`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "@app.get\\(\"/aprobar|mis-requisiciones|Todas las Requisiciones" app/main.py templates tests`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+- Resultado:
+  - `Aprobar` deja de mezclar historial y ahora muestra solo requisiciones `pendiente`.
+  - Se agrega `/todas-requisiciones` como vista de consulta global con filtros de estado, departamento y rango de fechas.
+  - Navbar y accesos rapidos del home quedan alineados a la nueva separacion entre bandeja operativa y vista de consulta.
+- Proximo paso:
+  - Validar visualmente densidad de filtros y decidir si en la siguiente iteracion conviene sumar filtro explicito por solicitante o referencia Prokey.
+
 ## 2026-03-13 09:48 UTC-6 | tool: Codex CLI
 - Objetivo: ampliar el Monitor de Actividad para que los KPI de auditoria permitan bajar de agregado a caso concreto, listando requisiciones relacionadas sin salir de la vista.
 - Tareas: `REQ-118G`, `REQ-118H`
