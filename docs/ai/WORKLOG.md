@@ -1,5 +1,695 @@
 # Worklog (append-only)
 
+## 2026-03-16 16:05 UTC-6 | tool: Codex CLI
+- Objetivo: ampliar la Fase 1 del `Monitor de Actividad` con dos KPI de uso que agreguen lectura de tiempo de ciclo y ritmo promedio de creacion sin abrir un endpoint nuevo.
+- Tareas: `REQ-118I`
+- Cambios:
+  - `app/main.py`
+  - `templates/monitor_actividad.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `/api/dashboard/basicos` ahora expone `kpis` con `promedio_horas_hasta_prokey`, `requisiciones_liquidadas_en_prokey`, `requisiciones_promedio_por_dia`, `dias_observados` y `total_requisiciones`.
+  - `monitor_actividad.html` agrega dos KPI cards al inicio de `Métricas de Uso`: `Tiempo Promedio a Prokey` y `Promedio de Requisiciones por Día`.
+  - El promedio diario se calcula sobre el historico observado entre la primera y la ultima requisicion creada, no solo sobre dias con actividad.
+- Proximo paso:
+  - Validar visualmente si estas dos KPI conviven bien con los cuatro graficos actuales o si conviene una siguiente iteracion de filtros temporales para todo el monitor.
+
+## 2026-03-16 15:27 UTC-6 | tool: Codex CLI
+- Objetivo: mejorar la affordance de los campos de fecha en `/bodega` para que el calendario nativo no dependa de acertar al icono derecho.
+- Tareas: `REQ-160`
+- Cambios:
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los inputs `type=date` de `/bodega` ahora usan `data-date-picker` e intentan abrir `showPicker()` al hacer clic en cualquier parte del campo, como en `Todas las Requisiciones`.
+  - Se agrega cobertura SSR para confirmar presencia de `data-date-picker` y del script asociado en la vista.
+  - El frente de `REQ-160` queda mas cerca de cierre al resolver una friccion concreta de usabilidad en los filtros.
+- Proximo paso:
+  - Si ya no hay mas ajustes de copy/orden en la barra, cerrar formalmente `REQ-160`.
+
+## 2026-03-16 15:18 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la semantica de `/bodega` para que `liquidada` no se considere historial si aun requiere confirmacion en Prokey.
+- Tareas: `REQ-161`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Las requisiciones en estado `liquidada` pasan a mostrarse en `Pendientes`, con accion `Confirmar en Prokey` cuando el rol lo permite.
+  - El historial de `/bodega` queda reservado a cierres definitivos: `liquidada_en_prokey` y `no_entregada`.
+  - Se agrega prueba especifica para validar que `liquidada` ya no aparece en historial y que sigue visible como pendiente hasta Prokey.
+- Proximo paso:
+  - Validar visualmente si tambien conviene ajustar el copy de `Historial` para explicitar que muestra solo cierres definitivos.
+
+## 2026-03-16 15:05 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-159` para ampliar el alcance real del buscador `q` en la vista `/bodega`.
+- Tareas: `REQ-159`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El buscador de `/bodega` ya no se limita a folio/cliente/solicitante; ahora tambien cubre receptor designado y actores operativos clave (`aprobador`, `preparador`, `entregador`, `liquidador`) tanto en pendientes como en historial.
+  - Se amplia el `joinedload` para evitar consultas adicionales innecesarias en esos campos visibles.
+  - Se alinea el placeholder del input para reflejar honestamente el alcance real de la busqueda y se agrega prueba SSR de busqueda por receptor/actor.
+- Proximo paso:
+  - Cerrar `REQ-160` si todavia se desea una ultima pasada de orden/copy en la barra de filtros de `/bodega`.
+
+## 2026-03-16 14:51 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-158` para enriquecer la barra de filtros de `/bodega` con datos de contexto temporal y organizacional.
+- Tareas: `REQ-158`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `/bodega` ya expone filtro SSR por `departamento` y rango `fecha_desde / fecha_hasta`, con validacion de fechas consistente al patron de `Todas las Requisiciones`.
+  - Los nuevos filtros aplican tanto sobre pendientes como sobre historial, permitiendo recortar la consulta operativa por area y ventana temporal.
+  - Se agregan pruebas para presencia del UI y para el filtrado efectivo por departamento y rango de fechas.
+- Proximo paso:
+  - Ejecutar `REQ-159`, ampliando el alcance del buscador `q` para cubrir mas actores y campos relevantes del flujo de bodega.
+
+## 2026-03-16 14:41 UTC-6 | tool: Codex CLI
+- Objetivo: alinear la barra de filtros de `/bodega` con el patron de autosubmit ya usado en vistas SSR de consulta.
+- Tareas: `REQ-160`
+- Cambios:
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los selectores de `vista`, `etapa` y `resultado` en `/bodega` ahora aplican el filtro automaticamente al cambiar, sin exigir pulsar `Buscar`.
+  - Se reutiliza el mismo patron simple basado en `js-autosubmit-filters` + `data-autosubmit-select` ya presente en `Aprobar` y `Todas las Requisiciones`.
+  - `Buscar` se conserva para el texto libre `q`, manteniendo la experiencia SSR consistente.
+- Proximo paso:
+  - Ejecutar `REQ-158` y `REQ-159` para completar el frente de filtros mas ricos de `/bodega`.
+
+## 2026-03-16 14:33 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-157` para redefinir la semantica base de filtros en `/bodega` sin mezclar todavia el resto del frente.
+- Tareas: `REQ-157`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `/bodega` ya no ofrece `Pendientes + Historial` como mezcla por defecto; la vista abre en `Pendientes` y separa claramente la consulta operativa del `Historial`.
+  - Se agrega un filtro SSR de `etapa` que cambia sus opciones segun la vista activa: etapas operativas para `Pendientes` y etapas de cierre para `Historial`.
+  - Se agregan pruebas SSR para default de vista, filtro por etapa en pendientes y filtro por etapa en historial.
+- Proximo paso:
+  - Ejecutar `REQ-158`, sumando `departamento` y rango de fechas a la barra de filtros de `/bodega`.
+
+## 2026-03-16 14:22 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar el siguiente frente de UI/usabilidad para reforzar los filtros de la vista `/bodega`, antes de tocar codigo.
+- Tareas: `EPIC-UI-05`, `REQ-157`, `REQ-158`, `REQ-159`, `REQ-160`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se define una epica nueva para convertir los filtros de `/bodega` en una herramienta operativa real y no solo una barra minima de busqueda/vista/resultado.
+  - La implementacion queda dividida en 4 tareas pequenas: semantica de vista/etapa, filtros de departamento/fechas, ampliacion de buscador y pulido final de UX.
+  - Se deja explicitamente documentado que el frente debe mantener SSR simple y no tocar la logica de negocio central del flujo de bodega.
+- Proximo paso:
+  - Ejecutar `REQ-157` primero, ajustando solo la semantica base de los filtros y el nuevo selector de `etapa`.
+
+## 2026-03-16 14:12 UTC-6 | tool: Codex CLI
+- Objetivo: corregir el panel `Estado Global del Flujo` para eliminar el tramo gris causado por estados no representados en la barra.
+- Tareas: `REQ-156`
+- Cambios:
+  - `app/main.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los paneles de supervision (`aprobador` y `jefe_bodega`) dejan de usar `total = todas las requisiciones` contra un set incompleto de segmentos.
+  - `Finalizada` ahora absorbe cierres reales (`liquidada`, `liquidada_en_prokey`, `no_entregada`) y `Pendiente de liquidación` excluye requisiciones ya cerradas por `no_entregada`.
+  - Con eso la barra ya no deja una porcion gris fuera de la leyenda semantica.
+- Proximo paso:
+  - Validar visualmente el panel con datos reales para confirmar que la semantica de `Finalizada` refleja bien el lenguaje operativo esperado.
+
+## 2026-03-16 13:56 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-155` para cerrar el frente del home `jefe_bodega` con una composicion compacta y coherente.
+- Tareas: `REQ-155`
+- Cambios:
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los 3 paneles SSR de `jefe_bodega` ahora se montan sobre una variante propia `home-bottom-grid--jefe-bodega-insights`, manteniendo una fila densa en escritorio y degradacion responsiva controlada.
+  - Se ajustan paddings, alturas y tipografia secundaria del bloque para que la vista quede mas compacta sin alterar contenido ni formulas.
+  - `Acciones Rápidas` deja de renderizarse tambien para el rol `jefe_bodega`, ya que el nuevo home de supervision vuelve ese bloque redundante.
+- Proximo paso:
+  - Validar visualmente el home `jefe_bodega` con datos reales para decidir si el mismo patron debe extrapolarse luego a `admin`.
+
+## 2026-03-16 13:45 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-154` para completar el tercer panel SSR del home del rol `jefe_bodega`.
+- Tareas: `REQ-154`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_jefe_bodega_delivery_results_chart(...)`, reutilizando la semantica historica de `delivery_result` ya validada en `bodega`.
+  - El home `jefe_bodega` ya renderiza `Resultados de Entrega`, mostrando la distribucion entre `Completa`, `Parcial` y `No Entregada` como lectura de calidad operativa.
+  - Se agrega prueba SSR especifica para validar presencia del panel y de los tres buckets visibles.
+- Proximo paso:
+  - Ejecutar `REQ-155`, compactando el home `jefe_bodega` y evaluando si `Acciones Rápidas` debe retirarse tambien en este rol.
+
+## 2026-03-16 13:35 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-153` para sumar una lectura temporal simple al home del rol `jefe_bodega`.
+- Tareas: `REQ-153`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_jefe_bodega_monthly_chart(...)`, usando `created_at` como volumen global de entrada mensual.
+  - El home `jefe_bodega` ya renderiza el panel SSR `Requisiciones por Mes` con barras para los ultimos 6 meses y sin dependencias JS.
+  - Se agrega prueba SSR minima para validar presencia del panel y del contenedor de barras.
+- Proximo paso:
+  - Ejecutar `REQ-154`, agregando `Resultados de Entrega` como tercer panel SSR del home `jefe_bodega`.
+
+## 2026-03-16 13:24 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-152` para que el home del rol `jefe_bodega` gane una lectura visual global del pipeline sin JS.
+- Tareas: `REQ-152`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_jefe_bodega_status_chart(...)` con segmentos para `Pendiente de aprobación`, `Pendiente de proceso`, `Pendiente de liquidación`, `Finalizada` y `Rechazada`.
+  - El home `jefe_bodega` ya renderiza el panel SSR `Estado Global del Flujo`, reutilizando el patron de barra apilada y leyenda ya validado en `aprobador` y `bodega`.
+  - Se agrega prueba SSR especifica para validar presencia del panel y de las etiquetas globales clave.
+- Proximo paso:
+  - Ejecutar `REQ-153`, agregando `Requisiciones por Mes` como segundo panel SSR del home `jefe_bodega`.
+
+## 2026-03-16 13:14 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-151` de forma aislada para corregir solo la semantica de las cards del home del rol `jefe_bodega`.
+- Tareas: `REQ-151`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El home de `jefe_bodega` pasa a 4 cards globales: `Pendientes por Aprobar`, `Pendientes de Procesar`, `Pendientes de Liquidar` y `Liquidadas en Prokey`.
+  - Se retiran `Todas Mis Requisiciones` y `Liquidadas` del bloque superior para evitar mezclar supervision global con lectura personal o cierres intermedios.
+  - Se actualiza la prueba SSR para validar las nuevas labels y la ausencia del bloque anterior.
+- Proximo paso:
+  - Ejecutar `REQ-152`, agregando el panel SSR `Estado Global del Flujo` antes de sumar tendencia mensual o resultados de entrega.
+
+## 2026-03-16 13:05 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar el siguiente frente de UI/usabilidad para el home del rol `jefe_bodega`, antes de tocar codigo.
+- Tareas: `EPIC-UI-04`, `REQ-151`, `REQ-152`, `REQ-153`, `REQ-154`, `REQ-155`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se define una epica nueva para adaptar el home de `jefe_bodega` a una semantica de supervision combinada entre aprobacion y bodega, evitando sumar mecanicamente ambas vistas.
+  - La implementacion queda dividida en 5 tareas pequenas: cards globales, panel SSR de estado del flujo, panel SSR mensual, panel SSR de resultados de entrega y compactado final del layout.
+  - Se deja explicitamente documentado que el frente debe evitar JS adicional y no tocar logica de negocio.
+- Proximo paso:
+  - Ejecutar `REQ-151` primero, ajustando solo las cards del home `jefe_bodega` y validando que los links de drill-down sigan apuntando a vistas coherentes.
+
+## 2026-03-16 12:32 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-150` para cerrar el frente del home `aprobador` con una composicion compacta y coherente.
+- Tareas: `REQ-150`
+- Cambios:
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los 3 paneles SSR de `aprobador` ahora se montan sobre una variante propia `home-bottom-grid--aprobador-insights`, manteniendo una fila densa en escritorio y degradacion responsiva controlada.
+  - Se ajustan paddings, alturas y tipografia secundaria del bloque para que la vista quede mas compacta sin alterar contenido ni formulas.
+  - `Acciones Rápidas` deja de renderizarse tambien para el rol `aprobador`, ya que el nuevo home de supervision vuelve ese bloque redundante.
+- Proximo paso:
+  - Validar visualmente el home `aprobador` con datos reales para decidir si el mismo patron debe extrapolarse luego a `admin`.
+
+## 2026-03-16 12:18 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-149` para completar el tercer panel SSR del home del rol `aprobador` con una métrica de valor semántico real.
+- Tareas: `REQ-149`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se redefine `build_home_aprobador_pending_age_chart(...)` para que construya un top SSR de `motivo_requisicion` en lugar de antiguedad de cola, manteniendo el diff tecnico acotado.
+  - El home `aprobador` ahora renderiza `Motivos de Requisición`, mostrando los principales motivos globales de uso de la aplicacion con barras y porcentajes.
+  - Se actualiza la prueba SSR para validar presencia del panel y de motivos reales (`Demostración`, `R1E`) en vez de buckets horarios.
+- Proximo paso:
+  - Ejecutar `REQ-150`, compactando las 4 cards y los 3 paneles SSR del home `aprobador` y definiendo si `Acciones Rápidas` debe seguir visible.
+
+## 2026-03-16 12:08 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-148` para sumar una lectura temporal simple al home del rol `aprobador`.
+- Tareas: `REQ-148`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_aprobador_monthly_chart(...)`, usando `created_at` como volumen global de entrada mensual.
+  - El home `aprobador` ya renderiza el panel SSR `Requisiciones por Mes` con barras para los ultimos 6 meses y sin dependencias JS.
+  - Se agrega prueba SSR minima para validar presencia del panel y del contenedor de barras.
+- Proximo paso:
+  - Ejecutar `REQ-149`, agregando `Tiempo en Pendiente de Aprobación` como tercer panel SSR del home `aprobador`.
+
+## 2026-03-16 11:56 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-147` para que el home del rol `aprobador` gane una lectura visual global del pipeline sin JS.
+- Tareas: `REQ-147`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_aprobador_status_chart(...)` con segmentos para `Pendiente de aprobación`, `Pendiente de entrega`, `Pendiente de liquidación`, `Finalizada` y `Rechazada`.
+  - El home `aprobador` ya renderiza el panel SSR `Estado Global de Requisiciones`, reutilizando el patron de barra apilada y leyenda ya usado en `user` y `bodega`.
+  - Se agrega prueba SSR especifica para validar presencia del panel y de las etiquetas globales clave.
+- Proximo paso:
+  - Ejecutar `REQ-148`, agregando `Requisiciones por Mes` como segundo panel SSR del home `aprobador`.
+
+## 2026-03-16 11:42 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-146` de forma aislada para corregir solo la semantica de las cards del home del rol `aprobador`.
+- Tareas: `REQ-146`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El home de `aprobador` pasa a 4 cards globales: `Pendientes por Aprobar`, `Pendientes de Entregar`, `Pendientes de Liquidar` y `Requisiciones Rechazadas`.
+  - Se retiran `Todas Mis Requisiciones`, `Requisiciones Pendientes` y `Requisiciones Finalizadas` del bloque superior para evitar mezclar vision personal con supervision operativa.
+  - Se agrega prueba SSR especifica para confirmar labels nuevas, ausencia del bloque personal y links correctos de drill-down.
+- Proximo paso:
+  - Ejecutar `REQ-147`, agregando el panel SSR `Estado Global de Requisiciones` antes de entrar a tendencia mensual o antiguedad de cola.
+
+## 2026-03-16 11:30 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar el siguiente frente de UI/usabilidad para el home del rol `aprobador`, antes de tocar codigo.
+- Tareas: `EPIC-UI-03`, `REQ-146`, `REQ-147`, `REQ-148`, `REQ-149`, `REQ-150`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se define una epica nueva para adaptar el home `aprobador` a una semantica de supervision global: cola de decision, backlog aguas abajo y antiguedad de aprobacion.
+  - La implementacion queda dividida en 5 tareas pequenas: cards semanticas, panel SSR de estado global, panel SSR mensual, panel SSR de antiguedad de cola y compactado final de layout.
+  - Se deja explicitamente documentado que el frente debe evitar JS adicional y no tocar logica de negocio.
+- Proximo paso:
+  - Ejecutar `REQ-146` primero, ajustando solo las cards del home `aprobador` y validando que los links de drill-down sigan apuntando a vistas coherentes.
+
+## 2026-03-16 11:12 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-145` para cerrar el frente del home `bodega` con una composicion compacta y coherente.
+- Tareas: `REQ-145`
+- Cambios:
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los 3 paneles SSR de `bodega` ahora se montan sobre una variante propia `home-bottom-grid--bodega-insights`, manteniendo una fila densa en escritorio y degradacion responsiva controlada.
+  - Se reducen paddings, alturas y tipografia secundaria del bloque para que la vista quede mas compacta sin alterar contenido ni formulas.
+  - `Acciones Rápidas` deja de renderizarse tambien para el rol `bodega`, ya que el nuevo home operativo vuelve ese bloque redundante.
+- Proximo paso:
+  - Validar visualmente el home `bodega` con datos reales para decidir si el mismo patron debe extrapolarse luego a `logistica` o `jefe_bodega`.
+
+## 2026-03-16 11:00 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-144` para completar el tercer panel SSR del home del rol `bodega` antes del compactado final.
+- Tareas: `REQ-144`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_bodega_delivery_results_chart(...)`, que resume las entregas en `completa`, `parcial` y `no_entregada`.
+  - El home `bodega` ya renderiza `Resultados de Entrega` reutilizando el patron SSR de barras y porcentajes ya usado en `Tiempo de Cierre`.
+  - Se agrega prueba SSR especifica para validar presencia del panel y de los tres buckets visibles.
+- Proximo paso:
+  - Ejecutar `REQ-145`, compactando las 4 cards y los 3 paneles SSR del home `bodega` en una composicion mas densa y coherente en escritorio.
+
+## 2026-03-16 10:49 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-143` para sumar una lectura temporal simple al home del rol `bodega`.
+- Tareas: `REQ-143`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_bodega_monthly_chart(...)`, usando `delivered_at` como proxy de actividad operativa mensual.
+  - El home `bodega` ya renderiza el panel SSR `Movimiento de Requisiciones por Mes` con barras para los ultimos 6 meses y sin dependencias JS.
+  - Se agrega prueba SSR minima para validar presencia del panel y del contenedor de barras.
+- Proximo paso:
+  - Ejecutar `REQ-144`, agregando el panel `Resultados de Entrega` antes de hacer el compactado final del layout en `REQ-145`.
+
+## 2026-03-16 10:37 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-142` para que el home del rol `bodega` gane una lectura visual del pipeline operativo sin JS.
+- Tareas: `REQ-142`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega el builder SSR `build_home_bodega_status_chart(...)` con segmentos de estado para `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas`, `Liquidadas en Prokey` y `No Entregadas`.
+  - El home de `bodega` ya renderiza un panel `Estado de Operación de Bodega` reutilizando el patron visual de barra apilada y leyenda introducido antes en el home del rol `user`.
+  - Se agrega prueba SSR especifica para validar presencia del panel y de las etiquetas operativas clave.
+- Proximo paso:
+  - Ejecutar `REQ-143`, agregando `Movimiento de Requisiciones por Mes` como segundo panel SSR del home `bodega`.
+
+## 2026-03-16 10:24 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-141` de forma aislada para corregir solo la semantica de las cards del home del rol `bodega`.
+- Tareas: `REQ-141`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El home de `bodega` pasa de 6 a 4 cards operativas: `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas` y `Liquidadas en Prokey`.
+  - Se retiran `Preparadas` y `No Entregadas` del bloque superior para evitar ruido y alinear la vista a una semantica de cola + cierre.
+  - Se agrega prueba SSR especifica para confirmar labels esperadas, ausencia de las retiradas y activacion del layout compacto de una fila.
+- Proximo paso:
+  - Ejecutar `REQ-142`, agregando el panel SSR `Estado de Operación de Bodega` antes de entrar a metricas mensuales o resultados de entrega.
+
+## 2026-03-16 10:12 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar el siguiente frente de UI/usabilidad para el home del rol `bodega`, antes de tocar codigo.
+- Tareas: `EPIC-UI-02`, `REQ-141`, `REQ-142`, `REQ-143`, `REQ-144`, `REQ-145`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se definio una epica nueva para adaptar el home de `bodega` al patron compacto del home `user`, pero con semantica operativa propia.
+  - La implementacion quedo dividida en 5 tareas pequenas: cards semanticas, panel SSR de estado, panel SSR mensual, panel SSR de resultados de entrega y compactado final de layout.
+  - Se deja explicitamente documentado que el frente debe evitar JS adicional y no tocar logica de negocio.
+- Proximo paso:
+  - Ejecutar `REQ-141` primero, ajustando solo las cards del home `bodega` y validando que los links de drill-down sigan apuntando a vistas coherentes.
+
+## 2026-03-16 09:41 UTC-6 | tool: Codex CLI
+- Objetivo: completar el tercer grafico de valor para el home del rol `user`, enfocado en tiempo de ciclo.
+- Tareas: `REQ-140`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `Tiempo de Cierre` como panel SSR con buckets `0-1`, `2-3`, `4-7` y `8+ días`.
+  - El calculo se basa en requisiciones finalizadas del usuario, usando `created_at` contra el mejor timestamp de cierre disponible.
+  - El home de `user` queda con tres paneles informativos reales y todos mantienen la filosofia de simplicidad sin librerias JS.
+- Proximo paso:
+  - Validar visualmente si los tres paneles SSR del home deben seguir apilados verticalmente o si ya conviene una composicion de dos columnas en escritorio amplio.
+
+## 2026-03-16 09:33 UTC-6 | tool: Codex CLI
+- Objetivo: incorporar el segundo grafico de valor real al home del rol `user` manteniendo el enfoque SSR sin JS.
+- Tareas: `REQ-139`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `Mis Requisiciones por Mes` como panel SSR con barras para los ultimos 6 meses.
+  - La altura de cada barra se normaliza al maximo del periodo y se mantiene un estado vacio si no hay historial suficiente.
+  - El home del rol `user` gana una lectura de tendencia temporal sin acoplarse a librerias de graficacion.
+- Proximo paso:
+  - Validar visualmente si ambos paneles del home de `user` deben quedar apilados o si conviene reacomodarlos en dos columnas para escritorio amplio.
+
+## 2026-03-16 09:24 UTC-6 | tool: Codex CLI
+- Objetivo: agregar un grafico de valor real al home del rol `user` sin introducir dependencias JS innecesarias.
+- Tareas: `REQ-138`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega el panel `Estado de Mis Requisiciones` para `user`, construido 100% SSR.
+  - El panel muestra distribucion por `Pendiente de aprobación`, `En proceso`, `Pendiente de cierre`, `Rechazada` y `Finalizada`, con barra apilada y leyenda porcentual.
+  - No se introduce `Chart.js` ni JS adicional en el home; la implementacion queda deliberadamente simple y mantenible.
+- Proximo paso:
+  - Validar visualmente si la jerarquia del panel debe crecer o reducirse frente al grid superior y si conviene reutilizarlo despues para `logistica`.
+
+## 2026-03-16 09:15 UTC-6 | tool: Codex CLI
+- Objetivo: retirar `Acciones Rápidas` del home para el rol `user` por redundancia funcional.
+- Tareas: `REQ-137`
+- Cambios:
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El bloque `Acciones Rápidas` se renderiza solo para roles distintos de `user`.
+  - La prueba del home de usuario ahora valida la ausencia de ese panel.
+- Proximo paso:
+  - Revisar visualmente si el home de `user` queda balanceado con solo el grid superior o si conviene aumentar el espaciado inferior para compensar la ausencia del panel.
+
+## 2026-03-16 09:11 UTC-6 | tool: Codex CLI
+- Objetivo: simplificar el home del rol `user` eliminando dos cards de bajo valor semantico y compactando las restantes en una sola fila.
+- Tareas: `REQ-136`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se eliminan `Requieren Seguimiento` y `Requisiciones Rechazadas` del home del rol `user`.
+  - El grid del home detecta cuando hay 4 cards y pasa a una sola fila en escritorio.
+  - La prueba principal del home queda alineada a la nueva semantica y densidad visual.
+- Proximo paso:
+  - Validar visualmente si el mismo tratamiento de densidad conviene tambien para `logistica` o si debe mantenerse el layout de 6 cards sin variaciones.
+
+## 2026-03-16 09:03 UTC-6 | tool: Codex CLI
+- Objetivo: ajustar el copy de las cards personales del home para hacerlas mas claras al usuario final.
+- Tareas: `REQ-135`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `Mis Requisiciones` pasa a `Todas Mis Requisiciones`.
+  - `Mis Requisiciones Pendientes` pasa a `Requisiciones Pendientes`.
+  - `Mis Cerradas` pasa a `Requisiciones Finalizadas`.
+  - `Mis Rechazadas` pasa a `Requisiciones Rechazadas`.
+- Proximo paso:
+  - Validar visualmente si la longitud nueva sigue cabiendo bien en el grid de seis cards, especialmente en resoluciones medias.
+
+## 2026-03-13 20:18 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la inconsistencia entre las cards personales del home y el detalle real de `Mis Requisiciones`.
+- Tareas: `REQ-134`
+- Cambios:
+  - `app/main.py`
+  - `templates/mis_requisiciones.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `Pendientes de Mis Requisiciones` se renombra a `Mis Requisiciones Pendientes`.
+  - `/mis-requisiciones` agrega filtro SSR por `estado` y la vista incorpora un selector simple con auto-submit.
+  - Las cards personales del home apuntan ahora a subconjuntos reales del historial (`abiertas`, `cerradas`, `rechazada`, `seguimiento`) en vez de caer todas en el mismo listado completo.
+- Proximo paso:
+  - Validar visualmente si conviene agregar mas adelante filtros equivalentes por fecha o motivo en `Mis Requisiciones`, manteniendo la vista mas ligera que `Todas las Requisiciones`.
+
+## 2026-03-13 20:02 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la semantica del home para que las cards representen trabajo personal u operativo por rol sin mezclar historico/global en el mismo indicador.
+- Tareas: `REQ-133`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - La ruta `/` ahora construye `home_cards` y `home_actions` explicitamente por rol (`user`, `logistica`, `aprobador`, `bodega`, `jefe_bodega`, `admin`).
+  - El template del home ya no hardcodea seis KPI ambiguos; renderiza cards consistentes por rol y elimina el bloque `Indicadores Rápidos`.
+  - `Acciones Rápidas` queda como unico panel inferior y se alimenta tambien desde backend para mantener coherencia semantica.
+- Proximo paso:
+  - Validar visualmente la densidad del home por rol, especialmente `admin`, `bodega` y `jefe_bodega`, para confirmar que los labels nuevos caben bien sin romper el grid.
+
+## 2026-03-13 19:08 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la legibilidad del label `Administración` en el navbar admin tras el compactado en dos lineas.
+- Tareas: `REQ-132`
+- Cambios:
+  - `templates/partials/navbar.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `Administración` deja de partirse como si fueran dos palabras y vuelve a mostrarse como una sola etiqueta.
+  - El resto del compactado del navbar se mantiene intacto.
+- Proximo paso:
+  - Validar visualmente si `Administración` sigue cabiendo bien en admin o si conviene una abreviatura deliberada distinta en otra iteracion.
+
+## 2026-03-13 19:02 UTC-6 | tool: Codex CLI
+- Objetivo: reducir el ancho percibido del navbar compactando los labels largos sin cambiar el mapa de navegacion.
+- Tareas: `REQ-131`
+- Cambios:
+  - `templates/partials/navbar.html`
+  - `static/theme.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `sed -n '1,120p' templates/partials/navbar.html`
+  - `rg -n "nav-item|menu-links" static/theme.css static/style.css`
+- Resultado:
+  - Los labels largos del navbar ahora se renderizan en dos lineas (`Nueva Requisicion`, `Mis Requisiciones`, `Todas las Requisiciones`, `Monitor de Actividad` y el agrupador de administracion).
+  - El ahorro de ancho se obtiene sin mover menus, sin introducir JS y sin tocar permisos.
+- Proximo paso:
+  - Validar visualmente el navbar con `admin` y `logistica` para confirmar que la densidad mejora sin sacrificar legibilidad.
+
+## 2026-03-13 18:40 UTC-6 | tool: Codex CLI
+- Objetivo: ampliar la cobertura del buscador de `Todas las Requisiciones` para alinearlo a las columnas y datos operativos realmente visibles en la tabla.
+- Tareas: `REQ-130`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m py_compile app/main.py`
+  - `python -m compileall tests/test_basic_flow.py`
+- Resultado:
+  - `q` ahora busca tambien por `motivo_requisicion`, `prokey_ref`, `receptor_designado.nombre` y por nombres de actores operativos (`aprobador`, `rechazador`, `preparador`, `entregador`, `liquidador`, `liquidada en Prokey`).
+  - Se agrega cobertura de prueba para motivo, receptor, actor y referencia Prokey.
+- Proximo paso:
+  - Validar manualmente si conviene sumar tambien busqueda por comentarios de aprobacion/rechazo/entrega o si eso ya seria demasiado ruido para un solo campo.
+
+## 2026-03-13 18:28 UTC-6 | tool: Codex CLI
+- Objetivo: mejorar la usabilidad del filtro de fechas en la vista global sin introducir datepickers externos ni romper el fallback nativo/manual.
+- Tareas: `REQ-129`
+- Cambios:
+  - `templates/todas_requisiciones.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "type=\\\"date\\\"|appearance|calendar-picker|showPicker" templates static`
+  - `python -m compileall tests/test_basic_flow.py`
+- Resultado:
+  - Los inputs de fecha siguen siendo nativos (`type=date`) y aceptan escritura manual.
+  - En navegadores compatibles, un clic sobre el campo ahora intenta abrir el picker con `showPicker()`.
+  - El control gana affordance visual ligera mediante cursor/indicador del picker.
+- Proximo paso:
+  - Validar manualmente en Chrome si el calendario ya abre al clic y decidir si conviene extender el mismo patron a otros filtros de fecha futuros.
+
+## 2026-03-13 18:10 UTC-6 | tool: Codex CLI
+- Objetivo: reducir friccion en listados SSR haciendo que los filtros por selector se apliquen sin clic extra, sin tocar logica de negocio.
+- Tareas: `REQ-128`
+- Cambios:
+  - `templates/aprobar.html`
+  - `templates/todas_requisiciones.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `python -m compileall tests/test_basic_flow.py`
+  - `python -m py_compile app/main.py`
+- Resultado:
+  - Los selectores de `Aprobar` y `Todas las Requisiciones` ahora envian el formulario automaticamente al cambiar.
+  - `Buscar` se mantiene como accion explicita para texto libre y fechas, evitando recargas innecesarias mientras el usuario escribe o arma un rango.
+  - Se agrego una cobertura SSR minima para confirmar presencia de los hooks de auto-submit.
+- Proximo paso:
+  - Validar manualmente si el mismo patron conviene extenderse a otras vistas filtradas como `Bodega`.
+
+## 2026-03-13 17:35 UTC-6 | tool: Codex CLI
+- Objetivo: separar la bandeja operativa de aprobacion del historial/consulta global, manteniendo intacta la logica de negocio.
+- Tareas: `REQ-127`
+- Cambios:
+  - `app/main.py`
+  - `templates/aprobar.html`
+  - `templates/todas_requisiciones.html`
+  - `templates/partials/navbar.html`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Comandos:
+  - `rg -n "@app.get\\(\"/aprobar|mis-requisiciones|Todas las Requisiciones" app/main.py templates tests`
+  - `python -m compileall app/main.py tests/test_basic_flow.py`
+- Resultado:
+  - `Aprobar` deja de mezclar historial y ahora muestra solo requisiciones `pendiente`.
+  - Se agrega `/todas-requisiciones` como vista de consulta global con filtros de estado, departamento y rango de fechas.
+  - Navbar y accesos rapidos del home quedan alineados a la nueva separacion entre bandeja operativa y vista de consulta.
+- Proximo paso:
+  - Validar visualmente densidad de filtros y decidir si en la siguiente iteracion conviene sumar filtro explicito por solicitante o referencia Prokey.
+
 ## 2026-03-13 09:48 UTC-6 | tool: Codex CLI
 - Objetivo: ampliar el Monitor de Actividad para que los KPI de auditoria permitan bajar de agregado a caso concreto, listando requisiciones relacionadas sin salir de la vista.
 - Tareas: `REQ-118G`, `REQ-118H`

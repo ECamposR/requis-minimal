@@ -156,6 +156,19 @@
         <p>Explica la demanda operativa del sistema de contingencias: por qué, quién, qué y cuándo se activa.</p>
     </header>
 
+<section class="dashboard-bi-kpi-grid" aria-label="KPIs de uso">
+    <article class="panel view-panel dashboard-bi-kpi-card">
+        <span class="dashboard-bi-kpi-label">Tiempo Promedio a Prokey</span>
+        <strong class="dashboard-bi-kpi-value" id="kpi-tiempo-promedio-prokey">--</strong>
+        <p class="dashboard-bi-kpi-note" id="kpi-tiempo-promedio-prokey-note">Cargando métricas de uso...</p>
+    </article>
+    <article class="panel view-panel dashboard-bi-kpi-card">
+        <span class="dashboard-bi-kpi-label">Promedio de Requisiciones por Día</span>
+        <strong class="dashboard-bi-kpi-value" id="kpi-promedio-requisiciones-dia">--</strong>
+        <p class="dashboard-bi-kpi-note" id="kpi-promedio-requisiciones-dia-note">Cargando métricas de uso...</p>
+    </article>
+</section>
+
 <section class="dashboard-bi-grid" aria-label="Metricas de contingencia">
     <article class="panel view-panel dashboard-bi-card">
         <header>
@@ -318,6 +331,35 @@ function setAuditKpi(id, value, noteId, note) {
     const noteNode = document.getElementById(noteId);
     if (valueNode) valueNode.textContent = value;
     if (noteNode) noteNode.innerHTML = note;
+}
+
+function fmtUsageKpiNumber(value, fractionDigits = 2) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
+    return Number(value).toLocaleString("es-SV", {
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits,
+    });
+}
+
+function renderUsageKpis(kpis) {
+    const avgHours = Number(kpis?.promedio_horas_hasta_prokey ?? 0);
+    const prokeyCount = Number(kpis?.requisiciones_liquidadas_en_prokey ?? 0);
+    const avgPerDay = Number(kpis?.requisiciones_promedio_por_dia ?? 0);
+    const observedDays = Number(kpis?.dias_observados ?? 0);
+    const totalReqs = Number(kpis?.total_requisiciones ?? 0);
+
+    setAuditKpi(
+        "kpi-tiempo-promedio-prokey",
+        `${fmtUsageKpiNumber(avgHours)} h`,
+        "kpi-tiempo-promedio-prokey-note",
+        `Promedio desde creación hasta <strong>Liquidada en Prokey</strong>, calculado sobre <strong>${fmtAuditNumber(prokeyCount)}</strong> requisiciones cerradas definitivamente.`
+    );
+    setAuditKpi(
+        "kpi-promedio-requisiciones-dia",
+        fmtUsageKpiNumber(avgPerDay),
+        "kpi-promedio-requisiciones-dia-note",
+        `Promedio histórico observado sobre <strong>${fmtAuditNumber(observedDays)}</strong> días calendario y <strong>${fmtAuditNumber(totalReqs)}</strong> requisiciones creadas.`
+    );
 }
 
 function setDrilldownStatus(message, isError = false) {
@@ -707,6 +749,8 @@ function renderDiferenciaTecnicoChart(data) {
 
 async function cargarDatosBasicos() {
     ["motivos", "solicitantes", "items", "horario"].forEach((key) => setChartStatus(key, "Cargando datos..."));
+    setAuditKpi("kpi-tiempo-promedio-prokey", "--", "kpi-tiempo-promedio-prokey-note", "Cargando métricas de uso...");
+    setAuditKpi("kpi-promedio-requisiciones-dia", "--", "kpi-promedio-requisiciones-dia-note", "Cargando métricas de uso...");
     try {
         const response = await fetch("/api/dashboard/basicos", {
             headers: { "Accept": "application/json" },
@@ -716,6 +760,7 @@ async function cargarDatosBasicos() {
             throw new Error(`No se pudo cargar el Monitor de Actividad (${response.status})`);
         }
         const payload = await response.json();
+        renderUsageKpis(payload.kpis);
         renderMotivosChart(payload.motivos);
         renderSolicitantesChart(payload.top_solicitantes);
         renderItemsChart(payload.top_items);
@@ -725,6 +770,8 @@ async function cargarDatosBasicos() {
         ["motivos", "solicitantes", "items", "horario"].forEach((key) => {
             setChartStatus(key, "No se pudieron cargar los datos.", true);
         });
+        setAuditKpi("kpi-tiempo-promedio-prokey", "--", "kpi-tiempo-promedio-prokey-note", "No se pudieron cargar las métricas de uso.");
+        setAuditKpi("kpi-promedio-requisiciones-dia", "--", "kpi-promedio-requisiciones-dia-note", "No se pudieron cargar las métricas de uso.");
     }
 }
 

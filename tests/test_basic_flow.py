@@ -1,5 +1,4 @@
 from datetime import datetime
-import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -172,6 +171,15 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
                 delivered_at=datetime.now(),
                 delivered_to="Usuario Ops",
             ),
+            Requisicion(
+                folio="REQ-2005",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada_en_prokey",
+                justificacion="Cerrada usuario",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
         ]
     )
     db_session.commit()
@@ -181,18 +189,286 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
     assert response.status_code == 200
 
     html = response.text
-    assert "Mis requisiciones" in html
-    assert "Mis pendientes" in html
-    assert "Aprobadas historicas" in html
-    assert "Rechazadas" in html
-    assert "Mis entregadas" in html
-    assert "Creadas este mes" in html
-    assert "Pendientes de aprobar" in html
-    assert "Pendientes de entregar" in html
-    assert "Rechazadas" in html
-    assert "Entregadas (30 dias)" in html
+    assert "Todas Mis Requisiciones" in html
+    assert "Requisiciones Pendientes" in html
+    assert "Requisiciones Finalizadas" in html
+    assert "Creadas Este Mes" in html
+    assert "Requisiciones Rechazadas" not in html
+    assert "Requieren Seguimiento" not in html
+    assert "Acciones Rápidas" not in html
+    assert "home-kpi-grid--single-row" in html
+    assert "Estado de Mis Requisiciones" in html
+    assert "Pendiente de aprobación" in html
+    assert "En proceso" in html
+    assert "Pendiente de cierre" in html
+    assert "Finalizada" in html
+    assert "Mis Requisiciones por Mes" in html
+    assert "Tiempo de Cierre" in html
+    assert "0-1 días" in html
+    assert "2-3 días" in html
+    assert "4-7 días" in html
+    assert "8+ días" in html
+    assert "Indicadores Rápidos" not in html
+    assert "Aprobadas Históricas" not in html
+    assert "Mis Entregadas" not in html
     assert "Pendientes por aprobar" not in html
-    assert "Pendientes por entregar" not in html
+    assert "Pendientes de entregar" not in html
+
+
+def test_home_bodega_muestra_cards_operativas_compactas(client: TestClient):
+    login(client, "bodega.1", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Pendientes de Procesar" in html
+    assert "Pendientes de Liquidar" in html
+    assert "Liquidadas" in html
+    assert "Liquidadas en Prokey" in html
+    assert "Preparadas" not in html
+    assert "No Entregadas" not in html
+    assert "home-kpi-grid--single-row" in html
+    assert "Acciones Rápidas" not in html
+    assert "/bodega" in html
+    assert "/bodega?vista=historial" in html
+
+
+def test_home_bodega_muestra_panel_estado_operativo(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-01",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Pendiente procesar",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-02",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Pendiente liquidar",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-03",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada",
+                justificacion="Liquidada",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+                liquidated_by=bodega.id,
+                liquidated_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-04",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada_en_prokey",
+                justificacion="Cerrada Prokey",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-05",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="No entregada",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+                delivery_result="no_entregada",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Estado de Operación de Bodega" in html
+    assert "Resume el estado actual de las requisiciones gestionadas por bodega." in html
+    assert "Pendientes de Procesar" in html
+    assert "Pendientes de Liquidar" in html
+    assert "Liquidadas en Prokey" in html
+    assert "No Entregadas" in html
+
+
+def test_home_bodega_muestra_movimiento_mensual(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    ahora = datetime.now()
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-M1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega mes actual",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+            ),
+            Requisicion(
+                folio="REQ-BOD-M2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada",
+                justificacion="Entrega mes anterior",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora.replace(month=max(1, ahora.month - 1)),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Movimiento de Requisiciones por Mes" in html
+    assert "Muestra el volumen de requisiciones entregadas por mes." in html
+    assert "user-monthly-chart" in html
+
+
+def test_home_bodega_muestra_resultados_de_entrega(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    ahora = datetime.now()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-R1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega completa",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="completa",
+            ),
+            Requisicion(
+                folio="REQ-BOD-R2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega parcial",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="parcial",
+            ),
+            Requisicion(
+                folio="REQ-BOD-R3",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="No entregada",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="no_entregada",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Resultados de Entrega" in html
+    assert "Expone cómo terminan las entregas gestionadas por bodega." in html
+    assert "Completa" in html
+    assert "Parcial" in html
+    assert "No Entregada" in html
+    assert "home-bottom-grid--bodega-insights" in html
+
+
+def test_mis_requisiciones_filtra_abiertas_para_alinear_cards_home(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-2010",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente visible",
+            ),
+            Requisicion(
+                folio="REQ-2011",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Seguimiento visible",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-2012",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="rechazada",
+                justificacion="Rechazada oculta",
+            ),
+            Requisicion(
+                folio="REQ-2013",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada_en_prokey",
+                justificacion="Cerrada oculta",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "user.ops", "pass123")
+    response = client.get("/mis-requisiciones?estado=abiertas")
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-2010" in html
+    assert "REQ-2011" in html
+    assert "REQ-2012" not in html
+    assert "REQ-2013" not in html
+    assert 'name="estado"' in html
+    assert 'value="abiertas"' in html
 
 
 def test_dashboard_backend_restringe_acceso_por_rol(client: TestClient):
@@ -220,6 +496,8 @@ def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
     assert "chart-horario" in response_page.text
     assert "chart-diferencia-producto" in response_page.text
     assert "chart-diferencia-tecnico" in response_page.text
+    assert "kpi-tiempo-promedio-prokey" in response_page.text
+    assert "kpi-promedio-requisiciones-dia" in response_page.text
     assert "kpi-indice-discrepancia" in response_page.text
     assert "kpi-inversion-demos" in response_page.text
     assert 'data-drilldown-kind="discrepancias"' in response_page.text
@@ -228,6 +506,7 @@ def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
     assert "/api/dashboard/auditoria/demos" in response_page.text
     assert response_api.status_code == 200
     payload = response_api.json()
+    assert "kpis" in payload
     assert "motivos" in payload
     assert "top_solicitantes" in payload
     assert "top_items" in payload
@@ -277,17 +556,43 @@ def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: 
         justificacion="Contingencia tres",
         created_at=datetime(2026, 3, 11, 15, 10, 0),
     )
-    db_session.add_all([req_1, req_2, req_3])
+    req_4 = Requisicion(
+        folio="REQ-DASH-04",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Demostración",
+        justificacion="Contingencia cuatro",
+        created_at=datetime(2026, 3, 12, 10, 0, 0),
+        liquidated_at=datetime(2026, 3, 13, 12, 0, 0),
+        prokey_liquidada_at=datetime(2026, 3, 13, 16, 0, 0),
+    )
+    req_5 = Requisicion(
+        folio="REQ-DASH-05",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Reposición",
+        justificacion="Contingencia cinco",
+        created_at=datetime(2026, 3, 13, 8, 0, 0),
+        liquidated_at=datetime(2026, 3, 13, 18, 0, 0),
+        prokey_liquidada_at=datetime(2026, 3, 14, 2, 0, 0),
+    )
+    db_session.add_all([req_1, req_2, req_3, req_4, req_5])
     db_session.commit()
     db_session.refresh(req_1)
     db_session.refresh(req_2)
     db_session.refresh(req_3)
+    db_session.refresh(req_4)
+    db_session.refresh(req_5)
 
     db_session.add_all(
         [
             Item(requisicion_id=req_1.id, descripcion="Cable UTP Cat6", cantidad=3, unidad="unidad"),
             Item(requisicion_id=req_2.id, descripcion="Cable UTP Cat6", cantidad=2, unidad="unidad"),
             Item(requisicion_id=req_3.id, descripcion="Conector RJ45", cantidad=5, unidad="unidad"),
+            Item(requisicion_id=req_4.id, descripcion="Cable UTP Cat6", cantidad=1, unidad="unidad"),
+            Item(requisicion_id=req_5.id, descripcion="Bomba Dosificadora", cantidad=4, unidad="unidad"),
         ]
     )
     db_session.commit()
@@ -297,16 +602,24 @@ def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: 
     assert response.status_code == 200
     payload = response.json()
 
+    assert payload["kpis"]["promedio_horas_hasta_prokey"] == 24.0
+    assert payload["kpis"]["requisiciones_liquidadas_en_prokey"] == 2
+    assert payload["kpis"]["requisiciones_promedio_por_dia"] == 1.67
+    assert payload["kpis"]["dias_observados"] == 3
+    assert payload["kpis"]["total_requisiciones"] == 5
+
     motivos = dict(zip(payload["motivos"]["labels"], payload["motivos"]["values"]))
-    assert motivos["Demostración"] == 2
+    assert motivos["Demostración"] == 3
     assert motivos["Servicio No Programado"] == 1
+    assert motivos["Reposición"] == 1
 
     solicitantes = dict(zip(payload["top_solicitantes"]["labels"], payload["top_solicitantes"]["values"]))
-    assert solicitantes[user.nombre] == 3
+    assert solicitantes[user.nombre] == 5
 
     items = dict(zip(payload["top_items"]["labels"], payload["top_items"]["values"]))
-    assert items["Cable UTP Cat6"] == 5.0
+    assert items["Cable UTP Cat6"] == 6.0
     assert items["Conector RJ45"] == 5.0
+    assert items["Bomba Dosificadora"] == 4.0
     assert payload["horario"]["labels"][13] == "13:00"
     assert payload["horario"]["values"][13] == 1
     assert payload["horario"]["values"][15] == 2
@@ -491,16 +804,41 @@ def test_monitor_renderiza_fase_2_de_auditoria(client: TestClient):
     assert "Diferencias por Tecnico" in html
 
 
-def test_home_aprobador_grafico_usa_pendientes_globales(client: TestClient, db_session: Session):
+def test_home_aprobador_muestra_cards_operativas_globales(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
-    db_session.add(
-        Requisicion(
-            folio="REQ-2301",
-            solicitante_id=user.id,
-            departamento="Operaciones",
-            estado="pendiente",
-            justificacion="Pendiente para aprobador",
-        )
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-2301",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente para aprobador",
+            ),
+            Requisicion(
+                folio="REQ-2302",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entregada pendiente de liquidar",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-2303",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="rechazada",
+                justificacion="Rechazada para aprobador",
+                rejected_by=aprobador.id,
+                rejected_at=datetime.now(),
+                rejection_reason="No procede",
+            ),
+        ]
     )
     db_session.commit()
 
@@ -508,15 +846,172 @@ def test_home_aprobador_grafico_usa_pendientes_globales(client: TestClient, db_s
     response = client.get("/")
     assert response.status_code == 200
     html = response.text
-    assert "Pendientes por aprobar" in html
+    assert "Pendientes por Aprobar" in html
+    assert "Pendientes de Entregar" in html
+    assert "Pendientes de Liquidar" in html
+    assert "Requisiciones Rechazadas" in html
+    assert "Todas Mis Requisiciones" not in html
+    assert "Requisiciones Pendientes" not in html
+    assert "Requisiciones Finalizadas" not in html
+    assert "home-kpi-grid--single-row" in html
+    assert "Acciones Rápidas" not in html
+    assert "Aprobadas Históricas" not in html
+    assert "/aprobar" in html
+    assert "/todas-requisiciones?estado=pendiente_entregar" in html
+    assert "/todas-requisiciones?estado=entregada" in html
+    assert "/todas-requisiciones?estado=rechazada" in html
 
-    row_match = re.search(
-        r"Pendientes de aprobar.*?<strong class=\"value\">(\d+)</strong>",
-        html,
-        re.DOTALL,
+
+def test_home_aprobador_muestra_panel_estado_global(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-APR-01",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente global",
+            ),
+            Requisicion(
+                folio="REQ-APR-02",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Pendiente entrega global",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-APR-03",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Pendiente liquidacion global",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-APR-04",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="rechazada",
+                justificacion="Rechazada global",
+                rejected_by=aprobador.id,
+                rejected_at=datetime.now(),
+                rejection_reason="No procede",
+            ),
+            Requisicion(
+                folio="REQ-APR-05",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada_en_prokey",
+                justificacion="Finalizada global",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+        ]
     )
-    assert row_match is not None
-    assert row_match.group(1) == "1"
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Estado Global de Requisiciones" in html
+    assert "Resume el estado actual del flujo completo de requisiciones." in html
+    assert "Pendiente de aprobación" in html
+    assert "Pendiente de entrega" in html
+    assert "Pendiente de liquidación" in html
+    assert "Finalizada" in html
+    assert "Rechazada" in html
+
+
+def test_home_aprobador_muestra_requisiciones_por_mes(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    ahora = datetime.now()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-APR-M1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Mes actual aprobador",
+                created_at=ahora,
+            ),
+            Requisicion(
+                folio="REQ-APR-M2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Mes anterior aprobador",
+                created_at=ahora.replace(month=max(1, ahora.month - 1)),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Requisiciones por Mes" in html
+    assert "Muestra el volumen global de requisiciones creadas por mes." in html
+    assert "user-monthly-chart" in html
+
+
+def test_home_aprobador_muestra_motivos_de_requisicion(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-APR-P1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente reciente",
+                motivo_requisicion="Demostración",
+            ),
+            Requisicion(
+                folio="REQ-APR-P2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente antiguo",
+                motivo_requisicion="R1E",
+            ),
+            Requisicion(
+                folio="REQ-APR-P3",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Motivo repetido",
+                motivo_requisicion="Demostración",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Motivos de Requisición" in html
+    assert "Muestra los principales motivos de uso de la aplicación." in html
+    assert "Demostración" in html
+    assert "R1E" in html
+    assert "home-bottom-grid--aprobador-insights" in html
 
 
 def test_bodega_no_ve_accesos_de_creacion_ni_mis_requisiciones(client: TestClient):
@@ -971,16 +1466,198 @@ def test_aprobar_view_muestra_gestion_para_jefe_bodega(client: TestClient, db_se
     assert f"/aprobar/{req.id}/gestionar" in response.text
 
 
+def test_listados_con_filtros_exponen_autosubmit_en_selectores(client: TestClient):
+    login(client, "jefe.bodega", "pass123")
+
+    aprobar = client.get("/aprobar")
+    assert aprobar.status_code == 200
+    assert "js-autosubmit-filters" in aprobar.text
+    assert "data-autosubmit-select" in aprobar.text
+
+    todas = client.get("/todas-requisiciones")
+    assert todas.status_code == 200
+    assert "js-autosubmit-filters" in todas.text
+    assert "data-autosubmit-select" in todas.text
+    assert "data-date-picker" in todas.text
+    assert "showPicker" in todas.text
+
+    bodega = client.get("/bodega")
+    assert bodega.status_code == 200
+    assert "js-autosubmit-filters" in bodega.text
+    assert "data-autosubmit-select" in bodega.text
+    assert "data-date-picker" in bodega.text
+    assert "showPicker" in bodega.text
+
+
 def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
     login(client, "jefe.bodega", "pass123")
     response = client.get("/")
 
     assert response.status_code == 200
     html = response.text
-    assert '/aprobar?estado=aprobada' in html
-    assert '/aprobar?estado=rechazada' in html
-    assert '/aprobar?estado=pendiente_aprobar' in html
+    assert "Todas Mis Requisiciones" not in html
+    assert 'Pendientes de Procesar' in html
+    assert 'Pendientes de Liquidar' in html
+    assert 'Liquidadas' not in html
+    assert 'Liquidadas en Prokey' in html
+    assert '/aprobar' in html
+    assert '/bodega' in html
     assert '/bodega?vista=historial' in html
+
+
+def test_home_jefe_bodega_muestra_panel_estado_global(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-JB-EST-1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente jefe bodega",
+            ),
+            Requisicion(
+                folio="REQ-JB-EST-2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Proceso jefe bodega",
+            ),
+            Requisicion(
+                folio="REQ-JB-EST-3",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Liquidacion jefe bodega",
+            ),
+            Requisicion(
+                folio="REQ-JB-EST-4",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada_en_prokey",
+                justificacion="Finalizada jefe bodega",
+            ),
+            Requisicion(
+                folio="REQ-JB-EST-5",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="rechazada",
+                justificacion="Rechazada jefe bodega",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "jefe.bodega", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Estado Global del Flujo" in html
+    assert "Resume el estado actual del flujo de requisiciones bajo supervisión." in html
+    assert "Pendiente de aprobación" in html
+    assert "Pendiente de proceso" in html
+    assert "Pendiente de liquidación" in html
+    assert "Finalizada" in html
+    assert "Rechazada" in html
+
+
+def test_home_jefe_bodega_muestra_requisiciones_por_mes(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    ahora = datetime.now()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-JB-M1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Mes actual jefe bodega",
+                created_at=ahora,
+            ),
+            Requisicion(
+                folio="REQ-JB-M2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Mes anterior jefe bodega",
+                created_at=ahora - timedelta(days=35),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "jefe.bodega", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Requisiciones por Mes" in html
+    assert "Muestra el volumen global de requisiciones creadas por mes." in html
+    assert "user-monthly-chart" in html
+
+
+def test_home_jefe_bodega_muestra_resultados_de_entrega(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    ahora = datetime.now()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-JB-R1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega completa jefe bodega",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="completa",
+            ),
+            Requisicion(
+                folio="REQ-JB-R2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega parcial jefe bodega",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="parcial",
+            ),
+            Requisicion(
+                folio="REQ-JB-R3",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega fallida jefe bodega",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="no_entregada",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "jefe.bodega", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Resultados de Entrega" in html
+    assert "Expone cómo terminan las entregas gestionadas en operación." in html
+    assert "Completa" in html
+    assert "Parcial" in html
+    assert "No Entregada" in html
+    assert "home-bottom-grid--jefe-bodega-insights" in html
+    assert "Acciones Rápidas" not in html
 
 
 def test_aprobador_puede_abrir_vista_gestion_aprobacion(client: TestClient, db_session: Session):
@@ -1826,11 +2503,10 @@ def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_sessi
     assert response.status_code == 200
     html = response.text
     assert "REQ-0101" in html
-    assert "REQ-0102" in html
-    assert "REQ-0103" in html
-    assert "REQ-0104" in html
+    assert "REQ-0102" not in html
+    assert "REQ-0103" not in html
+    assert "REQ-0104" not in html
     assert "pendiente de aprobar" in html
-    assert "pendiente de entregar" in html
 
 
 def test_logistica_ve_todas_las_requisiciones_pero_no_aprueba(client: TestClient, db_session: Session):
@@ -1871,7 +2547,7 @@ def test_logistica_ve_todas_las_requisiciones_pero_no_aprueba(client: TestClient
     assert "REQ-AUDIT-01" not in html
     assert "REQ-AUDIT-02" not in html
 
-    response_todas = client.get("/mis-requisiciones?vista=todas")
+    response_todas = client.get("/todas-requisiciones")
     assert response_todas.status_code == 200
     html_todas = response_todas.text
     assert "Todas las Requisiciones" in html_todas
@@ -1885,7 +2561,7 @@ def test_logistica_ve_todas_las_requisiciones_pero_no_aprueba(client: TestClient
     assert aprobar.status_code == 403
 
 
-def test_aprobar_permita_filtrar_por_estado(client: TestClient, db_session: Session):
+def test_todas_requisiciones_permita_filtrar_por_estado(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
 
@@ -1910,10 +2586,53 @@ def test_aprobar_permita_filtrar_por_estado(client: TestClient, db_session: Sess
     db_session.commit()
 
     login(client, "aprob.ops", "pass123")
-    response = client.get("/aprobar?estado=rechazada")
+    response = client.get("/todas-requisiciones?estado=rechazada")
     assert response.status_code == 200
     assert "REQ-0202" in response.text
     assert "REQ-0201" not in response.text
+
+
+def test_todas_requisiciones_permita_buscar_por_motivo_receptor_actor_y_prokey(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    jefe_bodega = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
+
+    req = Requisicion(
+        folio="REQ-0203",
+        solicitante_id=user.id,
+        receptor_designado_id=jefe_bodega.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Queja de ultima hora",
+        justificacion="Busqueda ampliada",
+        prokey_ref="PK-7788",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        liquidated_by=jefe_bodega.id,
+        liquidated_at=datetime.now(),
+        prokey_liquidada_por=aprobador.id,
+        prokey_liquidada_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+
+    response_motivo = client.get("/todas-requisiciones?q=Queja")
+    assert response_motivo.status_code == 200
+    assert "REQ-0203" in response_motivo.text
+
+    response_receptor = client.get("/todas-requisiciones?q=Jefe")
+    assert response_receptor.status_code == 200
+    assert "REQ-0203" in response_receptor.text
+
+    response_actor = client.get("/todas-requisiciones?q=Aprobador")
+    assert response_actor.status_code == 200
+    assert "REQ-0203" in response_actor.text
+
+    response_prokey = client.get("/todas-requisiciones?q=PK-7788")
+    assert response_prokey.status_code == 200
+    assert "REQ-0203" in response_prokey.text
 
 
 def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_session: Session):
@@ -1955,6 +2674,267 @@ def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_s
     assert response.status_code == 200
     assert "REQ-0302" in response.text
     assert "REQ-0301" not in response.text
+
+
+def test_bodega_default_usa_vista_pendientes_y_selector_de_etapa(client: TestClient):
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Pendientes + Historial" not in html
+    assert 'option value="pendientes" selected' in html
+    assert 'name="etapa"' in html
+    assert "Aprobadas" in html
+    assert "Preparadas" in html
+    assert "Entregadas pendientes de liquidar" in html
+
+
+def test_bodega_puede_filtrar_pendientes_por_etapa(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-ETAPA-1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Solo aprobada",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-ETAPA-2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="preparado",
+                justificacion="Solo preparada",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                prepared_at=datetime.now(),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega?vista=pendientes&etapa=preparado")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-BOD-ETAPA-2" in html
+    assert "REQ-BOD-ETAPA-1" not in html
+
+
+def test_bodega_puede_filtrar_historial_por_etapa_no_entregada(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-HET-1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="No entregada historial",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+                delivery_result="no_entregada",
+            ),
+            Requisicion(
+                folio="REQ-BOD-HET-2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada",
+                justificacion="Liquidada historial",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+                liquidated_by=bodega.id,
+                liquidated_at=datetime.now(),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega?vista=historial&etapa=no_entregada")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-BOD-HET-1" in html
+    assert "REQ-BOD-HET-2" not in html
+    assert "No entregadas" in html
+    assert 'option value="liquidada"' not in html
+
+
+def test_bodega_trata_liquidada_como_pendiente_hasta_prokey(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req_liquidada = Requisicion(
+        folio="REQ-BOD-LIQ-1",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        justificacion="Aun pendiente de Prokey",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        liquidated_by=bodega.id,
+        liquidated_at=datetime.now(),
+    )
+    db_session.add(req_liquidada)
+    db_session.commit()
+
+    login(client, "jefe.bodega", "pass123")
+
+    response_pendientes = client.get("/bodega?vista=pendientes")
+    assert response_pendientes.status_code == 200
+    assert "REQ-BOD-LIQ-1" in response_pendientes.text
+    assert "Confirmar en Prokey" in response_pendientes.text
+
+    response_historial = client.get("/bodega?vista=historial")
+    assert response_historial.status_code == 200
+    assert "REQ-BOD-LIQ-1" not in response_historial.text
+
+
+def test_bodega_expone_departamento_y_fechas_en_filtros(client: TestClient):
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega")
+
+    assert response.status_code == 200
+    html = response.text
+    assert 'name="departamento"' in html
+    assert 'name="fecha_desde"' in html
+    assert 'name="fecha_hasta"' in html
+
+
+def test_bodega_puede_filtrar_por_departamento(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-DEP-1",
+                solicitante_id=user.id,
+                departamento="Ventas",
+                estado="aprobada",
+                justificacion="Filtro ventas",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-DEP-2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Filtro operaciones",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega?departamento=Ventas")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-BOD-DEP-1" in html
+    assert "REQ-BOD-DEP-2" not in html
+
+
+def test_bodega_puede_filtrar_por_rango_de_fechas(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    ahora = datetime.now()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-FEC-1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Dentro de rango",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                created_at=ahora,
+            ),
+            Requisicion(
+                folio="REQ-BOD-FEC-2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Fuera de rango",
+                approved_by=aprobador.id,
+                approved_at=ahora - timedelta(days=20),
+                created_at=ahora - timedelta(days=20),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    fecha_desde = (ahora - timedelta(days=3)).strftime("%Y-%m-%d")
+    fecha_hasta = (ahora + timedelta(days=1)).strftime("%Y-%m-%d")
+    response = client.get(f"/bodega?fecha_desde={fecha_desde}&fecha_hasta={fecha_hasta}")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-BOD-FEC-1" in html
+    assert "REQ-BOD-FEC-2" not in html
+
+
+def test_bodega_busca_por_receptor_y_actores_operativos(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    jefe_bodega = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
+
+    req = Requisicion(
+        folio="REQ-BOD-BUS-1",
+        solicitante_id=user.id,
+        receptor_designado_id=jefe_bodega.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        justificacion="Busqueda actor bodega",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivered_to="Tecnico Uno",
+        liquidated_by=bodega.id,
+        liquidated_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+
+    response_receptor = client.get("/bodega?vista=pendientes&q=Bodega Uno")
+    assert response_receptor.status_code == 200
+    assert "REQ-BOD-BUS-1" in response_receptor.text
+
+    response_actor = client.get("/bodega?vista=pendientes&q=Bodega Auxiliar")
+    assert response_actor.status_code == 200
+    assert "REQ-BOD-BUS-1" in response_actor.text
+
+    response_aprobador = client.get("/bodega?vista=pendientes&q=Aprobador Uno")
+    assert response_aprobador.status_code == 200
+    assert "REQ-BOD-BUS-1" in response_aprobador.text
 
 
 def test_bodega_no_duplica_entregadas_activas_en_historial(client: TestClient, db_session: Session):
@@ -2006,5 +2986,5 @@ def test_bodega_no_duplica_entregadas_activas_en_historial(client: TestClient, d
     response_historial = client.get("/bodega?vista=historial")
     assert response_historial.status_code == 200
     html_historial = response_historial.text
-    assert "REQ-0304" in html_historial
+    assert "REQ-0304" not in html_historial
     assert "REQ-0303" not in html_historial

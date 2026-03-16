@@ -15,155 +15,452 @@
         {% endif %}
     </header>
 
-    <section class="home-kpi-grid">
+    <section class="home-kpi-grid{% if home_cards|length <= 4 %} home-kpi-grid--single-row{% endif %}">
+        {% for card in home_cards %}
         <article class="home-kpi-card">
-            {% if current_user.rol != 'bodega' %}
-            <a href="/mis-requisiciones" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
-            {% endif %}
+            <a href="{{ card.href }}" class="kpi-detail-link">Ver detalle &gt;</a>
             <span class="kpi-icon" aria-hidden="true">
+                {% if card.icon == 'list' %}
                 <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            </span>
-            <span class="kpi-label">Mis Requisiciones</span>
-            <strong class="kpi-value">{{ mis_requisiciones }}</strong>
-        </article>
-
-        <article class="home-kpi-card">
-            {% if current_user.rol != 'bodega' %}
-            <a href="/mis-requisiciones" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
-            {% endif %}
-            <span class="kpi-icon" aria-hidden="true">
+                {% elif card.icon == 'pending' %}
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            </span>
-            <span class="kpi-label">Mis Pendientes</span>
-            <strong class="kpi-value">{{ mis_pendientes }}</strong>
-        </article>
-
-        <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/aprobar?estado=aprobada" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
-            {% endif %}
-            <span class="kpi-icon" aria-hidden="true">
+                {% elif card.icon == 'closed' %}
                 <svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            <span class="kpi-label">Aprobadas Históricas</span>
-            <strong class="kpi-value">{{ aprobadas_panel }}</strong>
-        </article>
-
-        <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/aprobar?estado=rechazada" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
-            {% endif %}
-            <span class="kpi-icon" aria-hidden="true">
+                {% elif card.icon == 'month' %}
+                <svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M5 8h14M6 5h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                {% elif card.icon == 'rejected' %}
                 <svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            </span>
-            <span class="kpi-label">Rechazadas</span>
-            <strong class="kpi-value">{{ rechazadas_panel }}</strong>
-        </article>
-
-        <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'bodega', 'jefe_bodega'] %}
-            <a href="/bodega?vista=historial" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <a href="/mis-requisiciones" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% endif %}
-            <span class="kpi-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M3 8.5 12 4l9 4.5-9 4.5zM3 8.5V16l9 4 9-4V8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-            </span>
-            <span class="kpi-label">Mis Entregadas</span>
-            <strong class="kpi-value">{{ mis_entregadas }}</strong>
-        </article>
-
-        <article class="home-kpi-card">
-            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/aprobar?estado=pendiente_aprobar" class="kpi-detail-link">Ver detalle &gt;</a>
-            {% else %}
-            <span class="kpi-detail-link is-disabled">Ver detalle &gt;</span>
-            {% endif %}
-            <span class="kpi-icon" aria-hidden="true">
+                {% elif card.icon == 'followup' %}
                 <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                {% elif card.icon == 'all' %}
+                <svg viewBox="0 0 24 24"><path d="M4 5h7v6H4zM13 5h7v6h-7zM4 13h7v6H4zM13 13h7v6h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'prokey_pending' %}
+                <svg viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12v10H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 14v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                {% elif card.icon == 'prokey_done' %}
+                <svg viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12v10H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m9.5 15 1.8 1.8 3.7-4.1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'approve' %}
+                <svg viewBox="0 0 24 24"><path d="M4 12h6l2-7 3 14 2-7h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'deliver' %}
+                <svg viewBox="0 0 24 24"><path d="M3 8.5 12 4l9 4.5-9 4.5zM3 8.5V16l9 4 9-4V8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'warehouse' %}
+                <svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6v9a1 1 0 0 1-1 1h-3v-6H7v6H4a1 1 0 0 1-1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'prepared' %}
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M5 7h14M5 17h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m16 17 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                {% elif card.icon == 'liquidate' %}
+                <svg viewBox="0 0 24 24"><path d="M12 3v10M12 13c-2.6 0-4.5 1.4-4.5 3.3S9.4 20 12 20s4.5-1.4 4.5-3.7S14.6 13 12 13Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                {% endif %}
             </span>
-            <span class="kpi-label">Pendientes por Aprobar</span>
-            <strong class="kpi-value">{{ pendientes_aprobar }}</strong>
+            <span class="kpi-label">{{ card.label }}</span>
+            <strong class="kpi-value">{{ card.value }}</strong>
         </article>
+        {% endfor %}
     </section>
 
-    <section class="home-bottom-grid">
-        <article class="home-panel indicators-panel">
+    {% if current_user.rol == 'user' and (home_user_status_chart or home_user_monthly_chart or home_user_closure_chart) %}
+    <section class="home-bottom-grid home-bottom-grid--user-insights">
+        {% if home_user_status_chart %}
+        <article class="home-panel user-status-panel">
             <header class="home-panel-header">
                 <div>
-                    <h3>Indicadores Rápidos</h3>
-                    <p>Vista resumida de actividad reciente</p>
-                </div>
-                <div class="period-tabs" role="tablist" aria-label="Periodo">
-                    <button type="button" class="period-tab is-active" aria-selected="true">30 días</button>
-                    <button type="button" class="period-tab" aria-selected="false" disabled title="Vista demostrativa">90 días</button>
+                    <h3>Estado de Mis Requisiciones</h3>
+                    <p>Distribución actual de tus solicitudes dentro del flujo operativo.</p>
                 </div>
             </header>
-            <div class="mini-chart-clean" aria-hidden="true">
-                <div class="mini-chart-track">
-                    <span class="chart-label">Creadas</span>
-                    <span class="chart-bar chart-bar-1" style="width: {{ (mis_creadas_mes * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
-                    <strong>{{ mis_creadas_mes }}</strong>
-                </div>
-                <div class="mini-chart-track">
-                    <span class="chart-label">Pend. aprobar</span>
-                    <span class="chart-bar chart-bar-2" style="width: {{ (pendientes_aprobar_panel * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
-                    <strong>{{ pendientes_aprobar_panel }}</strong>
-                </div>
-                <div class="mini-chart-track">
-                    <span class="chart-label">Pend. entregar</span>
-                    <span class="chart-bar chart-bar-3" style="width: {{ (pendientes_entregar_panel * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
-                    <strong>{{ pendientes_entregar_panel }}</strong>
-                </div>
-                <div class="mini-chart-track">
-                    <span class="chart-label">Rechazadas</span>
-                    <span class="chart-bar chart-bar-4" style="width: {{ (rechazadas_panel * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
-                    <strong>{{ rechazadas_panel }}</strong>
-                </div>
-                <div class="mini-chart-track">
-                    <span class="chart-label">Entregadas</span>
-                    <span class="chart-bar chart-bar-5" style="width: {{ (mis_entregadas_30d * 100 / escala_metricas_home)|round(0, 'floor')|int }}%"></span>
-                    <strong>{{ mis_entregadas_30d }}</strong>
-                </div>
+            {% if home_user_status_chart.has_data %}
+            <div class="user-status-chart" aria-hidden="true">
+                {% for segment in home_user_status_chart.segments %}
+                {% if segment.value > 0 %}
+                <span class="user-status-chart__segment is-{{ segment.tone }}" style="width: {{ segment.width_pct }}%"></span>
+                {% endif %}
+                {% endfor %}
             </div>
-        </article>
-
-        <article class="home-panel quick-actions-panel">
-            <h3>Acciones Rápidas</h3>
-            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            {% set buscar_href = '/aprobar' %}
-            {% elif current_user.rol in ['bodega', 'jefe_bodega'] %}
-            {% set buscar_href = '/bodega' %}
+            <div class="user-status-legend">
+                {% for segment in home_user_status_chart.segments %}
+                <div class="user-status-legend__item">
+                    <span class="user-status-legend__dot is-{{ segment.tone }}"></span>
+                    <div class="user-status-legend__content">
+                        <strong>{{ segment.label }}</strong>
+                        <span>{{ segment.value }} requisiciones{% if home_user_status_chart.total %} · {{ "%.1f"|format(segment.percentage) }}%{% endif %}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
             {% else %}
-            {% set buscar_href = '/mis-requisiciones' %}
+            <p class="user-status-empty">Aún no tienes requisiciones para graficar.</p>
             {% endif %}
+        </article>
+        {% endif %}
+        {% if home_user_monthly_chart %}
+        <article class="home-panel user-monthly-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Mis Requisiciones por Mes</h3>
+                    <p>Volumen de solicitudes creadas por ti durante los últimos 6 meses.</p>
+                </div>
+            </header>
+            {% if home_user_monthly_chart.has_data %}
+            <div class="user-monthly-chart" aria-hidden="true">
+                {% for bar in home_user_monthly_chart.bars %}
+                <div class="user-monthly-chart__col">
+                    <div class="user-monthly-chart__bar-wrap">
+                        {% if bar.value > 0 %}
+                        <span class="user-monthly-chart__bar" style="height: {{ bar.height_pct }}%"></span>
+                        {% else %}
+                        <span class="user-monthly-chart__bar user-monthly-chart__bar--empty"></span>
+                        {% endif %}
+                    </div>
+                    <strong class="user-monthly-chart__value">{{ bar.value }}</strong>
+                    <span class="user-monthly-chart__label">{{ bar.label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no tienes historial suficiente para esta vista.</p>
+            {% endif %}
+        </article>
+        {% endif %}
+        {% if home_user_closure_chart %}
+        <article class="home-panel user-closure-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Tiempo de Cierre</h3>
+                    <p>Cuánto tardan tus requisiciones finalizadas en cerrar su ciclo.</p>
+                </div>
+            </header>
+            {% if home_user_closure_chart.has_data %}
+            <div class="user-monthly-chart user-closure-chart" aria-hidden="true">
+                {% for bar in home_user_closure_chart.bars %}
+                <div class="user-monthly-chart__col">
+                    <div class="user-monthly-chart__bar-wrap">
+                        {% if bar.value > 0 %}
+                        <span class="user-monthly-chart__bar user-closure-chart__bar is-{{ bar.tone }}" style="height: {{ bar.height_pct }}%"></span>
+                        {% else %}
+                        <span class="user-monthly-chart__bar user-monthly-chart__bar--empty"></span>
+                        {% endif %}
+                    </div>
+                    <strong class="user-monthly-chart__value">{{ bar.value }}</strong>
+                    <span class="user-monthly-chart__label">{{ bar.label }}</span>
+                    <span class="user-closure-chart__meta">{{ "%.1f"|format(bar.percentage) }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no tienes requisiciones finalizadas para medir tiempos de cierre.</p>
+            {% endif %}
+        </article>
+        {% endif %}
+    </section>
+    {% endif %}
 
-            <a href="{{ buscar_href }}" class="quick-action-item">
+    {% if current_user.rol == 'bodega' and (home_bodega_status_chart or home_bodega_monthly_chart or home_bodega_delivery_results_chart) %}
+    <section class="home-bottom-grid home-bottom-grid--user-insights home-bottom-grid--bodega-insights">
+        {% if home_bodega_status_chart %}
+        <article class="home-panel user-status-panel bodega-status-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Estado de Operación de Bodega</h3>
+                    <p>Resume el estado actual de las requisiciones gestionadas por bodega.</p>
+                </div>
+            </header>
+            {% if home_bodega_status_chart.has_data %}
+            <div class="user-status-chart" aria-hidden="true">
+                {% for segment in home_bodega_status_chart.segments %}
+                {% if segment.value > 0 %}
+                <span class="user-status-chart__segment is-{{ segment.tone }}" style="width: {{ segment.width_pct }}%"></span>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <div class="user-status-legend">
+                {% for segment in home_bodega_status_chart.segments %}
+                <div class="user-status-legend__item">
+                    <span class="user-status-legend__dot is-{{ segment.tone }}"></span>
+                    <div class="user-status-legend__content">
+                        <strong>{{ segment.label }}</strong>
+                        <span>{{ segment.value }} requisiciones{% if home_bodega_status_chart.total %} · {{ "%.1f"|format(segment.percentage) }}%{% endif %}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no hay requisiciones para graficar la operación de bodega.</p>
+            {% endif %}
+        </article>
+        {% endif %}
+        {% if home_bodega_monthly_chart %}
+        <article class="home-panel user-monthly-panel bodega-monthly-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Movimiento de Requisiciones por Mes</h3>
+                    <p>Muestra el volumen de requisiciones entregadas por mes.</p>
+                </div>
+            </header>
+            {% if home_bodega_monthly_chart.has_data %}
+            <div class="user-monthly-chart" aria-hidden="true">
+                {% for bar in home_bodega_monthly_chart.bars %}
+                <div class="user-monthly-chart__col">
+                    <div class="user-monthly-chart__bar-wrap">
+                        {% if bar.value > 0 %}
+                        <span class="user-monthly-chart__bar" style="height: {{ bar.height_pct }}%"></span>
+                        {% else %}
+                        <span class="user-monthly-chart__bar user-monthly-chart__bar--empty"></span>
+                        {% endif %}
+                    </div>
+                    <strong class="user-monthly-chart__value">{{ bar.value }}</strong>
+                    <span class="user-monthly-chart__label">{{ bar.label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no hay entregas suficientes para mostrar tendencia mensual.</p>
+            {% endif %}
+        </article>
+        {% endif %}
+        {% if home_bodega_delivery_results_chart %}
+        <article class="home-panel user-closure-panel bodega-results-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Resultados de Entrega</h3>
+                    <p>Expone cómo terminan las entregas gestionadas por bodega.</p>
+                </div>
+            </header>
+            {% if home_bodega_delivery_results_chart.has_data %}
+            <div class="user-monthly-chart user-closure-chart" aria-hidden="true">
+                {% for bar in home_bodega_delivery_results_chart.bars %}
+                <div class="user-monthly-chart__col">
+                    <div class="user-monthly-chart__bar-wrap">
+                        {% if bar.value > 0 %}
+                        <span class="user-monthly-chart__bar user-closure-chart__bar is-{{ bar.tone }}" style="height: {{ bar.height_pct }}%"></span>
+                        {% else %}
+                        <span class="user-monthly-chart__bar user-monthly-chart__bar--empty"></span>
+                        {% endif %}
+                    </div>
+                    <strong class="user-monthly-chart__value">{{ bar.value }}</strong>
+                    <span class="user-monthly-chart__label">{{ bar.label }}</span>
+                    <span class="user-closure-chart__meta">{{ "%.1f"|format(bar.percentage) }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no hay resultados de entrega registrados para esta vista.</p>
+            {% endif %}
+        </article>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    {% if current_user.rol == 'aprobador' and (home_aprobador_status_chart or home_aprobador_monthly_chart or home_aprobador_pending_age_chart) %}
+    <section class="home-bottom-grid home-bottom-grid--user-insights home-bottom-grid--aprobador-insights">
+        {% if home_aprobador_status_chart %}
+        <article class="home-panel user-status-panel aprobador-status-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Estado Global de Requisiciones</h3>
+                    <p>Resume el estado actual del flujo completo de requisiciones.</p>
+                </div>
+            </header>
+            {% if home_aprobador_status_chart.has_data %}
+            <div class="user-status-chart" aria-hidden="true">
+                {% for segment in home_aprobador_status_chart.segments %}
+                {% if segment.value > 0 %}
+                <span class="user-status-chart__segment is-{{ segment.tone }}" style="width: {{ segment.width_pct }}%"></span>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <div class="user-status-legend">
+                {% for segment in home_aprobador_status_chart.segments %}
+                <div class="user-status-legend__item">
+                    <span class="user-status-legend__dot is-{{ segment.tone }}"></span>
+                    <div class="user-status-legend__content">
+                        <strong>{{ segment.label }}</strong>
+                        <span>{{ segment.value }} requisiciones{% if home_aprobador_status_chart.total %} · {{ "%.1f"|format(segment.percentage) }}%{% endif %}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no hay requisiciones para graficar el estado global.</p>
+            {% endif %}
+        </article>
+        {% endif %}
+        {% if home_aprobador_monthly_chart %}
+        <article class="home-panel user-monthly-panel aprobador-monthly-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Requisiciones por Mes</h3>
+                    <p>Muestra el volumen global de requisiciones creadas por mes.</p>
+                </div>
+            </header>
+            {% if home_aprobador_monthly_chart.has_data %}
+            <div class="user-monthly-chart" aria-hidden="true">
+                {% for bar in home_aprobador_monthly_chart.bars %}
+                <div class="user-monthly-chart__col">
+                    <div class="user-monthly-chart__bar-wrap">
+                        {% if bar.value > 0 %}
+                        <span class="user-monthly-chart__bar" style="height: {{ bar.height_pct }}%"></span>
+                        {% else %}
+                        <span class="user-monthly-chart__bar user-monthly-chart__bar--empty"></span>
+                        {% endif %}
+                    </div>
+                    <strong class="user-monthly-chart__value">{{ bar.value }}</strong>
+                    <span class="user-monthly-chart__label">{{ bar.label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no hay volumen suficiente para mostrar tendencia mensual.</p>
+            {% endif %}
+        </article>
+        {% endif %}
+        {% if home_aprobador_pending_age_chart %}
+        <article class="home-panel user-closure-panel aprobador-pending-age-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Motivos de Requisición</h3>
+                    <p>Muestra los principales motivos de uso de la aplicación.</p>
+                </div>
+            </header>
+            {% if home_aprobador_pending_age_chart.has_data %}
+            <div class="mini-chart-clean aprobador-motivos-chart" aria-hidden="true">
+                {% for bar in home_aprobador_pending_age_chart.bars %}
+                <div class="mini-chart-track">
+                    <span class="chart-label" title="{{ bar.label }}">{{ bar.label }}</span>
+                    <span class="chart-bar chart-bar-{{ loop.index }}" style="width: {{ bar.height_pct }}%"></span>
+                    <strong>{{ bar.value }} · {{ "%.1f"|format(bar.percentage) }}%</strong>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no hay motivos suficientes para mostrar esta distribución.</p>
+            {% endif %}
+        </article>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    {% if current_user.rol == 'jefe_bodega' and (home_jefe_bodega_status_chart or home_jefe_bodega_monthly_chart or home_jefe_bodega_delivery_results_chart) %}
+    <section class="home-bottom-grid home-bottom-grid--user-insights home-bottom-grid--jefe-bodega-insights">
+        <article class="home-panel user-status-panel jefe-bodega-status-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Estado Global del Flujo</h3>
+                    <p>Resume el estado actual del flujo de requisiciones bajo supervisión.</p>
+                </div>
+            </header>
+            {% if home_jefe_bodega_status_chart.has_data %}
+            <div class="user-status-chart" aria-hidden="true">
+                {% for segment in home_jefe_bodega_status_chart.segments %}
+                {% if segment.value > 0 %}
+                <span class="user-status-chart__segment is-{{ segment.tone }}" style="width: {{ segment.width_pct }}%"></span>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <div class="user-status-legend">
+                {% for segment in home_jefe_bodega_status_chart.segments %}
+                <div class="user-status-legend__item">
+                    <span class="user-status-legend__dot is-{{ segment.tone }}"></span>
+                    <div class="user-status-legend__content">
+                        <strong>{{ segment.label }}</strong>
+                        <span>{{ segment.value }} requisiciones{% if home_jefe_bodega_status_chart.total %} · {{ "%.1f"|format(segment.percentage) }}%{% endif %}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no hay requisiciones para graficar el estado del flujo.</p>
+            {% endif %}
+        </article>
+        {% if home_jefe_bodega_monthly_chart %}
+        <article class="home-panel user-monthly-panel jefe-bodega-monthly-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Requisiciones por Mes</h3>
+                    <p>Muestra el volumen global de requisiciones creadas por mes.</p>
+                </div>
+            </header>
+            {% if home_jefe_bodega_monthly_chart.has_data %}
+            <div class="user-monthly-chart" aria-hidden="true">
+                {% for bar in home_jefe_bodega_monthly_chart.bars %}
+                <div class="user-monthly-chart__col">
+                    <div class="user-monthly-chart__bar-wrap">
+                        {% if bar.value > 0 %}
+                        <span class="user-monthly-chart__bar" style="height: {{ bar.height_pct }}%"></span>
+                        {% else %}
+                        <span class="user-monthly-chart__bar user-monthly-chart__bar--empty"></span>
+                        {% endif %}
+                    </div>
+                    <strong class="user-monthly-chart__value">{{ bar.value }}</strong>
+                    <span class="user-monthly-chart__label">{{ bar.label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no hay volumen suficiente para mostrar tendencia mensual.</p>
+            {% endif %}
+        </article>
+        {% endif %}
+        {% if home_jefe_bodega_delivery_results_chart %}
+        <article class="home-panel user-closure-panel bodega-results-panel jefe-bodega-results-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Resultados de Entrega</h3>
+                    <p>Expone cómo terminan las entregas gestionadas en operación.</p>
+                </div>
+            </header>
+            {% if home_jefe_bodega_delivery_results_chart.has_data %}
+            <div class="user-monthly-chart user-closure-chart" aria-hidden="true">
+                {% for bar in home_jefe_bodega_delivery_results_chart.bars %}
+                <div class="user-monthly-chart__col">
+                    <div class="user-monthly-chart__bar-wrap">
+                        {% if bar.value > 0 %}
+                        <span class="user-monthly-chart__bar user-closure-chart__bar is-{{ bar.tone }}" style="height: {{ bar.height_pct }}%"></span>
+                        {% else %}
+                        <span class="user-monthly-chart__bar user-monthly-chart__bar--empty"></span>
+                        {% endif %}
+                    </div>
+                    <strong class="user-monthly-chart__value">{{ bar.value }}</strong>
+                    <span class="user-monthly-chart__label">{{ bar.label }}</span>
+                    <span class="user-closure-chart__meta">{{ "%.1f"|format(bar.percentage) }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no hay resultados de entrega suficientes para mostrar esta distribución.</p>
+            {% endif %}
+        </article>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    {% if current_user.rol not in ['user', 'bodega', 'aprobador', 'jefe_bodega'] %}
+    <section class="home-bottom-grid home-bottom-grid--single">
+        <article class="home-panel quick-actions-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Acciones Rápidas</h3>
+                    <p>Accesos directos alineados a tu rol actual.</p>
+                </div>
+            </header>
+            {% for action in home_actions %}
+            <a href="{{ action.href }}" class="quick-action-item">
                 <span class="qa-icon" aria-hidden="true">
+                    {% if action.icon == 'new' %}
+                    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    {% elif action.icon == 'search' %}
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                </span>
-                <span class="qa-text">Buscar Requisición</span>
-                <span class="qa-arrow" aria-hidden="true">&gt;</span>
-            </a>
-
-            {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/aprobar?estado=pendiente_aprobar" class="quick-action-item">
-                <span class="qa-icon" aria-hidden="true">
+                    {% elif action.icon == 'approve' %}
                     <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    {% elif action.icon == 'monitor' %}
+                    <svg viewBox="0 0 24 24"><path d="M4 5h16v10H4zM8 19h8M12 15v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    {% elif action.icon == 'warehouse' %}
+                    <svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6v9a1 1 0 0 1-1 1h-3v-6H7v6H4a1 1 0 0 1-1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                    {% endif %}
                 </span>
-                <span class="qa-text">Aprobación Masiva</span>
+                <span class="qa-text">{{ action.label }}</span>
                 <span class="qa-arrow" aria-hidden="true">&gt;</span>
             </a>
-            {% endif %}
+            {% endfor %}
         </article>
     </section>
+    {% endif %}
 </section>
 {% endblock %}

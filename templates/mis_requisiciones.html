@@ -4,6 +4,26 @@
 {% block content %}
 {{ ui.page_header("Todas las Requisiciones" if vista_global else "Mis Requisiciones", "Vista global de requisiciones creadas en la app." if vista_global else "Historial de solicitudes creadas por tu usuario.") }}
 
+<form method="GET" class="filters-bar panel js-autosubmit-filters">
+    {% if vista_global %}
+    <input type="hidden" name="vista" value="todas">
+    {% endif %}
+    <select name="estado" data-autosubmit-select>
+        <option value="todas" {% if filtro_estado == 'todas' %}selected{% endif %}>Todos los estados</option>
+        <option value="abiertas" {% if filtro_estado == 'abiertas' %}selected{% endif %}>Abiertas</option>
+        <option value="seguimiento" {% if filtro_estado == 'seguimiento' %}selected{% endif %}>Requieren seguimiento</option>
+        <option value="cerradas" {% if filtro_estado == 'cerradas' %}selected{% endif %}>Cerradas</option>
+        <option value="rechazada" {% if filtro_estado == 'rechazada' %}selected{% endif %}>Rechazadas</option>
+        <option value="pendiente" {% if filtro_estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+        <option value="aprobada" {% if filtro_estado == 'aprobada' %}selected{% endif %}>Aprobada</option>
+        <option value="preparado" {% if filtro_estado == 'preparado' %}selected{% endif %}>Preparado</option>
+        <option value="entregada" {% if filtro_estado == 'entregada' %}selected{% endif %}>Entregada</option>
+        <option value="liquidada" {% if filtro_estado == 'liquidada' %}selected{% endif %}>Liquidada</option>
+        <option value="liquidada_en_prokey" {% if filtro_estado == 'liquidada_en_prokey' %}selected{% endif %}>Liquidada en Prokey</option>
+    </select>
+    <a href="{{ '/mis-requisiciones?vista=todas' if vista_global else '/mis-requisiciones' }}" role="button" class="secondary">Limpiar</a>
+</form>
+
 {% if requisiciones %}
 <section class="panel view-panel table-wrap">
 <table class="table-compact">
@@ -55,5 +75,20 @@
     </article>
 </dialog>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".js-autosubmit-filters [data-autosubmit-select]").forEach((select) => {
+        select.addEventListener("change", () => {
+            if (select.form) {
+                if (typeof select.form.requestSubmit === "function") {
+                    select.form.requestSubmit();
+                } else {
+                    select.form.submit();
+                }
+            }
+        });
+    });
+});
+</script>
 <script src="/static/app.js"></script>
 {% endblock %}

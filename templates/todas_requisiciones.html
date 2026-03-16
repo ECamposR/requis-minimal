@@ -1,18 +1,30 @@
 {% extends "base.html" %}
 {% import "macros/ui.html" as ui %}
-{% block title %}Aprobar{% endblock %}
+{% block title %}Todas las Requisiciones{% endblock %}
 {% block content %}
-{{ ui.page_header("Aprobar Requisiciones", "Bandeja operativa con solicitudes pendientes de aprobacion.") }}
-<form method="GET" class="filters-bar panel js-autosubmit-filters">
+{{ ui.page_header("Todas las Requisiciones", "Consulta global con filtros por estado, fechas y datos base de la solicitud.") }}
+<form method="GET" class="filters-bar panel js-autosubmit-filters all-requests-filters">
     <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante...">
+    <select name="estado" data-autosubmit-select>
+        <option value="todos" {% if filtro_estado == 'todos' %}selected{% endif %}>Todos los estados</option>
+        <option value="pendiente_aprobar" {% if filtro_estado == 'pendiente_aprobar' or filtro_estado == 'pendiente' %}selected{% endif %}>Pendiente de aprobar</option>
+        <option value="pendiente_entregar" {% if filtro_estado == 'pendiente_entregar' or filtro_estado == 'aprobada' %}selected{% endif %}>Pendiente de entregar</option>
+        <option value="preparado" {% if filtro_estado == 'preparado' %}selected{% endif %}>Preparado</option>
+        <option value="rechazada" {% if filtro_estado == 'rechazada' %}selected{% endif %}>Rechazada</option>
+        <option value="entregada" {% if filtro_estado == 'entregada' %}selected{% endif %}>Entregada</option>
+        <option value="liquidada" {% if filtro_estado == 'liquidada' %}selected{% endif %}>Liquidada</option>
+        <option value="liquidada_en_prokey" {% if filtro_estado == 'liquidada_en_prokey' %}selected{% endif %}>Liquidada en Prokey</option>
+    </select>
     <select name="departamento" data-autosubmit-select>
         <option value="todos" {% if filtro_departamento == 'todos' %}selected{% endif %}>Todos los departamentos</option>
         {% for d in departamentos %}
         <option value="{{ d }}" {% if filtro_departamento == d %}selected{% endif %}>{{ d }}</option>
         {% endfor %}
     </select>
+    <input type="date" name="fecha_desde" value="{{ filtro_fecha_desde }}" aria-label="Fecha desde" data-date-picker>
+    <input type="date" name="fecha_hasta" value="{{ filtro_fecha_hasta }}" aria-label="Fecha hasta" data-date-picker>
     <button type="submit">Buscar</button>
-    <a href="/aprobar" role="button" class="secondary">Limpiar</a>
+    <a href="/todas-requisiciones" role="button" class="secondary">Limpiar</a>
 </form>
 {% if requisiciones %}
 <section class="panel view-panel table-wrap">
@@ -22,25 +34,27 @@
         <th class="col-folio"># Req</th>
         <th class="col-estado">Estado</th>
         <th>Solicitante</th>
+        <th>Receptor</th>
         <th>Departamento</th>
-        <th>Justificacion</th>
-        <th class="col-fecha">Fecha</th>
+        <th>Motivo</th>
+        <th class="col-fecha">Fecha de Creación</th>
+        <th class="col-fecha">Fecha Liquidación</th>
         <th>Gestionado por</th>
         <th class="col-detalle">Detalle</th>
-        <th class="col-acciones">Acciones</th>
+        {% if current_user.rol == 'admin' %}<th class="col-acciones">Acciones</th>{% endif %}
     </tr>
     </thead>
     <tbody>
     {% for req in requisiciones %}
     <tr>
         <td>{{ req.folio }}</td>
-        <td>
-            {{ ui.status_badge(req.estado) }}
-        </td>
-        <td>{{ req.solicitante.nombre }}</td>
+        <td>{{ ui.status_badge(req.estado) }}</td>
+        <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
+        <td>{{ req.receptor_designado.nombre if req.receptor_designado else '-' }}</td>
         <td>{{ req.departamento }}</td>
-        <td class="truncate" title="{{ req.justificacion }}">{{ req.justificacion }}</td>
+        <td class="truncate" title="{{ req.motivo_requisicion or '-' }}">{{ req.motivo_requisicion or '-' }}</td>
         <td>{{ req.created_at | fmt_dt }}</td>
+        <td>{{ (req.liquidated_at or req.prokey_liquidada_at) | fmt_dt if (req.liquidated_at or req.prokey_liquidada_at) else '-' }}</td>
         <td>
             {% if req.estado == 'aprobada' and req.aprobador %}
                 {{ req.aprobador.nombre }}
@@ -59,30 +73,23 @@
             {% endif %}
         </td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
+        {% if current_user.rol == 'admin' %}
         <td class="table-actions">
-            {% if req.estado == 'pendiente' and current_user.rol in ['admin', 'aprobador', 'jefe_bodega'] %}
-            <a href="/aprobar/{{ req.id }}/gestionar" role="button" class="secondary">Gestionar</a>
-            {% elif req.estado == 'pendiente' %}
-            <small class="status-muted">Sin permiso para gestionar</small>
-            {% else %}
-            <small class="status-muted">Sin acciones</small>
-            {% endif %}
-            {% if current_user.rol == 'admin' %}
             <form method="POST" action="/admin/requisiciones/{{ req.id }}/eliminar" style="display:inline">
                 <button type="submit" class="btn-danger-sm"
                     onclick="return confirm('¿Eliminar {{ req.folio }}? Esta acción no se puede deshacer.')">
                     Eliminar
                 </button>
             </form>
-            {% endif %}
         </td>
+        {% endif %}
     </tr>
     {% endfor %}
     </tbody>
 </table>
 </section>
 {% else %}
-<p>No hay requisiciones pendientes de aprobar.</p>
+<p>No hay requisiciones que coincidan con los filtros aplicados.</p>
 {% endif %}
 
 <dialog id="modal-detalle">
@@ -105,6 +112,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     select.form.submit();
                 }
+            }
+        });
+    });
+
+    document.querySelectorAll(".js-autosubmit-filters [data-date-picker]").forEach((input) => {
+        input.addEventListener("click", () => {
+            if (typeof input.showPicker === "function") {
+                input.showPicker();
             }
         });
     });

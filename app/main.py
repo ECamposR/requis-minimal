@@ -490,6 +490,11 @@ def puede_ver_todas_las_requisiciones(current_user: Usuario) -> bool:
     return current_user.rol == "logistica"
 
 
+def ensure_all_requests_access(current_user: Usuario) -> None:
+    if current_user.rol not in ["admin", "aprobador", "jefe_bodega", "logistica"]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+
 def redirect_if_bodega_plain_accesses_own_requests(current_user: Usuario) -> RedirectResponse | None:
     if es_bodega_plano(current_user):
         return redirect_with_message(
@@ -503,6 +508,765 @@ def redirect_if_bodega_plain_accesses_own_requests(current_user: Usuario) -> Red
 def ensure_admin(current_user: Usuario) -> None:
     if current_user.rol != "admin":
         raise HTTPException(status_code=403, detail="No autorizado")
+
+
+def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, object]]:
+    ahora = now_sv()
+    inicio_mes = datetime(ahora.year, ahora.month, 1)
+    mis_query = db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id)
+
+    mis_requisiciones = mis_query.count()
+    mis_abiertas = mis_query.filter(
+        Requisicion.estado.in_(["pendiente", "aprobada", "preparado", "entregada", "liquidada"]),
+        or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+    ).count()
+    mis_cerradas = mis_query.filter(
+        or_(
+            Requisicion.estado == "liquidada_en_prokey",
+            Requisicion.delivery_result == "no_entregada",
+        )
+    ).count()
+    mis_creadas_mes = mis_query.filter(Requisicion.created_at >= inicio_mes).count()
+
+    pendientes_aprobar = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
+    pendientes_entregar = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
+    preparadas = db.query(Requisicion).filter(Requisicion.estado == "preparado").count()
+    pendientes_liquidar = db.query(Requisicion).filter(Requisicion.estado == "entregada").count()
+    liquidadas = db.query(Requisicion).filter(Requisicion.estado == "liquidada").count()
+    liquidadas_en_prokey = db.query(Requisicion).filter(Requisicion.estado == "liquidada_en_prokey").count()
+    rechazadas = db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
+    no_entregadas = db.query(Requisicion).filter(Requisicion.delivery_result == "no_entregada").count()
+    pendientes_ref_prokey = db.query(Requisicion).filter(
+        Requisicion.estado == "liquidada",
+        or_(Requisicion.prokey_ref.is_(None), Requisicion.prokey_ref == ""),
+    ).count()
+    todas_requisiciones = db.query(Requisicion).count()
+
+    cards_by_role = {
+        "user": [
+            {"label": "Todas Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {
+                "label": "Requisiciones Pendientes",
+                "value": mis_abiertas,
+                "href": "/mis-requisiciones?estado=abiertas",
+                "icon": "pending",
+            },
+            {"label": "Requisiciones Finalizadas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
+            {"label": "Creadas Este Mes", "value": mis_creadas_mes, "href": "/mis-requisiciones", "icon": "month"},
+        ],
+        "logistica": [
+            {"label": "Todas Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {
+                "label": "Requisiciones Pendientes",
+                "value": mis_abiertas,
+                "href": "/mis-requisiciones?estado=abiertas",
+                "icon": "pending",
+            },
+            {"label": "Requisiciones Finalizadas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
+            {"label": "Todas las Requisiciones", "value": todas_requisiciones, "href": "/todas-requisiciones", "icon": "all"},
+            {
+                "label": "Pendientes de Referencia Prokey",
+                "value": pendientes_ref_prokey,
+                "href": "/todas-requisiciones?estado=liquidada",
+                "icon": "prokey_pending",
+            },
+            {
+                "label": "Liquidadas en Prokey",
+                "value": liquidadas_en_prokey,
+                "href": "/todas-requisiciones?estado=liquidada_en_prokey",
+                "icon": "prokey_done",
+            },
+        ],
+        "aprobador": [
+            {"label": "Pendientes por Aprobar", "value": pendientes_aprobar, "href": "/aprobar", "icon": "approve"},
+            {
+                "label": "Pendientes de Entregar",
+                "value": pendientes_entregar,
+                "href": "/todas-requisiciones?estado=pendiente_entregar",
+                "icon": "deliver",
+            },
+            {
+                "label": "Pendientes de Liquidar",
+                "value": pendientes_liquidar,
+                "href": "/todas-requisiciones?estado=entregada",
+                "icon": "liquidate",
+            },
+            {
+                "label": "Requisiciones Rechazadas",
+                "value": rechazadas,
+                "href": "/todas-requisiciones?estado=rechazada",
+                "icon": "rejected",
+            },
+        ],
+        "bodega": [
+            {"label": "Pendientes de Procesar", "value": pendientes_entregar, "href": "/bodega", "icon": "warehouse"},
+            {
+                "label": "Pendientes de Liquidar",
+                "value": pendientes_liquidar,
+                "href": "/bodega",
+                "icon": "liquidate",
+            },
+            {"label": "Liquidadas", "value": liquidadas, "href": "/bodega?vista=historial", "icon": "closed"},
+            {
+                "label": "Liquidadas en Prokey",
+                "value": liquidadas_en_prokey,
+                "href": "/bodega?vista=historial",
+                "icon": "prokey_done",
+            },
+        ],
+        "jefe_bodega": [
+            {"label": "Pendientes por Aprobar", "value": pendientes_aprobar, "href": "/aprobar", "icon": "approve"},
+            {"label": "Pendientes de Procesar", "value": pendientes_entregar, "href": "/bodega", "icon": "warehouse"},
+            {
+                "label": "Pendientes de Liquidar",
+                "value": pendientes_liquidar,
+                "href": "/bodega",
+                "icon": "liquidate",
+            },
+            {
+                "label": "Liquidadas en Prokey",
+                "value": liquidadas_en_prokey,
+                "href": "/bodega?vista=historial",
+                "icon": "prokey_done",
+            },
+        ],
+        "admin": [
+            {"label": "Todas Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {"label": "Pendientes por Aprobar", "value": pendientes_aprobar, "href": "/aprobar", "icon": "approve"},
+            {
+                "label": "Pendientes de Entregar",
+                "value": pendientes_entregar,
+                "href": "/todas-requisiciones?estado=pendiente_entregar",
+                "icon": "deliver",
+            },
+            {
+                "label": "Pendientes de Liquidar",
+                "value": pendientes_liquidar,
+                "href": "/todas-requisiciones?estado=entregada",
+                "icon": "liquidate",
+            },
+            {"label": "Liquidadas", "value": liquidadas, "href": "/todas-requisiciones?estado=liquidada", "icon": "closed"},
+            {
+                "label": "Liquidadas en Prokey",
+                "value": liquidadas_en_prokey,
+                "href": "/todas-requisiciones?estado=liquidada_en_prokey",
+                "icon": "prokey_done",
+            },
+        ],
+    }
+    return cards_by_role.get(current_user.rol, cards_by_role["user"])
+
+
+def build_home_actions(current_user: Usuario) -> list[dict[str, str]]:
+    actions: list[dict[str, str]] = []
+    if current_user.rol != "bodega":
+        actions.append({"label": "Nueva Requisición", "href": "/crear", "icon": "new"})
+
+    if current_user.rol in ["admin", "aprobador", "jefe_bodega", "logistica"]:
+        actions.append({"label": "Todas las Requisiciones", "href": "/todas-requisiciones", "icon": "search"})
+    elif current_user.rol == "bodega":
+        actions.append({"label": "Bodega", "href": "/bodega", "icon": "warehouse"})
+    else:
+        actions.append({"label": "Mis Requisiciones", "href": "/mis-requisiciones", "icon": "search"})
+
+    if current_user.rol in ["admin", "aprobador", "jefe_bodega"]:
+        actions.append({"label": "Aprobar", "href": "/aprobar", "icon": "approve"})
+        actions.append({"label": "Monitor de Actividad", "href": "/monitor", "icon": "monitor"})
+
+    if current_user.rol in ["admin", "bodega", "jefe_bodega"]:
+        actions.append({"label": "Bodega", "href": "/bodega", "icon": "warehouse"})
+
+    return actions
+
+
+def build_home_user_status_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "user":
+        return None
+
+    mis_query = db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id)
+    total = mis_query.count()
+    segmentos_raw = [
+        {
+            "label": "Pendiente de aprobación",
+            "value": mis_query.filter(Requisicion.estado == "pendiente").count(),
+            "tone": "pending",
+        },
+        {
+            "label": "En proceso",
+            "value": mis_query.filter(Requisicion.estado.in_(["aprobada", "preparado"])).count(),
+            "tone": "process",
+        },
+        {
+            "label": "Pendiente de cierre",
+            "value": mis_query.filter(
+                Requisicion.estado.in_(["entregada", "liquidada"]),
+                or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+            ).count(),
+            "tone": "closure",
+        },
+        {
+            "label": "Rechazada",
+            "value": mis_query.filter(Requisicion.estado == "rechazada").count(),
+            "tone": "rejected",
+        },
+        {
+            "label": "Finalizada",
+            "value": mis_query.filter(
+                or_(
+                    Requisicion.estado == "liquidada_en_prokey",
+                    Requisicion.delivery_result == "no_entregada",
+                )
+            ).count(),
+            "tone": "finalized",
+        },
+    ]
+    segmentos = []
+    for segmento in segmentos_raw:
+        porcentaje = round((segmento["value"] * 100 / total), 1) if total else 0
+        segmentos.append(
+            {
+                **segmento,
+                "percentage": porcentaje,
+                "width_pct": max(porcentaje, 3) if segmento["value"] > 0 and total else 0,
+            }
+        )
+
+    return {
+        "total": total,
+        "segments": segmentos,
+        "has_data": total > 0,
+    }
+
+
+def build_home_user_monthly_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "user":
+        return None
+
+    ahora = now_sv()
+    months = []
+    year = ahora.year
+    month = ahora.month
+    for _ in range(6):
+        months.append((year, month))
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+    months.reverse()
+
+    labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    bars = []
+    max_value = 1
+    for year_value, month_value in months:
+        start = datetime(year_value, month_value, 1)
+        if month_value == 12:
+            end = datetime(year_value + 1, 1, 1)
+        else:
+            end = datetime(year_value, month_value + 1, 1)
+        count = (
+            db.query(Requisicion)
+            .filter(
+                Requisicion.solicitante_id == current_user.id,
+                Requisicion.created_at >= start,
+                Requisicion.created_at < end,
+            )
+            .count()
+        )
+        max_value = max(max_value, count)
+        bars.append(
+            {
+                "label": f"{labels[month_value - 1]} {str(year_value)[-2:]}",
+                "value": count,
+            }
+        )
+
+    for bar in bars:
+        bar["height_pct"] = max(round((bar["value"] * 100) / max_value, 1), 8) if bar["value"] > 0 else 0
+
+    return {
+        "bars": bars,
+        "has_data": any(bar["value"] > 0 for bar in bars),
+        "max_value": max_value,
+    }
+
+
+def build_home_user_closure_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "user":
+        return None
+
+    closed_requests = (
+        db.query(Requisicion)
+        .filter(
+            Requisicion.solicitante_id == current_user.id,
+            or_(
+                Requisicion.estado == "liquidada_en_prokey",
+                Requisicion.delivery_result == "no_entregada",
+            ),
+        )
+        .all()
+    )
+
+    buckets = [
+        {"label": "0-1 días", "value": 0, "tone": "fast"},
+        {"label": "2-3 días", "value": 0, "tone": "medium"},
+        {"label": "4-7 días", "value": 0, "tone": "slow"},
+        {"label": "8+ días", "value": 0, "tone": "very-slow"},
+    ]
+
+    for req in closed_requests:
+        end_at = req.prokey_liquidada_at or req.liquidated_at or req.delivered_at or req.updated_at or req.created_at
+        start_at = req.created_at
+        if not start_at or not end_at:
+            continue
+        delta_days = max((end_at - start_at).total_seconds() / 86400, 0)
+        if delta_days <= 1:
+            buckets[0]["value"] += 1
+        elif delta_days <= 3:
+            buckets[1]["value"] += 1
+        elif delta_days <= 7:
+            buckets[2]["value"] += 1
+        else:
+            buckets[3]["value"] += 1
+
+    total = sum(bucket["value"] for bucket in buckets)
+    max_value = max(1, *(bucket["value"] for bucket in buckets))
+    for bucket in buckets:
+        bucket["height_pct"] = max(round((bucket["value"] * 100) / max_value, 1), 10) if bucket["value"] > 0 else 0
+        bucket["percentage"] = round((bucket["value"] * 100) / total, 1) if total else 0
+
+    return {
+        "bars": buckets,
+        "has_data": total > 0,
+        "total": total,
+    }
+
+
+def build_home_bodega_status_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "bodega":
+        return None
+
+    total = db.query(Requisicion).count()
+    segmentos_raw = [
+        {
+            "label": "Pendientes de Procesar",
+            "value": db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count(),
+            "tone": "process",
+        },
+        {
+            "label": "Pendientes de Liquidar",
+            "value": db.query(Requisicion).filter(Requisicion.estado == "entregada").count(),
+            "tone": "closure",
+        },
+        {
+            "label": "Liquidadas",
+            "value": db.query(Requisicion).filter(Requisicion.estado == "liquidada").count(),
+            "tone": "pending",
+        },
+        {
+            "label": "Liquidadas en Prokey",
+            "value": db.query(Requisicion).filter(Requisicion.estado == "liquidada_en_prokey").count(),
+            "tone": "finalized",
+        },
+        {
+            "label": "No Entregadas",
+            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "no_entregada").count(),
+            "tone": "rejected",
+        },
+    ]
+    segmentos = []
+    for segmento in segmentos_raw:
+        porcentaje = round((segmento["value"] * 100 / total), 1) if total else 0
+        segmentos.append(
+            {
+                **segmento,
+                "percentage": porcentaje,
+                "width_pct": max(porcentaje, 3) if segmento["value"] > 0 and total else 0,
+            }
+        )
+
+    return {
+        "total": total,
+        "segments": segmentos,
+        "has_data": total > 0,
+    }
+
+
+def build_home_aprobador_status_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "aprobador":
+        return None
+
+    pendientes_aprobacion = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
+    pendientes_entrega = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
+    pendientes_liquidacion = db.query(Requisicion).filter(
+        Requisicion.estado == "entregada",
+        or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+    ).count()
+    finalizadas = db.query(Requisicion).filter(
+        or_(
+            Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]),
+            Requisicion.delivery_result == "no_entregada",
+        )
+    ).count()
+    rechazadas = db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
+    total = pendientes_aprobacion + pendientes_entrega + pendientes_liquidacion + finalizadas + rechazadas
+    segmentos_raw = [
+        {
+            "label": "Pendiente de aprobación",
+            "value": pendientes_aprobacion,
+            "tone": "pending",
+        },
+        {
+            "label": "Pendiente de entrega",
+            "value": pendientes_entrega,
+            "tone": "process",
+        },
+        {
+            "label": "Pendiente de liquidación",
+            "value": pendientes_liquidacion,
+            "tone": "closure",
+        },
+        {
+            "label": "Finalizada",
+            "value": finalizadas,
+            "tone": "finalized",
+        },
+        {
+            "label": "Rechazada",
+            "value": rechazadas,
+            "tone": "rejected",
+        },
+    ]
+    segmentos = []
+    for segmento in segmentos_raw:
+        porcentaje = round((segmento["value"] * 100 / total), 1) if total else 0
+        segmentos.append(
+            {
+                **segmento,
+                "percentage": porcentaje,
+                "width_pct": max(porcentaje, 3) if segmento["value"] > 0 and total else 0,
+            }
+        )
+
+    return {
+        "total": total,
+        "segments": segmentos,
+        "has_data": total > 0,
+    }
+
+
+def build_home_jefe_bodega_status_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "jefe_bodega":
+        return None
+
+    pendientes_aprobacion = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
+    pendientes_proceso = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
+    pendientes_liquidacion = db.query(Requisicion).filter(
+        Requisicion.estado == "entregada",
+        or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+    ).count()
+    finalizadas = db.query(Requisicion).filter(
+        or_(
+            Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]),
+            Requisicion.delivery_result == "no_entregada",
+        )
+    ).count()
+    rechazadas = db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
+    total = pendientes_aprobacion + pendientes_proceso + pendientes_liquidacion + finalizadas + rechazadas
+    segmentos_raw = [
+        {
+            "label": "Pendiente de aprobación",
+            "value": pendientes_aprobacion,
+            "tone": "pending",
+        },
+        {
+            "label": "Pendiente de proceso",
+            "value": pendientes_proceso,
+            "tone": "process",
+        },
+        {
+            "label": "Pendiente de liquidación",
+            "value": pendientes_liquidacion,
+            "tone": "closure",
+        },
+        {
+            "label": "Finalizada",
+            "value": finalizadas,
+            "tone": "finalized",
+        },
+        {
+            "label": "Rechazada",
+            "value": rechazadas,
+            "tone": "rejected",
+        },
+    ]
+    segmentos = []
+    for segmento in segmentos_raw:
+        porcentaje = round((segmento["value"] * 100 / total), 1) if total else 0
+        segmentos.append(
+            {
+                **segmento,
+                "percentage": porcentaje,
+                "width_pct": max(porcentaje, 3) if segmento["value"] > 0 and total else 0,
+            }
+        )
+
+    return {
+        "total": total,
+        "segments": segmentos,
+        "has_data": total > 0,
+    }
+
+
+def build_home_jefe_bodega_monthly_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "jefe_bodega":
+        return None
+
+    ahora = now_sv()
+    months = []
+    year = ahora.year
+    month = ahora.month
+    for _ in range(6):
+        months.append((year, month))
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+    months.reverse()
+
+    labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    bars = []
+    max_value = 1
+    for year_value, month_value in months:
+        start = datetime(year_value, month_value, 1)
+        if month_value == 12:
+            end = datetime(year_value + 1, 1, 1)
+        else:
+            end = datetime(year_value, month_value + 1, 1)
+        value = db.query(Requisicion).filter(Requisicion.created_at >= start, Requisicion.created_at < end).count()
+        max_value = max(max_value, value)
+        bars.append({"label": f"{labels[month_value - 1]} {str(year_value)[2:]}", "value": value})
+
+    for bar in bars:
+        bar["height_pct"] = 18 if bar["value"] == 0 else max(22, round((bar["value"] / max_value) * 100))
+
+    return {
+        "bars": bars,
+        "has_data": any(bar["value"] > 0 for bar in bars),
+        "max_value": max_value,
+    }
+
+
+def build_home_aprobador_monthly_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "aprobador":
+        return None
+
+    ahora = now_sv()
+    months = []
+    year = ahora.year
+    month = ahora.month
+    for _ in range(6):
+        months.append((year, month))
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+    months.reverse()
+
+    labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    bars = []
+    max_value = 1
+    for year_value, month_value in months:
+        start = datetime(year_value, month_value, 1)
+        if month_value == 12:
+            end = datetime(year_value + 1, 1, 1)
+        else:
+            end = datetime(year_value, month_value + 1, 1)
+        count = (
+            db.query(Requisicion)
+            .filter(
+                Requisicion.created_at >= start,
+                Requisicion.created_at < end,
+            )
+            .count()
+        )
+        max_value = max(max_value, count)
+        bars.append(
+            {
+                "label": f"{labels[month_value - 1]} {str(year_value)[-2:]}",
+                "value": count,
+            }
+        )
+
+    for bar in bars:
+        bar["height_pct"] = max(round((bar["value"] * 100) / max_value, 1), 8) if bar["value"] > 0 else 0
+
+    return {
+        "bars": bars,
+        "has_data": any(bar["value"] > 0 for bar in bars),
+        "max_value": max_value,
+    }
+
+
+def build_home_aprobador_pending_age_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "aprobador":
+        return None
+
+    motivos = (
+        db.query(
+            Requisicion.motivo_requisicion,
+            func.count(Requisicion.id).label("total"),
+        )
+        .filter(Requisicion.motivo_requisicion.is_not(None), Requisicion.motivo_requisicion != "")
+        .group_by(Requisicion.motivo_requisicion)
+        .order_by(func.count(Requisicion.id).desc(), Requisicion.motivo_requisicion.asc())
+        .limit(5)
+        .all()
+    )
+
+    buckets = []
+    tones = ["fast", "medium", "slow", "very-slow", "process"]
+    for index, row in enumerate(motivos):
+        buckets.append(
+            {
+                "label": row[0],
+                "value": row[1],
+                "tone": tones[index % len(tones)],
+            }
+        )
+
+    total = sum(bucket["value"] for bucket in buckets)
+    max_value = max([1, *[bucket["value"] for bucket in buckets]])
+    for bucket in buckets:
+        bucket["height_pct"] = max(round((bucket["value"] * 100) / max_value, 1), 10) if bucket["value"] > 0 else 0
+        bucket["percentage"] = round((bucket["value"] * 100) / total, 1) if total else 0
+
+    return {
+        "bars": buckets,
+        "has_data": total > 0,
+        "total": total,
+    }
+
+
+def build_home_bodega_monthly_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "bodega":
+        return None
+
+    ahora = now_sv()
+    months = []
+    year = ahora.year
+    month = ahora.month
+    for _ in range(6):
+        months.append((year, month))
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+    months.reverse()
+
+    labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    bars = []
+    max_value = 1
+    for year_value, month_value in months:
+        start = datetime(year_value, month_value, 1)
+        if month_value == 12:
+            end = datetime(year_value + 1, 1, 1)
+        else:
+            end = datetime(year_value, month_value + 1, 1)
+        count = (
+            db.query(Requisicion)
+            .filter(
+                Requisicion.delivered_at.is_not(None),
+                Requisicion.delivered_at >= start,
+                Requisicion.delivered_at < end,
+            )
+            .count()
+        )
+        max_value = max(max_value, count)
+        bars.append(
+            {
+                "label": f"{labels[month_value - 1]} {str(year_value)[-2:]}",
+                "value": count,
+            }
+        )
+
+    for bar in bars:
+        bar["height_pct"] = max(round((bar["value"] * 100) / max_value, 1), 8) if bar["value"] > 0 else 0
+
+    return {
+        "bars": bars,
+        "has_data": any(bar["value"] > 0 for bar in bars),
+        "max_value": max_value,
+    }
+
+
+def build_home_bodega_delivery_results_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "bodega":
+        return None
+
+    buckets = [
+        {
+            "label": "Completa",
+            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "completa").count(),
+            "tone": "fast",
+        },
+        {
+            "label": "Parcial",
+            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "parcial").count(),
+            "tone": "slow",
+        },
+        {
+            "label": "No Entregada",
+            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "no_entregada").count(),
+            "tone": "very-slow",
+        },
+    ]
+
+    total = sum(bucket["value"] for bucket in buckets)
+    max_value = max(1, *(bucket["value"] for bucket in buckets))
+    for bucket in buckets:
+        bucket["height_pct"] = max(round((bucket["value"] * 100) / max_value, 1), 10) if bucket["value"] > 0 else 0
+        bucket["percentage"] = round((bucket["value"] * 100) / total, 1) if total else 0
+
+    return {
+        "bars": buckets,
+        "has_data": total > 0,
+        "total": total,
+    }
+
+
+def build_home_jefe_bodega_delivery_results_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "jefe_bodega":
+        return None
+
+    buckets = [
+        {
+            "label": "Completa",
+            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "completa").count(),
+            "tone": "fast",
+        },
+        {
+            "label": "Parcial",
+            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "parcial").count(),
+            "tone": "slow",
+        },
+        {
+            "label": "No Entregada",
+            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "no_entregada").count(),
+            "tone": "very-slow",
+        },
+    ]
+
+    total = sum(bucket["value"] for bucket in buckets)
+    max_value = max(1, *(bucket["value"] for bucket in buckets))
+    for bucket in buckets:
+        bucket["height_pct"] = max(round((bucket["value"] * 100) / max_value, 1), 10) if bucket["value"] > 0 else 0
+        bucket["percentage"] = round((bucket["value"] * 100) / total, 1) if total else 0
+
+    return {
+        "bars": buckets,
+        "has_data": total > 0,
+        "total": total,
+    }
 
 
 def ensure_dashboard_access(current_user: Usuario) -> None:
@@ -807,67 +1571,40 @@ def cambiar_password_guardar(
 
 @app.get("/")
 def home(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
-    mis_requisiciones_query = db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id)
-    ahora = now_sv()
-    inicio_mes = datetime(ahora.year, ahora.month, 1)
-    hace_30_dias = ahora - timedelta(days=30)
-
-    mis_requisiciones = mis_requisiciones_query.count()
-    mis_pendientes = mis_requisiciones_query.filter(Requisicion.estado == "pendiente").count()
-    mis_aprobadas = mis_requisiciones_query.filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
-    mis_rechazadas = mis_requisiciones_query.filter(Requisicion.estado == "rechazada").count()
-    mis_entregadas = mis_requisiciones_query.filter(Requisicion.estado == "entregada").count()
-    mis_creadas_mes = mis_requisiciones_query.filter(Requisicion.created_at >= inicio_mes).count()
-    mis_entregadas_30d = mis_requisiciones_query.filter(
-        Requisicion.estado == "entregada", Requisicion.delivered_at >= hace_30_dias
-    ).count()
-    pendientes_aprobar = 0
-    if current_user.rol in ["aprobador", "admin", "jefe_bodega"]:
-        pendientes_aprobar = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
-    pendientes_aprobar_panel = pendientes_aprobar if current_user.rol in ["aprobador", "admin", "jefe_bodega"] else mis_pendientes
-    mis_aprobadas_historicas = mis_requisiciones_query.filter(Requisicion.approved_by.isnot(None)).count()
-    aprobadas_panel = (
-        db.query(Requisicion).filter(Requisicion.approved_by.isnot(None)).count()
-        if current_user.rol in ["admin", "aprobador", "bodega", "jefe_bodega"]
-        else mis_aprobadas_historicas
-    )
-    pendientes_bodega = 0
-    if current_user.rol in ["bodega", "admin", "jefe_bodega"]:
-        pendientes_bodega = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
-    pendientes_entregar_panel = pendientes_bodega if current_user.rol in ["bodega", "admin", "jefe_bodega"] else aprobadas_panel
-    rechazadas_panel = (
-        db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
-        if current_user.rol in ["admin", "aprobador", "bodega", "jefe_bodega"]
-        else mis_rechazadas
-    )
-    escala_metricas_home = max(
-        1,
-        mis_creadas_mes,
-        pendientes_aprobar_panel,
-        pendientes_entregar_panel,
-        rechazadas_panel,
-        mis_entregadas_30d,
-    )
+    home_cards = build_home_cards(current_user, db)
+    home_actions = build_home_actions(current_user)
+    home_user_status_chart = build_home_user_status_chart(current_user, db)
+    home_user_monthly_chart = build_home_user_monthly_chart(current_user, db)
+    home_user_closure_chart = build_home_user_closure_chart(current_user, db)
+    home_aprobador_status_chart = build_home_aprobador_status_chart(current_user, db)
+    home_aprobador_monthly_chart = build_home_aprobador_monthly_chart(current_user, db)
+    home_aprobador_pending_age_chart = build_home_aprobador_pending_age_chart(current_user, db)
+    home_jefe_bodega_status_chart = build_home_jefe_bodega_status_chart(current_user, db)
+    home_jefe_bodega_monthly_chart = build_home_jefe_bodega_monthly_chart(current_user, db)
+    home_jefe_bodega_delivery_results_chart = build_home_jefe_bodega_delivery_results_chart(current_user, db)
+    home_bodega_status_chart = build_home_bodega_status_chart(current_user, db)
+    home_bodega_monthly_chart = build_home_bodega_monthly_chart(current_user, db)
+    home_bodega_delivery_results_chart = build_home_bodega_delivery_results_chart(current_user, db)
 
     return templates.TemplateResponse(
         "home.html",
         template_context(
             request,
             current_user,
-            mis_requisiciones=mis_requisiciones,
-            mis_pendientes=mis_pendientes,
-            mis_aprobadas=mis_aprobadas,
-            aprobadas_panel=aprobadas_panel,
-            mis_rechazadas=mis_rechazadas,
-            mis_entregadas=mis_entregadas,
-            mis_creadas_mes=mis_creadas_mes,
-            mis_entregadas_30d=mis_entregadas_30d,
-            pendientes_aprobar_panel=pendientes_aprobar_panel,
-            pendientes_entregar_panel=pendientes_entregar_panel,
-            rechazadas_panel=rechazadas_panel,
-            escala_metricas_home=escala_metricas_home,
-            pendientes_aprobar=pendientes_aprobar,
-            pendientes_bodega=pendientes_bodega,
+            home_cards=home_cards,
+            home_actions=home_actions,
+            home_user_status_chart=home_user_status_chart,
+            home_user_monthly_chart=home_user_monthly_chart,
+            home_user_closure_chart=home_user_closure_chart,
+            home_aprobador_status_chart=home_aprobador_status_chart,
+            home_aprobador_monthly_chart=home_aprobador_monthly_chart,
+            home_aprobador_pending_age_chart=home_aprobador_pending_age_chart,
+            home_jefe_bodega_status_chart=home_jefe_bodega_status_chart,
+            home_jefe_bodega_monthly_chart=home_jefe_bodega_monthly_chart,
+            home_jefe_bodega_delivery_results_chart=home_jefe_bodega_delivery_results_chart,
+            home_bodega_status_chart=home_bodega_status_chart,
+            home_bodega_monthly_chart=home_bodega_monthly_chart,
+            home_bodega_delivery_results_chart=home_bodega_delivery_results_chart,
         ),
     )
 
@@ -932,8 +1669,40 @@ def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db:
     heatmap_counts = {int(row.hora): int(row.total) for row in hourly_rows if row.hora is not None}
     heatmap_labels = [f"{hour:02d}:00" for hour in range(24)]
     heatmap_values = [heatmap_counts.get(hour, 0) for hour in range(24)]
+    total_requisiciones = db.query(func.count(Requisicion.id)).scalar() or 0
+    rango_fechas = db.query(
+        func.min(Requisicion.created_at).label("min_created_at"),
+        func.max(Requisicion.created_at).label("max_created_at"),
+    ).one()
+    dias_observados = 0
+    if rango_fechas.min_created_at and rango_fechas.max_created_at:
+        dias_observados = max((rango_fechas.max_created_at.date() - rango_fechas.min_created_at.date()).days + 1, 1)
+    promedio_requisiciones_por_dia = round(total_requisiciones / dias_observados, 2) if dias_observados else 0.0
+
+    prokey_cycle_rows = (
+        db.query(Requisicion.created_at, Requisicion.prokey_liquidada_at)
+        .filter(
+            Requisicion.estado == "liquidada_en_prokey",
+            Requisicion.created_at.is_not(None),
+            Requisicion.prokey_liquidada_at.is_not(None),
+        )
+        .all()
+    )
+    cycle_hours = [
+        max((row.prokey_liquidada_at - row.created_at).total_seconds() / 3600.0, 0.0)
+        for row in prokey_cycle_rows
+        if row.created_at and row.prokey_liquidada_at
+    ]
+    promedio_horas_hasta_prokey = round(sum(cycle_hours) / len(cycle_hours), 2) if cycle_hours else 0.0
 
     return {
+        "kpis": {
+            "promedio_horas_hasta_prokey": promedio_horas_hasta_prokey,
+            "requisiciones_liquidadas_en_prokey": len(cycle_hours),
+            "requisiciones_promedio_por_dia": promedio_requisiciones_por_dia,
+            "dias_observados": dias_observados,
+            "total_requisiciones": int(total_requisiciones),
+        },
         "motivos": {
             "labels": [str(row.motivo or "Sin motivo") for row in motivos_rows],
             "values": [int(row.total or 0) for row in motivos_rows],
@@ -1253,10 +2022,33 @@ def mis_requisiciones(
     if restricted_redirect:
         return restricted_redirect
     vista_param = request.query_params.get("vista", "mias").strip().lower()
+    estado = request.query_params.get("estado", "todas").strip().lower()
     vista_global = puede_ver_todas_las_requisiciones(current_user) and vista_param == "todas"
     query = db.query(Requisicion).options(joinedload(Requisicion.solicitante))
     if not vista_global:
         query = query.filter(Requisicion.solicitante_id == current_user.id)
+
+    estados_validos = {"pendiente", "aprobada", "preparado", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"}
+    if estado == "abiertas":
+        query = query.filter(
+            Requisicion.estado.in_(["pendiente", "aprobada", "preparado", "entregada", "liquidada"]),
+            or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+        )
+    elif estado == "seguimiento":
+        query = query.filter(
+            Requisicion.estado.in_(["aprobada", "preparado", "entregada", "liquidada"]),
+            or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+        )
+    elif estado == "cerradas":
+        query = query.filter(
+            or_(
+                Requisicion.estado == "liquidada_en_prokey",
+                Requisicion.delivery_result == "no_entregada",
+            )
+        )
+    elif estado in estados_validos:
+        query = query.filter(Requisicion.estado == estado)
+
     requisiciones = (
         query
         .order_by(Requisicion.created_at.desc())
@@ -1264,7 +2056,13 @@ def mis_requisiciones(
     )
     return templates.TemplateResponse(
         "mis_requisiciones.html",
-        template_context(request, current_user, requisiciones=requisiciones, vista_global=vista_global),
+        template_context(
+            request,
+            current_user,
+            requisiciones=requisiciones,
+            vista_global=vista_global,
+            filtro_estado=estado,
+        ),
     )
 
 
@@ -1454,35 +2252,20 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
         raise HTTPException(status_code=403, detail="No autorizado")
 
     q = request.query_params.get("q", "").strip()
-    estado = request.query_params.get("estado", "todos").strip().lower()
     departamento = request.query_params.get("departamento", "todos").strip()
-
-    alias_estado = {
-        "pendiente_aprobar": "pendiente",
-        "pendiente_entregar": "aprobada",
-    }
-    estado_real = alias_estado.get(estado, estado)
-    estados_validos = {"pendiente", "aprobada", "preparado", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"}
     query = (
         db.query(Requisicion)
         .options(
             joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.receptor_designado),
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.rechazador),
             joinedload(Requisicion.preparador),
             joinedload(Requisicion.entregador),
             joinedload(Requisicion.liquidator),
         )
-        .filter(
-            Requisicion.estado.in_(
-                ["pendiente", "aprobada", "preparado", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"]
-            )
-        )
+        .filter(Requisicion.estado == "pendiente")
     )
-    if estado == "pendiente_entregar":
-        query = query.filter(Requisicion.estado.in_(["aprobada", "preparado"]))
-    elif estado_real in estados_validos:
-        query = query.filter(Requisicion.estado == estado_real)
     if departamento and departamento != "todos":
         query = query.filter(Requisicion.departamento == departamento)
     if q:
@@ -1511,8 +2294,105 @@ def aprobar_view(request: Request, current_user: Usuario = Depends(get_current_u
             current_user,
             requisiciones=requisiciones,
             filtro_q=q,
+            filtro_departamento=departamento,
+            departamentos=departamentos,
+        ),
+    )
+
+
+@app.get("/todas-requisiciones")
+def todas_requisiciones_view(
+    request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    ensure_all_requests_access(current_user)
+
+    q = request.query_params.get("q", "").strip()
+    estado = request.query_params.get("estado", "todos").strip().lower()
+    departamento = request.query_params.get("departamento", "todos").strip()
+    fecha_desde_raw = request.query_params.get("fecha_desde", "").strip()
+    fecha_hasta_raw = request.query_params.get("fecha_hasta", "").strip()
+
+    alias_estado = {
+        "pendiente_aprobar": "pendiente",
+        "pendiente_entregar": "aprobada",
+    }
+    estado_real = alias_estado.get(estado, estado)
+    estados_validos = {"pendiente", "aprobada", "preparado", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"}
+    query = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.receptor_designado),
+            joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.rechazador),
+            joinedload(Requisicion.preparador),
+            joinedload(Requisicion.entregador),
+            joinedload(Requisicion.liquidator),
+            joinedload(Requisicion.prokey_liquidator),
+        )
+        .filter(
+            Requisicion.estado.in_(
+                ["pendiente", "aprobada", "preparado", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"]
+            )
+        )
+    )
+    if estado == "pendiente_entregar":
+        query = query.filter(Requisicion.estado.in_(["aprobada", "preparado"]))
+    elif estado_real in estados_validos:
+        query = query.filter(Requisicion.estado == estado_real)
+    if departamento and departamento != "todos":
+        query = query.filter(Requisicion.departamento == departamento)
+    if fecha_desde_raw:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde_raw, "%Y-%m-%d")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha desde invalida") from exc
+        query = query.filter(Requisicion.created_at >= fecha_desde)
+    if fecha_hasta_raw:
+        try:
+            fecha_hasta = datetime.strptime(fecha_hasta_raw, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha hasta invalida") from exc
+        query = query.filter(Requisicion.created_at < fecha_hasta)
+    if q:
+        patron = f"%{q}%"
+        query = query.filter(
+            or_(
+                Requisicion.folio.ilike(patron),
+                Requisicion.departamento.ilike(patron),
+                Requisicion.motivo_requisicion.ilike(patron),
+                Requisicion.justificacion.ilike(patron),
+                Requisicion.cliente_codigo.ilike(patron),
+                Requisicion.cliente_nombre.ilike(patron),
+                Requisicion.prokey_ref.ilike(patron),
+                Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
+                Requisicion.receptor_designado.has(Usuario.nombre.ilike(patron)),
+                Requisicion.aprobador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.rechazador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.preparador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.entregador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.liquidator.has(Usuario.nombre.ilike(patron)),
+                Requisicion.prokey_liquidator.has(Usuario.nombre.ilike(patron)),
+            )
+        )
+
+    requisiciones = query.order_by(Requisicion.created_at.desc()).all()
+    departamentos = [
+        row[0]
+        for row in db.query(Requisicion.departamento).distinct().order_by(Requisicion.departamento.asc()).all()
+        if row[0]
+    ]
+    return templates.TemplateResponse(
+        "todas_requisiciones.html",
+        template_context(
+            request,
+            current_user,
+            requisiciones=requisiciones,
+            filtro_q=q,
             filtro_estado=estado,
             filtro_departamento=departamento,
+            filtro_fecha_desde=fecha_desde_raw,
+            filtro_fecha_hasta=fecha_hasta_raw,
             departamentos=departamentos,
         ),
     )
@@ -1605,11 +2485,18 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         raise HTTPException(status_code=403, detail="No autorizado")
 
     q = request.query_params.get("q", "").strip()
-    vista = request.query_params.get("vista", "todos").strip().lower()
+    vista = request.query_params.get("vista", "pendientes").strip().lower()
+    if vista not in {"pendientes", "historial"}:
+        vista = "pendientes"
+    etapa = request.query_params.get("etapa", "todos").strip().lower()
+    departamento = request.query_params.get("departamento", "todos").strip()
     resultado = request.query_params.get("resultado", "todos").strip().lower()
+    fecha_desde_raw = request.query_params.get("fecha_desde", "").strip()
+    fecha_hasta_raw = request.query_params.get("fecha_hasta", "").strip()
 
     bodega_optionals = [
         joinedload(Requisicion.solicitante),
+        joinedload(Requisicion.receptor_designado),
         joinedload(Requisicion.aprobador),
         joinedload(Requisicion.preparador),
         joinedload(Requisicion.entregador),
@@ -1627,6 +2514,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
                 Requisicion.estado == "aprobada",
                 Requisicion.estado == "preparado",
                 Requisicion.estado == "entregada",
+                Requisicion.estado == "liquidada",
             )
         )
     )
@@ -1635,8 +2523,25 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             Requisicion.estado == "aprobada",
             Requisicion.estado == "preparado",
             Requisicion.delivery_result.in_(["completa", "parcial"]),
+            Requisicion.estado == "liquidada",
         )
     )
+    if departamento and departamento != "todos":
+        pendientes_query = pendientes_query.filter(Requisicion.departamento == departamento)
+    if fecha_desde_raw:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde_raw, "%Y-%m-%d")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha desde invalida") from exc
+        pendientes_query = pendientes_query.filter(Requisicion.created_at >= fecha_desde)
+    if fecha_hasta_raw:
+        try:
+            fecha_hasta = datetime.strptime(fecha_hasta_raw, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha hasta invalida") from exc
+        pendientes_query = pendientes_query.filter(Requisicion.created_at < fecha_hasta)
+    if etapa in {"aprobada", "preparado", "entregada", "liquidada"}:
+        pendientes_query = pendientes_query.filter(Requisicion.estado == etapa)
     if q:
         patron = f"%{q}%"
         pendientes_query = pendientes_query.filter(
@@ -1647,6 +2552,11 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
                 Requisicion.cliente_codigo.ilike(patron),
                 Requisicion.cliente_nombre.ilike(patron),
                 Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
+                Requisicion.receptor_designado.has(Usuario.nombre.ilike(patron)),
+                Requisicion.aprobador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.preparador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.entregador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.liquidator.has(Usuario.nombre.ilike(patron)),
             )
         )
 
@@ -1661,17 +2571,37 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         db.query(Requisicion)
         .options(
             joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.receptor_designado),
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.preparador),
             joinedload(Requisicion.entregador),
+            joinedload(Requisicion.liquidator),
         )
         .filter(
             or_(
-                Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]),
+                Requisicion.estado == "liquidada_en_prokey",
                 Requisicion.delivery_result == "no_entregada",
             )
         )
     )
+    if departamento and departamento != "todos":
+        historial_query = historial_query.filter(Requisicion.departamento == departamento)
+    if fecha_desde_raw:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde_raw, "%Y-%m-%d")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha desde invalida") from exc
+        historial_query = historial_query.filter(Requisicion.created_at >= fecha_desde)
+    if fecha_hasta_raw:
+        try:
+            fecha_hasta = datetime.strptime(fecha_hasta_raw, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha hasta invalida") from exc
+        historial_query = historial_query.filter(Requisicion.created_at < fecha_hasta)
+    if etapa == "liquidada_en_prokey":
+        historial_query = historial_query.filter(Requisicion.estado == "liquidada_en_prokey")
+    elif etapa == "no_entregada":
+        historial_query = historial_query.filter(Requisicion.delivery_result == "no_entregada")
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(
             or_(
@@ -1693,11 +2623,21 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
                 Requisicion.cliente_codigo.ilike(patron),
                 Requisicion.cliente_nombre.ilike(patron),
                 Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
+                Requisicion.receptor_designado.has(Usuario.nombre.ilike(patron)),
+                Requisicion.aprobador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.preparador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.entregador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.liquidator.has(Usuario.nombre.ilike(patron)),
                 Requisicion.delivered_to.ilike(patron),
             )
         )
 
     historial_entregadas = historial_query.order_by(Requisicion.delivered_at.desc()).all()
+    departamentos = [
+        row[0]
+        for row in db.query(Requisicion.departamento).distinct().order_by(Requisicion.departamento.asc()).all()
+        if row[0]
+    ]
 
     return templates.TemplateResponse(
         "bodega.html",
@@ -1708,7 +2648,12 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             historial_entregadas=historial_entregadas,
             filtro_q=q,
             filtro_vista=vista,
+            filtro_etapa=etapa,
+            filtro_departamento=departamento,
+            filtro_fecha_desde=fecha_desde_raw,
+            filtro_fecha_hasta=fecha_hasta_raw,
             filtro_resultado=resultado,
+            departamentos=departamentos,
         ),
     )
 
