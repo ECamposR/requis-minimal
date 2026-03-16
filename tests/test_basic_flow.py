@@ -354,6 +354,66 @@ def test_home_bodega_muestra_movimiento_mensual(client: TestClient, db_session: 
     assert "user-monthly-chart" in html
 
 
+def test_home_bodega_muestra_resultados_de_entrega(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    ahora = datetime.now()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-R1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega completa",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="completa",
+            ),
+            Requisicion(
+                folio="REQ-BOD-R2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega parcial",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="parcial",
+            ),
+            Requisicion(
+                folio="REQ-BOD-R3",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="No entregada",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="no_entregada",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Resultados de Entrega" in html
+    assert "Expone cómo terminan las entregas gestionadas por bodega." in html
+    assert "Completa" in html
+    assert "Parcial" in html
+    assert "No Entregada" in html
+
+
 def test_mis_requisiciones_filtra_abiertas_para_alinear_cards_home(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

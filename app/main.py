@@ -942,6 +942,41 @@ def build_home_bodega_monthly_chart(current_user: Usuario, db: Session) -> dict[
     }
 
 
+def build_home_bodega_delivery_results_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "bodega":
+        return None
+
+    buckets = [
+        {
+            "label": "Completa",
+            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "completa").count(),
+            "tone": "fast",
+        },
+        {
+            "label": "Parcial",
+            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "parcial").count(),
+            "tone": "slow",
+        },
+        {
+            "label": "No Entregada",
+            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "no_entregada").count(),
+            "tone": "very-slow",
+        },
+    ]
+
+    total = sum(bucket["value"] for bucket in buckets)
+    max_value = max(1, *(bucket["value"] for bucket in buckets))
+    for bucket in buckets:
+        bucket["height_pct"] = max(round((bucket["value"] * 100) / max_value, 1), 10) if bucket["value"] > 0 else 0
+        bucket["percentage"] = round((bucket["value"] * 100) / total, 1) if total else 0
+
+    return {
+        "bars": buckets,
+        "has_data": total > 0,
+        "total": total,
+    }
+
+
 def ensure_dashboard_access(current_user: Usuario) -> None:
     if current_user.rol not in ["admin", "aprobador", "jefe_bodega"]:
         raise HTTPException(status_code=403, detail="No autorizado")
@@ -1251,6 +1286,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
     home_user_closure_chart = build_home_user_closure_chart(current_user, db)
     home_bodega_status_chart = build_home_bodega_status_chart(current_user, db)
     home_bodega_monthly_chart = build_home_bodega_monthly_chart(current_user, db)
+    home_bodega_delivery_results_chart = build_home_bodega_delivery_results_chart(current_user, db)
 
     return templates.TemplateResponse(
         "home.html",
@@ -1264,6 +1300,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
             home_user_closure_chart=home_user_closure_chart,
             home_bodega_status_chart=home_bodega_status_chart,
             home_bodega_monthly_chart=home_bodega_monthly_chart,
+            home_bodega_delivery_results_chart=home_bodega_delivery_results_chart,
         ),
     )
 

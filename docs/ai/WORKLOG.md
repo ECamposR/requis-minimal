@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 11:00 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-144` para completar el tercer panel SSR del home del rol `bodega` antes del compactado final.
+- Tareas: `REQ-144`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_bodega_delivery_results_chart(...)`, que resume las entregas en `completa`, `parcial` y `no_entregada`.
+  - El home `bodega` ya renderiza `Resultados de Entrega` reutilizando el patron SSR de barras y porcentajes ya usado en `Tiempo de Cierre`.
+  - Se agrega prueba SSR especifica para validar presencia del panel y de los tres buckets visibles.
+- Proximo paso:
+  - Ejecutar `REQ-145`, compactando las 4 cards y los 3 paneles SSR del home `bodega` en una composicion mas densa y coherente en escritorio.
+
 ## 2026-03-16 10:49 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-143` para sumar una lectura temporal simple al home del rol `bodega`.
 - Tareas: `REQ-143`

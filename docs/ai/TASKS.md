@@ -32,7 +32,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-141` | `done` | Refactor semantico del home `bodega`: reemplazar cards ambiguas o ajenas al rol por 4 cards operativas (`Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas`, `Liquidadas en Prokey`) con links coherentes a `/bodega` o su historial.
 - `REQ-142` | `done` | Agregar al home `bodega` un panel SSR `Estado de Operación de Bodega`, con barra apilada y leyenda para `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas`, `Liquidadas en Prokey` y `No Entregadas`.
 - `REQ-143` | `done` | Agregar al home `bodega` un panel SSR `Movimiento de Requisiciones por Mes`, orientado a volumen operativo de bodega usando entregas por mes en los ultimos 6 meses.
-- `REQ-144` | `todo` | Agregar al home `bodega` un panel SSR `Resultados de Entrega`, mostrando distribucion de `completa`, `parcial` y `no_entregada` como lectura simple de calidad de entrega.
+- `REQ-144` | `done` | Agregar al home `bodega` un panel SSR `Resultados de Entrega`, mostrando distribucion de `completa`, `parcial` y `no_entregada` como lectura simple de calidad de entrega.
 - `REQ-145` | `todo` | Compactar layout del home `bodega` para que las 4 cards y los 3 paneles SSR queden en una composicion densa y clara en escritorio, reutilizando el patron visual del home `user` sin duplicar complejidad.
 
 ## Monitor de Actividad
