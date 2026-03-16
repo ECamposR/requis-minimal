@@ -1884,6 +1884,10 @@ table tbody tr:hover td,
     grid-template-columns: minmax(0, 1.15fr) repeat(2, minmax(0, 0.92fr));
 }
 
+.route-home .home-bottom-grid--jefe-bodega-insights {
+    grid-template-columns: minmax(0, 1.18fr) repeat(2, minmax(0, 0.9fr));
+}
+
 .route-home .home-panel {
     border-radius: 0.95rem;
     border: 1px solid rgba(83, 119, 166, 0.3);
@@ -1944,6 +1948,10 @@ table tbody tr:hover td,
     padding: 0.78rem 0.82rem;
 }
 
+.route-home .home-bottom-grid--jefe-bodega-insights .home-panel {
+    padding: 0.78rem 0.82rem;
+}
+
 .route-home .home-bottom-grid--bodega-insights .home-panel-header {
     margin-bottom: 0.5rem;
 }
@@ -1952,11 +1960,19 @@ table tbody tr:hover td,
     margin-bottom: 0.52rem;
 }
 
+.route-home .home-bottom-grid--jefe-bodega-insights .home-panel-header {
+    margin-bottom: 0.52rem;
+}
+
 .route-home .home-bottom-grid--bodega-insights .home-panel p {
     font-size: 0.82rem;
 }
 
 .route-home .home-bottom-grid--aprobador-insights .home-panel p {
+    font-size: 0.82rem;
+}
+
+.route-home .home-bottom-grid--jefe-bodega-insights .home-panel p {
     font-size: 0.82rem;
 }
 
@@ -1980,7 +1996,15 @@ table tbody tr:hover td,
     gap: 0.58rem 0.82rem;
 }
 
+.route-home .home-bottom-grid--jefe-bodega-insights .user-status-legend {
+    gap: 0.58rem 0.82rem;
+}
+
 .route-home .home-bottom-grid--aprobador-insights .user-status-legend__content strong {
+    font-size: 0.84rem;
+}
+
+.route-home .home-bottom-grid--jefe-bodega-insights .user-status-legend__content strong {
     font-size: 0.84rem;
 }
 
@@ -1988,7 +2012,15 @@ table tbody tr:hover td,
     font-size: 0.8rem;
 }
 
+.route-home .home-bottom-grid--jefe-bodega-insights .user-status-legend__content span {
+    font-size: 0.8rem;
+}
+
 .route-home .home-bottom-grid--aprobador-insights .user-monthly-chart__bar-wrap {
+    height: 6.15rem;
+}
+
+.route-home .home-bottom-grid--jefe-bodega-insights .user-monthly-chart__bar-wrap {
     height: 6.15rem;
 }
 
@@ -2000,6 +2032,10 @@ table tbody tr:hover td,
     font-size: 0.88rem;
 }
 
+.route-home .home-bottom-grid--jefe-bodega-insights .user-monthly-chart__value {
+    font-size: 0.88rem;
+}
+
 .route-home .home-bottom-grid--bodega-insights .user-monthly-chart__label,
 .route-home .home-bottom-grid--bodega-insights .user-closure-chart__meta {
     font-size: 0.76rem;
@@ -2007,6 +2043,11 @@ table tbody tr:hover td,
 
 .route-home .home-bottom-grid--aprobador-insights .user-monthly-chart__label,
 .route-home .home-bottom-grid--aprobador-insights .user-closure-chart__meta {
+    font-size: 0.76rem;
+}
+
+.route-home .home-bottom-grid--jefe-bodega-insights .user-monthly-chart__label,
+.route-home .home-bottom-grid--jefe-bodega-insights .user-closure-chart__meta {
     font-size: 0.76rem;
 }
 
@@ -2374,6 +2415,10 @@ input.req-client-field:-webkit-autofill:active {
     .route-home .home-bottom-grid--aprobador-insights {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .route-home .home-bottom-grid--jefe-bodega-insights {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 640px) {
@@ -2407,6 +2452,10 @@ input.req-client-field:-webkit-autofill:active {
     }
 
     .route-home .home-bottom-grid--aprobador-insights {
+        grid-template-columns: 1fr;
+    }
+
+    .route-home .home-bottom-grid--jefe-bodega-insights {
         grid-template-columns: 1fr;
     }
 }

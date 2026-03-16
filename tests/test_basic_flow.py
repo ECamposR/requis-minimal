@@ -1612,6 +1612,8 @@ def test_home_jefe_bodega_muestra_resultados_de_entrega(client: TestClient, db_s
     assert "Completa" in html
     assert "Parcial" in html
     assert "No Entregada" in html
+    assert "home-bottom-grid--jefe-bodega-insights" in html
+    assert "Acciones Rápidas" not in html
 
 
 def test_aprobador_puede_abrir_vista_gestion_aprobacion(client: TestClient, db_session: Session):

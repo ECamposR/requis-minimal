@@ -338,7 +338,7 @@
     {% endif %}
 
     {% if current_user.rol == 'jefe_bodega' and (home_jefe_bodega_status_chart or home_jefe_bodega_monthly_chart or home_jefe_bodega_delivery_results_chart) %}
-    <section class="home-bottom-grid home-bottom-grid--single">
+    <section class="home-bottom-grid home-bottom-grid--user-insights home-bottom-grid--jefe-bodega-insights">
         <article class="home-panel user-status-panel jefe-bodega-status-panel">
             <header class="home-panel-header">
                 <div>
@@ -431,7 +431,7 @@
     </section>
     {% endif %}
 
-    {% if current_user.rol not in ['user', 'bodega', 'aprobador'] %}
+    {% if current_user.rol not in ['user', 'bodega', 'aprobador', 'jefe_bodega'] %}
     <section class="home-bottom-grid home-bottom-grid--single">
         <article class="home-panel quick-actions-panel">
             <header class="home-panel-header">

@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 13:56 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-155` para cerrar el frente del home `jefe_bodega` con una composicion compacta y coherente.
+- Tareas: `REQ-155`
+- Cambios:
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los 3 paneles SSR de `jefe_bodega` ahora se montan sobre una variante propia `home-bottom-grid--jefe-bodega-insights`, manteniendo una fila densa en escritorio y degradacion responsiva controlada.
+  - Se ajustan paddings, alturas y tipografia secundaria del bloque para que la vista quede mas compacta sin alterar contenido ni formulas.
+  - `Acciones Rápidas` deja de renderizarse tambien para el rol `jefe_bodega`, ya que el nuevo home de supervision vuelve ese bloque redundante.
+- Proximo paso:
+  - Validar visualmente el home `jefe_bodega` con datos reales para decidir si el mismo patron debe extrapolarse luego a `admin`.
+
 ## 2026-03-16 13:45 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-154` para completar el tercer panel SSR del home del rol `jefe_bodega`.
 - Tareas: `REQ-154`
