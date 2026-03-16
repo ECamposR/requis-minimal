@@ -33,7 +33,13 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-142` | `done` | Agregar al home `bodega` un panel SSR `Estado de Operación de Bodega`, con barra apilada y leyenda para `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas`, `Liquidadas en Prokey` y `No Entregadas`.
 - `REQ-143` | `done` | Agregar al home `bodega` un panel SSR `Movimiento de Requisiciones por Mes`, orientado a volumen operativo de bodega usando entregas por mes en los ultimos 6 meses.
 - `REQ-144` | `done` | Agregar al home `bodega` un panel SSR `Resultados de Entrega`, mostrando distribucion de `completa`, `parcial` y `no_entregada` como lectura simple de calidad de entrega.
-- `REQ-145` | `todo` | Compactar layout del home `bodega` para que las 4 cards y los 3 paneles SSR queden en una composicion densa y clara en escritorio, reutilizando el patron visual del home `user` sin duplicar complejidad.
+- `REQ-145` | `done` | Compactar layout del home `bodega` para que las 4 cards y los 3 paneles SSR queden en una composicion densa y clara en escritorio, reutilizando el patron visual del home `user` sin duplicar complejidad.
+- `EPIC-UI-03` | `todo` | Replantear el home del rol `aprobador` para que deje de mezclar vision personal con supervision global y pase a una lectura semantica de cola de decision, backlog aguas abajo y antiguedad de aprobacion, sin introducir JS ni tocar logica de negocio.
+- `REQ-146` | `todo` | Refactor semantico del home `aprobador`: reducirlo a 4 cards globales de valor real (`Pendientes por Aprobar`, `Pendientes de Entregar`, `Pendientes de Liquidar`, `Requisiciones Rechazadas`) con links coherentes a `/aprobar` y `/todas-requisiciones`.
+- `REQ-147` | `todo` | Agregar al home `aprobador` un panel SSR `Estado Global de Requisiciones`, con barra apilada y leyenda para `Pendiente de aprobación`, `Pendiente de entrega`, `Pendiente de liquidación`, `Finalizada` y `Rechazada`.
+- `REQ-148` | `todo` | Agregar al home `aprobador` un panel SSR `Requisiciones por Mes`, mostrando volumen global creado en los ultimos 6 meses usando `created_at`.
+- `REQ-149` | `todo` | Agregar al home `aprobador` un panel SSR `Tiempo en Pendiente de Aprobación`, agrupando requisiciones abiertas en cola por buckets `0-24h`, `24-48h`, `48-72h` y `72h+`.
+- `REQ-150` | `todo` | Compactar layout del home `aprobador` para que sus 4 cards y 3 paneles SSR queden en una composicion densa y clara en escritorio, evaluando ademas si `Acciones Rápidas` sigue aportando o debe retirarse por redundancia.
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

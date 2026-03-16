@@ -1,5 +1,36 @@
 # Worklog (append-only)
 
+## 2026-03-16 11:30 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar el siguiente frente de UI/usabilidad para el home del rol `aprobador`, antes de tocar codigo.
+- Tareas: `EPIC-UI-03`, `REQ-146`, `REQ-147`, `REQ-148`, `REQ-149`, `REQ-150`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se define una epica nueva para adaptar el home `aprobador` a una semantica de supervision global: cola de decision, backlog aguas abajo y antiguedad de aprobacion.
+  - La implementacion queda dividida en 5 tareas pequenas: cards semanticas, panel SSR de estado global, panel SSR mensual, panel SSR de antiguedad de cola y compactado final de layout.
+  - Se deja explicitamente documentado que el frente debe evitar JS adicional y no tocar logica de negocio.
+- Proximo paso:
+  - Ejecutar `REQ-146` primero, ajustando solo las cards del home `aprobador` y validando que los links de drill-down sigan apuntando a vistas coherentes.
+
+## 2026-03-16 11:12 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-145` para cerrar el frente del home `bodega` con una composicion compacta y coherente.
+- Tareas: `REQ-145`
+- Cambios:
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los 3 paneles SSR de `bodega` ahora se montan sobre una variante propia `home-bottom-grid--bodega-insights`, manteniendo una fila densa en escritorio y degradacion responsiva controlada.
+  - Se reducen paddings, alturas y tipografia secundaria del bloque para que la vista quede mas compacta sin alterar contenido ni formulas.
+  - `Acciones Rápidas` deja de renderizarse tambien para el rol `bodega`, ya que el nuevo home operativo vuelve ese bloque redundante.
+- Proximo paso:
+  - Validar visualmente el home `bodega` con datos reales para decidir si el mismo patron debe extrapolarse luego a `logistica` o `jefe_bodega`.
+
 ## 2026-03-16 11:00 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-144` para completar el tercer panel SSR del home del rol `bodega` antes del compactado final.
 - Tareas: `REQ-144`

@@ -23,7 +23,13 @@
   - `REQ-142` completada: el home `bodega` ya muestra el panel SSR `Estado de Operación de Bodega`, con barra apilada y leyenda para `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas`, `Liquidadas en Prokey` y `No Entregadas`.
   - `REQ-143` completada: el home `bodega` ya muestra `Movimiento de Requisiciones por Mes`, un panel SSR con barras para los ultimos 6 meses usando `delivered_at` como proxy de actividad operativa.
   - `REQ-144` completada: el home `bodega` ya muestra `Resultados de Entrega`, un panel SSR que distribuye `completa`, `parcial` y `no_entregada` como lectura simple de calidad operativa.
-  - `REQ-145`: compactar layout final del home `bodega` para una sola composicion clara en escritorio.
+  - `REQ-145` completada: el home `bodega` ya compacta sus 4 cards y 3 paneles SSR en una composicion mas densa en escritorio, y deja de renderizar `Acciones Rápidas` por redundancia semantica.
+- Se define `EPIC-UI-03` para replantear el home del rol `aprobador` con semantica de supervision global, evitando mezclarlo con metricas personales. La implementacion queda descompuesta asi:
+  - `REQ-146`: redefinir las 4 cards del home `aprobador` a `Pendientes por Aprobar`, `Pendientes de Entregar`, `Pendientes de Liquidar` y `Requisiciones Rechazadas`.
+  - `REQ-147`: agregar panel SSR `Estado Global de Requisiciones`.
+  - `REQ-148`: agregar panel SSR `Requisiciones por Mes`.
+  - `REQ-149`: agregar panel SSR `Tiempo en Pendiente de Aprobación`.
+  - `REQ-150`: compactar layout final del home `aprobador` y decidir si `Acciones Rápidas` debe permanecer.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-119` completada: el navbar ya agrupa los accesos `admin` bajo un dropdown `Administracion` y el bloque de usuario ahora despliega `Cambiar contrasena` + `Salir`, reduciendo ancho horizontal sin introducir JS adicional.
 - `REQ-123` completada en `main`: `Gestionar Entrega` y `Entrega Parcial` ahora fuerzan en JS el estado inicial bloqueado del receptor; el selector solo se habilita tras pulsar `Cambiar receptor`.
