@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 12:18 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-149` para completar el tercer panel SSR del home del rol `aprobador` antes del compactado final.
+- Tareas: `REQ-149`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_aprobador_pending_age_chart(...)`, calculando antiguedad de la cola `pendiente` contra `now_sv()` con buckets `0-24h`, `24-48h`, `48-72h` y `72h+`.
+  - El home `aprobador` ya renderiza `Tiempo en Pendiente de Aprobación` reutilizando el patron SSR de barras y porcentajes ya usado antes en otros roles.
+  - Se agrega prueba SSR especifica para validar presencia del panel y de los 4 buckets visibles.
+- Proximo paso:
+  - Ejecutar `REQ-150`, compactando las 4 cards y los 3 paneles SSR del home `aprobador` y definiendo si `Acciones Rápidas` debe seguir visible.
+
 ## 2026-03-16 12:08 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-148` para sumar una lectura temporal simple al home del rol `aprobador`.
 - Tareas: `REQ-148`

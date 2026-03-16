@@ -931,6 +931,45 @@ def test_home_aprobador_muestra_requisiciones_por_mes(client: TestClient, db_ses
     assert "user-monthly-chart" in html
 
 
+def test_home_aprobador_muestra_antiguedad_de_pendientes(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    ahora = datetime.now()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-APR-P1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente reciente",
+                created_at=ahora,
+            ),
+            Requisicion(
+                folio="REQ-APR-P2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente antiguo",
+                created_at=ahora.replace(day=max(1, ahora.day - 4)),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Tiempo en Pendiente de Aprobación" in html
+    assert "Expone cuánto tiempo llevan las requisiciones esperando aprobación." in html
+    assert "0-24h" in html
+    assert "24-48h" in html
+    assert "48-72h" in html
+    assert "72h+" in html
+
+
 def test_bodega_no_ve_accesos_de_creacion_ni_mis_requisiciones(client: TestClient):
     login(client, "bodega.1", "pass123")
     response = client.get("/")

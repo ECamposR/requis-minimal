@@ -38,7 +38,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-146` | `done` | Refactor semantico del home `aprobador`: reducirlo a 4 cards globales de valor real (`Pendientes por Aprobar`, `Pendientes de Entregar`, `Pendientes de Liquidar`, `Requisiciones Rechazadas`) con links coherentes a `/aprobar` y `/todas-requisiciones`.
 - `REQ-147` | `done` | Agregar al home `aprobador` un panel SSR `Estado Global de Requisiciones`, con barra apilada y leyenda para `Pendiente de aprobación`, `Pendiente de entrega`, `Pendiente de liquidación`, `Finalizada` y `Rechazada`.
 - `REQ-148` | `done` | Agregar al home `aprobador` un panel SSR `Requisiciones por Mes`, mostrando volumen global creado en los ultimos 6 meses usando `created_at`.
-- `REQ-149` | `todo` | Agregar al home `aprobador` un panel SSR `Tiempo en Pendiente de Aprobación`, agrupando requisiciones abiertas en cola por buckets `0-24h`, `24-48h`, `48-72h` y `72h+`.
+- `REQ-149` | `done` | Agregar al home `aprobador` un panel SSR `Tiempo en Pendiente de Aprobación`, agrupando requisiciones abiertas en cola por buckets `0-24h`, `24-48h`, `48-72h` y `72h+`.
 - `REQ-150` | `todo` | Compactar layout del home `aprobador` para que sus 4 cards y 3 paneles SSR queden en una composicion densa y clara en escritorio, evaluando ademas si `Acciones Rápidas` sigue aportando o debe retirarse por redundancia.
 
 ## Monitor de Actividad

@@ -994,6 +994,47 @@ def build_home_aprobador_monthly_chart(current_user: Usuario, db: Session) -> di
     }
 
 
+def build_home_aprobador_pending_age_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "aprobador":
+        return None
+
+    pending_requests = db.query(Requisicion).filter(Requisicion.estado == "pendiente").all()
+    ahora = now_sv()
+
+    buckets = [
+        {"label": "0-24h", "value": 0, "tone": "fast"},
+        {"label": "24-48h", "value": 0, "tone": "medium"},
+        {"label": "48-72h", "value": 0, "tone": "slow"},
+        {"label": "72h+", "value": 0, "tone": "very-slow"},
+    ]
+
+    for req in pending_requests:
+        start_at = req.created_at
+        if not start_at:
+            continue
+        delta_hours = max((ahora - start_at).total_seconds() / 3600, 0)
+        if delta_hours <= 24:
+            buckets[0]["value"] += 1
+        elif delta_hours <= 48:
+            buckets[1]["value"] += 1
+        elif delta_hours <= 72:
+            buckets[2]["value"] += 1
+        else:
+            buckets[3]["value"] += 1
+
+    total = sum(bucket["value"] for bucket in buckets)
+    max_value = max(1, *(bucket["value"] for bucket in buckets))
+    for bucket in buckets:
+        bucket["height_pct"] = max(round((bucket["value"] * 100) / max_value, 1), 10) if bucket["value"] > 0 else 0
+        bucket["percentage"] = round((bucket["value"] * 100) / total, 1) if total else 0
+
+    return {
+        "bars": buckets,
+        "has_data": total > 0,
+        "total": total,
+    }
+
+
 def build_home_bodega_monthly_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
     if current_user.rol != "bodega":
         return None
@@ -1390,6 +1431,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
     home_user_closure_chart = build_home_user_closure_chart(current_user, db)
     home_aprobador_status_chart = build_home_aprobador_status_chart(current_user, db)
     home_aprobador_monthly_chart = build_home_aprobador_monthly_chart(current_user, db)
+    home_aprobador_pending_age_chart = build_home_aprobador_pending_age_chart(current_user, db)
     home_bodega_status_chart = build_home_bodega_status_chart(current_user, db)
     home_bodega_monthly_chart = build_home_bodega_monthly_chart(current_user, db)
     home_bodega_delivery_results_chart = build_home_bodega_delivery_results_chart(current_user, db)
@@ -1406,6 +1448,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
             home_user_closure_chart=home_user_closure_chart,
             home_aprobador_status_chart=home_aprobador_status_chart,
             home_aprobador_monthly_chart=home_aprobador_monthly_chart,
+            home_aprobador_pending_age_chart=home_aprobador_pending_age_chart,
             home_bodega_status_chart=home_bodega_status_chart,
             home_bodega_monthly_chart=home_bodega_monthly_chart,
             home_bodega_delivery_results_chart=home_bodega_delivery_results_chart,

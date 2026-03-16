@@ -28,7 +28,7 @@
   - `REQ-146` completada: las cards del home `aprobador` ya quedaron reducidas a `Pendientes por Aprobar`, `Pendientes de Entregar`, `Pendientes de Liquidar` y `Requisiciones Rechazadas`, eliminando el bloque personal del nivel superior.
   - `REQ-147` completada: el home `aprobador` ya muestra el panel SSR `Estado Global de Requisiciones`, con barra apilada y leyenda para `Pendiente de aprobación`, `Pendiente de entrega`, `Pendiente de liquidación`, `Finalizada` y `Rechazada`.
   - `REQ-148` completada: el home `aprobador` ya muestra `Requisiciones por Mes`, un panel SSR con barras para los ultimos 6 meses usando `created_at` como volumen global de entrada.
-  - `REQ-149`: agregar panel SSR `Tiempo en Pendiente de Aprobación`.
+  - `REQ-149` completada: el home `aprobador` ya muestra `Tiempo en Pendiente de Aprobación`, un panel SSR con buckets `0-24h`, `24-48h`, `48-72h` y `72h+` calculados contra la cola actual de pendientes.
   - `REQ-150`: compactar layout final del home `aprobador` y decidir si `Acciones Rápidas` debe permanecer.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-119` completada: el navbar ya agrupa los accesos `admin` bajo un dropdown `Administracion` y el bloque de usuario ahora despliega `Cambiar contrasena` + `Salir`, reduciendo ancho horizontal sin introducir JS adicional.
