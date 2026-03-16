@@ -12,7 +12,6 @@
     <select name="etapa" data-autosubmit-select class="bodega-filter-control bodega-filter-stage">
         <option value="todos" {% if filtro_etapa == 'todos' %}selected{% endif %}>Todas las etapas visibles</option>
         {% if filtro_vista == 'historial' %}
-        <option value="liquidada" {% if filtro_etapa == 'liquidada' %}selected{% endif %}>Liquidadas</option>
         <option value="liquidada_en_prokey" {% if filtro_etapa == 'liquidada_en_prokey' %}selected{% endif %}>Liquidadas en Prokey</option>
         <option value="no_entregada" {% if filtro_etapa == 'no_entregada' %}selected{% endif %}>No entregadas</option>
         {% else %}

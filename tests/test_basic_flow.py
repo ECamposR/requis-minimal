@@ -2772,6 +2772,7 @@ def test_bodega_puede_filtrar_historial_por_etapa_no_entregada(client: TestClien
     assert "REQ-BOD-HET-1" in html
     assert "REQ-BOD-HET-2" not in html
     assert "No entregadas" in html
+    assert 'option value="liquidada"' not in html
 
 
 def test_bodega_trata_liquidada_como_pendiente_hasta_prokey(client: TestClient, db_session: Session):
@@ -2923,15 +2924,15 @@ def test_bodega_busca_por_receptor_y_actores_operativos(client: TestClient, db_s
 
     login(client, "bodega.1", "pass123")
 
-    response_receptor = client.get("/bodega?vista=historial&q=Bodega Uno")
+    response_receptor = client.get("/bodega?vista=pendientes&q=Bodega Uno")
     assert response_receptor.status_code == 200
     assert "REQ-BOD-BUS-1" in response_receptor.text
 
-    response_actor = client.get("/bodega?vista=historial&q=Bodega Auxiliar")
+    response_actor = client.get("/bodega?vista=pendientes&q=Bodega Auxiliar")
     assert response_actor.status_code == 200
     assert "REQ-BOD-BUS-1" in response_actor.text
 
-    response_aprobador = client.get("/bodega?vista=historial&q=Aprobador Uno")
+    response_aprobador = client.get("/bodega?vista=pendientes&q=Aprobador Uno")
     assert response_aprobador.status_code == 200
     assert "REQ-BOD-BUS-1" in response_aprobador.text
 
@@ -2985,5 +2986,5 @@ def test_bodega_no_duplica_entregadas_activas_en_historial(client: TestClient, d
     response_historial = client.get("/bodega?vista=historial")
     assert response_historial.status_code == 200
     html_historial = response_historial.text
-    assert "REQ-0304" in html_historial
+    assert "REQ-0304" not in html_historial
     assert "REQ-0303" not in html_historial
