@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 16:05 UTC-6 | tool: Codex CLI
+- Objetivo: ampliar la Fase 1 del `Monitor de Actividad` con dos KPI de uso que agreguen lectura de tiempo de ciclo y ritmo promedio de creacion sin abrir un endpoint nuevo.
+- Tareas: `REQ-118I`
+- Cambios:
+  - `app/main.py`
+  - `templates/monitor_actividad.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `/api/dashboard/basicos` ahora expone `kpis` con `promedio_horas_hasta_prokey`, `requisiciones_liquidadas_en_prokey`, `requisiciones_promedio_por_dia`, `dias_observados` y `total_requisiciones`.
+  - `monitor_actividad.html` agrega dos KPI cards al inicio de `Métricas de Uso`: `Tiempo Promedio a Prokey` y `Promedio de Requisiciones por Día`.
+  - El promedio diario se calcula sobre el historico observado entre la primera y la ultima requisicion creada, no solo sobre dias con actividad.
+- Proximo paso:
+  - Validar visualmente si estas dos KPI conviven bien con los cuatro graficos actuales o si conviene una siguiente iteracion de filtros temporales para todo el monitor.
+
 ## 2026-03-16 15:27 UTC-6 | tool: Codex CLI
 - Objetivo: mejorar la affordance de los campos de fecha en `/bodega` para que el calendario nativo no dependa de acertar al icono derecho.
 - Tareas: `REQ-160`

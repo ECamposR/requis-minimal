@@ -1669,8 +1669,40 @@ def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db:
     heatmap_counts = {int(row.hora): int(row.total) for row in hourly_rows if row.hora is not None}
     heatmap_labels = [f"{hour:02d}:00" for hour in range(24)]
     heatmap_values = [heatmap_counts.get(hour, 0) for hour in range(24)]
+    total_requisiciones = db.query(func.count(Requisicion.id)).scalar() or 0
+    rango_fechas = db.query(
+        func.min(Requisicion.created_at).label("min_created_at"),
+        func.max(Requisicion.created_at).label("max_created_at"),
+    ).one()
+    dias_observados = 0
+    if rango_fechas.min_created_at and rango_fechas.max_created_at:
+        dias_observados = max((rango_fechas.max_created_at.date() - rango_fechas.min_created_at.date()).days + 1, 1)
+    promedio_requisiciones_por_dia = round(total_requisiciones / dias_observados, 2) if dias_observados else 0.0
+
+    prokey_cycle_rows = (
+        db.query(Requisicion.created_at, Requisicion.prokey_liquidada_at)
+        .filter(
+            Requisicion.estado == "liquidada_en_prokey",
+            Requisicion.created_at.is_not(None),
+            Requisicion.prokey_liquidada_at.is_not(None),
+        )
+        .all()
+    )
+    cycle_hours = [
+        max((row.prokey_liquidada_at - row.created_at).total_seconds() / 3600.0, 0.0)
+        for row in prokey_cycle_rows
+        if row.created_at and row.prokey_liquidada_at
+    ]
+    promedio_horas_hasta_prokey = round(sum(cycle_hours) / len(cycle_hours), 2) if cycle_hours else 0.0
 
     return {
+        "kpis": {
+            "promedio_horas_hasta_prokey": promedio_horas_hasta_prokey,
+            "requisiciones_liquidadas_en_prokey": len(cycle_hours),
+            "requisiciones_promedio_por_dia": promedio_requisiciones_por_dia,
+            "dias_observados": dias_observados,
+            "total_requisiciones": int(total_requisiciones),
+        },
         "motivos": {
             "labels": [str(row.motivo or "Sin motivo") for row in motivos_rows],
             "values": [int(row.total or 0) for row in motivos_rows],

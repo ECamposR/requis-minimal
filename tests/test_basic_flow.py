@@ -496,6 +496,8 @@ def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
     assert "chart-horario" in response_page.text
     assert "chart-diferencia-producto" in response_page.text
     assert "chart-diferencia-tecnico" in response_page.text
+    assert "kpi-tiempo-promedio-prokey" in response_page.text
+    assert "kpi-promedio-requisiciones-dia" in response_page.text
     assert "kpi-indice-discrepancia" in response_page.text
     assert "kpi-inversion-demos" in response_page.text
     assert 'data-drilldown-kind="discrepancias"' in response_page.text
@@ -504,6 +506,7 @@ def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
     assert "/api/dashboard/auditoria/demos" in response_page.text
     assert response_api.status_code == 200
     payload = response_api.json()
+    assert "kpis" in payload
     assert "motivos" in payload
     assert "top_solicitantes" in payload
     assert "top_items" in payload
@@ -553,17 +556,43 @@ def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: 
         justificacion="Contingencia tres",
         created_at=datetime(2026, 3, 11, 15, 10, 0),
     )
-    db_session.add_all([req_1, req_2, req_3])
+    req_4 = Requisicion(
+        folio="REQ-DASH-04",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Demostración",
+        justificacion="Contingencia cuatro",
+        created_at=datetime(2026, 3, 12, 10, 0, 0),
+        liquidated_at=datetime(2026, 3, 13, 12, 0, 0),
+        prokey_liquidada_at=datetime(2026, 3, 13, 16, 0, 0),
+    )
+    req_5 = Requisicion(
+        folio="REQ-DASH-05",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Reposición",
+        justificacion="Contingencia cinco",
+        created_at=datetime(2026, 3, 13, 8, 0, 0),
+        liquidated_at=datetime(2026, 3, 13, 18, 0, 0),
+        prokey_liquidada_at=datetime(2026, 3, 14, 2, 0, 0),
+    )
+    db_session.add_all([req_1, req_2, req_3, req_4, req_5])
     db_session.commit()
     db_session.refresh(req_1)
     db_session.refresh(req_2)
     db_session.refresh(req_3)
+    db_session.refresh(req_4)
+    db_session.refresh(req_5)
 
     db_session.add_all(
         [
             Item(requisicion_id=req_1.id, descripcion="Cable UTP Cat6", cantidad=3, unidad="unidad"),
             Item(requisicion_id=req_2.id, descripcion="Cable UTP Cat6", cantidad=2, unidad="unidad"),
             Item(requisicion_id=req_3.id, descripcion="Conector RJ45", cantidad=5, unidad="unidad"),
+            Item(requisicion_id=req_4.id, descripcion="Cable UTP Cat6", cantidad=1, unidad="unidad"),
+            Item(requisicion_id=req_5.id, descripcion="Bomba Dosificadora", cantidad=4, unidad="unidad"),
         ]
     )
     db_session.commit()
@@ -573,16 +602,24 @@ def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: 
     assert response.status_code == 200
     payload = response.json()
 
+    assert payload["kpis"]["promedio_horas_hasta_prokey"] == 24.0
+    assert payload["kpis"]["requisiciones_liquidadas_en_prokey"] == 2
+    assert payload["kpis"]["requisiciones_promedio_por_dia"] == 1.67
+    assert payload["kpis"]["dias_observados"] == 3
+    assert payload["kpis"]["total_requisiciones"] == 5
+
     motivos = dict(zip(payload["motivos"]["labels"], payload["motivos"]["values"]))
-    assert motivos["Demostración"] == 2
+    assert motivos["Demostración"] == 3
     assert motivos["Servicio No Programado"] == 1
+    assert motivos["Reposición"] == 1
 
     solicitantes = dict(zip(payload["top_solicitantes"]["labels"], payload["top_solicitantes"]["values"]))
-    assert solicitantes[user.nombre] == 3
+    assert solicitantes[user.nombre] == 5
 
     items = dict(zip(payload["top_items"]["labels"], payload["top_items"]["values"]))
-    assert items["Cable UTP Cat6"] == 5.0
+    assert items["Cable UTP Cat6"] == 6.0
     assert items["Conector RJ45"] == 5.0
+    assert items["Bomba Dosificadora"] == 4.0
     assert payload["horario"]["labels"][13] == "13:00"
     assert payload["horario"]["values"][13] == 1
     assert payload["horario"]["values"][15] == 2
