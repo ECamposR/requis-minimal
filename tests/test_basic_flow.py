@@ -1554,6 +1554,66 @@ def test_home_jefe_bodega_muestra_requisiciones_por_mes(client: TestClient, db_s
     assert "user-monthly-chart" in html
 
 
+def test_home_jefe_bodega_muestra_resultados_de_entrega(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    ahora = datetime.now()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-JB-R1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega completa jefe bodega",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="completa",
+            ),
+            Requisicion(
+                folio="REQ-JB-R2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega parcial jefe bodega",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="parcial",
+            ),
+            Requisicion(
+                folio="REQ-JB-R3",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega fallida jefe bodega",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+                delivery_result="no_entregada",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "jefe.bodega", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Resultados de Entrega" in html
+    assert "Expone cómo terminan las entregas gestionadas en operación." in html
+    assert "Completa" in html
+    assert "Parcial" in html
+    assert "No Entregada" in html
+
+
 def test_aprobador_puede_abrir_vista_gestion_aprobacion(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     req = Requisicion(

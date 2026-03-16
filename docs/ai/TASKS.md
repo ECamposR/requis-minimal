@@ -44,7 +44,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-151` | `done` | Refactor semantico del home `jefe_bodega`: reducirlo a 4 cards globales de valor real (`Pendientes por Aprobar`, `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas en Prokey`) con links coherentes a `/aprobar` y `/bodega`.
 - `REQ-152` | `done` | Agregar al home `jefe_bodega` un panel SSR `Estado Global del Flujo`, con barra apilada y leyenda para `Pendiente de aprobación`, `Pendiente de proceso`, `Pendiente de liquidación`, `Finalizada` y `Rechazada`.
 - `REQ-153` | `done` | Agregar al home `jefe_bodega` un panel SSR `Requisiciones por Mes`, mostrando el volumen global creado en los ultimos 6 meses sin introducir JS adicional.
-- `REQ-154` | `todo` | Agregar al home `jefe_bodega` un panel SSR `Resultados de Entrega`, distribuyendo `completa`, `parcial` y `no_entregada` como lectura de calidad operativa del flujo combinado.
+- `REQ-154` | `done` | Agregar al home `jefe_bodega` un panel SSR `Resultados de Entrega`, distribuyendo `completa`, `parcial` y `no_entregada` como lectura de calidad operativa del flujo combinado.
 - `REQ-155` | `todo` | Compactar layout del home `jefe_bodega` para que sus 4 cards y 3 paneles SSR queden en una composicion densa y clara en escritorio, y evaluar si `Acciones Rápidas` debe desaparecer tambien en este rol.
 
 ## Monitor de Actividad

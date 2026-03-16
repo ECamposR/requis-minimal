@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 13:45 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-154` para completar el tercer panel SSR del home del rol `jefe_bodega`.
+- Tareas: `REQ-154`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_jefe_bodega_delivery_results_chart(...)`, reutilizando la semantica historica de `delivery_result` ya validada en `bodega`.
+  - El home `jefe_bodega` ya renderiza `Resultados de Entrega`, mostrando la distribucion entre `Completa`, `Parcial` y `No Entregada` como lectura de calidad operativa.
+  - Se agrega prueba SSR especifica para validar presencia del panel y de los tres buckets visibles.
+- Proximo paso:
+  - Ejecutar `REQ-155`, compactando el home `jefe_bodega` y evaluando si `Acciones Rápidas` debe retirarse tambien en este rol.
+
 ## 2026-03-16 13:35 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-153` para sumar una lectura temporal simple al home del rol `jefe_bodega`.
 - Tareas: `REQ-153`
