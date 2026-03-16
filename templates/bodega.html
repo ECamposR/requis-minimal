@@ -3,26 +3,39 @@
 {% block title %}Bodega{% endblock %}
 {% block content %}
 {{ ui.page_header("Bodega", "Procesa entregas y consulta trazabilidad de despacho por requisicion.") }}
-<form method="GET" class="filters-bar panel">
+<form method="GET" class="filters-bar panel js-autosubmit-filters">
     <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante...">
-    <select name="vista">
-        <option value="todos" {% if filtro_vista == 'todos' %}selected{% endif %}>Pendientes + Historial</option>
+    <select name="vista" data-autosubmit-select>
         <option value="pendientes" {% if filtro_vista == 'pendientes' %}selected{% endif %}>Solo pendientes</option>
         <option value="historial" {% if filtro_vista == 'historial' %}selected{% endif %}>Solo historial</option>
     </select>
-    <select name="resultado">
+    <select name="etapa" data-autosubmit-select>
+        <option value="todos" {% if filtro_etapa == 'todos' %}selected{% endif %}>Todas las etapas visibles</option>
+        {% if filtro_vista == 'historial' %}
+        <option value="liquidada" {% if filtro_etapa == 'liquidada' %}selected{% endif %}>Liquidadas</option>
+        <option value="liquidada_en_prokey" {% if filtro_etapa == 'liquidada_en_prokey' %}selected{% endif %}>Liquidadas en Prokey</option>
+        <option value="no_entregada" {% if filtro_etapa == 'no_entregada' %}selected{% endif %}>No entregadas</option>
+        {% else %}
+        <option value="aprobada" {% if filtro_etapa == 'aprobada' %}selected{% endif %}>Aprobadas</option>
+        <option value="preparado" {% if filtro_etapa == 'preparado' %}selected{% endif %}>Preparadas</option>
+        <option value="entregada" {% if filtro_etapa == 'entregada' %}selected{% endif %}>Entregadas pendientes de liquidar</option>
+        {% endif %}
+    </select>
+    {% if filtro_vista == 'historial' %}
+    <select name="resultado" data-autosubmit-select>
         <option value="todos" {% if filtro_resultado == 'todos' %}selected{% endif %}>Todos los resultados</option>
         <option value="completa" {% if filtro_resultado == 'completa' %}selected{% endif %}>Completas</option>
         <option value="parcial" {% if filtro_resultado == 'parcial' %}selected{% endif %}>Parciales</option>
         <option value="no_entregada" {% if filtro_resultado == 'no_entregada' %}selected{% endif %}>No entregadas</option>
     </select>
+    {% endif %}
     <button type="submit">Buscar</button>
     <a href="/bodega" role="button" class="secondary">Limpiar</a>
 </form>
-{% if filtro_resultado != 'todos' and filtro_vista != 'pendientes' %}
+{% if filtro_vista == 'historial' and filtro_resultado != 'todos' %}
 <p class="page-subtitle">Filtro aplicado en historial por resultado de entrega.</p>
 {% endif %}
-{% if filtro_vista != 'historial' %}
+{% if filtro_vista == 'pendientes' %}
 <h3>Pendientes de Procesar</h3>
 {% if pendientes_entrega %}
 <section class="panel view-panel table-wrap">
@@ -82,7 +95,7 @@
 {% endif %}
 {% endif %}
 
-{% if filtro_vista != 'pendientes' %}
+{% if filtro_vista == 'historial' %}
 <h3>Historial</h3>
 {% if historial_entregadas %}
 <section class="panel view-panel table-wrap">
@@ -165,4 +178,19 @@
 </dialog>
 
 <script src="/static/app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".js-autosubmit-filters [data-autosubmit-select]").forEach((select) => {
+        select.addEventListener("change", () => {
+            if (select.form) {
+                if (typeof select.form.requestSubmit === "function") {
+                    select.form.requestSubmit();
+                } else {
+                    select.form.submit();
+                }
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

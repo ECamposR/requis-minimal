@@ -38,10 +38,10 @@
   - `REQ-155` completada: el home `jefe_bodega` ya compacta sus 4 cards y 3 paneles SSR en una composicion mas densa en escritorio, y deja de renderizar `Acciones Rápidas` por redundancia operativa.
 - `REQ-156` completada en esta rama: los paneles `Estado Global del Flujo` / `Estado Global de Requisiciones` ya no dejan una franja gris por estados no representados. `Finalizada` ahora agrupa `liquidada`, `liquidada_en_prokey` y `no_entregada`; `Pendiente de liquidación` deja fuera cierres fallidos.
 - Se define `EPIC-UI-05` para reforzar los filtros de `/bodega` sin tocar logica de negocio. La implementacion queda descompuesta asi:
-  - `REQ-157` pendiente: reordenar la semantica base de filtros (`Pendientes` / `Historial`) y agregar un filtro SSR de `etapa` alineado al flujo operativo real.
+  - `REQ-157` completada: `/bodega` ya deja de mezclar `Pendientes + Historial` por defecto; la vista queda separada entre `Pendientes` / `Historial` y suma un filtro SSR de `etapa` alineado al flujo operativo.
   - `REQ-158` pendiente: sumar `departamento` y rango de fechas a la barra de filtros, reutilizando el patron SSR ya usado en `Todas las Requisiciones`.
   - `REQ-159` pendiente: ampliar el alcance del buscador `q` para cubrir mas campos y actores operativos relevantes de bodega.
-  - `REQ-160` pendiente: pulir la experiencia de la barra de filtros (autosubmit, orden de controles y copy contextual) para que la consulta sea mas rapida y menos ambigua.
+  - `REQ-160` en progreso: los selectores de `/bodega` ya aplican autosubmit como en `Todas las Requisiciones`; quedan pendientes el resto de ajustes de orden/copy del frente.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-119` completada: el navbar ya agrupa los accesos `admin` bajo un dropdown `Administracion` y el bloque de usuario ahora despliega `Cambiar contrasena` + `Salir`, reduciendo ancho horizontal sin introducir JS adicional.
 - `REQ-123` completada en `main`: `Gestionar Entrega` y `Entrega Parcial` ahora fuerzan en JS el estado inicial bloqueado del receptor; el selector solo se habilita tras pulsar `Cambiar receptor`.

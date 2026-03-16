@@ -1444,6 +1444,11 @@ def test_listados_con_filtros_exponen_autosubmit_en_selectores(client: TestClien
     assert "data-date-picker" in todas.text
     assert "showPicker" in todas.text
 
+    bodega = client.get("/bodega")
+    assert bodega.status_code == 200
+    assert "js-autosubmit-filters" in bodega.text
+    assert "data-autosubmit-select" in bodega.text
+
 
 def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
     login(client, "jefe.bodega", "pass123")
@@ -2630,6 +2635,104 @@ def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_s
     assert response.status_code == 200
     assert "REQ-0302" in response.text
     assert "REQ-0301" not in response.text
+
+
+def test_bodega_default_usa_vista_pendientes_y_selector_de_etapa(client: TestClient):
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Pendientes + Historial" not in html
+    assert 'option value="pendientes" selected' in html
+    assert 'name="etapa"' in html
+    assert "Aprobadas" in html
+    assert "Preparadas" in html
+    assert "Entregadas pendientes de liquidar" in html
+
+
+def test_bodega_puede_filtrar_pendientes_por_etapa(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-ETAPA-1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Solo aprobada",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-ETAPA-2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="preparado",
+                justificacion="Solo preparada",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                prepared_at=datetime.now(),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega?vista=pendientes&etapa=preparado")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-BOD-ETAPA-2" in html
+    assert "REQ-BOD-ETAPA-1" not in html
+
+
+def test_bodega_puede_filtrar_historial_por_etapa_no_entregada(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-HET-1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="No entregada historial",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+                delivery_result="no_entregada",
+            ),
+            Requisicion(
+                folio="REQ-BOD-HET-2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada",
+                justificacion="Liquidada historial",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+                liquidated_by=bodega.id,
+                liquidated_at=datetime.now(),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega?vista=historial&etapa=no_entregada")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-BOD-HET-1" in html
+    assert "REQ-BOD-HET-2" not in html
+    assert "No entregadas" in html
 
 
 def test_bodega_no_duplica_entregadas_activas_en_historial(client: TestClient, db_session: Session):

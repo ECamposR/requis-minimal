@@ -2453,7 +2453,10 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         raise HTTPException(status_code=403, detail="No autorizado")
 
     q = request.query_params.get("q", "").strip()
-    vista = request.query_params.get("vista", "todos").strip().lower()
+    vista = request.query_params.get("vista", "pendientes").strip().lower()
+    if vista not in {"pendientes", "historial"}:
+        vista = "pendientes"
+    etapa = request.query_params.get("etapa", "todos").strip().lower()
     resultado = request.query_params.get("resultado", "todos").strip().lower()
 
     bodega_optionals = [
@@ -2485,6 +2488,8 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             Requisicion.delivery_result.in_(["completa", "parcial"]),
         )
     )
+    if etapa in {"aprobada", "preparado", "entregada"}:
+        pendientes_query = pendientes_query.filter(Requisicion.estado == etapa)
     if q:
         patron = f"%{q}%"
         pendientes_query = pendientes_query.filter(
@@ -2520,6 +2525,12 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             )
         )
     )
+    if etapa == "liquidada":
+        historial_query = historial_query.filter(Requisicion.estado == "liquidada")
+    elif etapa == "liquidada_en_prokey":
+        historial_query = historial_query.filter(Requisicion.estado == "liquidada_en_prokey")
+    elif etapa == "no_entregada":
+        historial_query = historial_query.filter(Requisicion.delivery_result == "no_entregada")
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(
             or_(
@@ -2556,6 +2567,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             historial_entregadas=historial_entregadas,
             filtro_q=q,
             filtro_vista=vista,
+            filtro_etapa=etapa,
             filtro_resultado=resultado,
         ),
     )

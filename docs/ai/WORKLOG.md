@@ -1,5 +1,37 @@
 # Worklog (append-only)
 
+## 2026-03-16 14:41 UTC-6 | tool: Codex CLI
+- Objetivo: alinear la barra de filtros de `/bodega` con el patron de autosubmit ya usado en vistas SSR de consulta.
+- Tareas: `REQ-160`
+- Cambios:
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los selectores de `vista`, `etapa` y `resultado` en `/bodega` ahora aplican el filtro automaticamente al cambiar, sin exigir pulsar `Buscar`.
+  - Se reutiliza el mismo patron simple basado en `js-autosubmit-filters` + `data-autosubmit-select` ya presente en `Aprobar` y `Todas las Requisiciones`.
+  - `Buscar` se conserva para el texto libre `q`, manteniendo la experiencia SSR consistente.
+- Proximo paso:
+  - Ejecutar `REQ-158` y `REQ-159` para completar el frente de filtros mas ricos de `/bodega`.
+
+## 2026-03-16 14:33 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-157` para redefinir la semantica base de filtros en `/bodega` sin mezclar todavia el resto del frente.
+- Tareas: `REQ-157`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `/bodega` ya no ofrece `Pendientes + Historial` como mezcla por defecto; la vista abre en `Pendientes` y separa claramente la consulta operativa del `Historial`.
+  - Se agrega un filtro SSR de `etapa` que cambia sus opciones segun la vista activa: etapas operativas para `Pendientes` y etapas de cierre para `Historial`.
+  - Se agregan pruebas SSR para default de vista, filtro por etapa en pendientes y filtro por etapa en historial.
+- Proximo paso:
+  - Ejecutar `REQ-158`, sumando `departamento` y rango de fechas a la barra de filtros de `/bodega`.
+
 ## 2026-03-16 14:22 UTC-6 | tool: Codex CLI
 - Objetivo: formalizar el siguiente frente de UI/usabilidad para reforzar los filtros de la vista `/bodega`, antes de tocar codigo.
 - Tareas: `EPIC-UI-05`, `REQ-157`, `REQ-158`, `REQ-159`, `REQ-160`
