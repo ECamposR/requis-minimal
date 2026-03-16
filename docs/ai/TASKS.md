@@ -28,6 +28,12 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-138` | `done` | Agregar al home del rol `user` un grafico SSR `Estado de Mis Requisiciones`, mostrando distribucion real por etapas del flujo (`pendiente`, `en proceso`, `pendiente de cierre`, `rechazada`, `finalizada`) sin introducir JS adicional.
 - `REQ-139` | `done` | Agregar al home del rol `user` el grafico SSR `Mis Requisiciones por Mes`, mostrando volumen creado en los ultimos 6 meses con barras simples y sin dependencias JS.
 - `REQ-140` | `done` | Agregar al home del rol `user` el grafico SSR `Tiempo de Cierre`, agrupando requisiciones finalizadas por rangos de duracion (`0-1`, `2-3`, `4-7`, `8+ dias`) para dar visibilidad real de tiempo de ciclo sin JS.
+- `EPIC-UI-02` | `in_progress` | Replantear el home del rol `bodega` para que siga el patron compacto del rol `user`, pero con semantica 100% operativa: cola de trabajo, cierres y trazabilidad de entrega, sin introducir JS ni tocar la logica de negocio.
+- `REQ-141` | `done` | Refactor semantico del home `bodega`: reemplazar cards ambiguas o ajenas al rol por 4 cards operativas (`Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas`, `Liquidadas en Prokey`) con links coherentes a `/bodega` o su historial.
+- `REQ-142` | `todo` | Agregar al home `bodega` un panel SSR `Estado de Operación de Bodega`, con barra apilada y leyenda para `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas`, `Liquidadas en Prokey` y `No Entregadas`.
+- `REQ-143` | `todo` | Agregar al home `bodega` un panel SSR `Movimiento de Requisiciones por Mes`, orientado a volumen operativo de bodega usando entregas por mes en los ultimos 6 meses.
+- `REQ-144` | `todo` | Agregar al home `bodega` un panel SSR `Resultados de Entrega`, mostrando distribucion de `completa`, `parcial` y `no_entregada` como lectura simple de calidad de entrega.
+- `REQ-145` | `todo` | Compactar layout del home `bodega` para que las 4 cards y los 3 paneles SSR queden en una composicion densa y clara en escritorio, reutilizando el patron visual del home `user` sin duplicar complejidad.
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

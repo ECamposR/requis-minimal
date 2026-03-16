@@ -1,5 +1,35 @@
 # Worklog (append-only)
 
+## 2026-03-16 10:24 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-141` de forma aislada para corregir solo la semantica de las cards del home del rol `bodega`.
+- Tareas: `REQ-141`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El home de `bodega` pasa de 6 a 4 cards operativas: `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas` y `Liquidadas en Prokey`.
+  - Se retiran `Preparadas` y `No Entregadas` del bloque superior para evitar ruido y alinear la vista a una semantica de cola + cierre.
+  - Se agrega prueba SSR especifica para confirmar labels esperadas, ausencia de las retiradas y activacion del layout compacto de una fila.
+- Proximo paso:
+  - Ejecutar `REQ-142`, agregando el panel SSR `Estado de Operación de Bodega` antes de entrar a metricas mensuales o resultados de entrega.
+
+## 2026-03-16 10:12 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar el siguiente frente de UI/usabilidad para el home del rol `bodega`, antes de tocar codigo.
+- Tareas: `EPIC-UI-02`, `REQ-141`, `REQ-142`, `REQ-143`, `REQ-144`, `REQ-145`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se definio una epica nueva para adaptar el home de `bodega` al patron compacto del home `user`, pero con semantica operativa propia.
+  - La implementacion quedo dividida en 5 tareas pequenas: cards semanticas, panel SSR de estado, panel SSR mensual, panel SSR de resultados de entrega y compactado final de layout.
+  - Se deja explicitamente documentado que el frente debe evitar JS adicional y no tocar logica de negocio.
+- Proximo paso:
+  - Ejecutar `REQ-141` primero, ajustando solo las cards del home `bodega` y validando que los links de drill-down sigan apuntando a vistas coherentes.
+
 ## 2026-03-16 09:41 UTC-6 | tool: Codex CLI
 - Objetivo: completar el tercer grafico de valor para el home del rol `user`, enfocado en tiempo de ciclo.
 - Tareas: `REQ-140`

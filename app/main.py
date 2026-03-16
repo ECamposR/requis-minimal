@@ -597,9 +597,8 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
         ],
         "bodega": [
             {"label": "Pendientes de Procesar", "value": pendientes_entregar, "href": "/bodega", "icon": "warehouse"},
-            {"label": "Preparadas", "value": preparadas, "href": "/bodega", "icon": "prepared"},
             {
-                "label": "Entregadas Pendientes de Liquidar",
+                "label": "Pendientes de Liquidar",
                 "value": pendientes_liquidar,
                 "href": "/bodega",
                 "icon": "liquidate",
@@ -610,12 +609,6 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
                 "value": liquidadas_en_prokey,
                 "href": "/bodega?vista=historial",
                 "icon": "prokey_done",
-            },
-            {
-                "label": "No Entregadas",
-                "value": no_entregadas,
-                "href": "/bodega?vista=historial&resultado=no_entregada",
-                "icon": "rejected",
             },
         ],
         "jefe_bodega": [

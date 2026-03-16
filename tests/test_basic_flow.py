@@ -215,6 +215,23 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
     assert "Pendientes de entregar" not in html
 
 
+def test_home_bodega_muestra_cards_operativas_compactas(client: TestClient):
+    login(client, "bodega.1", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Pendientes de Procesar" in html
+    assert "Pendientes de Liquidar" in html
+    assert "Liquidadas" in html
+    assert "Liquidadas en Prokey" in html
+    assert "Preparadas" not in html
+    assert "No Entregadas" not in html
+    assert "home-kpi-grid--single-row" in html
+    assert "/bodega" in html
+    assert "/bodega?vista=historial" in html
+
+
 def test_mis_requisiciones_filtra_abiertas_para_alinear_cards_home(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
