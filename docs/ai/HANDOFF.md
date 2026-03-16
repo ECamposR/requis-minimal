@@ -15,6 +15,7 @@
 - `REQ-135` completada en esta rama: copy refinado de las cards personales del home para mejorar comprension (`Todas Mis Requisiciones`, `Requisiciones Pendientes`, `Requisiciones Finalizadas`, `Requisiciones Rechazadas`) sin tocar formulas ni navegacion.
 - `REQ-136` completada en esta rama: el home del rol `user` se simplifica a 4 cards utiles (`Todas Mis Requisiciones`, `Requisiciones Pendientes`, `Requisiciones Finalizadas`, `Creadas Este Mes`) y el grid se ajusta para mantenerlas en una sola fila en escritorio.
 - `REQ-137` completada en esta rama: el bloque `Acciones Rápidas` deja de renderizarse para el rol `user`, ya que en ese perfil resultaba redundante frente al navbar y las pocas rutas disponibles.
+- `REQ-138` completada en esta rama: el home del rol `user` ahora agrega un panel `Estado de Mis Requisiciones` con barra apilada y leyenda SSR, útil para ver en qué etapa operativa se concentran sus solicitudes sin depender del monitor gerencial.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-119` completada: el navbar ya agrupa los accesos `admin` bajo un dropdown `Administracion` y el bloque de usuario ahora despliega `Cambiar contrasena` + `Salir`, reduciendo ancho horizontal sin introducir JS adicional.
 - `REQ-123` completada en `main`: `Gestionar Entrega` y `Entrega Parcial` ahora fuerzan en JS el estado inicial bloqueado del receptor; el selector solo se habilita tras pulsar `Cambiar receptor`.

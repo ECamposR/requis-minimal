@@ -197,6 +197,11 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
     assert "Requieren Seguimiento" not in html
     assert "Acciones Rápidas" not in html
     assert "home-kpi-grid--single-row" in html
+    assert "Estado de Mis Requisiciones" in html
+    assert "Pendiente de aprobación" in html
+    assert "En proceso" in html
+    assert "Pendiente de cierre" in html
+    assert "Finalizada" in html
     assert "Indicadores Rápidos" not in html
     assert "Aprobadas Históricas" not in html
     assert "Mis Entregadas" not in html

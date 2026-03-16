@@ -685,6 +685,65 @@ def build_home_actions(current_user: Usuario) -> list[dict[str, str]]:
     return actions
 
 
+def build_home_user_status_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "user":
+        return None
+
+    mis_query = db.query(Requisicion).filter(Requisicion.solicitante_id == current_user.id)
+    total = mis_query.count()
+    segmentos_raw = [
+        {
+            "label": "Pendiente de aprobación",
+            "value": mis_query.filter(Requisicion.estado == "pendiente").count(),
+            "tone": "pending",
+        },
+        {
+            "label": "En proceso",
+            "value": mis_query.filter(Requisicion.estado.in_(["aprobada", "preparado"])).count(),
+            "tone": "process",
+        },
+        {
+            "label": "Pendiente de cierre",
+            "value": mis_query.filter(
+                Requisicion.estado.in_(["entregada", "liquidada"]),
+                or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+            ).count(),
+            "tone": "closure",
+        },
+        {
+            "label": "Rechazada",
+            "value": mis_query.filter(Requisicion.estado == "rechazada").count(),
+            "tone": "rejected",
+        },
+        {
+            "label": "Finalizada",
+            "value": mis_query.filter(
+                or_(
+                    Requisicion.estado == "liquidada_en_prokey",
+                    Requisicion.delivery_result == "no_entregada",
+                )
+            ).count(),
+            "tone": "finalized",
+        },
+    ]
+    segmentos = []
+    for segmento in segmentos_raw:
+        porcentaje = round((segmento["value"] * 100 / total), 1) if total else 0
+        segmentos.append(
+            {
+                **segmento,
+                "percentage": porcentaje,
+                "width_pct": max(porcentaje, 3) if segmento["value"] > 0 and total else 0,
+            }
+        )
+
+    return {
+        "total": total,
+        "segments": segmentos,
+        "has_data": total > 0,
+    }
+
+
 def ensure_dashboard_access(current_user: Usuario) -> None:
     if current_user.rol not in ["admin", "aprobador", "jefe_bodega"]:
         raise HTTPException(status_code=403, detail="No autorizado")
@@ -989,6 +1048,7 @@ def cambiar_password_guardar(
 def home(request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     home_cards = build_home_cards(current_user, db)
     home_actions = build_home_actions(current_user)
+    home_user_status_chart = build_home_user_status_chart(current_user, db)
 
     return templates.TemplateResponse(
         "home.html",
@@ -997,6 +1057,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
             current_user,
             home_cards=home_cards,
             home_actions=home_actions,
+            home_user_status_chart=home_user_status_chart,
         ),
     )
 

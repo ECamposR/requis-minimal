@@ -56,6 +56,41 @@
         {% endfor %}
     </section>
 
+    {% if current_user.rol == 'user' and home_user_status_chart %}
+    <section class="home-bottom-grid home-bottom-grid--single home-bottom-grid--user-chart">
+        <article class="home-panel user-status-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Estado de Mis Requisiciones</h3>
+                    <p>Distribución actual de tus solicitudes dentro del flujo operativo.</p>
+                </div>
+            </header>
+            {% if home_user_status_chart.has_data %}
+            <div class="user-status-chart" aria-hidden="true">
+                {% for segment in home_user_status_chart.segments %}
+                {% if segment.value > 0 %}
+                <span class="user-status-chart__segment is-{{ segment.tone }}" style="width: {{ segment.width_pct }}%"></span>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <div class="user-status-legend">
+                {% for segment in home_user_status_chart.segments %}
+                <div class="user-status-legend__item">
+                    <span class="user-status-legend__dot is-{{ segment.tone }}"></span>
+                    <div class="user-status-legend__content">
+                        <strong>{{ segment.label }}</strong>
+                        <span>{{ segment.value }} requisiciones{% if home_user_status_chart.total %} · {{ "%.1f"|format(segment.percentage) }}%{% endif %}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no tienes requisiciones para graficar.</p>
+            {% endif %}
+        </article>
+    </section>
+    {% endif %}
+
     {% if current_user.rol != 'user' %}
     <section class="home-bottom-grid home-bottom-grid--single">
         <article class="home-panel quick-actions-panel">

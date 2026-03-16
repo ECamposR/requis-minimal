@@ -1,5 +1,23 @@
 # Worklog (append-only)
 
+## 2026-03-16 09:24 UTC-6 | tool: Codex CLI
+- Objetivo: agregar un grafico de valor real al home del rol `user` sin introducir dependencias JS innecesarias.
+- Tareas: `REQ-138`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega el panel `Estado de Mis Requisiciones` para `user`, construido 100% SSR.
+  - El panel muestra distribucion por `Pendiente de aprobación`, `En proceso`, `Pendiente de cierre`, `Rechazada` y `Finalizada`, con barra apilada y leyenda porcentual.
+  - No se introduce `Chart.js` ni JS adicional en el home; la implementacion queda deliberadamente simple y mantenible.
+- Proximo paso:
+  - Validar visualmente si la jerarquia del panel debe crecer o reducirse frente al grid superior y si conviene reutilizarlo despues para `logistica`.
+
 ## 2026-03-16 09:15 UTC-6 | tool: Codex CLI
 - Objetivo: retirar `Acciones Rápidas` del home para el rol `user` por redundancia funcional.
 - Tareas: `REQ-137`
