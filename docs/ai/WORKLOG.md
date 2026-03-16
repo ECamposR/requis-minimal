@@ -1,5 +1,37 @@
 # Worklog (append-only)
 
+## 2026-03-16 15:27 UTC-6 | tool: Codex CLI
+- Objetivo: mejorar la affordance de los campos de fecha en `/bodega` para que el calendario nativo no dependa de acertar al icono derecho.
+- Tareas: `REQ-160`
+- Cambios:
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los inputs `type=date` de `/bodega` ahora usan `data-date-picker` e intentan abrir `showPicker()` al hacer clic en cualquier parte del campo, como en `Todas las Requisiciones`.
+  - Se agrega cobertura SSR para confirmar presencia de `data-date-picker` y del script asociado en la vista.
+  - El frente de `REQ-160` queda mas cerca de cierre al resolver una friccion concreta de usabilidad en los filtros.
+- Proximo paso:
+  - Si ya no hay mas ajustes de copy/orden en la barra, cerrar formalmente `REQ-160`.
+
+## 2026-03-16 15:18 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la semantica de `/bodega` para que `liquidada` no se considere historial si aun requiere confirmacion en Prokey.
+- Tareas: `REQ-161`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Las requisiciones en estado `liquidada` pasan a mostrarse en `Pendientes`, con accion `Confirmar en Prokey` cuando el rol lo permite.
+  - El historial de `/bodega` queda reservado a cierres definitivos: `liquidada_en_prokey` y `no_entregada`.
+  - Se agrega prueba especifica para validar que `liquidada` ya no aparece en historial y que sigue visible como pendiente hasta Prokey.
+- Proximo paso:
+  - Validar visualmente si tambien conviene ajustar el copy de `Historial` para explicitar que muestra solo cierres definitivos.
+
 ## 2026-03-16 15:05 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-159` para ampliar el alcance real del buscador `q` en la vista `/bodega`.
 - Tareas: `REQ-159`

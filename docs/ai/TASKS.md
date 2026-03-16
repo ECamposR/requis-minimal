@@ -52,6 +52,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-158` | `done` | Agregar a `/bodega` filtros SSR de `departamento` y rango `fecha_desde / fecha_hasta`, reutilizando el patron ya validado en `Todas las Requisiciones`.
 - `REQ-159` | `done` | Mejorar el buscador `q` de `/bodega` para cubrir folio, cliente, solicitante, receptor designado y actores operativos clave (`aprobador`, `entregador`, `liquidador`) con placeholder honesto respecto al alcance real.
 - `REQ-160` | `todo` | Pulir la UI de filtros de `/bodega`: autosubmit en selectores, orden claro de controles, boton `Buscar` reservado para texto/fechas y copy contextual que explique cuando un filtro solo afecta historial.
+- `REQ-161` | `done` | Ajustar semantica de `/bodega`: el estado `liquidada` deja de caer en historial y pasa a `pendientes` hasta `Confirmar en Prokey`; historial queda solo para cierres definitivos (`liquidada_en_prokey` / `no_entregada`).
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

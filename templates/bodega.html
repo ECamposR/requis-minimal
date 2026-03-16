@@ -19,6 +19,7 @@
         <option value="aprobada" {% if filtro_etapa == 'aprobada' %}selected{% endif %}>Aprobadas</option>
         <option value="preparado" {% if filtro_etapa == 'preparado' %}selected{% endif %}>Preparadas</option>
         <option value="entregada" {% if filtro_etapa == 'entregada' %}selected{% endif %}>Entregadas pendientes de liquidar</option>
+        <option value="liquidada" {% if filtro_etapa == 'liquidada' %}selected{% endif %}>Liquidadas pendientes de Prokey</option>
         {% endif %}
     </select>
     <select name="departamento" data-autosubmit-select class="bodega-filter-control bodega-filter-department">
@@ -35,8 +36,8 @@
         <option value="no_entregada" {% if filtro_resultado == 'no_entregada' %}selected{% endif %}>No entregadas</option>
     </select>
     {% endif %}
-    <input type="date" name="fecha_desde" value="{{ filtro_fecha_desde }}" aria-label="Fecha desde" class="bodega-filter-date">
-    <input type="date" name="fecha_hasta" value="{{ filtro_fecha_hasta }}" aria-label="Fecha hasta" class="bodega-filter-date">
+    <input type="date" name="fecha_desde" value="{{ filtro_fecha_desde }}" aria-label="Fecha desde" class="bodega-filter-date" data-date-picker>
+    <input type="date" name="fecha_hasta" value="{{ filtro_fecha_hasta }}" aria-label="Fecha hasta" class="bodega-filter-date" data-date-picker>
     <button type="submit">Buscar</button>
     <a href="/bodega" role="button" class="secondary">Limpiar</a>
 </form>
@@ -89,6 +90,20 @@
             <a href="/bodega/{{ req.id }}/gestionar" role="button" class="secondary">Entregar</a>
             {% elif req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
             <a href="/liquidar/{{ req.id }}" role="button" class="secondary">Liquidar</a>
+            {% elif req.estado == 'liquidada' %}
+                {% if current_user.rol in ['jefe_bodega', 'admin'] %}
+                <form method="POST" action="/requisiciones/{{ req.id }}/liquidar-prokey" style="display:inline">
+                    <button
+                        type="submit"
+                        class="secondary"
+                        onclick="return confirm('¿Confirmar que esta requisición ya fue liquidada en Prokey?')"
+                    >
+                        Confirmar en Prokey
+                    </button>
+                </form>
+                {% else %}
+                {{ ui.status_badge('liquidada') }}
+                {% endif %}
             {% else %}
             -
             {% endif %}
@@ -145,20 +160,6 @@
         <td class="table-actions">
             {% if req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
             <a href="/liquidar/{{ req.id }}" role="button" class="secondary">Liquidar</a>
-            {% elif req.estado == 'liquidada' %}
-                {% if current_user.rol in ['jefe_bodega', 'admin'] %}
-                <form method="POST" action="/requisiciones/{{ req.id }}/liquidar-prokey" style="display:inline">
-                    <button
-                        type="submit"
-                        class="secondary"
-                        onclick="return confirm('¿Confirmar que esta requisición ya fue liquidada en Prokey?')"
-                    >
-                        Confirmar en Prokey
-                    </button>
-                </form>
-                {% else %}
-                {{ ui.status_badge('liquidada') }}
-                {% endif %}
             {% elif req.estado == 'liquidada_en_prokey' %}
             {{ ui.status_badge('liquidada_en_prokey') }}
             {% else %}
@@ -195,6 +196,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     select.form.requestSubmit();
                 } else {
                     select.form.submit();
+                }
+            }
+        });
+    });
+
+    document.querySelectorAll(".js-autosubmit-filters [data-date-picker]").forEach((input) => {
+        input.addEventListener("click", () => {
+            if (typeof input.showPicker === "function") {
+                try {
+                    input.showPicker();
+                } catch (error) {
+                    console.debug("showPicker no disponible en este contexto", error);
                 }
             }
         });

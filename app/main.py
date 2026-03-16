@@ -2482,6 +2482,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
                 Requisicion.estado == "aprobada",
                 Requisicion.estado == "preparado",
                 Requisicion.estado == "entregada",
+                Requisicion.estado == "liquidada",
             )
         )
     )
@@ -2490,6 +2491,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             Requisicion.estado == "aprobada",
             Requisicion.estado == "preparado",
             Requisicion.delivery_result.in_(["completa", "parcial"]),
+            Requisicion.estado == "liquidada",
         )
     )
     if departamento and departamento != "todos":
@@ -2506,7 +2508,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         except ValueError as exc:
             raise HTTPException(status_code=400, detail="Fecha hasta invalida") from exc
         pendientes_query = pendientes_query.filter(Requisicion.created_at < fecha_hasta)
-    if etapa in {"aprobada", "preparado", "entregada"}:
+    if etapa in {"aprobada", "preparado", "entregada", "liquidada"}:
         pendientes_query = pendientes_query.filter(Requisicion.estado == etapa)
     if q:
         patron = f"%{q}%"
@@ -2545,7 +2547,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         )
         .filter(
             or_(
-                Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]),
+                Requisicion.estado == "liquidada_en_prokey",
                 Requisicion.delivery_result == "no_entregada",
             )
         )
@@ -2564,9 +2566,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         except ValueError as exc:
             raise HTTPException(status_code=400, detail="Fecha hasta invalida") from exc
         historial_query = historial_query.filter(Requisicion.created_at < fecha_hasta)
-    if etapa == "liquidada":
-        historial_query = historial_query.filter(Requisicion.estado == "liquidada")
-    elif etapa == "liquidada_en_prokey":
+    if etapa == "liquidada_en_prokey":
         historial_query = historial_query.filter(Requisicion.estado == "liquidada_en_prokey")
     elif etapa == "no_entregada":
         historial_query = historial_query.filter(Requisicion.delivery_result == "no_entregada")

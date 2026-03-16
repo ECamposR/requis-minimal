@@ -1448,6 +1448,8 @@ def test_listados_con_filtros_exponen_autosubmit_en_selectores(client: TestClien
     assert bodega.status_code == 200
     assert "js-autosubmit-filters" in bodega.text
     assert "data-autosubmit-select" in bodega.text
+    assert "data-date-picker" in bodega.text
+    assert "showPicker" in bodega.text
 
 
 def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
@@ -2733,6 +2735,39 @@ def test_bodega_puede_filtrar_historial_por_etapa_no_entregada(client: TestClien
     assert "REQ-BOD-HET-1" in html
     assert "REQ-BOD-HET-2" not in html
     assert "No entregadas" in html
+
+
+def test_bodega_trata_liquidada_como_pendiente_hasta_prokey(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req_liquidada = Requisicion(
+        folio="REQ-BOD-LIQ-1",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        justificacion="Aun pendiente de Prokey",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        liquidated_by=bodega.id,
+        liquidated_at=datetime.now(),
+    )
+    db_session.add(req_liquidada)
+    db_session.commit()
+
+    login(client, "jefe.bodega", "pass123")
+
+    response_pendientes = client.get("/bodega?vista=pendientes")
+    assert response_pendientes.status_code == 200
+    assert "REQ-BOD-LIQ-1" in response_pendientes.text
+    assert "Confirmar en Prokey" in response_pendientes.text
+
+    response_historial = client.get("/bodega?vista=historial")
+    assert response_historial.status_code == 200
+    assert "REQ-BOD-LIQ-1" not in response_historial.text
 
 
 def test_bodega_expone_departamento_y_fechas_en_filtros(client: TestClient):
