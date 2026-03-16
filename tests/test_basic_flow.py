@@ -1461,6 +1461,63 @@ def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
     assert '/bodega?vista=historial' in html
 
 
+def test_home_jefe_bodega_muestra_panel_estado_global(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-JB-EST-1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente jefe bodega",
+            ),
+            Requisicion(
+                folio="REQ-JB-EST-2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Proceso jefe bodega",
+            ),
+            Requisicion(
+                folio="REQ-JB-EST-3",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Liquidacion jefe bodega",
+            ),
+            Requisicion(
+                folio="REQ-JB-EST-4",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada_en_prokey",
+                justificacion="Finalizada jefe bodega",
+            ),
+            Requisicion(
+                folio="REQ-JB-EST-5",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="rechazada",
+                justificacion="Rechazada jefe bodega",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "jefe.bodega", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Estado Global del Flujo" in html
+    assert "Resume el estado actual del flujo de requisiciones bajo supervisión." in html
+    assert "Pendiente de aprobación" in html
+    assert "Pendiente de proceso" in html
+    assert "Pendiente de liquidación" in html
+    assert "Finalizada" in html
+    assert "Rechazada" in html
+
+
 def test_aprobador_puede_abrir_vista_gestion_aprobacion(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     req = Requisicion(

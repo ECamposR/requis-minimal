@@ -32,7 +32,7 @@
   - `REQ-150` completada: el home `aprobador` ya compacta sus 4 cards y 3 paneles SSR en una composicion mas densa en escritorio, y deja de renderizar `Acciones Rápidas` por redundancia operativa.
 - Se define `EPIC-UI-04` para replantear el home del rol `jefe_bodega` con semantica de supervision combinada entre aprobacion y bodega. La implementacion queda descompuesta asi:
   - `REQ-151` completada: el bloque superior del home `jefe_bodega` ya queda reducido a 4 cards globales (`Pendientes por Aprobar`, `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas en Prokey`) y desaparece la mezcla con cards personales/cierres intermedios.
-  - `REQ-152` pendiente: agregar el panel SSR `Estado Global del Flujo`, con barra apilada end-to-end para backlog de aprobacion, proceso, liquidacion, cierre y rechazo.
+  - `REQ-152` completada: el home `jefe_bodega` ya muestra el panel SSR `Estado Global del Flujo`, con barra apilada y leyenda para backlog de aprobacion, proceso, liquidacion, cierre y rechazo.
   - `REQ-153` pendiente: agregar `Requisiciones por Mes` como lectura temporal simple del volumen global de entrada en los ultimos 6 meses.
   - `REQ-154` pendiente: agregar `Resultados de Entrega` como lectura de calidad operativa del flujo conjunto, reutilizando la semantica ya validada en `bodega`.
   - `REQ-155` pendiente: compactar el layout final del home `jefe_bodega` y decidir si `Acciones Rápidas` sigue aportando valor o debe retirarse tambien en este rol.

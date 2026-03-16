@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 13:24 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-152` para que el home del rol `jefe_bodega` gane una lectura visual global del pipeline sin JS.
+- Tareas: `REQ-152`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_jefe_bodega_status_chart(...)` con segmentos para `Pendiente de aprobación`, `Pendiente de proceso`, `Pendiente de liquidación`, `Finalizada` y `Rechazada`.
+  - El home `jefe_bodega` ya renderiza el panel SSR `Estado Global del Flujo`, reutilizando el patron de barra apilada y leyenda ya validado en `aprobador` y `bodega`.
+  - Se agrega prueba SSR especifica para validar presencia del panel y de las etiquetas globales clave.
+- Proximo paso:
+  - Ejecutar `REQ-153`, agregando `Requisiciones por Mes` como segundo panel SSR del home `jefe_bodega`.
+
 ## 2026-03-16 13:14 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-151` de forma aislada para corregir solo la semantica de las cards del home del rol `jefe_bodega`.
 - Tareas: `REQ-151`

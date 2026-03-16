@@ -941,6 +941,56 @@ def build_home_aprobador_status_chart(current_user: Usuario, db: Session) -> dic
     }
 
 
+def build_home_jefe_bodega_status_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "jefe_bodega":
+        return None
+
+    total = db.query(Requisicion).count()
+    segmentos_raw = [
+        {
+            "label": "Pendiente de aprobación",
+            "value": db.query(Requisicion).filter(Requisicion.estado == "pendiente").count(),
+            "tone": "pending",
+        },
+        {
+            "label": "Pendiente de proceso",
+            "value": db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count(),
+            "tone": "process",
+        },
+        {
+            "label": "Pendiente de liquidación",
+            "value": db.query(Requisicion).filter(Requisicion.estado == "entregada").count(),
+            "tone": "closure",
+        },
+        {
+            "label": "Finalizada",
+            "value": db.query(Requisicion).filter(Requisicion.estado == "liquidada_en_prokey").count(),
+            "tone": "finalized",
+        },
+        {
+            "label": "Rechazada",
+            "value": db.query(Requisicion).filter(Requisicion.estado == "rechazada").count(),
+            "tone": "rejected",
+        },
+    ]
+    segmentos = []
+    for segmento in segmentos_raw:
+        porcentaje = round((segmento["value"] * 100 / total), 1) if total else 0
+        segmentos.append(
+            {
+                **segmento,
+                "percentage": porcentaje,
+                "width_pct": max(porcentaje, 3) if segmento["value"] > 0 and total else 0,
+            }
+        )
+
+    return {
+        "total": total,
+        "segments": segmentos,
+        "has_data": total > 0,
+    }
+
+
 def build_home_aprobador_monthly_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
     if current_user.rol != "aprobador":
         return None
@@ -1429,6 +1479,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
     home_aprobador_status_chart = build_home_aprobador_status_chart(current_user, db)
     home_aprobador_monthly_chart = build_home_aprobador_monthly_chart(current_user, db)
     home_aprobador_pending_age_chart = build_home_aprobador_pending_age_chart(current_user, db)
+    home_jefe_bodega_status_chart = build_home_jefe_bodega_status_chart(current_user, db)
     home_bodega_status_chart = build_home_bodega_status_chart(current_user, db)
     home_bodega_monthly_chart = build_home_bodega_monthly_chart(current_user, db)
     home_bodega_delivery_results_chart = build_home_bodega_delivery_results_chart(current_user, db)
@@ -1446,6 +1497,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
             home_aprobador_status_chart=home_aprobador_status_chart,
             home_aprobador_monthly_chart=home_aprobador_monthly_chart,
             home_aprobador_pending_age_chart=home_aprobador_pending_age_chart,
+            home_jefe_bodega_status_chart=home_jefe_bodega_status_chart,
             home_bodega_status_chart=home_bodega_status_chart,
             home_bodega_monthly_chart=home_bodega_monthly_chart,
             home_bodega_delivery_results_chart=home_bodega_delivery_results_chart,
