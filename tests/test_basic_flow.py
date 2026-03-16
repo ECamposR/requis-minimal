@@ -626,6 +626,42 @@ def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: 
     assert payload["horario"]["alert_from_hour"] == 14
 
 
+def test_dashboard_basicos_excluye_fines_de_semana_del_promedio_diario(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-DASH-WD-01",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                motivo_requisicion="Demostración",
+                justificacion="Viernes",
+                created_at=datetime(2026, 3, 13, 10, 0, 0),
+            ),
+            Requisicion(
+                folio="REQ-DASH-WD-02",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                motivo_requisicion="Demostración",
+                justificacion="Lunes",
+                created_at=datetime(2026, 3, 16, 10, 0, 0),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/api/dashboard/basicos")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["kpis"]["dias_observados"] == 2
+    assert payload["kpis"]["requisiciones_promedio_por_dia"] == 1.0
+
+
 def test_dashboard_auditoria_agrega_kpis_y_diferencias(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

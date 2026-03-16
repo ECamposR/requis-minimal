@@ -1676,7 +1676,12 @@ def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db:
     ).one()
     dias_observados = 0
     if rango_fechas.min_created_at and rango_fechas.max_created_at:
-        dias_observados = max((rango_fechas.max_created_at.date() - rango_fechas.min_created_at.date()).days + 1, 1)
+        current_day = rango_fechas.min_created_at.date()
+        end_day = rango_fechas.max_created_at.date()
+        while current_day <= end_day:
+            if current_day.weekday() < 5:
+                dias_observados += 1
+            current_day += timedelta(days=1)
     promedio_requisiciones_por_dia = round(total_requisiciones / dias_observados, 2) if dias_observados else 0.0
 
     prokey_cycle_rows = (

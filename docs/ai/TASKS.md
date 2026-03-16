@@ -66,6 +66,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-118G` | `done` | Backend drill-down: agregar endpoints de detalle para KPIs de auditoria (`/api/dashboard/auditoria/discrepancias` y `/api/dashboard/auditoria/demos`) devolviendo requisiciones cerradas relacionadas a cada indicador.
 - `REQ-118H` | `done` | Frontend drill-down: agregar botones `Ver detalle` en los KPI de auditoria y un panel inline en `monitor_actividad.html` para listar las requisiciones relacionadas sin salir del monitor.
 - `REQ-118I` | `done` | Ampliar `GET /api/dashboard/basicos` y `monitor_actividad.html` con dos KPI de uso: promedio de horas desde `created_at` hasta `prokey_liquidada_at` para requisiciones `liquidada_en_prokey`, y promedio historico observado de requisiciones creadas por dia calendario.
+- `REQ-118J` | `done` | Ajustar la KPI `Promedio de Requisiciones por Día` para que el denominador use solo dias habiles de lunes a viernes dentro del historico observado, excluyendo fines de semana.
 
 ## Reinicio Liquidacion (desde `3d7702b`)
 - `REQ-060` | `done` | Base de liquidacion implementada: estado `liquidada`, campos base en `requisiciones/items`, migracion robusta e idempotente + baseline de entrega (`cantidad_entregada`) normalizado.

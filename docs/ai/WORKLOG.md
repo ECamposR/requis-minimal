@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 16:45 UTC-6 | tool: Codex CLI
+- Objetivo: corregir la KPI `Promedio de Requisiciones por Día` para que use solo dias laborables en el historico observado.
+- Tareas: `REQ-118J`
+- Cambios:
+  - `app/main.py`
+  - `templates/monitor_actividad.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El denominador de `requisiciones_promedio_por_dia` ahora excluye sabados y domingos.
+  - La nota de la KPI en `monitor_actividad.html` ya habla de `dias hábiles`.
+  - Se agrega prueba especifica para asegurar que un rango viernes-lunes cuente 2 dias observados y no 4.
+- Proximo paso:
+  - Si en el futuro se requiere mas precision, evaluar un calendario configurable de feriados; por ahora solo se excluyen fines de semana.
+
 ## 2026-03-16 16:05 UTC-6 | tool: Codex CLI
 - Objetivo: ampliar la Fase 1 del `Monitor de Actividad` con dos KPI de uso que agreguen lectura de tiempo de ciclo y ritmo promedio de creacion sin abrir un endpoint nuevo.
 - Tareas: `REQ-118I`

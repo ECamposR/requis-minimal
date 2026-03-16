@@ -347,10 +347,11 @@ function renderUsageKpis(kpis) {
     const avgPerDay = Number(kpis?.requisiciones_promedio_por_dia ?? 0);
     const observedDays = Number(kpis?.dias_observados ?? 0);
     const totalReqs = Number(kpis?.total_requisiciones ?? 0);
+    const avgDays = avgHours / 24;
 
     setAuditKpi(
         "kpi-tiempo-promedio-prokey",
-        `${fmtUsageKpiNumber(avgHours)} h`,
+        `${fmtUsageKpiNumber(avgHours)}h / ${fmtUsageKpiNumber(avgDays)} días`,
         "kpi-tiempo-promedio-prokey-note",
         `Promedio desde creación hasta <strong>Liquidada en Prokey</strong>, calculado sobre <strong>${fmtAuditNumber(prokeyCount)}</strong> requisiciones cerradas definitivamente.`
     );
@@ -358,7 +359,7 @@ function renderUsageKpis(kpis) {
         "kpi-promedio-requisiciones-dia",
         fmtUsageKpiNumber(avgPerDay),
         "kpi-promedio-requisiciones-dia-note",
-        `Promedio histórico observado sobre <strong>${fmtAuditNumber(observedDays)}</strong> días calendario y <strong>${fmtAuditNumber(totalReqs)}</strong> requisiciones creadas.`
+        `Promedio histórico observado sobre <strong>${fmtAuditNumber(observedDays)}</strong> días hábiles y <strong>${fmtAuditNumber(totalReqs)}</strong> requisiciones creadas.`
     );
 }
 
