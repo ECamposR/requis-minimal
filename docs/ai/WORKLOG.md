@@ -1,5 +1,19 @@
 # Worklog (append-only)
 
+## 2026-03-16 13:05 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar el siguiente frente de UI/usabilidad para el home del rol `jefe_bodega`, antes de tocar codigo.
+- Tareas: `EPIC-UI-04`, `REQ-151`, `REQ-152`, `REQ-153`, `REQ-154`, `REQ-155`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se define una epica nueva para adaptar el home de `jefe_bodega` a una semantica de supervision combinada entre aprobacion y bodega, evitando sumar mecanicamente ambas vistas.
+  - La implementacion queda dividida en 5 tareas pequenas: cards globales, panel SSR de estado del flujo, panel SSR mensual, panel SSR de resultados de entrega y compactado final del layout.
+  - Se deja explicitamente documentado que el frente debe evitar JS adicional y no tocar logica de negocio.
+- Proximo paso:
+  - Ejecutar `REQ-151` primero, ajustando solo las cards del home `jefe_bodega` y validando que los links de drill-down sigan apuntando a vistas coherentes.
+
 ## 2026-03-16 12:32 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-150` para cerrar el frente del home `aprobador` con una composicion compacta y coherente.
 - Tareas: `REQ-150`
