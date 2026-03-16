@@ -824,6 +824,77 @@ def test_home_aprobador_muestra_cards_operativas_globales(client: TestClient, db
     assert "/todas-requisiciones?estado=rechazada" in html
 
 
+def test_home_aprobador_muestra_panel_estado_global(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-APR-01",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente global",
+            ),
+            Requisicion(
+                folio="REQ-APR-02",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Pendiente entrega global",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-APR-03",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Pendiente liquidacion global",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-APR-04",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="rechazada",
+                justificacion="Rechazada global",
+                rejected_by=aprobador.id,
+                rejected_at=datetime.now(),
+                rejection_reason="No procede",
+            ),
+            Requisicion(
+                folio="REQ-APR-05",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada_en_prokey",
+                justificacion="Finalizada global",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Estado Global de Requisiciones" in html
+    assert "Resume el estado actual del flujo completo de requisiciones." in html
+    assert "Pendiente de aprobación" in html
+    assert "Pendiente de entrega" in html
+    assert "Pendiente de liquidación" in html
+    assert "Finalizada" in html
+    assert "Rechazada" in html
+
+
 def test_bodega_no_ve_accesos_de_creacion_ni_mis_requisiciones(client: TestClient):
     login(client, "bodega.1", "pass123")
     response = client.get("/")

@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 11:56 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-147` para que el home del rol `aprobador` gane una lectura visual global del pipeline sin JS.
+- Tareas: `REQ-147`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_aprobador_status_chart(...)` con segmentos para `Pendiente de aprobación`, `Pendiente de entrega`, `Pendiente de liquidación`, `Finalizada` y `Rechazada`.
+  - El home `aprobador` ya renderiza el panel SSR `Estado Global de Requisiciones`, reutilizando el patron de barra apilada y leyenda ya usado en `user` y `bodega`.
+  - Se agrega prueba SSR especifica para validar presencia del panel y de las etiquetas globales clave.
+- Proximo paso:
+  - Ejecutar `REQ-148`, agregando `Requisiciones por Mes` como segundo panel SSR del home `aprobador`.
+
 ## 2026-03-16 11:42 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-146` de forma aislada para corregir solo la semantica de las cards del home del rol `aprobador`.
 - Tareas: `REQ-146`

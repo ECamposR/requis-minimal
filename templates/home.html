@@ -153,7 +153,7 @@
     {% endif %}
 
     {% if current_user.rol == 'bodega' and (home_bodega_status_chart or home_bodega_monthly_chart or home_bodega_delivery_results_chart) %}
-    <section class="home-bottom-grid home-bottom-grid--user-insights">
+    <section class="home-bottom-grid home-bottom-grid--user-insights home-bottom-grid--bodega-insights">
         {% if home_bodega_status_chart %}
         <article class="home-panel user-status-panel bodega-status-panel">
             <header class="home-panel-header">
@@ -248,7 +248,42 @@
     </section>
     {% endif %}
 
-    {% if current_user.rol != 'user' %}
+    {% if current_user.rol == 'aprobador' and home_aprobador_status_chart %}
+    <section class="home-bottom-grid home-bottom-grid--single">
+        <article class="home-panel user-status-panel aprobador-status-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Estado Global de Requisiciones</h3>
+                    <p>Resume el estado actual del flujo completo de requisiciones.</p>
+                </div>
+            </header>
+            {% if home_aprobador_status_chart.has_data %}
+            <div class="user-status-chart" aria-hidden="true">
+                {% for segment in home_aprobador_status_chart.segments %}
+                {% if segment.value > 0 %}
+                <span class="user-status-chart__segment is-{{ segment.tone }}" style="width: {{ segment.width_pct }}%"></span>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <div class="user-status-legend">
+                {% for segment in home_aprobador_status_chart.segments %}
+                <div class="user-status-legend__item">
+                    <span class="user-status-legend__dot is-{{ segment.tone }}"></span>
+                    <div class="user-status-legend__content">
+                        <strong>{{ segment.label }}</strong>
+                        <span>{{ segment.value }} requisiciones{% if home_aprobador_status_chart.total %} · {{ "%.1f"|format(segment.percentage) }}%{% endif %}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no hay requisiciones para graficar el estado global.</p>
+            {% endif %}
+        </article>
+    </section>
+    {% endif %}
+
+    {% if current_user.rol not in ['user', 'bodega'] %}
     <section class="home-bottom-grid home-bottom-grid--single">
         <article class="home-panel quick-actions-panel">
             <header class="home-panel-header">
