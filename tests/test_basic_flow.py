@@ -2735,6 +2735,96 @@ def test_bodega_puede_filtrar_historial_por_etapa_no_entregada(client: TestClien
     assert "No entregadas" in html
 
 
+def test_bodega_expone_departamento_y_fechas_en_filtros(client: TestClient):
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega")
+
+    assert response.status_code == 200
+    html = response.text
+    assert 'name="departamento"' in html
+    assert 'name="fecha_desde"' in html
+    assert 'name="fecha_hasta"' in html
+
+
+def test_bodega_puede_filtrar_por_departamento(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-DEP-1",
+                solicitante_id=user.id,
+                departamento="Ventas",
+                estado="aprobada",
+                justificacion="Filtro ventas",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-DEP-2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Filtro operaciones",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega?departamento=Ventas")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-BOD-DEP-1" in html
+    assert "REQ-BOD-DEP-2" not in html
+
+
+def test_bodega_puede_filtrar_por_rango_de_fechas(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    ahora = datetime.now()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-FEC-1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Dentro de rango",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                created_at=ahora,
+            ),
+            Requisicion(
+                folio="REQ-BOD-FEC-2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Fuera de rango",
+                approved_by=aprobador.id,
+                approved_at=ahora - timedelta(days=20),
+                created_at=ahora - timedelta(days=20),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    fecha_desde = (ahora - timedelta(days=3)).strftime("%Y-%m-%d")
+    fecha_hasta = (ahora + timedelta(days=1)).strftime("%Y-%m-%d")
+    response = client.get(f"/bodega?fecha_desde={fecha_desde}&fecha_hasta={fecha_hasta}")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-BOD-FEC-1" in html
+    assert "REQ-BOD-FEC-2" not in html
+
+
 def test_bodega_no_duplica_entregadas_activas_en_historial(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

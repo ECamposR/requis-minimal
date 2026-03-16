@@ -144,8 +144,52 @@ body {
     grid-template-columns: minmax(12rem, 1.4fr) minmax(10rem, 0.95fr) minmax(10rem, 0.95fr) minmax(8.5rem, 0.8fr) minmax(8.5rem, 0.8fr) auto auto;
 }
 
+.bodega-filters {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.45rem;
+    overflow-x: auto;
+}
+
 .all-requests-filters input[name="q"] {
     min-width: 0;
+}
+
+.bodega-filters input[name="q"] {
+    min-width: 0;
+}
+
+.bodega-filters .bodega-filter-q {
+    flex: 0 1 16.8rem;
+    width: 16.8rem;
+    max-width: 16.8rem;
+    min-width: 16.8rem;
+}
+
+.bodega-filters .bodega-filter-control {
+    flex: 0 0 auto;
+}
+
+.bodega-filters .bodega-filter-view {
+    width: 8.2rem;
+}
+
+.bodega-filters .bodega-filter-stage {
+    width: 10.4rem;
+}
+
+.bodega-filters .bodega-filter-department {
+    width: 8.9rem;
+}
+
+.bodega-filters .bodega-filter-result {
+    width: 8.5rem;
+}
+
+.bodega-filters .bodega-filter-date {
+    width: 13.1rem;
+    min-width: 13.1rem;
 }
 
 .all-requests-filters button[type="submit"],
@@ -163,14 +207,41 @@ body {
     white-space: nowrap;
 }
 
+.bodega-filters button[type="submit"],
+.bodega-filters a[role="button"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.12rem;
+    min-height: 2.12rem;
+    margin: 0;
+    line-height: 1.2;
+    min-width: 4.7rem;
+    width: 100%;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-size: 0.81rem;
+    white-space: nowrap;
+    flex: 0 0 4.7rem;
+}
+
 @media (max-width: 1180px) {
     .all-requests-filters {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .bodega-filters {
+        display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 760px) {
     .all-requests-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .bodega-filters {
         grid-template-columns: 1fr;
     }
 }

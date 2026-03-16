@@ -3,13 +3,13 @@
 {% block title %}Bodega{% endblock %}
 {% block content %}
 {{ ui.page_header("Bodega", "Procesa entregas y consulta trazabilidad de despacho por requisicion.") }}
-<form method="GET" class="filters-bar panel js-autosubmit-filters">
-    <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante...">
-    <select name="vista" data-autosubmit-select>
+<form method="GET" class="filters-bar panel js-autosubmit-filters bodega-filters">
+    <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante..." class="bodega-filter-q">
+    <select name="vista" data-autosubmit-select class="bodega-filter-control bodega-filter-view">
         <option value="pendientes" {% if filtro_vista == 'pendientes' %}selected{% endif %}>Solo pendientes</option>
         <option value="historial" {% if filtro_vista == 'historial' %}selected{% endif %}>Solo historial</option>
     </select>
-    <select name="etapa" data-autosubmit-select>
+    <select name="etapa" data-autosubmit-select class="bodega-filter-control bodega-filter-stage">
         <option value="todos" {% if filtro_etapa == 'todos' %}selected{% endif %}>Todas las etapas visibles</option>
         {% if filtro_vista == 'historial' %}
         <option value="liquidada" {% if filtro_etapa == 'liquidada' %}selected{% endif %}>Liquidadas</option>
@@ -21,14 +21,22 @@
         <option value="entregada" {% if filtro_etapa == 'entregada' %}selected{% endif %}>Entregadas pendientes de liquidar</option>
         {% endif %}
     </select>
+    <select name="departamento" data-autosubmit-select class="bodega-filter-control bodega-filter-department">
+        <option value="todos" {% if filtro_departamento == 'todos' %}selected{% endif %}>Todos los departamentos</option>
+        {% for d in departamentos %}
+        <option value="{{ d }}" {% if filtro_departamento == d %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+    </select>
     {% if filtro_vista == 'historial' %}
-    <select name="resultado" data-autosubmit-select>
+    <select name="resultado" data-autosubmit-select class="bodega-filter-control bodega-filter-result">
         <option value="todos" {% if filtro_resultado == 'todos' %}selected{% endif %}>Todos los resultados</option>
         <option value="completa" {% if filtro_resultado == 'completa' %}selected{% endif %}>Completas</option>
         <option value="parcial" {% if filtro_resultado == 'parcial' %}selected{% endif %}>Parciales</option>
         <option value="no_entregada" {% if filtro_resultado == 'no_entregada' %}selected{% endif %}>No entregadas</option>
     </select>
     {% endif %}
+    <input type="date" name="fecha_desde" value="{{ filtro_fecha_desde }}" aria-label="Fecha desde" class="bodega-filter-date">
+    <input type="date" name="fecha_hasta" value="{{ filtro_fecha_hasta }}" aria-label="Fecha hasta" class="bodega-filter-date">
     <button type="submit">Buscar</button>
     <a href="/bodega" role="button" class="secondary">Limpiar</a>
 </form>

@@ -2457,7 +2457,10 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
     if vista not in {"pendientes", "historial"}:
         vista = "pendientes"
     etapa = request.query_params.get("etapa", "todos").strip().lower()
+    departamento = request.query_params.get("departamento", "todos").strip()
     resultado = request.query_params.get("resultado", "todos").strip().lower()
+    fecha_desde_raw = request.query_params.get("fecha_desde", "").strip()
+    fecha_hasta_raw = request.query_params.get("fecha_hasta", "").strip()
 
     bodega_optionals = [
         joinedload(Requisicion.solicitante),
@@ -2488,6 +2491,20 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             Requisicion.delivery_result.in_(["completa", "parcial"]),
         )
     )
+    if departamento and departamento != "todos":
+        pendientes_query = pendientes_query.filter(Requisicion.departamento == departamento)
+    if fecha_desde_raw:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde_raw, "%Y-%m-%d")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha desde invalida") from exc
+        pendientes_query = pendientes_query.filter(Requisicion.created_at >= fecha_desde)
+    if fecha_hasta_raw:
+        try:
+            fecha_hasta = datetime.strptime(fecha_hasta_raw, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha hasta invalida") from exc
+        pendientes_query = pendientes_query.filter(Requisicion.created_at < fecha_hasta)
     if etapa in {"aprobada", "preparado", "entregada"}:
         pendientes_query = pendientes_query.filter(Requisicion.estado == etapa)
     if q:
@@ -2525,6 +2542,20 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             )
         )
     )
+    if departamento and departamento != "todos":
+        historial_query = historial_query.filter(Requisicion.departamento == departamento)
+    if fecha_desde_raw:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde_raw, "%Y-%m-%d")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha desde invalida") from exc
+        historial_query = historial_query.filter(Requisicion.created_at >= fecha_desde)
+    if fecha_hasta_raw:
+        try:
+            fecha_hasta = datetime.strptime(fecha_hasta_raw, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha hasta invalida") from exc
+        historial_query = historial_query.filter(Requisicion.created_at < fecha_hasta)
     if etapa == "liquidada":
         historial_query = historial_query.filter(Requisicion.estado == "liquidada")
     elif etapa == "liquidada_en_prokey":
@@ -2557,6 +2588,11 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         )
 
     historial_entregadas = historial_query.order_by(Requisicion.delivered_at.desc()).all()
+    departamentos = [
+        row[0]
+        for row in db.query(Requisicion.departamento).distinct().order_by(Requisicion.departamento.asc()).all()
+        if row[0]
+    ]
 
     return templates.TemplateResponse(
         "bodega.html",
@@ -2568,7 +2604,11 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
             filtro_q=q,
             filtro_vista=vista,
             filtro_etapa=etapa,
+            filtro_departamento=departamento,
+            filtro_fecha_desde=fecha_desde_raw,
+            filtro_fecha_hasta=fecha_hasta_raw,
             filtro_resultado=resultado,
+            departamentos=departamentos,
         ),
     )
 

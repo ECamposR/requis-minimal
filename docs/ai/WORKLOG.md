@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 14:51 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-158` para enriquecer la barra de filtros de `/bodega` con datos de contexto temporal y organizacional.
+- Tareas: `REQ-158`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `/bodega` ya expone filtro SSR por `departamento` y rango `fecha_desde / fecha_hasta`, con validacion de fechas consistente al patron de `Todas las Requisiciones`.
+  - Los nuevos filtros aplican tanto sobre pendientes como sobre historial, permitiendo recortar la consulta operativa por area y ventana temporal.
+  - Se agregan pruebas para presencia del UI y para el filtrado efectivo por departamento y rango de fechas.
+- Proximo paso:
+  - Ejecutar `REQ-159`, ampliando el alcance del buscador `q` para cubrir mas actores y campos relevantes del flujo de bodega.
+
 ## 2026-03-16 14:41 UTC-6 | tool: Codex CLI
 - Objetivo: alinear la barra de filtros de `/bodega` con el patron de autosubmit ya usado en vistas SSR de consulta.
 - Tareas: `REQ-160`
