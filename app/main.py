@@ -895,31 +895,44 @@ def build_home_aprobador_status_chart(current_user: Usuario, db: Session) -> dic
     if current_user.rol != "aprobador":
         return None
 
-    total = db.query(Requisicion).count()
+    pendientes_aprobacion = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
+    pendientes_entrega = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
+    pendientes_liquidacion = db.query(Requisicion).filter(
+        Requisicion.estado == "entregada",
+        or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+    ).count()
+    finalizadas = db.query(Requisicion).filter(
+        or_(
+            Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]),
+            Requisicion.delivery_result == "no_entregada",
+        )
+    ).count()
+    rechazadas = db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
+    total = pendientes_aprobacion + pendientes_entrega + pendientes_liquidacion + finalizadas + rechazadas
     segmentos_raw = [
         {
             "label": "Pendiente de aprobación",
-            "value": db.query(Requisicion).filter(Requisicion.estado == "pendiente").count(),
+            "value": pendientes_aprobacion,
             "tone": "pending",
         },
         {
             "label": "Pendiente de entrega",
-            "value": db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count(),
+            "value": pendientes_entrega,
             "tone": "process",
         },
         {
             "label": "Pendiente de liquidación",
-            "value": db.query(Requisicion).filter(Requisicion.estado == "entregada").count(),
+            "value": pendientes_liquidacion,
             "tone": "closure",
         },
         {
             "label": "Finalizada",
-            "value": db.query(Requisicion).filter(Requisicion.estado == "liquidada_en_prokey").count(),
+            "value": finalizadas,
             "tone": "finalized",
         },
         {
             "label": "Rechazada",
-            "value": db.query(Requisicion).filter(Requisicion.estado == "rechazada").count(),
+            "value": rechazadas,
             "tone": "rejected",
         },
     ]
@@ -945,31 +958,44 @@ def build_home_jefe_bodega_status_chart(current_user: Usuario, db: Session) -> d
     if current_user.rol != "jefe_bodega":
         return None
 
-    total = db.query(Requisicion).count()
+    pendientes_aprobacion = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
+    pendientes_proceso = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
+    pendientes_liquidacion = db.query(Requisicion).filter(
+        Requisicion.estado == "entregada",
+        or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
+    ).count()
+    finalizadas = db.query(Requisicion).filter(
+        or_(
+            Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]),
+            Requisicion.delivery_result == "no_entregada",
+        )
+    ).count()
+    rechazadas = db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
+    total = pendientes_aprobacion + pendientes_proceso + pendientes_liquidacion + finalizadas + rechazadas
     segmentos_raw = [
         {
             "label": "Pendiente de aprobación",
-            "value": db.query(Requisicion).filter(Requisicion.estado == "pendiente").count(),
+            "value": pendientes_aprobacion,
             "tone": "pending",
         },
         {
             "label": "Pendiente de proceso",
-            "value": db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count(),
+            "value": pendientes_proceso,
             "tone": "process",
         },
         {
             "label": "Pendiente de liquidación",
-            "value": db.query(Requisicion).filter(Requisicion.estado == "entregada").count(),
+            "value": pendientes_liquidacion,
             "tone": "closure",
         },
         {
             "label": "Finalizada",
-            "value": db.query(Requisicion).filter(Requisicion.estado == "liquidada_en_prokey").count(),
+            "value": finalizadas,
             "tone": "finalized",
         },
         {
             "label": "Rechazada",
-            "value": db.query(Requisicion).filter(Requisicion.estado == "rechazada").count(),
+            "value": rechazadas,
             "tone": "rejected",
         },
     ]

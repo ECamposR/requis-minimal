@@ -36,6 +36,7 @@
   - `REQ-153` completada: el home `jefe_bodega` ya muestra `Requisiciones por Mes`, un panel SSR con barras para los ultimos 6 meses usando `created_at` como volumen global de entrada.
   - `REQ-154` completada: el home `jefe_bodega` ya muestra `Resultados de Entrega`, un panel SSR que distribuye `completa`, `parcial` y `no_entregada` como lectura de calidad operativa del flujo conjunto.
   - `REQ-155` completada: el home `jefe_bodega` ya compacta sus 4 cards y 3 paneles SSR en una composicion mas densa en escritorio, y deja de renderizar `Acciones Rápidas` por redundancia operativa.
+- `REQ-156` completada en esta rama: los paneles `Estado Global del Flujo` / `Estado Global de Requisiciones` ya no dejan una franja gris por estados no representados. `Finalizada` ahora agrupa `liquidada`, `liquidada_en_prokey` y `no_entregada`; `Pendiente de liquidación` deja fuera cierres fallidos.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-119` completada: el navbar ya agrupa los accesos `admin` bajo un dropdown `Administracion` y el bloque de usuario ahora despliega `Cambiar contrasena` + `Salir`, reduciendo ancho horizontal sin introducir JS adicional.
 - `REQ-123` completada en `main`: `Gestionar Entrega` y `Entrega Parcial` ahora fuerzan en JS el estado inicial bloqueado del receptor; el selector solo se habilita tras pulsar `Cambiar receptor`.

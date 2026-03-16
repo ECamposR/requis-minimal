@@ -1,5 +1,20 @@
 # Worklog (append-only)
 
+## 2026-03-16 14:12 UTC-6 | tool: Codex CLI
+- Objetivo: corregir el panel `Estado Global del Flujo` para eliminar el tramo gris causado por estados no representados en la barra.
+- Tareas: `REQ-156`
+- Cambios:
+  - `app/main.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los paneles de supervision (`aprobador` y `jefe_bodega`) dejan de usar `total = todas las requisiciones` contra un set incompleto de segmentos.
+  - `Finalizada` ahora absorbe cierres reales (`liquidada`, `liquidada_en_prokey`, `no_entregada`) y `Pendiente de liquidación` excluye requisiciones ya cerradas por `no_entregada`.
+  - Con eso la barra ya no deja una porcion gris fuera de la leyenda semantica.
+- Proximo paso:
+  - Validar visualmente el panel con datos reales para confirmar que la semantica de `Finalizada` refleja bien el lenguaje operativo esperado.
+
 ## 2026-03-16 13:56 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-155` para cerrar el frente del home `jefe_bodega` con una composicion compacta y coherente.
 - Tareas: `REQ-155`
