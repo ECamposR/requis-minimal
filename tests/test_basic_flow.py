@@ -895,6 +895,42 @@ def test_home_aprobador_muestra_panel_estado_global(client: TestClient, db_sessi
     assert "Rechazada" in html
 
 
+def test_home_aprobador_muestra_requisiciones_por_mes(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    ahora = datetime.now()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-APR-M1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Mes actual aprobador",
+                created_at=ahora,
+            ),
+            Requisicion(
+                folio="REQ-APR-M2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Mes anterior aprobador",
+                created_at=ahora.replace(month=max(1, ahora.month - 1)),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Requisiciones por Mes" in html
+    assert "Muestra el volumen global de requisiciones creadas por mes." in html
+    assert "user-monthly-chart" in html
+
+
 def test_bodega_no_ve_accesos_de_creacion_ni_mis_requisiciones(client: TestClient):
     login(client, "bodega.1", "pass123")
     response = client.get("/")

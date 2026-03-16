@@ -248,8 +248,9 @@
     </section>
     {% endif %}
 
-    {% if current_user.rol == 'aprobador' and home_aprobador_status_chart %}
-    <section class="home-bottom-grid home-bottom-grid--single">
+    {% if current_user.rol == 'aprobador' and (home_aprobador_status_chart or home_aprobador_monthly_chart) %}
+    <section class="home-bottom-grid home-bottom-grid--user-insights">
+        {% if home_aprobador_status_chart %}
         <article class="home-panel user-status-panel aprobador-status-panel">
             <header class="home-panel-header">
                 <div>
@@ -280,6 +281,36 @@
             <p class="user-status-empty">Aún no hay requisiciones para graficar el estado global.</p>
             {% endif %}
         </article>
+        {% endif %}
+        {% if home_aprobador_monthly_chart %}
+        <article class="home-panel user-monthly-panel aprobador-monthly-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Requisiciones por Mes</h3>
+                    <p>Muestra el volumen global de requisiciones creadas por mes.</p>
+                </div>
+            </header>
+            {% if home_aprobador_monthly_chart.has_data %}
+            <div class="user-monthly-chart" aria-hidden="true">
+                {% for bar in home_aprobador_monthly_chart.bars %}
+                <div class="user-monthly-chart__col">
+                    <div class="user-monthly-chart__bar-wrap">
+                        {% if bar.value > 0 %}
+                        <span class="user-monthly-chart__bar" style="height: {{ bar.height_pct }}%"></span>
+                        {% else %}
+                        <span class="user-monthly-chart__bar user-monthly-chart__bar--empty"></span>
+                        {% endif %}
+                    </div>
+                    <strong class="user-monthly-chart__value">{{ bar.value }}</strong>
+                    <span class="user-monthly-chart__label">{{ bar.label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no hay volumen suficiente para mostrar tendencia mensual.</p>
+            {% endif %}
+        </article>
+        {% endif %}
     </section>
     {% endif %}
 

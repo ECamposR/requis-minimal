@@ -27,7 +27,7 @@
 - Se define `EPIC-UI-03` para replantear el home del rol `aprobador` con semantica de supervision global, evitando mezclarlo con metricas personales. La implementacion queda descompuesta asi:
   - `REQ-146` completada: las cards del home `aprobador` ya quedaron reducidas a `Pendientes por Aprobar`, `Pendientes de Entregar`, `Pendientes de Liquidar` y `Requisiciones Rechazadas`, eliminando el bloque personal del nivel superior.
   - `REQ-147` completada: el home `aprobador` ya muestra el panel SSR `Estado Global de Requisiciones`, con barra apilada y leyenda para `Pendiente de aprobación`, `Pendiente de entrega`, `Pendiente de liquidación`, `Finalizada` y `Rechazada`.
-  - `REQ-148`: agregar panel SSR `Requisiciones por Mes`.
+  - `REQ-148` completada: el home `aprobador` ya muestra `Requisiciones por Mes`, un panel SSR con barras para los ultimos 6 meses usando `created_at` como volumen global de entrada.
   - `REQ-149`: agregar panel SSR `Tiempo en Pendiente de Aprobación`.
   - `REQ-150`: compactar layout final del home `aprobador` y decidir si `Acciones Rápidas` debe permanecer.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.

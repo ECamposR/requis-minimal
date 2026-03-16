@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 12:08 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-148` para sumar una lectura temporal simple al home del rol `aprobador`.
+- Tareas: `REQ-148`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_aprobador_monthly_chart(...)`, usando `created_at` como volumen global de entrada mensual.
+  - El home `aprobador` ya renderiza el panel SSR `Requisiciones por Mes` con barras para los ultimos 6 meses y sin dependencias JS.
+  - Se agrega prueba SSR minima para validar presencia del panel y del contenedor de barras.
+- Proximo paso:
+  - Ejecutar `REQ-149`, agregando `Tiempo en Pendiente de Aprobación` como tercer panel SSR del home `aprobador`.
+
 ## 2026-03-16 11:56 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-147` para que el home del rol `aprobador` gane una lectura visual global del pipeline sin JS.
 - Tareas: `REQ-147`
