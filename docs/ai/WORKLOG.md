@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 15:05 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-159` para ampliar el alcance real del buscador `q` en la vista `/bodega`.
+- Tareas: `REQ-159`
+- Cambios:
+  - `app/main.py`
+  - `templates/bodega.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El buscador de `/bodega` ya no se limita a folio/cliente/solicitante; ahora tambien cubre receptor designado y actores operativos clave (`aprobador`, `preparador`, `entregador`, `liquidador`) tanto en pendientes como en historial.
+  - Se amplia el `joinedload` para evitar consultas adicionales innecesarias en esos campos visibles.
+  - Se alinea el placeholder del input para reflejar honestamente el alcance real de la busqueda y se agrega prueba SSR de busqueda por receptor/actor.
+- Proximo paso:
+  - Cerrar `REQ-160` si todavia se desea una ultima pasada de orden/copy en la barra de filtros de `/bodega`.
+
 ## 2026-03-16 14:51 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-158` para enriquecer la barra de filtros de `/bodega` con datos de contexto temporal y organizacional.
 - Tareas: `REQ-158`

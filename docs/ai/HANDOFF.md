@@ -40,7 +40,7 @@
 - Se define `EPIC-UI-05` para reforzar los filtros de `/bodega` sin tocar logica de negocio. La implementacion queda descompuesta asi:
   - `REQ-157` completada: `/bodega` ya deja de mezclar `Pendientes + Historial` por defecto; la vista queda separada entre `Pendientes` / `Historial` y suma un filtro SSR de `etapa` alineado al flujo operativo.
   - `REQ-158` completada: `/bodega` ya suma `departamento` y rango `fecha_desde / fecha_hasta`, reutilizando el patron SSR y validacion de fechas ya usado en `Todas las Requisiciones`.
-  - `REQ-159` pendiente: ampliar el alcance del buscador `q` para cubrir mas campos y actores operativos relevantes de bodega.
+  - `REQ-159` completada: el buscador `q` de `/bodega` ya cubre receptor designado y actores operativos (`aprobador`, `preparador`, `entregador`, `liquidador`), con placeholder alineado al alcance real.
   - `REQ-160` en progreso: los selectores de `/bodega` ya aplican autosubmit como en `Todas las Requisiciones`; quedan pendientes el resto de ajustes de orden/copy del frente.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-119` completada: el navbar ya agrupa los accesos `admin` bajo un dropdown `Administracion` y el bloque de usuario ahora despliega `Cambiar contrasena` + `Salir`, reduciendo ancho horizontal sin introducir JS adicional.

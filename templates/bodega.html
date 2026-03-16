@@ -4,7 +4,7 @@
 {% block content %}
 {{ ui.page_header("Bodega", "Procesa entregas y consulta trazabilidad de despacho por requisicion.") }}
 <form method="GET" class="filters-bar panel js-autosubmit-filters bodega-filters">
-    <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante..." class="bodega-filter-q">
+    <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante, receptor o gestionado por..." class="bodega-filter-q">
     <select name="vista" data-autosubmit-select class="bodega-filter-control bodega-filter-view">
         <option value="pendientes" {% if filtro_vista == 'pendientes' %}selected{% endif %}>Solo pendientes</option>
         <option value="historial" {% if filtro_vista == 'historial' %}selected{% endif %}>Solo historial</option>

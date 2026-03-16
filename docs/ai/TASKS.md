@@ -50,7 +50,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `EPIC-UI-05` | `todo` | Reforzar los filtros de la vista `/bodega` para que dejen de ser una barra minima y pasen a una herramienta operativa real de consulta: vista, etapa, resultado, departamento, fechas y busqueda libre, sin tocar la logica de negocio central.
 - `REQ-157` | `done` | Redefinir semantica de filtros en `/bodega`: eliminar `Pendientes + Historial` como mezcla por defecto, priorizar `Pendientes`/`Historial` y agregar un filtro SSR de `etapa` coherente con el flujo (`aprobada`, `preparado`, `entregada`, `liquidada`, `liquidada_en_prokey`, `no_entregada`).
 - `REQ-158` | `done` | Agregar a `/bodega` filtros SSR de `departamento` y rango `fecha_desde / fecha_hasta`, reutilizando el patron ya validado en `Todas las Requisiciones`.
-- `REQ-159` | `todo` | Mejorar el buscador `q` de `/bodega` para cubrir folio, cliente, solicitante, receptor designado y actores operativos clave (`aprobador`, `entregador`, `liquidador`) con placeholder honesto respecto al alcance real.
+- `REQ-159` | `done` | Mejorar el buscador `q` de `/bodega` para cubrir folio, cliente, solicitante, receptor designado y actores operativos clave (`aprobador`, `entregador`, `liquidador`) con placeholder honesto respecto al alcance real.
 - `REQ-160` | `todo` | Pulir la UI de filtros de `/bodega`: autosubmit en selectores, orden claro de controles, boton `Buscar` reservado para texto/fechas y copy contextual que explique cuando un filtro solo afecta historial.
 
 ## Monitor de Actividad

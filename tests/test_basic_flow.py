@@ -2825,6 +2825,45 @@ def test_bodega_puede_filtrar_por_rango_de_fechas(client: TestClient, db_session
     assert "REQ-BOD-FEC-2" not in html
 
 
+def test_bodega_busca_por_receptor_y_actores_operativos(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    jefe_bodega = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
+
+    req = Requisicion(
+        folio="REQ-BOD-BUS-1",
+        solicitante_id=user.id,
+        receptor_designado_id=jefe_bodega.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        justificacion="Busqueda actor bodega",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivered_to="Tecnico Uno",
+        liquidated_by=bodega.id,
+        liquidated_at=datetime.now(),
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+
+    response_receptor = client.get("/bodega?vista=historial&q=Bodega Uno")
+    assert response_receptor.status_code == 200
+    assert "REQ-BOD-BUS-1" in response_receptor.text
+
+    response_actor = client.get("/bodega?vista=historial&q=Bodega Auxiliar")
+    assert response_actor.status_code == 200
+    assert "REQ-BOD-BUS-1" in response_actor.text
+
+    response_aprobador = client.get("/bodega?vista=historial&q=Aprobador Uno")
+    assert response_aprobador.status_code == 200
+    assert "REQ-BOD-BUS-1" in response_aprobador.text
+
+
 def test_bodega_no_duplica_entregadas_activas_en_historial(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

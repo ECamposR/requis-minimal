@@ -2464,6 +2464,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
 
     bodega_optionals = [
         joinedload(Requisicion.solicitante),
+        joinedload(Requisicion.receptor_designado),
         joinedload(Requisicion.aprobador),
         joinedload(Requisicion.preparador),
         joinedload(Requisicion.entregador),
@@ -2517,6 +2518,11 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
                 Requisicion.cliente_codigo.ilike(patron),
                 Requisicion.cliente_nombre.ilike(patron),
                 Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
+                Requisicion.receptor_designado.has(Usuario.nombre.ilike(patron)),
+                Requisicion.aprobador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.preparador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.entregador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.liquidator.has(Usuario.nombre.ilike(patron)),
             )
         )
 
@@ -2531,9 +2537,11 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         db.query(Requisicion)
         .options(
             joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.receptor_designado),
             joinedload(Requisicion.aprobador),
             joinedload(Requisicion.preparador),
             joinedload(Requisicion.entregador),
+            joinedload(Requisicion.liquidator),
         )
         .filter(
             or_(
@@ -2583,6 +2591,11 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
                 Requisicion.cliente_codigo.ilike(patron),
                 Requisicion.cliente_nombre.ilike(patron),
                 Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
+                Requisicion.receptor_designado.has(Usuario.nombre.ilike(patron)),
+                Requisicion.aprobador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.preparador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.entregador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.liquidator.has(Usuario.nombre.ilike(patron)),
                 Requisicion.delivered_to.ilike(patron),
             )
         )
