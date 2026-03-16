@@ -615,16 +615,14 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
             },
         ],
         "jefe_bodega": [
-            {"label": "Todas Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
             {"label": "Pendientes por Aprobar", "value": pendientes_aprobar, "href": "/aprobar", "icon": "approve"},
             {"label": "Pendientes de Procesar", "value": pendientes_entregar, "href": "/bodega", "icon": "warehouse"},
             {
-                "label": "Entregadas Pendientes de Liquidar",
+                "label": "Pendientes de Liquidar",
                 "value": pendientes_liquidar,
                 "href": "/bodega",
                 "icon": "liquidate",
             },
-            {"label": "Liquidadas", "value": liquidadas, "href": "/bodega?vista=historial", "icon": "closed"},
             {
                 "label": "Liquidadas en Prokey",
                 "value": liquidadas_en_prokey,

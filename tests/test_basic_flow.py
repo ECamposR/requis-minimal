@@ -1451,8 +1451,10 @@ def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
 
     assert response.status_code == 200
     html = response.text
+    assert "Todas Mis Requisiciones" not in html
     assert 'Pendientes de Procesar' in html
-    assert 'Entregadas Pendientes de Liquidar' in html
+    assert 'Pendientes de Liquidar' in html
+    assert 'Liquidadas' not in html
     assert 'Liquidadas en Prokey' in html
     assert '/aprobar' in html
     assert '/bodega' in html

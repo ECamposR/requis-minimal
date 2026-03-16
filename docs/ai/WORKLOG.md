@@ -1,5 +1,21 @@
 # Worklog (append-only)
 
+## 2026-03-16 13:14 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-151` de forma aislada para corregir solo la semantica de las cards del home del rol `jefe_bodega`.
+- Tareas: `REQ-151`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El home de `jefe_bodega` pasa a 4 cards globales: `Pendientes por Aprobar`, `Pendientes de Procesar`, `Pendientes de Liquidar` y `Liquidadas en Prokey`.
+  - Se retiran `Todas Mis Requisiciones` y `Liquidadas` del bloque superior para evitar mezclar supervision global con lectura personal o cierres intermedios.
+  - Se actualiza la prueba SSR para validar las nuevas labels y la ausencia del bloque anterior.
+- Proximo paso:
+  - Ejecutar `REQ-152`, agregando el panel SSR `Estado Global del Flujo` antes de sumar tendencia mensual o resultados de entrega.
+
 ## 2026-03-16 13:05 UTC-6 | tool: Codex CLI
 - Objetivo: formalizar el siguiente frente de UI/usabilidad para el home del rol `jefe_bodega`, antes de tocar codigo.
 - Tareas: `EPIC-UI-04`, `REQ-151`, `REQ-152`, `REQ-153`, `REQ-154`, `REQ-155`
