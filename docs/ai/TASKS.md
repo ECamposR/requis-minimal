@@ -26,6 +26,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-136` | `done` | Simplificar el home del rol `user`: eliminar `Requieren Seguimiento` y `Requisiciones Rechazadas` por bajo valor, dejando 4 cards y ajustando el grid para que queden en una sola fila en escritorio.
 - `REQ-137` | `done` | Eliminar `Acciones Rápidas` del home para el rol `user`; en ese perfil el bloque era redundante por la baja cantidad de opciones y no aportaba navegacion adicional relevante.
 - `REQ-138` | `done` | Agregar al home del rol `user` un grafico SSR `Estado de Mis Requisiciones`, mostrando distribucion real por etapas del flujo (`pendiente`, `en proceso`, `pendiente de cierre`, `rechazada`, `finalizada`) sin introducir JS adicional.
+- `REQ-139` | `done` | Agregar al home del rol `user` el grafico SSR `Mis Requisiciones por Mes`, mostrando volumen creado en los ultimos 6 meses con barras simples y sin dependencias JS.
+- `REQ-140` | `done` | Agregar al home del rol `user` el grafico SSR `Tiempo de Cierre`, agrupando requisiciones finalizadas por rangos de duracion (`0-1`, `2-3`, `4-7`, `8+ dias`) para dar visibilidad real de tiempo de ciclo sin JS.
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

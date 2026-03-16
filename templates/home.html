@@ -91,6 +91,71 @@
     </section>
     {% endif %}
 
+    {% if current_user.rol == 'user' and home_user_monthly_chart %}
+    <section class="home-bottom-grid home-bottom-grid--single home-bottom-grid--user-chart">
+        <article class="home-panel user-monthly-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Mis Requisiciones por Mes</h3>
+                    <p>Volumen de solicitudes creadas por ti durante los últimos 6 meses.</p>
+                </div>
+            </header>
+            {% if home_user_monthly_chart.has_data %}
+            <div class="user-monthly-chart" aria-hidden="true">
+                {% for bar in home_user_monthly_chart.bars %}
+                <div class="user-monthly-chart__col">
+                    <div class="user-monthly-chart__bar-wrap">
+                        {% if bar.value > 0 %}
+                        <span class="user-monthly-chart__bar" style="height: {{ bar.height_pct }}%"></span>
+                        {% else %}
+                        <span class="user-monthly-chart__bar user-monthly-chart__bar--empty"></span>
+                        {% endif %}
+                    </div>
+                    <strong class="user-monthly-chart__value">{{ bar.value }}</strong>
+                    <span class="user-monthly-chart__label">{{ bar.label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no tienes historial suficiente para esta vista.</p>
+            {% endif %}
+        </article>
+    </section>
+    {% endif %}
+
+    {% if current_user.rol == 'user' and home_user_closure_chart %}
+    <section class="home-bottom-grid home-bottom-grid--single home-bottom-grid--user-chart">
+        <article class="home-panel user-closure-panel">
+            <header class="home-panel-header">
+                <div>
+                    <h3>Tiempo de Cierre</h3>
+                    <p>Cuánto tardan tus requisiciones finalizadas en cerrar su ciclo.</p>
+                </div>
+            </header>
+            {% if home_user_closure_chart.has_data %}
+            <div class="user-monthly-chart user-closure-chart" aria-hidden="true">
+                {% for bar in home_user_closure_chart.bars %}
+                <div class="user-monthly-chart__col">
+                    <div class="user-monthly-chart__bar-wrap">
+                        {% if bar.value > 0 %}
+                        <span class="user-monthly-chart__bar user-closure-chart__bar is-{{ bar.tone }}" style="height: {{ bar.height_pct }}%"></span>
+                        {% else %}
+                        <span class="user-monthly-chart__bar user-monthly-chart__bar--empty"></span>
+                        {% endif %}
+                    </div>
+                    <strong class="user-monthly-chart__value">{{ bar.value }}</strong>
+                    <span class="user-monthly-chart__label">{{ bar.label }}</span>
+                    <span class="user-closure-chart__meta">{{ "%.1f"|format(bar.percentage) }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="user-status-empty">Aún no tienes requisiciones finalizadas para medir tiempos de cierre.</p>
+            {% endif %}
+        </article>
+    </section>
+    {% endif %}
+
     {% if current_user.rol != 'user' %}
     <section class="home-bottom-grid home-bottom-grid--single">
         <article class="home-panel quick-actions-panel">

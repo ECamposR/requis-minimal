@@ -1915,6 +1915,14 @@ table tbody tr:hover td,
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 248, 255, 0.9) 100%) !important;
 }
 
+.route-home .user-monthly-panel {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(244, 249, 255, 0.9) 100%) !important;
+}
+
+.route-home .user-closure-panel {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(246, 245, 255, 0.9) 100%) !important;
+}
+
 .route-home .user-status-chart {
     display: flex;
     width: 100%;
@@ -1988,6 +1996,79 @@ table tbody tr:hover td,
 .route-home .user-status-empty {
     color: #5b6f8f;
     font-size: 0.86rem;
+}
+
+.route-home .user-monthly-chart {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.8rem;
+    align-items: end;
+    margin-top: 0.7rem;
+}
+
+.route-home .user-monthly-chart__col {
+    display: grid;
+    justify-items: center;
+    gap: 0.35rem;
+}
+
+.route-home .user-monthly-chart__bar-wrap {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    width: 100%;
+    height: 8.25rem;
+    padding: 0.3rem 0;
+    border-radius: 0.8rem;
+    background: rgba(191, 210, 235, 0.22);
+    border: 1px solid rgba(83, 119, 166, 0.18);
+}
+
+.route-home .user-monthly-chart__bar {
+    display: block;
+    width: min(2.8rem, 70%);
+    min-height: 0.5rem;
+    border-radius: 0.65rem 0.65rem 0.35rem 0.35rem;
+    background: linear-gradient(180deg, #68a7ff 0%, #2c72dc 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.route-home .user-monthly-chart__bar--empty {
+    background: rgba(130, 154, 184, 0.3);
+    min-height: 0.32rem;
+}
+
+.route-home .user-monthly-chart__value {
+    color: #11325f;
+    font-size: 0.92rem;
+}
+
+.route-home .user-monthly-chart__label {
+    color: #5b6f8f;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.route-home .user-closure-chart__bar.is-fast {
+    background: linear-gradient(180deg, #39c98e 0%, #188f5c 100%);
+}
+
+.route-home .user-closure-chart__bar.is-medium {
+    background: linear-gradient(180deg, #7db4ff 0%, #3d78d8 100%);
+}
+
+.route-home .user-closure-chart__bar.is-slow {
+    background: linear-gradient(180deg, #f0bb58 0%, #cf8623 100%);
+}
+
+.route-home .user-closure-chart__bar.is-very-slow {
+    background: linear-gradient(180deg, #df7d7d 0%, #bf4343 100%);
+}
+
+.route-home .user-closure-chart__meta {
+    color: #6a5a8b;
+    font-size: 0.75rem;
+    text-align: center;
 }
 
 .route-home .period-tabs {
@@ -2158,6 +2239,10 @@ input.req-client-field:-webkit-autofill:active {
 
     .route-home .user-status-legend {
         grid-template-columns: 1fr;
+    }
+
+    .route-home .user-monthly-chart {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
 

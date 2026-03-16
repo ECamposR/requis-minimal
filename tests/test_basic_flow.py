@@ -202,6 +202,12 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
     assert "En proceso" in html
     assert "Pendiente de cierre" in html
     assert "Finalizada" in html
+    assert "Mis Requisiciones por Mes" in html
+    assert "Tiempo de Cierre" in html
+    assert "0-1 días" in html
+    assert "2-3 días" in html
+    assert "4-7 días" in html
+    assert "8+ días" in html
     assert "Indicadores Rápidos" not in html
     assert "Aprobadas Históricas" not in html
     assert "Mis Entregadas" not in html

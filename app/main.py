@@ -744,6 +744,109 @@ def build_home_user_status_chart(current_user: Usuario, db: Session) -> dict[str
     }
 
 
+def build_home_user_monthly_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "user":
+        return None
+
+    ahora = now_sv()
+    months = []
+    year = ahora.year
+    month = ahora.month
+    for _ in range(6):
+        months.append((year, month))
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+    months.reverse()
+
+    labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    bars = []
+    max_value = 1
+    for year_value, month_value in months:
+        start = datetime(year_value, month_value, 1)
+        if month_value == 12:
+            end = datetime(year_value + 1, 1, 1)
+        else:
+            end = datetime(year_value, month_value + 1, 1)
+        count = (
+            db.query(Requisicion)
+            .filter(
+                Requisicion.solicitante_id == current_user.id,
+                Requisicion.created_at >= start,
+                Requisicion.created_at < end,
+            )
+            .count()
+        )
+        max_value = max(max_value, count)
+        bars.append(
+            {
+                "label": f"{labels[month_value - 1]} {str(year_value)[-2:]}",
+                "value": count,
+            }
+        )
+
+    for bar in bars:
+        bar["height_pct"] = max(round((bar["value"] * 100) / max_value, 1), 8) if bar["value"] > 0 else 0
+
+    return {
+        "bars": bars,
+        "has_data": any(bar["value"] > 0 for bar in bars),
+        "max_value": max_value,
+    }
+
+
+def build_home_user_closure_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "user":
+        return None
+
+    closed_requests = (
+        db.query(Requisicion)
+        .filter(
+            Requisicion.solicitante_id == current_user.id,
+            or_(
+                Requisicion.estado == "liquidada_en_prokey",
+                Requisicion.delivery_result == "no_entregada",
+            ),
+        )
+        .all()
+    )
+
+    buckets = [
+        {"label": "0-1 días", "value": 0, "tone": "fast"},
+        {"label": "2-3 días", "value": 0, "tone": "medium"},
+        {"label": "4-7 días", "value": 0, "tone": "slow"},
+        {"label": "8+ días", "value": 0, "tone": "very-slow"},
+    ]
+
+    for req in closed_requests:
+        end_at = req.prokey_liquidada_at or req.liquidated_at or req.delivered_at or req.updated_at or req.created_at
+        start_at = req.created_at
+        if not start_at or not end_at:
+            continue
+        delta_days = max((end_at - start_at).total_seconds() / 86400, 0)
+        if delta_days <= 1:
+            buckets[0]["value"] += 1
+        elif delta_days <= 3:
+            buckets[1]["value"] += 1
+        elif delta_days <= 7:
+            buckets[2]["value"] += 1
+        else:
+            buckets[3]["value"] += 1
+
+    total = sum(bucket["value"] for bucket in buckets)
+    max_value = max(1, *(bucket["value"] for bucket in buckets))
+    for bucket in buckets:
+        bucket["height_pct"] = max(round((bucket["value"] * 100) / max_value, 1), 10) if bucket["value"] > 0 else 0
+        bucket["percentage"] = round((bucket["value"] * 100) / total, 1) if total else 0
+
+    return {
+        "bars": buckets,
+        "has_data": total > 0,
+        "total": total,
+    }
+
+
 def ensure_dashboard_access(current_user: Usuario) -> None:
     if current_user.rol not in ["admin", "aprobador", "jefe_bodega"]:
         raise HTTPException(status_code=403, detail="No autorizado")
@@ -1049,6 +1152,8 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
     home_cards = build_home_cards(current_user, db)
     home_actions = build_home_actions(current_user)
     home_user_status_chart = build_home_user_status_chart(current_user, db)
+    home_user_monthly_chart = build_home_user_monthly_chart(current_user, db)
+    home_user_closure_chart = build_home_user_closure_chart(current_user, db)
 
     return templates.TemplateResponse(
         "home.html",
@@ -1058,6 +1163,8 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
             home_cards=home_cards,
             home_actions=home_actions,
             home_user_status_chart=home_user_status_chart,
+            home_user_monthly_chart=home_user_monthly_chart,
+            home_user_closure_chart=home_user_closure_chart,
         ),
     )
 

@@ -1,5 +1,41 @@
 # Worklog (append-only)
 
+## 2026-03-16 09:41 UTC-6 | tool: Codex CLI
+- Objetivo: completar el tercer grafico de valor para el home del rol `user`, enfocado en tiempo de ciclo.
+- Tareas: `REQ-140`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `Tiempo de Cierre` como panel SSR con buckets `0-1`, `2-3`, `4-7` y `8+ días`.
+  - El calculo se basa en requisiciones finalizadas del usuario, usando `created_at` contra el mejor timestamp de cierre disponible.
+  - El home de `user` queda con tres paneles informativos reales y todos mantienen la filosofia de simplicidad sin librerias JS.
+- Proximo paso:
+  - Validar visualmente si los tres paneles SSR del home deben seguir apilados verticalmente o si ya conviene una composicion de dos columnas en escritorio amplio.
+
+## 2026-03-16 09:33 UTC-6 | tool: Codex CLI
+- Objetivo: incorporar el segundo grafico de valor real al home del rol `user` manteniendo el enfoque SSR sin JS.
+- Tareas: `REQ-139`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `Mis Requisiciones por Mes` como panel SSR con barras para los ultimos 6 meses.
+  - La altura de cada barra se normaliza al maximo del periodo y se mantiene un estado vacio si no hay historial suficiente.
+  - El home del rol `user` gana una lectura de tendencia temporal sin acoplarse a librerias de graficacion.
+- Proximo paso:
+  - Validar visualmente si ambos paneles del home de `user` deben quedar apilados o si conviene reacomodarlos en dos columnas para escritorio amplio.
+
 ## 2026-03-16 09:24 UTC-6 | tool: Codex CLI
 - Objetivo: agregar un grafico de valor real al home del rol `user` sin introducir dependencias JS innecesarias.
 - Tareas: `REQ-138`
