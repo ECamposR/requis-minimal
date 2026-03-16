@@ -47,6 +47,11 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-154` | `done` | Agregar al home `jefe_bodega` un panel SSR `Resultados de Entrega`, distribuyendo `completa`, `parcial` y `no_entregada` como lectura de calidad operativa del flujo combinado.
 - `REQ-155` | `done` | Compactar layout del home `jefe_bodega` para que sus 4 cards y 3 paneles SSR queden en una composicion densa y clara en escritorio, y retirar `Acciones Rápidas` por redundancia operativa.
 - `REQ-156` | `done` | Corregir `Estado Global del Flujo` en homes de supervision (`aprobador` y `jefe_bodega`) para que no deje tramo gris: `Finalizada` ahora absorbe cierres reales (`liquidada`, `liquidada_en_prokey`, `no_entregada`) y `Pendiente de liquidación` excluye cierres fallidos.
+- `EPIC-UI-05` | `todo` | Reforzar los filtros de la vista `/bodega` para que dejen de ser una barra minima y pasen a una herramienta operativa real de consulta: vista, etapa, resultado, departamento, fechas y busqueda libre, sin tocar la logica de negocio central.
+- `REQ-157` | `todo` | Redefinir semantica de filtros en `/bodega`: eliminar `Pendientes + Historial` como mezcla por defecto, priorizar `Pendientes`/`Historial` y agregar un filtro SSR de `etapa` coherente con el flujo (`aprobada`, `preparado`, `entregada`, `liquidada`, `liquidada_en_prokey`, `no_entregada`).
+- `REQ-158` | `todo` | Agregar a `/bodega` filtros SSR de `departamento` y rango `fecha_desde / fecha_hasta`, reutilizando el patron ya validado en `Todas las Requisiciones`.
+- `REQ-159` | `todo` | Mejorar el buscador `q` de `/bodega` para cubrir folio, cliente, solicitante, receptor designado y actores operativos clave (`aprobador`, `entregador`, `liquidador`) con placeholder honesto respecto al alcance real.
+- `REQ-160` | `todo` | Pulir la UI de filtros de `/bodega`: autosubmit en selectores, orden claro de controles, boton `Buscar` reservado para texto/fechas y copy contextual que explique cuando un filtro solo afecta historial.
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

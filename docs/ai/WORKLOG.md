@@ -1,5 +1,19 @@
 # Worklog (append-only)
 
+## 2026-03-16 14:22 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar el siguiente frente de UI/usabilidad para reforzar los filtros de la vista `/bodega`, antes de tocar codigo.
+- Tareas: `EPIC-UI-05`, `REQ-157`, `REQ-158`, `REQ-159`, `REQ-160`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se define una epica nueva para convertir los filtros de `/bodega` en una herramienta operativa real y no solo una barra minima de busqueda/vista/resultado.
+  - La implementacion queda dividida en 4 tareas pequenas: semantica de vista/etapa, filtros de departamento/fechas, ampliacion de buscador y pulido final de UX.
+  - Se deja explicitamente documentado que el frente debe mantener SSR simple y no tocar la logica de negocio central del flujo de bodega.
+- Proximo paso:
+  - Ejecutar `REQ-157` primero, ajustando solo la semantica base de los filtros y el nuevo selector de `etapa`.
+
 ## 2026-03-16 14:12 UTC-6 | tool: Codex CLI
 - Objetivo: corregir el panel `Estado Global del Flujo` para eliminar el tramo gris causado por estados no representados en la barra.
 - Tareas: `REQ-156`
