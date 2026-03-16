@@ -228,6 +228,7 @@ def test_home_bodega_muestra_cards_operativas_compactas(client: TestClient):
     assert "Preparadas" not in html
     assert "No Entregadas" not in html
     assert "home-kpi-grid--single-row" in html
+    assert "Acciones Rápidas" not in html
     assert "/bodega" in html
     assert "/bodega?vista=historial" in html
 
@@ -412,6 +413,7 @@ def test_home_bodega_muestra_resultados_de_entrega(client: TestClient, db_sessio
     assert "Completa" in html
     assert "Parcial" in html
     assert "No Entregada" in html
+    assert "home-bottom-grid--bodega-insights" in html
 
 
 def test_mis_requisiciones_filtra_abiertas_para_alinear_cards_home(client: TestClient, db_session: Session):
@@ -767,14 +769,39 @@ def test_monitor_renderiza_fase_2_de_auditoria(client: TestClient):
 
 def test_home_aprobador_muestra_cards_operativas_globales(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
-    db_session.add(
-        Requisicion(
-            folio="REQ-2301",
-            solicitante_id=user.id,
-            departamento="Operaciones",
-            estado="pendiente",
-            justificacion="Pendiente para aprobador",
-        )
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-2301",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente para aprobador",
+            ),
+            Requisicion(
+                folio="REQ-2302",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entregada pendiente de liquidar",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-2303",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="rechazada",
+                justificacion="Rechazada para aprobador",
+                rejected_by=aprobador.id,
+                rejected_at=datetime.now(),
+                rejection_reason="No procede",
+            ),
+        ]
     )
     db_session.commit()
 
@@ -784,10 +811,17 @@ def test_home_aprobador_muestra_cards_operativas_globales(client: TestClient, db
     html = response.text
     assert "Pendientes por Aprobar" in html
     assert "Pendientes de Entregar" in html
-    assert "Rechazadas" in html
+    assert "Pendientes de Liquidar" in html
+    assert "Requisiciones Rechazadas" in html
+    assert "Todas Mis Requisiciones" not in html
+    assert "Requisiciones Pendientes" not in html
+    assert "Requisiciones Finalizadas" not in html
+    assert "home-kpi-grid--single-row" in html
     assert "Aprobadas Históricas" not in html
     assert "/aprobar" in html
     assert "/todas-requisiciones?estado=pendiente_entregar" in html
+    assert "/todas-requisiciones?estado=entregada" in html
+    assert "/todas-requisiciones?estado=rechazada" in html
 
 
 def test_bodega_no_ve_accesos_de_creacion_ni_mis_requisiciones(client: TestClient):

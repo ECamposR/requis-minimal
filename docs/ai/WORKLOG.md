@@ -1,5 +1,21 @@
 # Worklog (append-only)
 
+## 2026-03-16 11:42 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-146` de forma aislada para corregir solo la semantica de las cards del home del rol `aprobador`.
+- Tareas: `REQ-146`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El home de `aprobador` pasa a 4 cards globales: `Pendientes por Aprobar`, `Pendientes de Entregar`, `Pendientes de Liquidar` y `Requisiciones Rechazadas`.
+  - Se retiran `Todas Mis Requisiciones`, `Requisiciones Pendientes` y `Requisiciones Finalizadas` del bloque superior para evitar mezclar vision personal con supervision operativa.
+  - Se agrega prueba SSR especifica para confirmar labels nuevas, ausencia del bloque personal y links correctos de drill-down.
+- Proximo paso:
+  - Ejecutar `REQ-147`, agregando el panel SSR `Estado Global de Requisiciones` antes de entrar a tendencia mensual o antiguedad de cola.
+
 ## 2026-03-16 11:30 UTC-6 | tool: Codex CLI
 - Objetivo: formalizar el siguiente frente de UI/usabilidad para el home del rol `aprobador`, antes de tocar codigo.
 - Tareas: `EPIC-UI-03`, `REQ-146`, `REQ-147`, `REQ-148`, `REQ-149`, `REQ-150`

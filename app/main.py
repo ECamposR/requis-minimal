@@ -578,14 +578,6 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
             },
         ],
         "aprobador": [
-            {"label": "Todas Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
-            {
-                "label": "Requisiciones Pendientes",
-                "value": mis_abiertas,
-                "href": "/mis-requisiciones?estado=abiertas",
-                "icon": "pending",
-            },
-            {"label": "Requisiciones Finalizadas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
             {"label": "Pendientes por Aprobar", "value": pendientes_aprobar, "href": "/aprobar", "icon": "approve"},
             {
                 "label": "Pendientes de Entregar",
@@ -593,7 +585,18 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
                 "href": "/todas-requisiciones?estado=pendiente_entregar",
                 "icon": "deliver",
             },
-            {"label": "Rechazadas", "value": rechazadas, "href": "/todas-requisiciones?estado=rechazada", "icon": "rejected"},
+            {
+                "label": "Pendientes de Liquidar",
+                "value": pendientes_liquidar,
+                "href": "/todas-requisiciones?estado=entregada",
+                "icon": "liquidate",
+            },
+            {
+                "label": "Requisiciones Rechazadas",
+                "value": rechazadas,
+                "href": "/todas-requisiciones?estado=rechazada",
+                "icon": "rejected",
+            },
         ],
         "bodega": [
             {"label": "Pendientes de Procesar", "value": pendientes_entregar, "href": "/bodega", "icon": "warehouse"},
