@@ -232,6 +232,84 @@ def test_home_bodega_muestra_cards_operativas_compactas(client: TestClient):
     assert "/bodega?vista=historial" in html
 
 
+def test_home_bodega_muestra_panel_estado_operativo(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-01",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Pendiente procesar",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-02",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Pendiente liquidar",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-03",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada",
+                justificacion="Liquidada",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+                liquidated_by=bodega.id,
+                liquidated_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-04",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada_en_prokey",
+                justificacion="Cerrada Prokey",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+            Requisicion(
+                folio="REQ-BOD-05",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="No entregada",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+                delivered_by=bodega.id,
+                delivered_at=datetime.now(),
+                delivery_result="no_entregada",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Estado de Operación de Bodega" in html
+    assert "Resume el estado actual de las requisiciones gestionadas por bodega." in html
+    assert "Pendientes de Procesar" in html
+    assert "Pendientes de Liquidar" in html
+    assert "Liquidadas en Prokey" in html
+    assert "No Entregadas" in html
+
+
 def test_mis_requisiciones_filtra_abiertas_para_alinear_cards_home(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

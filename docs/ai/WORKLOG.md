@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 10:37 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-142` para que el home del rol `bodega` gane una lectura visual del pipeline operativo sin JS.
+- Tareas: `REQ-142`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega el builder SSR `build_home_bodega_status_chart(...)` con segmentos de estado para `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas`, `Liquidadas en Prokey` y `No Entregadas`.
+  - El home de `bodega` ya renderiza un panel `Estado de Operación de Bodega` reutilizando el patron visual de barra apilada y leyenda introducido antes en el home del rol `user`.
+  - Se agrega prueba SSR especifica para validar presencia del panel y de las etiquetas operativas clave.
+- Proximo paso:
+  - Ejecutar `REQ-143`, agregando `Movimiento de Requisiciones por Mes` como segundo panel SSR del home `bodega`.
+
 ## 2026-03-16 10:24 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-141` de forma aislada para corregir solo la semantica de las cards del home del rol `bodega`.
 - Tareas: `REQ-141`

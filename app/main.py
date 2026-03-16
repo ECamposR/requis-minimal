@@ -840,6 +840,56 @@ def build_home_user_closure_chart(current_user: Usuario, db: Session) -> dict[st
     }
 
 
+def build_home_bodega_status_chart(current_user: Usuario, db: Session) -> dict[str, object] | None:
+    if current_user.rol != "bodega":
+        return None
+
+    total = db.query(Requisicion).count()
+    segmentos_raw = [
+        {
+            "label": "Pendientes de Procesar",
+            "value": db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count(),
+            "tone": "process",
+        },
+        {
+            "label": "Pendientes de Liquidar",
+            "value": db.query(Requisicion).filter(Requisicion.estado == "entregada").count(),
+            "tone": "closure",
+        },
+        {
+            "label": "Liquidadas",
+            "value": db.query(Requisicion).filter(Requisicion.estado == "liquidada").count(),
+            "tone": "pending",
+        },
+        {
+            "label": "Liquidadas en Prokey",
+            "value": db.query(Requisicion).filter(Requisicion.estado == "liquidada_en_prokey").count(),
+            "tone": "finalized",
+        },
+        {
+            "label": "No Entregadas",
+            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "no_entregada").count(),
+            "tone": "rejected",
+        },
+    ]
+    segmentos = []
+    for segmento in segmentos_raw:
+        porcentaje = round((segmento["value"] * 100 / total), 1) if total else 0
+        segmentos.append(
+            {
+                **segmento,
+                "percentage": porcentaje,
+                "width_pct": max(porcentaje, 3) if segmento["value"] > 0 and total else 0,
+            }
+        )
+
+    return {
+        "total": total,
+        "segments": segmentos,
+        "has_data": total > 0,
+    }
+
+
 def ensure_dashboard_access(current_user: Usuario) -> None:
     if current_user.rol not in ["admin", "aprobador", "jefe_bodega"]:
         raise HTTPException(status_code=403, detail="No autorizado")
@@ -1147,6 +1197,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
     home_user_status_chart = build_home_user_status_chart(current_user, db)
     home_user_monthly_chart = build_home_user_monthly_chart(current_user, db)
     home_user_closure_chart = build_home_user_closure_chart(current_user, db)
+    home_bodega_status_chart = build_home_bodega_status_chart(current_user, db)
 
     return templates.TemplateResponse(
         "home.html",
@@ -1158,6 +1209,7 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
             home_user_status_chart=home_user_status_chart,
             home_user_monthly_chart=home_user_monthly_chart,
             home_user_closure_chart=home_user_closure_chart,
+            home_bodega_status_chart=home_bodega_status_chart,
         ),
     )
 
