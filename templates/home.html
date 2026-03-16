@@ -56,8 +56,9 @@
         {% endfor %}
     </section>
 
-    {% if current_user.rol == 'user' and home_user_status_chart %}
-    <section class="home-bottom-grid home-bottom-grid--single home-bottom-grid--user-chart">
+    {% if current_user.rol == 'user' and (home_user_status_chart or home_user_monthly_chart or home_user_closure_chart) %}
+    <section class="home-bottom-grid home-bottom-grid--user-insights">
+        {% if home_user_status_chart %}
         <article class="home-panel user-status-panel">
             <header class="home-panel-header">
                 <div>
@@ -88,11 +89,8 @@
             <p class="user-status-empty">Aún no tienes requisiciones para graficar.</p>
             {% endif %}
         </article>
-    </section>
-    {% endif %}
-
-    {% if current_user.rol == 'user' and home_user_monthly_chart %}
-    <section class="home-bottom-grid home-bottom-grid--single home-bottom-grid--user-chart">
+        {% endif %}
+        {% if home_user_monthly_chart %}
         <article class="home-panel user-monthly-panel">
             <header class="home-panel-header">
                 <div>
@@ -120,11 +118,8 @@
             <p class="user-status-empty">Aún no tienes historial suficiente para esta vista.</p>
             {% endif %}
         </article>
-    </section>
-    {% endif %}
-
-    {% if current_user.rol == 'user' and home_user_closure_chart %}
-    <section class="home-bottom-grid home-bottom-grid--single home-bottom-grid--user-chart">
+        {% endif %}
+        {% if home_user_closure_chart %}
         <article class="home-panel user-closure-panel">
             <header class="home-panel-header">
                 <div>
@@ -153,6 +148,7 @@
             <p class="user-status-empty">Aún no tienes requisiciones finalizadas para medir tiempos de cierre.</p>
             {% endif %}
         </article>
+        {% endif %}
     </section>
     {% endif %}
 
