@@ -15,7 +15,7 @@
         {% endif %}
     </header>
 
-    <section class="home-kpi-grid">
+    <section class="home-kpi-grid{% if home_cards|length <= 4 %} home-kpi-grid--single-row{% endif %}">
         {% for card in home_cards %}
         <article class="home-kpi-card">
             <a href="{{ card.href }}" class="kpi-detail-link">Ver detalle &gt;</a>
@@ -56,6 +56,7 @@
         {% endfor %}
     </section>
 
+    {% if current_user.rol != 'user' %}
     <section class="home-bottom-grid home-bottom-grid--single">
         <article class="home-panel quick-actions-panel">
             <header class="home-panel-header">
@@ -85,5 +86,6 @@
             {% endfor %}
         </article>
     </section>
+    {% endif %}
 </section>
 {% endblock %}

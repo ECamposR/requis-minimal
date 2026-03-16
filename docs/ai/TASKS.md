@@ -22,6 +22,9 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-132` | `done` | Ajuste puntual del navbar: `Administración` deja de partirse en dos lineas como si fueran dos palabras; se mantiene como una sola etiqueta para preservar legibilidad en el dropdown admin.
 - `REQ-133` | `done` | Refactor semantico del home `/`: las 6 cards ahora se construyen por rol desde backend con nombres y links consistentes; se elimina el bloque `Indicadores Rápidos` y `Acciones Rápidas` pasa a renderizarse desde una lista explicita por rol.
 - `REQ-134` | `done` | Alinear el drill-down de cards personales del home con `Mis Requisiciones`: renombrar `Mis Requisiciones Pendientes`, agregar filtro SSR por estado en `/mis-requisiciones` y hacer que los links de las cards apunten a subconjuntos reales (`abiertas`, `cerradas`, `rechazada`, `seguimiento`).
+- `REQ-135` | `done` | Ajuste de copy en cards personales del home para hacerlas mas entendibles: `Todas Mis Requisiciones`, `Requisiciones Pendientes`, `Requisiciones Finalizadas` y `Requisiciones Rechazadas`, sin alterar calculos ni enlaces.
+- `REQ-136` | `done` | Simplificar el home del rol `user`: eliminar `Requieren Seguimiento` y `Requisiciones Rechazadas` por bajo valor, dejando 4 cards y ajustando el grid para que queden en una sola fila en escritorio.
+- `REQ-137` | `done` | Eliminar `Acciones Rápidas` del home para el rol `user`; en ese perfil el bloque era redundante por la baja cantidad de opciones y no aportaba navegacion adicional relevante.
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

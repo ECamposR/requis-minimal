@@ -1789,6 +1789,10 @@ table tbody tr:hover td,
     gap: 0.8rem;
 }
 
+.route-home .home-kpi-grid--single-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .route-home .home-kpi-card {
     position: relative;
     background: rgba(255, 255, 255, 0.82);

@@ -189,13 +189,14 @@ def test_home_muestra_metricas_por_estado_para_usuario(client: TestClient, db_se
     assert response.status_code == 200
 
     html = response.text
-    assert "Mis Requisiciones" in html
-    assert "Mis Requisiciones Pendientes" in html
-    assert "Mis Cerradas" in html
+    assert "Todas Mis Requisiciones" in html
+    assert "Requisiciones Pendientes" in html
+    assert "Requisiciones Finalizadas" in html
     assert "Creadas Este Mes" in html
-    assert "Mis Rechazadas" in html
-    assert "Requieren Seguimiento" in html
-    assert "Acciones Rápidas" in html
+    assert "Requisiciones Rechazadas" not in html
+    assert "Requieren Seguimiento" not in html
+    assert "Acciones Rápidas" not in html
+    assert "home-kpi-grid--single-row" in html
     assert "Indicadores Rápidos" not in html
     assert "Aprobadas Históricas" not in html
     assert "Mis Entregadas" not in html

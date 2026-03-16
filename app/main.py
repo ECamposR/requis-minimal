@@ -527,11 +527,6 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
         )
     ).count()
     mis_creadas_mes = mis_query.filter(Requisicion.created_at >= inicio_mes).count()
-    mis_rechazadas = mis_query.filter(Requisicion.estado == "rechazada").count()
-    mis_seguimiento = mis_query.filter(
-        Requisicion.estado.in_(["aprobada", "preparado", "entregada", "liquidada"]),
-        or_(Requisicion.delivery_result.is_(None), Requisicion.delivery_result != "no_entregada"),
-    ).count()
 
     pendientes_aprobar = db.query(Requisicion).filter(Requisicion.estado == "pendiente").count()
     pendientes_entregar = db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count()
@@ -549,32 +544,25 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
 
     cards_by_role = {
         "user": [
-            {"label": "Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {"label": "Todas Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
             {
-                "label": "Mis Requisiciones Pendientes",
+                "label": "Requisiciones Pendientes",
                 "value": mis_abiertas,
                 "href": "/mis-requisiciones?estado=abiertas",
                 "icon": "pending",
             },
-            {"label": "Mis Cerradas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
+            {"label": "Requisiciones Finalizadas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
             {"label": "Creadas Este Mes", "value": mis_creadas_mes, "href": "/mis-requisiciones", "icon": "month"},
-            {"label": "Mis Rechazadas", "value": mis_rechazadas, "href": "/mis-requisiciones?estado=rechazada", "icon": "rejected"},
-            {
-                "label": "Requieren Seguimiento",
-                "value": mis_seguimiento,
-                "href": "/mis-requisiciones?estado=seguimiento",
-                "icon": "followup",
-            },
         ],
         "logistica": [
-            {"label": "Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {"label": "Todas Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
             {
-                "label": "Mis Requisiciones Pendientes",
+                "label": "Requisiciones Pendientes",
                 "value": mis_abiertas,
                 "href": "/mis-requisiciones?estado=abiertas",
                 "icon": "pending",
             },
-            {"label": "Mis Cerradas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
+            {"label": "Requisiciones Finalizadas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
             {"label": "Todas las Requisiciones", "value": todas_requisiciones, "href": "/todas-requisiciones", "icon": "all"},
             {
                 "label": "Pendientes de Referencia Prokey",
@@ -590,14 +578,14 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
             },
         ],
         "aprobador": [
-            {"label": "Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {"label": "Todas Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
             {
-                "label": "Mis Requisiciones Pendientes",
+                "label": "Requisiciones Pendientes",
                 "value": mis_abiertas,
                 "href": "/mis-requisiciones?estado=abiertas",
                 "icon": "pending",
             },
-            {"label": "Mis Cerradas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
+            {"label": "Requisiciones Finalizadas", "value": mis_cerradas, "href": "/mis-requisiciones?estado=cerradas", "icon": "closed"},
             {"label": "Pendientes por Aprobar", "value": pendientes_aprobar, "href": "/aprobar", "icon": "approve"},
             {
                 "label": "Pendientes de Entregar",
@@ -631,7 +619,7 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
             },
         ],
         "jefe_bodega": [
-            {"label": "Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {"label": "Todas Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
             {"label": "Pendientes por Aprobar", "value": pendientes_aprobar, "href": "/aprobar", "icon": "approve"},
             {"label": "Pendientes de Procesar", "value": pendientes_entregar, "href": "/bodega", "icon": "warehouse"},
             {
@@ -649,7 +637,7 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
             },
         ],
         "admin": [
-            {"label": "Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
+            {"label": "Todas Mis Requisiciones", "value": mis_requisiciones, "href": "/mis-requisiciones", "icon": "list"},
             {"label": "Pendientes por Aprobar", "value": pendientes_aprobar, "href": "/aprobar", "icon": "approve"},
             {
                 "label": "Pendientes de Entregar",

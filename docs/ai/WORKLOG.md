@@ -1,5 +1,55 @@
 # Worklog (append-only)
 
+## 2026-03-16 09:15 UTC-6 | tool: Codex CLI
+- Objetivo: retirar `Acciones Rápidas` del home para el rol `user` por redundancia funcional.
+- Tareas: `REQ-137`
+- Cambios:
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El bloque `Acciones Rápidas` se renderiza solo para roles distintos de `user`.
+  - La prueba del home de usuario ahora valida la ausencia de ese panel.
+- Proximo paso:
+  - Revisar visualmente si el home de `user` queda balanceado con solo el grid superior o si conviene aumentar el espaciado inferior para compensar la ausencia del panel.
+
+## 2026-03-16 09:11 UTC-6 | tool: Codex CLI
+- Objetivo: simplificar el home del rol `user` eliminando dos cards de bajo valor semantico y compactando las restantes en una sola fila.
+- Tareas: `REQ-136`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se eliminan `Requieren Seguimiento` y `Requisiciones Rechazadas` del home del rol `user`.
+  - El grid del home detecta cuando hay 4 cards y pasa a una sola fila en escritorio.
+  - La prueba principal del home queda alineada a la nueva semantica y densidad visual.
+- Proximo paso:
+  - Validar visualmente si el mismo tratamiento de densidad conviene tambien para `logistica` o si debe mantenerse el layout de 6 cards sin variaciones.
+
+## 2026-03-16 09:03 UTC-6 | tool: Codex CLI
+- Objetivo: ajustar el copy de las cards personales del home para hacerlas mas claras al usuario final.
+- Tareas: `REQ-135`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `Mis Requisiciones` pasa a `Todas Mis Requisiciones`.
+  - `Mis Requisiciones Pendientes` pasa a `Requisiciones Pendientes`.
+  - `Mis Cerradas` pasa a `Requisiciones Finalizadas`.
+  - `Mis Rechazadas` pasa a `Requisiciones Rechazadas`.
+- Proximo paso:
+  - Validar visualmente si la longitud nueva sigue cabiendo bien en el grid de seis cards, especialmente en resoluciones medias.
+
 ## 2026-03-13 20:18 UTC-6 | tool: Codex CLI
 - Objetivo: corregir la inconsistencia entre las cards personales del home y el detalle real de `Mis Requisiciones`.
 - Tareas: `REQ-134`
