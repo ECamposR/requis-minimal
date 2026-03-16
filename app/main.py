@@ -998,32 +998,31 @@ def build_home_aprobador_pending_age_chart(current_user: Usuario, db: Session) -
     if current_user.rol != "aprobador":
         return None
 
-    pending_requests = db.query(Requisicion).filter(Requisicion.estado == "pendiente").all()
-    ahora = now_sv()
+    motivos = (
+        db.query(
+            Requisicion.motivo_requisicion,
+            func.count(Requisicion.id).label("total"),
+        )
+        .filter(Requisicion.motivo_requisicion.is_not(None), Requisicion.motivo_requisicion != "")
+        .group_by(Requisicion.motivo_requisicion)
+        .order_by(func.count(Requisicion.id).desc(), Requisicion.motivo_requisicion.asc())
+        .limit(5)
+        .all()
+    )
 
-    buckets = [
-        {"label": "0-24h", "value": 0, "tone": "fast"},
-        {"label": "24-48h", "value": 0, "tone": "medium"},
-        {"label": "48-72h", "value": 0, "tone": "slow"},
-        {"label": "72h+", "value": 0, "tone": "very-slow"},
-    ]
-
-    for req in pending_requests:
-        start_at = req.created_at
-        if not start_at:
-            continue
-        delta_hours = max((ahora - start_at).total_seconds() / 3600, 0)
-        if delta_hours <= 24:
-            buckets[0]["value"] += 1
-        elif delta_hours <= 48:
-            buckets[1]["value"] += 1
-        elif delta_hours <= 72:
-            buckets[2]["value"] += 1
-        else:
-            buckets[3]["value"] += 1
+    buckets = []
+    tones = ["fast", "medium", "slow", "very-slow", "process"]
+    for index, row in enumerate(motivos):
+        buckets.append(
+            {
+                "label": row[0],
+                "value": row[1],
+                "tone": tones[index % len(tones)],
+            }
+        )
 
     total = sum(bucket["value"] for bucket in buckets)
-    max_value = max(1, *(bucket["value"] for bucket in buckets))
+    max_value = max([1, *[bucket["value"] for bucket in buckets]])
     for bucket in buckets:
         bucket["height_pct"] = max(round((bucket["value"] * 100) / max_value, 1), 10) if bucket["value"] > 0 else 0
         bucket["percentage"] = round((bucket["value"] * 100) / total, 1) if total else 0

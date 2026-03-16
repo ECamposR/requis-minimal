@@ -1,7 +1,24 @@
 # Worklog (append-only)
 
+## 2026-03-16 12:32 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-150` para cerrar el frente del home `aprobador` con una composicion compacta y coherente.
+- Tareas: `REQ-150`
+- Cambios:
+  - `templates/home.html`
+  - `static/theme.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los 3 paneles SSR de `aprobador` ahora se montan sobre una variante propia `home-bottom-grid--aprobador-insights`, manteniendo una fila densa en escritorio y degradacion responsiva controlada.
+  - Se ajustan paddings, alturas y tipografia secundaria del bloque para que la vista quede mas compacta sin alterar contenido ni formulas.
+  - `Acciones Rápidas` deja de renderizarse tambien para el rol `aprobador`, ya que el nuevo home de supervision vuelve ese bloque redundante.
+- Proximo paso:
+  - Validar visualmente el home `aprobador` con datos reales para decidir si el mismo patron debe extrapolarse luego a `admin`.
+
 ## 2026-03-16 12:18 UTC-6 | tool: Codex CLI
-- Objetivo: ejecutar `REQ-149` para completar el tercer panel SSR del home del rol `aprobador` antes del compactado final.
+- Objetivo: ejecutar `REQ-149` para completar el tercer panel SSR del home del rol `aprobador` con una métrica de valor semántico real.
 - Tareas: `REQ-149`
 - Cambios:
   - `app/main.py`
@@ -11,9 +28,9 @@
   - `docs/ai/HANDOFF.md`
   - `docs/ai/WORKLOG.md`
 - Resultado:
-  - Se agrega `build_home_aprobador_pending_age_chart(...)`, calculando antiguedad de la cola `pendiente` contra `now_sv()` con buckets `0-24h`, `24-48h`, `48-72h` y `72h+`.
-  - El home `aprobador` ya renderiza `Tiempo en Pendiente de Aprobación` reutilizando el patron SSR de barras y porcentajes ya usado antes en otros roles.
-  - Se agrega prueba SSR especifica para validar presencia del panel y de los 4 buckets visibles.
+  - Se redefine `build_home_aprobador_pending_age_chart(...)` para que construya un top SSR de `motivo_requisicion` en lugar de antiguedad de cola, manteniendo el diff tecnico acotado.
+  - El home `aprobador` ahora renderiza `Motivos de Requisición`, mostrando los principales motivos globales de uso de la aplicacion con barras y porcentajes.
+  - Se actualiza la prueba SSR para validar presencia del panel y de motivos reales (`Demostración`, `R1E`) en vez de buckets horarios.
 - Proximo paso:
   - Ejecutar `REQ-150`, compactando las 4 cards y los 3 paneles SSR del home `aprobador` y definiendo si `Acciones Rápidas` debe seguir visible.
 

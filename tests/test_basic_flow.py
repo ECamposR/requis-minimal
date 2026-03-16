@@ -817,6 +817,7 @@ def test_home_aprobador_muestra_cards_operativas_globales(client: TestClient, db
     assert "Requisiciones Pendientes" not in html
     assert "Requisiciones Finalizadas" not in html
     assert "home-kpi-grid--single-row" in html
+    assert "Acciones Rápidas" not in html
     assert "Aprobadas Históricas" not in html
     assert "/aprobar" in html
     assert "/todas-requisiciones?estado=pendiente_entregar" in html
@@ -931,9 +932,8 @@ def test_home_aprobador_muestra_requisiciones_por_mes(client: TestClient, db_ses
     assert "user-monthly-chart" in html
 
 
-def test_home_aprobador_muestra_antiguedad_de_pendientes(client: TestClient, db_session: Session):
+def test_home_aprobador_muestra_motivos_de_requisicion(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
-    ahora = datetime.now()
 
     db_session.add_all(
         [
@@ -943,7 +943,7 @@ def test_home_aprobador_muestra_antiguedad_de_pendientes(client: TestClient, db_
                 departamento="Operaciones",
                 estado="pendiente",
                 justificacion="Pendiente reciente",
-                created_at=ahora,
+                motivo_requisicion="Demostración",
             ),
             Requisicion(
                 folio="REQ-APR-P2",
@@ -951,7 +951,15 @@ def test_home_aprobador_muestra_antiguedad_de_pendientes(client: TestClient, db_
                 departamento="Operaciones",
                 estado="pendiente",
                 justificacion="Pendiente antiguo",
-                created_at=ahora.replace(day=max(1, ahora.day - 4)),
+                motivo_requisicion="R1E",
+            ),
+            Requisicion(
+                folio="REQ-APR-P3",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="aprobada",
+                justificacion="Motivo repetido",
+                motivo_requisicion="Demostración",
             ),
         ]
     )
@@ -962,12 +970,11 @@ def test_home_aprobador_muestra_antiguedad_de_pendientes(client: TestClient, db_
 
     assert response.status_code == 200
     html = response.text
-    assert "Tiempo en Pendiente de Aprobación" in html
-    assert "Expone cuánto tiempo llevan las requisiciones esperando aprobación." in html
-    assert "0-24h" in html
-    assert "24-48h" in html
-    assert "48-72h" in html
-    assert "72h+" in html
+    assert "Motivos de Requisición" in html
+    assert "Muestra los principales motivos de uso de la aplicación." in html
+    assert "Demostración" in html
+    assert "R1E" in html
+    assert "home-bottom-grid--aprobador-insights" in html
 
 
 def test_bodega_no_ve_accesos_de_creacion_ni_mis_requisiciones(client: TestClient):

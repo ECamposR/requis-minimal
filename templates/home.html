@@ -249,7 +249,7 @@
     {% endif %}
 
     {% if current_user.rol == 'aprobador' and (home_aprobador_status_chart or home_aprobador_monthly_chart or home_aprobador_pending_age_chart) %}
-    <section class="home-bottom-grid home-bottom-grid--user-insights">
+    <section class="home-bottom-grid home-bottom-grid--user-insights home-bottom-grid--aprobador-insights">
         {% if home_aprobador_status_chart %}
         <article class="home-panel user-status-panel aprobador-status-panel">
             <header class="home-panel-header">
@@ -315,36 +315,29 @@
         <article class="home-panel user-closure-panel aprobador-pending-age-panel">
             <header class="home-panel-header">
                 <div>
-                    <h3>Tiempo en Pendiente de Aprobación</h3>
-                    <p>Expone cuánto tiempo llevan las requisiciones esperando aprobación.</p>
+                    <h3>Motivos de Requisición</h3>
+                    <p>Muestra los principales motivos de uso de la aplicación.</p>
                 </div>
             </header>
             {% if home_aprobador_pending_age_chart.has_data %}
-            <div class="user-monthly-chart user-closure-chart" aria-hidden="true">
+            <div class="mini-chart-clean aprobador-motivos-chart" aria-hidden="true">
                 {% for bar in home_aprobador_pending_age_chart.bars %}
-                <div class="user-monthly-chart__col">
-                    <div class="user-monthly-chart__bar-wrap">
-                        {% if bar.value > 0 %}
-                        <span class="user-monthly-chart__bar user-closure-chart__bar is-{{ bar.tone }}" style="height: {{ bar.height_pct }}%"></span>
-                        {% else %}
-                        <span class="user-monthly-chart__bar user-monthly-chart__bar--empty"></span>
-                        {% endif %}
-                    </div>
-                    <strong class="user-monthly-chart__value">{{ bar.value }}</strong>
-                    <span class="user-monthly-chart__label">{{ bar.label }}</span>
-                    <span class="user-closure-chart__meta">{{ "%.1f"|format(bar.percentage) }}%</span>
+                <div class="mini-chart-track">
+                    <span class="chart-label" title="{{ bar.label }}">{{ bar.label }}</span>
+                    <span class="chart-bar chart-bar-{{ loop.index }}" style="width: {{ bar.height_pct }}%"></span>
+                    <strong>{{ bar.value }} · {{ "%.1f"|format(bar.percentage) }}%</strong>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <p class="user-status-empty">Aún no hay requisiciones pendientes para medir antigüedad de aprobación.</p>
+            <p class="user-status-empty">Aún no hay motivos suficientes para mostrar esta distribución.</p>
             {% endif %}
         </article>
         {% endif %}
     </section>
     {% endif %}
 
-    {% if current_user.rol not in ['user', 'bodega'] %}
+    {% if current_user.rol not in ['user', 'bodega', 'aprobador'] %}
     <section class="home-bottom-grid home-bottom-grid--single">
         <article class="home-panel quick-actions-panel">
             <header class="home-panel-header">

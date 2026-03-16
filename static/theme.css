@@ -1880,6 +1880,10 @@ table tbody tr:hover td,
     grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, 0.9fr));
 }
 
+.route-home .home-bottom-grid--aprobador-insights {
+    grid-template-columns: minmax(0, 1.15fr) repeat(2, minmax(0, 0.92fr));
+}
+
 .route-home .home-panel {
     border-radius: 0.95rem;
     border: 1px solid rgba(83, 119, 166, 0.3);
@@ -1936,11 +1940,23 @@ table tbody tr:hover td,
     padding: 0.76rem 0.8rem;
 }
 
+.route-home .home-bottom-grid--aprobador-insights .home-panel {
+    padding: 0.78rem 0.82rem;
+}
+
 .route-home .home-bottom-grid--bodega-insights .home-panel-header {
     margin-bottom: 0.5rem;
 }
 
+.route-home .home-bottom-grid--aprobador-insights .home-panel-header {
+    margin-bottom: 0.52rem;
+}
+
 .route-home .home-bottom-grid--bodega-insights .home-panel p {
+    font-size: 0.82rem;
+}
+
+.route-home .home-bottom-grid--aprobador-insights .home-panel p {
     font-size: 0.82rem;
 }
 
@@ -1960,13 +1976,48 @@ table tbody tr:hover td,
     height: 6.1rem;
 }
 
+.route-home .home-bottom-grid--aprobador-insights .user-status-legend {
+    gap: 0.58rem 0.82rem;
+}
+
+.route-home .home-bottom-grid--aprobador-insights .user-status-legend__content strong {
+    font-size: 0.84rem;
+}
+
+.route-home .home-bottom-grid--aprobador-insights .user-status-legend__content span {
+    font-size: 0.8rem;
+}
+
+.route-home .home-bottom-grid--aprobador-insights .user-monthly-chart__bar-wrap {
+    height: 6.15rem;
+}
+
 .route-home .home-bottom-grid--bodega-insights .user-monthly-chart__value {
+    font-size: 0.88rem;
+}
+
+.route-home .home-bottom-grid--aprobador-insights .user-monthly-chart__value {
     font-size: 0.88rem;
 }
 
 .route-home .home-bottom-grid--bodega-insights .user-monthly-chart__label,
 .route-home .home-bottom-grid--bodega-insights .user-closure-chart__meta {
     font-size: 0.76rem;
+}
+
+.route-home .home-bottom-grid--aprobador-insights .user-monthly-chart__label,
+.route-home .home-bottom-grid--aprobador-insights .user-closure-chart__meta {
+    font-size: 0.76rem;
+}
+
+.route-home .aprobador-motivos-chart .mini-chart-track {
+    grid-template-columns: minmax(9.5rem, 12rem) 1fr auto;
+    align-items: center;
+}
+
+.route-home .aprobador-motivos-chart .chart-label {
+    white-space: normal;
+    line-height: 1.2;
 }
 
 .route-home .bodega-results-panel .user-monthly-chart {
@@ -2319,6 +2370,10 @@ input.req-client-field:-webkit-autofill:active {
     .route-home .home-bottom-grid--bodega-insights {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .route-home .home-bottom-grid--aprobador-insights {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 640px) {
@@ -2348,6 +2403,10 @@ input.req-client-field:-webkit-autofill:active {
     }
 
     .route-home .home-bottom-grid--bodega-insights {
+        grid-template-columns: 1fr;
+    }
+
+    .route-home .home-bottom-grid--aprobador-insights {
         grid-template-columns: 1fr;
     }
 }
