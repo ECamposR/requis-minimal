@@ -1,5 +1,21 @@
 # Worklog (append-only)
 
+## 2026-03-16 17:05 UTC-6 | tool: Codex CLI
+- Objetivo: dejar un mecanismo de backup completo desde servidor para el despliegue Docker productivo, independiente de la UI admin.
+- Tareas: `REQ-162`
+- Cambios:
+  - `scripts/backup_docker_prod.sh`
+  - `README.md`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega un script bash que ejecuta snapshot consistente de SQLite via `docker exec` sobre el contenedor `requisiciones`.
+  - El respaldo empaqueta DB, `.env`, compose, Dockerfile, configuracion de Caddy y un `manifest.txt` con commit/host/estado de contenedores.
+  - El output por defecto queda en `backups/full/` como `.tar.gz`.
+- Proximo paso:
+  - Ejecutarlo una vez en producción y validar restauración en entorno aislado antes de depender de él como mecanismo principal.
+
 ## 2026-03-16 16:45 UTC-6 | tool: Codex CLI
 - Objetivo: corregir la KPI `Promedio de Requisiciones por Día` para que use solo dias laborables en el historico observado.
 - Tareas: `REQ-118J`

@@ -196,6 +196,36 @@ pytest -q tests/test_liquidacion.py
   - recupera la data operativa de la app
   - no restaura codigo, imagen Docker ni el archivo `.env`
 
+## Backup completo desde servidor Docker
+Si necesitas un respaldo operativo completo desde el servidor, existe el script:
+
+```bash
+./scripts/backup_docker_prod.sh
+```
+
+Genera un `.tar.gz` en `backups/full/` con:
+- snapshot consistente de `data/requisiciones.db`
+- `.env`
+- `docker-compose.yml`
+- `Dockerfile`
+- `README.md`
+- `deploy/caddy/Caddyfile`
+- `deploy/caddy/docker-compose.yml`
+- estado de Caddy (`/data` y `/config`) si el contenedor `caddy` está corriendo
+- `manifest.txt` con host, commit y contenedores activos
+
+Variables opcionales:
+- `APP_CONTAINER` (default `requisiciones`)
+- `CADDY_CONTAINER` (default `caddy`)
+- `APP_DB_PATH` (default `/app/data/requisiciones.db`)
+- `OUTPUT_DIR` (default `./backups/full`)
+
+Ejemplo:
+
+```bash
+OUTPUT_DIR=/srv/backups/requisiciones ./scripts/backup_docker_prod.sh
+```
+
 ## Despliegue
 ### Opción 1: local/systemd (simple)
 - recomendado para entorno interno pequeño con SQLite local.
