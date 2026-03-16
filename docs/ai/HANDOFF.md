@@ -21,7 +21,7 @@
 - Se abre `EPIC-UI-02` en esta rama para adaptar el home del rol `bodega` al mismo patron compacto del rol `user`, pero con foco operativo. La implementacion quedo descompuesta para evitar errores:
   - `REQ-141` completada: las cards del home `bodega` ya quedaron reducidas a `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas` y `Liquidadas en Prokey`, eliminando `Preparadas` y `No Entregadas` del bloque superior.
   - `REQ-142` completada: el home `bodega` ya muestra el panel SSR `Estado de Operación de Bodega`, con barra apilada y leyenda para `Pendientes de Procesar`, `Pendientes de Liquidar`, `Liquidadas`, `Liquidadas en Prokey` y `No Entregadas`.
-  - `REQ-143`: agregar panel SSR `Movimiento de Requisiciones por Mes`.
+  - `REQ-143` completada: el home `bodega` ya muestra `Movimiento de Requisiciones por Mes`, un panel SSR con barras para los ultimos 6 meses usando `delivered_at` como proxy de actividad operativa.
   - `REQ-144`: agregar panel SSR `Resultados de Entrega`.
   - `REQ-145`: compactar layout final del home `bodega` para una sola composicion clara en escritorio.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.

@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-03-16 10:49 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-143` para sumar una lectura temporal simple al home del rol `bodega`.
+- Tareas: `REQ-143`
+- Cambios:
+  - `app/main.py`
+  - `templates/home.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `build_home_bodega_monthly_chart(...)`, usando `delivered_at` como proxy de actividad operativa mensual.
+  - El home `bodega` ya renderiza el panel SSR `Movimiento de Requisiciones por Mes` con barras para los ultimos 6 meses y sin dependencias JS.
+  - Se agrega prueba SSR minima para validar presencia del panel y del contenedor de barras.
+- Proximo paso:
+  - Ejecutar `REQ-144`, agregando el panel `Resultados de Entrega` antes de hacer el compactado final del layout en `REQ-145`.
+
 ## 2026-03-16 10:37 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-142` para que el home del rol `bodega` gane una lectura visual del pipeline operativo sin JS.
 - Tareas: `REQ-142`

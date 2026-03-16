@@ -310,6 +310,50 @@ def test_home_bodega_muestra_panel_estado_operativo(client: TestClient, db_sessi
     assert "No Entregadas" in html
 
 
+def test_home_bodega_muestra_movimiento_mensual(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    ahora = datetime.now()
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-M1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="entregada",
+                justificacion="Entrega mes actual",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora,
+            ),
+            Requisicion(
+                folio="REQ-BOD-M2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada",
+                justificacion="Entrega mes anterior",
+                approved_by=aprobador.id,
+                approved_at=ahora,
+                delivered_by=bodega.id,
+                delivered_at=ahora.replace(month=max(1, ahora.month - 1)),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Movimiento de Requisiciones por Mes" in html
+    assert "Muestra el volumen de requisiciones entregadas por mes." in html
+    assert "user-monthly-chart" in html
+
+
 def test_mis_requisiciones_filtra_abiertas_para_alinear_cards_home(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
