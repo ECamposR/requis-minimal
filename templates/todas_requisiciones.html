@@ -36,7 +36,7 @@
         <th class="col-estado">Estado</th>
         <th>Solicitante</th>
         <th>Receptor</th>
-        <th>Departamento</th>
+        <th class="col-departamento">Departamento</th>
         <th>Motivo</th>
         <th class="col-fecha">Fecha de Creación</th>
         <th class="col-fecha">Fecha Liquidación</th>
@@ -52,7 +52,7 @@
         <td class="col-estado">{{ ui.status_badge(req.estado) }}</td>
         <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
         <td>{{ req.receptor_designado.nombre if req.receptor_designado else '-' }}</td>
-        <td>{{ req.departamento }}</td>
+        <td class="col-departamento">{{ req.departamento }}</td>
         <td class="truncate" title="{{ req.motivo_requisicion or '-' }}">{{ req.motivo_requisicion or '-' }}</td>
         <td>{{ req.created_at | fmt_dt }}</td>
         <td>{{ (req.liquidated_at or req.prokey_liquidada_at) | fmt_dt if (req.liquidated_at or req.prokey_liquidada_at) else '-' }}</td>

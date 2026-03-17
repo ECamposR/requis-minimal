@@ -1750,6 +1750,18 @@ table tbody tr:hover td,
     width: 12.6rem;
 }
 
+.all-requests-table th.col-departamento,
+.all-requests-table td.col-departamento {
+    min-width: 11.6rem;
+    width: 11.6rem;
+}
+
+.all-requests-table thead th,
+.all-requests-table td {
+    text-align: center;
+    vertical-align: middle !important;
+}
+
 .all-requests-table td.col-estado {
     vertical-align: middle !important;
 }
