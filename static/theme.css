@@ -583,6 +583,7 @@ table tbody tr:hover td {
 
 .bodega-status-cell {
     vertical-align: middle !important;
+    text-align: center;
 }
 
 .bodega-requests-table td:not(.bodega-status-cell):not(.table-actions),
