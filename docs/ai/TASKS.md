@@ -62,7 +62,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-167` | `done` | Marcar `No Aplica Confirmar en Prokey` en liquidaciones donde todo regresa como `no usado` (`qty_used` total = 0), persistiendo el flag, evitando `Confirmar en Prokey` y alineando detalle/PDF/conteos.
 - `EPIC-UI-07` | `todo` | Reemplazar el estado ambiguo `liquidada` por dos estados semanticos puros: `pendiente_prokey` y `finalizada_sin_prokey`, manteniendo `no_entregada` y `liquidada_en_prokey` como cierres finales diferenciados.
 - `REQ-168` | `done` | Actualizar modelo/migraciones SQLite para introducir `pendiente_prokey` y `finalizada_sin_prokey`, migrando historico actual de `liquidada` segun corresponda y dejando compatibilidad transitoria con `prokey_no_aplica`.
-- `REQ-169` | `todo` | Ajustar `ejecutar_liquidacion()` y `marcar_liquidada_en_prokey()` para que la liquidacion cierre en `pendiente_prokey` o `finalizada_sin_prokey`, y para que solo `pendiente_prokey` pueda confirmarse en Prokey.
+- `REQ-169` | `done` | Ajustar `ejecutar_liquidacion()` y `marcar_liquidada_en_prokey()` para que la liquidacion cierre en `pendiente_prokey` o `finalizada_sin_prokey`, y para que solo `pendiente_prokey` pueda confirmarse en Prokey.
 - `REQ-170` | `todo` | Alinear listados, filtros, detalle, badges, tabla de bodega y PDF a los nuevos estados, reforzando labels UI de cierre (`Pendiente Prokey`, `Finalizada sin Prokey`, `Finalizada en Prokey`, `No Entregada - Finalizada`).
 - `REQ-171` | `todo` | Actualizar homes, metricas y conteos a la nueva semantica y retirar dependencias funcionales del flag `prokey_no_aplica`, dejandolo solo como puente de migracion si fuera necesario.
 

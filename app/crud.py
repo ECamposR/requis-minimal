@@ -319,7 +319,7 @@ def ejecutar_liquidacion(
     items_data: {item_id: {qty_returned_to_warehouse, qty_used, qty_left_at_client, item_liquidation_note}}
     Requisición debe estar en estado 'entregada'. NO se bloquea por delta != 0.
     """
-    if requisicion.estado == "liquidada":
+    if requisicion.estado in ("liquidada", "pendiente_prokey", "finalizada_sin_prokey"):
         raise ValueError("Esta requisición ya fue liquidada")
 
     total_qty_used = 0.0
@@ -346,8 +346,8 @@ def ejecutar_liquidacion(
         item.liquidation_alerts = json.dumps(alertas)
         total_qty_used += qty_used
 
-    requisicion.estado = "liquidada"
     prokey_no_aplica = total_qty_used == 0
+    requisicion.estado = "finalizada_sin_prokey" if prokey_no_aplica else "pendiente_prokey"
     requisicion.prokey_no_aplica = prokey_no_aplica
     requisicion.prokey_ref = None if prokey_no_aplica else (prokey_ref or None)
     requisicion.prokey_ref_actualizada_at = now_sv() if prokey_ref and not prokey_no_aplica else None
@@ -363,8 +363,8 @@ def marcar_liquidada_en_prokey(db: Session, req_id: int, usuario_id: int) -> Req
     req = db.query(Requisicion).filter(Requisicion.id == req_id).first()
     if not req:
         raise ValueError("Requisicion no encontrada")
-    if req.estado != "liquidada":
-        raise ValueError("Solo se puede confirmar en Prokey una requisicion en estado liquidada")
+    if req.estado not in ("liquidada", "pendiente_prokey"):
+        raise ValueError("Solo se puede confirmar en Prokey una requisicion en estado pendiente_prokey")
     if bool(getattr(req, "prokey_no_aplica", False)):
         raise ValueError("Esta requisicion no requiere confirmacion en Prokey")
 
@@ -426,8 +426,8 @@ def transicionar_requisicion(
         requisicion.recibido_at = None
         requisicion.delivery_result = "no_entregada"
         requisicion.delivery_comment = delivery_comment
-    elif nuevo_estado == "liquidada":
-        requisicion.estado = "liquidada"
+    elif nuevo_estado in ("liquidada", "pendiente_prokey", "finalizada_sin_prokey"):
+        requisicion.estado = nuevo_estado
     else:
         raise ValueError("Estado no soportado")
 

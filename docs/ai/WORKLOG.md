@@ -4215,3 +4215,11 @@
   - Se agrega conversion historica: `liquidada + prokey_no_aplica=1 -> finalizada_sin_prokey`, y `liquidada + prokey_no_aplica=0 -> pendiente_prokey`.
   - Las consultas base y validaciones globales aceptan ya los nuevos estados para que no queden invisibles tras migrar datos.
   - Se agrego una prueba de migracion real sobre un esquema legacy para blindar la conversion de historico.
+
+- Objetivo: ejecutar `REQ-169` para que el flujo ya escriba los nuevos estados y deje de generar nuevas requisiciones en `liquidada`.
+- Tareas: `REQ-169`
+- Resultado:
+  - `ejecutar_liquidacion()` ahora escribe `pendiente_prokey` si hubo uso real y `finalizada_sin_prokey` si todo regreso como `no usado`.
+  - `marcar_liquidada_en_prokey()` solo acepta `pendiente_prokey` como estado previo valido.
+  - La edicion manual de referencia Prokey y el flag `prokey_pending` ya dependen de `pendiente_prokey`, no de `liquidada`.
+  - Se ajustaron pruebas unitarias y de integracion para reflejar los nuevos estados de salida del flujo.

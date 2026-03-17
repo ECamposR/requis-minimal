@@ -477,7 +477,7 @@ def redirect_with_message(url: str, message: str, level: str = "success") -> Red
 
 
 def puede_editar_prokey_ref(req: Requisicion, current_user: Usuario) -> bool:
-    return req.estado in ("liquidada", "pendiente_prokey") and not bool(getattr(req, "prokey_no_aplica", False)) and (
+    return req.estado in ("pendiente_prokey",) and not bool(getattr(req, "prokey_no_aplica", False)) and (
         current_user.rol in ("admin", "logistica") or req.solicitante_id == current_user.id
     )
 
@@ -3024,7 +3024,7 @@ def liquidar_form(
     )
     if not req:
         raise HTTPException(status_code=404, detail="Requisicion no encontrada")
-    if req.estado in ("liquidada", "pendiente_prokey", "finalizada_sin_prokey"):
+    if req.estado in ("pendiente_prokey", "finalizada_sin_prokey"):
         return redirect_with_message("/bodega", "Esta requisicion ya fue liquidada", "warning")
     if not puede_liquidar(req, current_user):
         return redirect_with_message("/bodega", "Requisicion no elegible para liquidacion", "error")
@@ -3066,7 +3066,7 @@ async def liquidar_guardar(
     )
     if not req:
         raise HTTPException(status_code=404, detail="Requisicion no encontrada")
-    if req.estado in ("liquidada", "pendiente_prokey", "finalizada_sin_prokey"):
+    if req.estado in ("pendiente_prokey", "finalizada_sin_prokey"):
         return redirect_with_message("/bodega", "Ya fue liquidada", "warning")
     if not puede_liquidar(req, current_user):
         return redirect_with_message("/bodega", "Requisicion no elegible para liquidacion", "error")
@@ -3228,8 +3228,8 @@ def editar_prokey_ref_form(
     if not req:
         raise HTTPException(status_code=404, detail="Requisicion no encontrada")
 
-    if req.estado != "liquidada":
-        return redirect_with_message("/mis-requisiciones", "Solo se puede completar referencia en requisiciones liquidadas", "error")
+    if req.estado != "pendiente_prokey":
+        return redirect_with_message("/mis-requisiciones", "Solo se puede completar referencia en requisiciones pendientes de Prokey", "error")
     if not puede_editar_prokey_ref(req, current_user):
         raise HTTPException(status_code=403, detail="No autorizado")
 
@@ -3251,8 +3251,8 @@ async def editar_prokey_ref_guardar(
     if not req:
         raise HTTPException(status_code=404, detail="Requisicion no encontrada")
 
-    if req.estado != "liquidada":
-        return redirect_with_message("/mis-requisiciones", "Solo se puede completar referencia en requisiciones liquidadas", "error")
+    if req.estado != "pendiente_prokey":
+        return redirect_with_message("/mis-requisiciones", "Solo se puede completar referencia en requisiciones pendientes de Prokey", "error")
     if not puede_editar_prokey_ref(req, current_user):
         raise HTTPException(status_code=403, detail="No autorizado")
 
@@ -4183,7 +4183,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "prokey_ref": req.prokey_ref,
         "prokey_not_applicable": req.estado == "no_entregada" or bool(getattr(req, "prokey_no_aplica", False)),
         "prokey_pending": (
-            req.estado in ("liquidada", "pendiente_prokey")
+            req.estado == "pendiente_prokey"
             and not bool(req.prokey_ref)
             and not bool(getattr(req, "prokey_no_aplica", False))
         ),
