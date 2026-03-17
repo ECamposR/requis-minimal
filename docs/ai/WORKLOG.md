@@ -1,5 +1,25 @@
 # Worklog (append-only)
 
+## 2026-03-17 11:24 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-165` para eliminar los residuos semanticos de Prokey y cierre parcial en el detalle/PDF de requisiciones `no_entregada`.
+- Tareas: `REQ-165`
+- Cambios:
+  - `app/main.py`
+  - `static/app.js`
+  - `app/pdf_generator.py`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El detalle API ahora expone `prokey_not_applicable` y solo marca `prokey_pending` cuando la requisicion esta realmente en `liquidada` sin referencia.
+  - El modal deja de mostrar `Prokey pendiente` en `no_entregada`; ahora renderiza `No aplica`.
+  - El timeline del detalle distingue ese cierre como `Cierre no entregada`, en lugar de simular una entrega normal.
+  - El PDF queda habilitado tambien para `estado=no_entregada`, y la card `Ref ProKey` ya muestra `No aplica` en ese caso.
+  - Validacion ejecutada: `python -m py_compile app/main.py app/pdf_generator.py`, `python -m compileall tests/test_liquidacion.py` y `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k \"detalle_no_entregada_no_marca_prokey_pendiente or detalle_liquidada_en_prokey_incluye_campos\"` -> `2 passed`.
+- Proximo paso:
+  - Ejecutar `REQ-166`, quitando dependencias residuales de `delivery_result=no_entregada` en homes y metricas para que el estado nuevo sea la fuente principal de conteo.
+
 ## 2026-03-17 11:12 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-164` para que el flujo real de bodega use ya el nuevo estado terminal `no_entregada`.
 - Tareas: `REQ-164`

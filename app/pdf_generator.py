@@ -167,6 +167,7 @@ def _estado_style(estado):
     return {
         "liquidada": (C_GREEN,    C_GREEN_BG,  C_GREEN_BD),
         "entregada": (C_PRI,      C_PRI_LIGHT, C_PRI_BORDER),
+        "no_entregada": (C_RED,   C_RED_BG,   C_RED_BD),
         "aprobada":  (colors.HexColor("#7c3aed"),
                       colors.HexColor("#ede9fe"),
                       colors.HexColor("#c4b5fd")),
@@ -406,8 +407,8 @@ def _card_estado(cv, req, x, top, w):
                           or req.get("tecnico_nombre") or "—"),         C_BLACK),
         ("Hora firma",   _fmt(req.get("recibido_at")
                               or req.get("delivered_at")),              C_BLACK),
-        ("Ref ProKey",   req.get("prokey_ref") or "Pendiente",
-                         C_AMBER if not req.get("prokey_ref") else C_BLACK),
+        ("Ref ProKey",   "No aplica" if req.get("prokey_not_applicable") else (req.get("prokey_ref") or "Pendiente"),
+                         C_BLACK if req.get("prokey_not_applicable") or req.get("prokey_ref") else C_AMBER),
     ]:
         cur = _card_row(cv, x, cur, lbl, val, vcolor=col, row_gap=ROW_GAP)
 

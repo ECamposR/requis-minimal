@@ -1358,3 +1358,16 @@ def test_detalle_liquidada_en_prokey_incluye_campos(db_session: Session):
     assert payload["prokey_liquidada_at"] is not None
     assert payload["prokey_liquidado_por_nombre"] == jefe.nombre
     assert any((e.get("evento") or "") == "Liquidada en Prokey" for e in payload.get("timeline", []))
+
+
+def test_detalle_no_entregada_no_marca_prokey_pendiente(db_session: Session):
+    req = create_req_entregada(db_session, estado="no_entregada", delivery_result="no_entregada")
+    owner = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+
+    payload = detalle_requisicion(req.id, current_user=owner, db=db_session)
+
+    assert payload["estado"] == "no_entregada"
+    assert payload["prokey_not_applicable"] is True
+    assert payload["prokey_pending"] is False
+    assert payload["pdf_url"] == f"/requisiciones/{req.id}/pdf"
+    assert any((e.get("evento") or "") == "Cierre no entregada" for e in payload.get("timeline", []))

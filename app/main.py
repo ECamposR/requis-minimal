@@ -4018,14 +4018,15 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             }
         )
     if req.delivered_at:
+        delivered_event = "Cierre no entregada" if req.estado == "no_entregada" else "Entrega de bodega"
         timeline.append(
             {
-                "evento": "Entrega de bodega",
+                "evento": delivered_event,
                 "actor": req.entregador.nombre if req.entregador else None,
                 "fecha_hora": req.delivered_at,
             }
         )
-        if req.recibido_por and req.recibido_at:
+        if req.estado != "no_entregada" and req.recibido_por and req.recibido_at:
             timeline.append(
                 {
                     "evento": "Recibido con firma",
@@ -4033,7 +4034,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                     "fecha_hora": req.recibido_at,
                 }
             )
-        elif req.delivered_to:
+        elif req.estado != "no_entregada" and req.delivered_to:
             timeline.append(
                 {
                     "evento": "Recibido",
@@ -4179,7 +4180,8 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "rejected_at": req.rejected_at,
         "delivered_at": req.delivered_at,
         "prokey_ref": req.prokey_ref,
-        "prokey_pending": not bool(req.prokey_ref),
+        "prokey_not_applicable": req.estado == "no_entregada",
+        "prokey_pending": req.estado == "liquidada" and not bool(req.prokey_ref),
         "prokey_ref_actualizada_at": prokey_ref_actualizada_at,
         "prokey_ref_actualizada_por_nombre": prokey_ref_editor.nombre if prokey_ref_editor else None,
         "prokey_ref_actualizada_por_rol": prokey_ref_editor.rol if prokey_ref_editor else None,
@@ -4191,7 +4193,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "prokey_liquidado_por_nombre": prokey_liquidator.nombre if prokey_liquidator else None,
         "pdf_url": (
             f"/requisiciones/{req.id}/pdf"
-            if req.estado in ("aprobada", "preparado", "entregada", "liquidada", "liquidada_en_prokey")
+            if req.estado in ("aprobada", "preparado", "entregada", "no_entregada", "liquidada", "liquidada_en_prokey")
             else None
         ),
         "timeline": timeline,
@@ -4222,7 +4224,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         raise HTTPException(status_code=404, detail="Requisición no encontrada")
     if not can_view_requisicion(req, current_user):
         raise HTTPException(status_code=403, detail="No autorizado")
-    if req.estado not in ("aprobada", "preparado", "entregada", "liquidada", "liquidada_en_prokey"):
+    if req.estado not in ("aprobada", "preparado", "entregada", "no_entregada", "liquidada", "liquidada_en_prokey"):
         raise HTTPException(status_code=403, detail="PDF disponible solo desde requisiciones aprobadas")
 
     items_data = []
@@ -4288,6 +4290,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         "liquidado_por_nombre": req.liquidator.nombre if req.liquidator else None,
         "recibido_por_nombre": req.recibido_por.nombre if req.recibido_por else None,
         "prokey_ref": req.prokey_ref,
+        "prokey_not_applicable": req.estado == "no_entregada",
         "justificacion": req.justificacion,
         "comentario_liquidacion": req.liquidation_comment,
         "items": items_data,
