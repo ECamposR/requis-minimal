@@ -1700,6 +1700,20 @@ table tbody tr:hover td,
     background: rgba(183, 212, 249, 0.32) !important;
 }
 
+.all-requests-table th.col-estado,
+.all-requests-table td.col-estado {
+    min-width: 12.6rem;
+    width: 12.6rem;
+}
+
+.all-requests-table td.col-estado {
+    vertical-align: middle !important;
+}
+
+.all-requests-table .badge-no-entregada-finalizada {
+    white-space: nowrap;
+}
+
 .badge,
 .badge-warning,
 .badge-success,

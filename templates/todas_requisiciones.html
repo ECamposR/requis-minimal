@@ -29,7 +29,7 @@
 </form>
 {% if requisiciones %}
 <section class="panel view-panel table-wrap">
-<table class="table-compact">
+<table class="table-compact all-requests-table">
     <thead>
     <tr>
         <th class="col-folio"># Req</th>
@@ -49,7 +49,7 @@
     {% for req in requisiciones %}
     <tr>
         <td>{{ req.folio }}</td>
-        <td>{{ ui.status_badge(req.estado) }}</td>
+        <td class="col-estado">{{ ui.status_badge(req.estado) }}</td>
         <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
         <td>{{ req.receptor_designado.nombre if req.receptor_designado else '-' }}</td>
         <td>{{ req.departamento }}</td>
