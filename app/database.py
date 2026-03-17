@@ -328,14 +328,18 @@ def run_migrations() -> None:
 
             # SQLite no permite ALTER CHECK constraint; si la tabla historica quedó
             # con CHECK de estado antiguo, reconstruimos tabla para incluir
-            # `liquidada_en_prokey` y evitar fallos de commit al cerrar en Prokey.
+            # estados operativos recientes y evitar fallos de commit/filtros.
             table_sql_row = conn.execute(
                 text("SELECT sql FROM sqlite_master WHERE type='table' AND name='requisiciones'")
             ).fetchone()
             table_sql = (table_sql_row[0] or "").lower() if table_sql_row else ""
-            if table_sql and ("liquidada_en_prokey" not in table_sql or "preparado" not in table_sql):
+            if table_sql and (
+                "liquidada_en_prokey" not in table_sql
+                or "preparado" not in table_sql
+                or "no_entregada" not in table_sql
+            ):
                 logger.warning(
-                    "Detectado CHECK antiguo en requisiciones.estado; reconstruyendo tabla para incluir preparado/liquidada_en_prokey"
+                    "Detectado CHECK antiguo en requisiciones.estado; reconstruyendo tabla para incluir preparado/no_entregada/liquidada_en_prokey"
                 )
                 conn.execute(text("PRAGMA foreign_keys=OFF"))
                 try:
@@ -381,7 +385,7 @@ def run_migrations() -> None:
                                 rejection_reason TEXT,
                                 rejection_comment TEXT,
                                 CONSTRAINT ck_requisiciones_estado CHECK (
-                                    estado in ('pendiente', 'aprobada', 'preparado', 'rechazada', 'entregada', 'liquidada', 'liquidada_en_prokey')
+                                    estado in ('pendiente', 'aprobada', 'preparado', 'rechazada', 'entregada', 'no_entregada', 'liquidada', 'liquidada_en_prokey')
                                 )
                             )
                             """
@@ -414,6 +418,16 @@ def run_migrations() -> None:
                     conn.execute(text("DROP TABLE requisiciones_old"))
                 finally:
                     conn.execute(text("PRAGMA foreign_keys=ON"))
+
+            conn.execute(
+                text(
+                    """
+                    UPDATE requisiciones
+                    SET estado = 'no_entregada'
+                    WHERE estado = 'entregada' AND delivery_result = 'no_entregada'
+                    """
+                )
+            )
 
         if "items" in tables:
             item_columns = {

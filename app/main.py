@@ -18,7 +18,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Upload
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import extract, func, or_
+from sqlalchemy import and_, extract, func, or_
 from sqlalchemy.orm import Session, joinedload
 from starlette.middleware.sessions import SessionMiddleware
 from urllib.parse import quote_plus
@@ -482,6 +482,13 @@ def puede_editar_prokey_ref(req: Requisicion, current_user: Usuario) -> bool:
     )
 
 
+def filtro_cierre_no_entregada():
+    return or_(
+        Requisicion.estado == "no_entregada",
+        and_(Requisicion.estado == "entregada", Requisicion.delivery_result == "no_entregada"),
+    )
+
+
 def es_bodega_plano(current_user: Usuario) -> bool:
     return current_user.rol == "bodega"
 
@@ -523,7 +530,7 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
     mis_cerradas = mis_query.filter(
         or_(
             Requisicion.estado == "liquidada_en_prokey",
-            Requisicion.delivery_result == "no_entregada",
+            filtro_cierre_no_entregada(),
         )
     ).count()
     mis_creadas_mes = mis_query.filter(Requisicion.created_at >= inicio_mes).count()
@@ -535,7 +542,7 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
     liquidadas = db.query(Requisicion).filter(Requisicion.estado == "liquidada").count()
     liquidadas_en_prokey = db.query(Requisicion).filter(Requisicion.estado == "liquidada_en_prokey").count()
     rechazadas = db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
-    no_entregadas = db.query(Requisicion).filter(Requisicion.delivery_result == "no_entregada").count()
+    no_entregadas = db.query(Requisicion).filter(filtro_cierre_no_entregada()).count()
     pendientes_ref_prokey = db.query(Requisicion).filter(
         Requisicion.estado == "liquidada",
         or_(Requisicion.prokey_ref.is_(None), Requisicion.prokey_ref == ""),
@@ -714,7 +721,7 @@ def build_home_user_status_chart(current_user: Usuario, db: Session) -> dict[str
             "value": mis_query.filter(
                 or_(
                     Requisicion.estado == "liquidada_en_prokey",
-                    Requisicion.delivery_result == "no_entregada",
+                    filtro_cierre_no_entregada(),
                 )
             ).count(),
             "tone": "finalized",
@@ -800,7 +807,7 @@ def build_home_user_closure_chart(current_user: Usuario, db: Session) -> dict[st
             Requisicion.solicitante_id == current_user.id,
             or_(
                 Requisicion.estado == "liquidada_en_prokey",
-                Requisicion.delivery_result == "no_entregada",
+                filtro_cierre_no_entregada(),
             ),
         )
         .all()
@@ -869,7 +876,7 @@ def build_home_bodega_status_chart(current_user: Usuario, db: Session) -> dict[s
         },
         {
             "label": "No Entregadas",
-            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "no_entregada").count(),
+            "value": db.query(Requisicion).filter(filtro_cierre_no_entregada()).count(),
             "tone": "rejected",
         },
     ]
@@ -904,7 +911,7 @@ def build_home_aprobador_status_chart(current_user: Usuario, db: Session) -> dic
     finalizadas = db.query(Requisicion).filter(
         or_(
             Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]),
-            Requisicion.delivery_result == "no_entregada",
+            filtro_cierre_no_entregada(),
         )
     ).count()
     rechazadas = db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
@@ -967,7 +974,7 @@ def build_home_jefe_bodega_status_chart(current_user: Usuario, db: Session) -> d
     finalizadas = db.query(Requisicion).filter(
         or_(
             Requisicion.estado.in_(["liquidada", "liquidada_en_prokey"]),
-            Requisicion.delivery_result == "no_entregada",
+            filtro_cierre_no_entregada(),
         )
     ).count()
     rechazadas = db.query(Requisicion).filter(Requisicion.estado == "rechazada").count()
@@ -1216,7 +1223,7 @@ def build_home_bodega_delivery_results_chart(current_user: Usuario, db: Session)
         },
         {
             "label": "No Entregada",
-            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "no_entregada").count(),
+            "value": db.query(Requisicion).filter(filtro_cierre_no_entregada()).count(),
             "tone": "very-slow",
         },
     ]
@@ -1251,7 +1258,7 @@ def build_home_jefe_bodega_delivery_results_chart(current_user: Usuario, db: Ses
         },
         {
             "label": "No Entregada",
-            "value": db.query(Requisicion).filter(Requisicion.delivery_result == "no_entregada").count(),
+            "value": db.query(Requisicion).filter(filtro_cierre_no_entregada()).count(),
             "tone": "very-slow",
         },
     ]
@@ -2033,7 +2040,7 @@ def mis_requisiciones(
     if not vista_global:
         query = query.filter(Requisicion.solicitante_id == current_user.id)
 
-    estados_validos = {"pendiente", "aprobada", "preparado", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"}
+    estados_validos = {"pendiente", "aprobada", "preparado", "rechazada", "entregada", "no_entregada", "liquidada", "liquidada_en_prokey"}
     if estado == "abiertas":
         query = query.filter(
             Requisicion.estado.in_(["pendiente", "aprobada", "preparado", "entregada", "liquidada"]),
@@ -2048,7 +2055,7 @@ def mis_requisiciones(
         query = query.filter(
             or_(
                 Requisicion.estado == "liquidada_en_prokey",
-                Requisicion.delivery_result == "no_entregada",
+                filtro_cierre_no_entregada(),
             )
         )
     elif estado in estados_validos:
@@ -2322,7 +2329,7 @@ def todas_requisiciones_view(
         "pendiente_entregar": "aprobada",
     }
     estado_real = alias_estado.get(estado, estado)
-    estados_validos = {"pendiente", "aprobada", "preparado", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"}
+    estados_validos = {"pendiente", "aprobada", "preparado", "rechazada", "entregada", "no_entregada", "liquidada", "liquidada_en_prokey"}
     query = (
         db.query(Requisicion)
         .options(
@@ -2337,7 +2344,7 @@ def todas_requisiciones_view(
         )
         .filter(
             Requisicion.estado.in_(
-                ["pendiente", "aprobada", "preparado", "rechazada", "entregada", "liquidada", "liquidada_en_prokey"]
+                ["pendiente", "aprobada", "preparado", "rechazada", "entregada", "no_entregada", "liquidada", "liquidada_en_prokey"]
             )
         )
     )
@@ -2585,7 +2592,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         .filter(
             or_(
                 Requisicion.estado == "liquidada_en_prokey",
-                Requisicion.delivery_result == "no_entregada",
+                filtro_cierre_no_entregada(),
             )
         )
     )
@@ -2606,7 +2613,7 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
     if etapa == "liquidada_en_prokey":
         historial_query = historial_query.filter(Requisicion.estado == "liquidada_en_prokey")
     elif etapa == "no_entregada":
-        historial_query = historial_query.filter(Requisicion.delivery_result == "no_entregada")
+        historial_query = historial_query.filter(filtro_cierre_no_entregada())
     if current_user.rol == "bodega":
         historial_query = historial_query.filter(
             or_(
@@ -2845,10 +2852,12 @@ def entregar(
             if item.cantidad_entregada is None:
                 item.cantidad_entregada = item.cantidad
 
+    nuevo_estado = "no_entregada" if resultado == "no_entregada" else "entregada"
+
     transicionar_requisicion(
         db,
         req,
-        nuevo_estado="entregada",
+        nuevo_estado=nuevo_estado,
         actor_id=current_user.id,
         delivered_to=receptor.nombre if receptor else None,
         delivery_result=resultado,
@@ -4003,14 +4012,15 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
             }
         )
     if req.delivered_at:
+        delivered_event = "Cierre no entregada" if req.estado == "no_entregada" else "Entrega de bodega"
         timeline.append(
             {
-                "evento": "Entrega de bodega",
+                "evento": delivered_event,
                 "actor": req.entregador.nombre if req.entregador else None,
                 "fecha_hora": req.delivered_at,
             }
         )
-        if req.recibido_por and req.recibido_at:
+        if req.estado != "no_entregada" and req.recibido_por and req.recibido_at:
             timeline.append(
                 {
                     "evento": "Recibido con firma",
@@ -4018,7 +4028,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                     "fecha_hora": req.recibido_at,
                 }
             )
-        elif req.delivered_to:
+        elif req.estado != "no_entregada" and req.delivered_to:
             timeline.append(
                 {
                     "evento": "Recibido",
@@ -4164,7 +4174,8 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "rejected_at": req.rejected_at,
         "delivered_at": req.delivered_at,
         "prokey_ref": req.prokey_ref,
-        "prokey_pending": not bool(req.prokey_ref),
+        "prokey_not_applicable": req.estado == "no_entregada",
+        "prokey_pending": req.estado == "liquidada" and not bool(req.prokey_ref),
         "prokey_ref_actualizada_at": prokey_ref_actualizada_at,
         "prokey_ref_actualizada_por_nombre": prokey_ref_editor.nombre if prokey_ref_editor else None,
         "prokey_ref_actualizada_por_rol": prokey_ref_editor.rol if prokey_ref_editor else None,
@@ -4176,7 +4187,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "prokey_liquidado_por_nombre": prokey_liquidator.nombre if prokey_liquidator else None,
         "pdf_url": (
             f"/requisiciones/{req.id}/pdf"
-            if req.estado in ("aprobada", "preparado", "entregada", "liquidada", "liquidada_en_prokey")
+            if req.estado in ("aprobada", "preparado", "entregada", "no_entregada", "liquidada", "liquidada_en_prokey")
             else None
         ),
         "timeline": timeline,
@@ -4207,7 +4218,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         raise HTTPException(status_code=404, detail="Requisición no encontrada")
     if not can_view_requisicion(req, current_user):
         raise HTTPException(status_code=403, detail="No autorizado")
-    if req.estado not in ("aprobada", "preparado", "entregada", "liquidada", "liquidada_en_prokey"):
+    if req.estado not in ("aprobada", "preparado", "entregada", "no_entregada", "liquidada", "liquidada_en_prokey"):
         raise HTTPException(status_code=403, detail="PDF disponible solo desde requisiciones aprobadas")
 
     items_data = []
@@ -4273,6 +4284,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         "liquidado_por_nombre": req.liquidator.nombre if req.liquidator else None,
         "recibido_por_nombre": req.recibido_por.nombre if req.recibido_por else None,
         "prokey_ref": req.prokey_ref,
+        "prokey_not_applicable": req.estado == "no_entregada",
         "justificacion": req.justificacion,
         "comentario_liquidacion": req.liquidation_comment,
         "items": items_data,

@@ -2295,7 +2295,7 @@ def test_bodega_puede_marcar_no_entregada(client: TestClient, db_session: Sessio
 
     assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "entregada"
+    assert req.estado == "no_entregada"
     assert req.delivered_by == bodega.id
     assert req.delivery_result == "no_entregada"
     assert req.delivered_to is None
@@ -2337,7 +2337,7 @@ def test_bodega_no_entregada_no_requiere_pin_aun_con_receptor_designado(client: 
 
     assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "entregada"
+    assert req.estado == "no_entregada"
     assert req.delivery_result == "no_entregada"
     assert req.recibido_por_id is None
     assert req.recibido_at is None
@@ -2693,7 +2693,7 @@ def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_s
         folio="REQ-0302",
         solicitante_id=user.id,
         departamento="Operaciones",
-        estado="entregada",
+        estado="no_entregada",
         justificacion="Historial no entregada",
         approved_by=aprobador.id,
         approved_at=datetime.now(),
@@ -2775,7 +2775,7 @@ def test_bodega_puede_filtrar_historial_por_etapa_no_entregada(client: TestClien
                 folio="REQ-BOD-HET-1",
                 solicitante_id=user.id,
                 departamento="Operaciones",
-                estado="entregada",
+                estado="no_entregada",
                 justificacion="No entregada historial",
                 approved_by=aprobador.id,
                 approved_at=datetime.now(),

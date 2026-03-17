@@ -366,7 +366,7 @@ async def test_no_liquidar_delivery_no_entregada(db_session: Session):
     transicionar_requisicion(
         db_session,
         req,
-        nuevo_estado="entregada",
+        nuevo_estado="no_entregada",
         actor_id=bodega.id,
         delivered_to=None,
         delivery_result="no_entregada",
@@ -381,7 +381,7 @@ async def test_no_liquidar_delivery_no_entregada(db_session: Session):
     )
     assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "entregada"
+    assert req.estado == "no_entregada"
     assert req.delivery_result == "no_entregada"
 
 

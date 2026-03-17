@@ -494,7 +494,12 @@ function verDetalle(id) {
                 })
                 .join("");
 
-            const resultVal = data.delivery_result || "-";
+            const resultLabels = {
+                completa: "Completa",
+                parcial: "Parcial",
+                no_entregada: "No Entregada",
+            };
+            const resultVal = data.delivery_result ? resultLabels[data.delivery_result] || data.delivery_result : "-";
             const chipCls =
                 { completa: "resultado-completa", parcial: "resultado-parcial", no_entregada: "resultado-no-entregada" }[
                     data.delivery_result
@@ -528,7 +533,9 @@ function verDetalle(id) {
             const prokeyEditorNote = data.prokey_ref_actualizada_por_nombre
                 ? `<div class="dd-kv-note">Registrada por ${escapeHtml(data.prokey_ref_actualizada_por_nombre)}${data.prokey_ref_actualizada_por_rol ? ` (${escapeHtml(data.prokey_ref_actualizada_por_rol)})` : ""}</div>`
                 : "";
-            const prokeyRefHtml = data.prokey_ref
+            const prokeyRefHtml = data.prokey_not_applicable
+                ? 'No aplica'
+                : data.prokey_ref
                 ? `${escapeHtml(data.prokey_ref)}${prokeyEditorNote}`
                 : data.puede_editar_prokey_ref
                     ? `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
@@ -584,7 +591,7 @@ function verDetalle(id) {
                         </table>
                     </div>
                 </section>`;
-            const isPdfEnabled = ["aprobada", "preparado", "entregada", "liquidada", "liquidada_en_prokey"].includes(data.estado) && !!data.pdf_url;
+            const isPdfEnabled = ["aprobada", "preparado", "entregada", "no_entregada", "liquidada", "liquidada_en_prokey"].includes(data.estado) && !!data.pdf_url;
             const pdfAction = isPdfEnabled
                 ? `<a class="secondary" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer">Ver PDF</a>`
                 : `<button type="button" class="secondary btn-disabled" disabled title="${data.estado === "pendiente" ? "Disponible al aprobar" : "No disponible para este estado"}">Ver PDF</button>`;

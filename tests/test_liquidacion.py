@@ -16,6 +16,7 @@ from app.crud import (
     transicionar_requisicion,
 )
 from app.main import (
+    build_home_cards,
     detalle_requisicion,
     editar_prokey_ref_form,
     editar_prokey_ref_guardar,
@@ -154,10 +155,10 @@ def create_req_entregada(
         justificacion="Test liquidacion",
         approved_by=aprob.id,
         approved_at=datetime.now(),
-        delivered_by=bode.id if estado in ("entregada", "liquidada", "liquidada_en_prokey") else None,
-        delivered_at=datetime.now() if estado in ("entregada", "liquidada", "liquidada_en_prokey") else None,
-        delivered_to="Cliente Test" if estado in ("entregada", "liquidada", "liquidada_en_prokey") else None,
-        delivery_result=delivery_result if estado in ("entregada", "liquidada", "liquidada_en_prokey") else None,
+        delivered_by=bode.id if estado in ("entregada", "no_entregada", "liquidada", "liquidada_en_prokey") else None,
+        delivered_at=datetime.now() if estado in ("entregada", "no_entregada", "liquidada", "liquidada_en_prokey") else None,
+        delivered_to="Cliente Test" if estado in ("entregada", "no_entregada", "liquidada", "liquidada_en_prokey") else None,
+        delivery_result=delivery_result if estado in ("entregada", "no_entregada", "liquidada", "liquidada_en_prokey") else None,
     )
     db_session.add(req)
     db_session.commit()
@@ -193,9 +194,30 @@ def test_puede_liquidar_rechaza_estado_aprobada(db_session: Session):
 
 
 def test_puede_liquidar_rechaza_no_entregada(db_session: Session):
-    req = create_req_entregada(db_session, delivery_result="no_entregada")
+    req = create_req_entregada(db_session, estado="no_entregada", delivery_result="no_entregada")
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     assert puede_liquidar(req, bodega) is False
+
+
+def test_transicionar_requisicion_permite_estado_no_entregada(db_session: Session):
+    req = create_req_entregada(db_session, estado="preparado")
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    updated = transicionar_requisicion(
+        db_session,
+        req,
+        nuevo_estado="no_entregada",
+        actor_id=bodega.id,
+        delivery_comment="Sin inventario",
+    )
+
+    assert updated.estado == "no_entregada"
+    assert updated.delivered_by == bodega.id
+    assert updated.delivered_at is not None
+    assert updated.delivery_result == "no_entregada"
+    assert updated.delivery_comment == "Sin inventario"
+    assert updated.delivered_to is None
+    assert updated.recibido_por_id is None
 
 
 def test_puede_liquidar_rechaza_rol_user(db_session: Session):
@@ -1337,3 +1359,44 @@ def test_detalle_liquidada_en_prokey_incluye_campos(db_session: Session):
     assert payload["prokey_liquidada_at"] is not None
     assert payload["prokey_liquidado_por_nombre"] == jefe.nombre
     assert any((e.get("evento") or "") == "Liquidada en Prokey" for e in payload.get("timeline", []))
+
+
+def test_detalle_no_entregada_no_marca_prokey_pendiente(db_session: Session):
+    req = create_req_entregada(db_session, estado="no_entregada", delivery_result="no_entregada")
+    owner = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+
+    payload = detalle_requisicion(req.id, current_user=owner, db=db_session)
+
+    assert payload["estado"] == "no_entregada"
+    assert payload["prokey_not_applicable"] is True
+    assert payload["prokey_pending"] is False
+    assert payload["pdf_url"] == f"/requisiciones/{req.id}/pdf"
+    assert any((e.get("evento") or "") == "Cierre no entregada" for e in payload.get("timeline", []))
+
+
+def test_home_cards_trata_no_entregada_como_requisicion_finalizada(db_session: Session):
+    owner = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprob = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bode = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req = Requisicion(
+        folio=f"REQ-NOENT-{datetime.now().timestamp()}",
+        solicitante_id=owner.id,
+        departamento="Operaciones",
+        estado="no_entregada",
+        justificacion="Cierre final sin entrega",
+        approved_by=aprob.id,
+        approved_at=datetime.now(),
+        delivered_by=bode.id,
+        delivered_at=datetime.now(),
+        delivery_result="no_entregada",
+        delivery_comment="Sin stock",
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    cards = {card["label"]: card["value"] for card in build_home_cards(owner, db_session)}
+
+    assert cards["Todas Mis Requisiciones"] == 1
+    assert cards["Requisiciones Pendientes"] == 0
+    assert cards["Requisiciones Finalizadas"] == 1

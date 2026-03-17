@@ -3,7 +3,7 @@
 ## Estado actual
 - La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
-- Rama activa: `chore/ui-usabilidad-ajustes`, destinada a ajustes incrementales de UI/usabilidad sin alterar la logica de negocio.
+- Rama activa: `fix/ajustes-varios`, destinada a fixes incrementales de semantica y flujo sobre `main`.
 - `REQ-127` completada en esta rama: `Aprobar` queda como bandeja de pendientes y la consulta global se mueve a `Todas las Requisiciones` (`/todas-requisiciones`) con filtros por estado, departamento y rango de fechas para roles de supervision.
 - `REQ-128` completada en esta rama: los filtros basados en selectores (`estado`/`departamento`) ahora se autoaplican en `Aprobar` y `Todas las Requisiciones`; el boton `Buscar` se conserva para texto libre y fechas.
 - `REQ-129` completada en esta rama: los filtros de fecha en `Todas las Requisiciones` mantienen el `input[type=date]` nativo, pero ahora intentan abrir el calendario con `showPicker()` en navegadores compatibles como mejora progresiva.
@@ -46,6 +46,11 @@
   - `REQ-159` completada: el buscador `q` de `/bodega` ya cubre receptor designado y actores operativos (`aprobador`, `preparador`, `entregador`, `liquidador`), con placeholder alineado al alcance real.
   - `REQ-160` en progreso: los selectores de `/bodega` ya aplican autosubmit como en `Todas las Requisiciones` y los campos de fecha ahora intentan abrir el picker con `showPicker()` al hacer clic; quedan pendientes solo ajustes finales de orden/copy del frente.
 - `REQ-161` completada en esta rama: `liquidada` ya no se trata como historial dentro de `/bodega`. Mientras siga pendiente `Confirmar en Prokey`, la requisicion permanece en `Pendientes` y solo `liquidada_en_prokey` / `no_entregada` quedan como cierres definitivos de historial.
+- Se define `EPIC-UI-06` para corregir la semantica de cierre de requisiciones `no entregada`, que hoy quedan como `estado=entregada` y `delivery_result=no_entregada`. La implementacion queda descompuesta asi:
+  - `REQ-163` completada: `no_entregada` ya existe como estado real en modelo/checks SQLite, la migracion convierte historico legado (`entregada + delivery_result=no_entregada`) y los listados base quedan compatibles para no ocultar esos cierres tras la conversion.
+  - `REQ-164` completada: `/entregar/{id}` ya transiciona directo a `estado=no_entregada` cuando el resultado es `No entregada`; el flujo deja de pasar por `entregada` para ese caso y el historial de bodega queda alineado al nuevo estado.
+  - `REQ-165` completada: detalle, timeline y PDF ya tratan `no_entregada` como cierre definitivo (`Prokey = No aplica`, timeline de cierre sin entrega y PDF habilitado como estado final).
+  - `REQ-166` completada: homes, conteos y metricas principales ya priorizan `estado=no_entregada` como fuente semantica de cierre, manteniendo fallback defensivo para historico legacy no migrado.
 - Frente activo en rama `feat/bi-dashboard`: `Monitor de Actividad` para `admin`, `aprobador` y `jefe_bodega`.
 - `REQ-119` completada: el navbar ya agrupa los accesos `admin` bajo un dropdown `Administracion` y el bloque de usuario ahora despliega `Cambiar contrasena` + `Salir`, reduciendo ancho horizontal sin introducir JS adicional.
 - `REQ-123` completada en `main`: `Gestionar Entrega` y `Entrega Parcial` ahora fuerzan en JS el estado inicial bloqueado del receptor; el selector solo se habilita tras pulsar `Cambiar receptor`.
@@ -154,6 +159,10 @@
 1. Validar visualmente la Fase 2 del Monitor de Actividad con datos reales y ajustar densidad/etiquetas si algun grafico se satura.
 2. Definir la siguiente iteracion BI: filtros de periodo/departamento o nuevas metricas de auditoria (`tiempos de liquidacion`, `diferencias por motivo`, `tendencia semanal`).
 
+### Frente `no_entregada` (`EPIC-UI-06`):
+1. Hacer una pasada de smoke manual sobre detalle/PDF de una `no_entregada` migrada desde datos historicos para confirmar que no queda ningun residuo legacy de Prokey.
+2. Si la validacion manual es correcta, este frente puede cerrarse sin cambios adicionales de modelo.
+
 ### Frente despliegue (REQ-087 / REQ-088):
 1. En el servidor Docker: `docker network create proxy`
 2. `cd deploy/caddy && docker compose up -d`
@@ -178,6 +187,10 @@
 
 ## Ultimo cambio cerrado
 - `REQ-118A` completada: backend base del Monitor de Actividad implementado. Ya existen `/monitor` y `/api/dashboard/basicos` con autorizacion para `admin`, `aprobador` y `jefe_bodega`; la API entrega las 4 agregaciones base listas para la UI actual.
+- `REQ-163` completada: `no_entregada` ya existe como estado final valido en modelo y migracion SQLite; el historico legado se convierte automaticamente desde `entregada + delivery_result=no_entregada` y las vistas base (`Mis/Todas/Bodega/home`) quedan compatibles para no perder esos cierres.
+- `REQ-164` completada: la ruta de entrega de bodega ahora cierra directo como `estado=no_entregada` cuando el resultado es `No entregada`; ya no pasa por `entregada` para ese caso, y el historial de bodega/tipos de filtro quedan alineados con el nuevo estado.
+- `REQ-165` completada: el detalle API/UI y el PDF ya tratan `no_entregada` como cierre final: `Prokey` aparece como `No aplica`, el timeline muestra `Cierre no entregada` y el PDF queda disponible como evidencia final del caso.
+- `REQ-166` completada: el home y los conteos base ya dejan de depender primariamente de `delivery_result=no_entregada`; ahora usan `estado=no_entregada` como señal semantica principal y solo conservan fallback defensivo para historico residual.
 - `REQ-118` completada: el workstream BI quedo formalmente abierto en rama dedicada y ya se descompuso en la epica `EPIC-BI-01` con tareas ejecutables `REQ-118A/B/C`, hoy institucionalizado como `Monitor de Actividad`.
 - `REQ-117` completada: `Gestionar Entrega` ya no exige firma/PIN cuando el resultado es `no_entregada`, incluso si existe receptor designado o el frontend envia `recibido_por_id`; backend ignora la firma en ese caso, UI oculta los campos y solo exige comentario para cerrar la requisicion.
 - `REQ-116` completada: documentacion de gobernanza y estado del producto actualizada para reflejar `beta operativa en produccion`, continuidad agnostica al LLM/herramienta y trazabilidad documental obligatoria como regla del repo.

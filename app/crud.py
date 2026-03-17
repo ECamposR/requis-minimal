@@ -384,8 +384,8 @@ def transicionar_requisicion(
     recibido_por_id: int | None = None,
     recibido_at: datetime | None = None,
 ) -> Requisicion:
-    if requisicion.estado == "liquidada_en_prokey":
-        raise ValueError("La requisicion ya fue cerrada en Prokey y no admite cambios")
+    if requisicion.estado in ("liquidada_en_prokey", "no_entregada"):
+        raise ValueError("La requisicion ya fue cerrada y no admite cambios")
 
     if nuevo_estado == "aprobada":
         requisicion.estado = "aprobada"
@@ -410,6 +410,15 @@ def transicionar_requisicion(
         requisicion.recibido_por_id = recibido_por_id
         requisicion.recibido_at = recibido_at
         requisicion.delivery_result = delivery_result or "completa"
+        requisicion.delivery_comment = delivery_comment
+    elif nuevo_estado == "no_entregada":
+        requisicion.estado = "no_entregada"
+        requisicion.delivered_at = now_sv()
+        requisicion.delivered_by = actor_id
+        requisicion.delivered_to = None
+        requisicion.recibido_por_id = None
+        requisicion.recibido_at = None
+        requisicion.delivery_result = "no_entregada"
         requisicion.delivery_comment = delivery_comment
     elif nuevo_estado == "liquidada":
         requisicion.estado = "liquidada"

@@ -1,5 +1,97 @@
 # Worklog (append-only)
 
+## 2026-03-17 11:37 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-166` para que homes y metricas dejen de depender primariamente de inferencias por `delivery_result=no_entregada`.
+- Tareas: `REQ-166`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `filtro_cierre_no_entregada()` como helper de compatibilidad semantica: prioriza `estado=no_entregada` y conserva fallback para historico residual `entregada + delivery_result=no_entregada`.
+  - Los conteos del home, los paneles SSR y los filtros cerrados relevantes ya usan esa helper en lugar de consultar `delivery_result` en bruto.
+  - Las metricas de `No Entregada` en los homes de `bodega` y `jefe_bodega` tambien quedan alineadas al nuevo estado final.
+  - Se agrega prueba unitaria para validar que el home del rol `user` cuenta una requisicion `no_entregada` como `Requisiciones Finalizadas`.
+  - Validacion ejecutada: `python -m py_compile app/main.py`, `python -m compileall tests/test_liquidacion.py` y `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k \"no_entregada and (home_cards or detalle_no_entregada_no_marca_prokey_pendiente or transicionar_requisicion_permite_estado_no_entregada)\"` -> `3 passed`.
+- Proximo paso:
+  - Hacer un smoke manual de una requisicion `no_entregada` migrada desde datos legacy para confirmar que detalle, historial y PDF no dejan residuos semanticos de Prokey.
+
+## 2026-03-17 11:24 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-165` para eliminar los residuos semanticos de Prokey y cierre parcial en el detalle/PDF de requisiciones `no_entregada`.
+- Tareas: `REQ-165`
+- Cambios:
+  - `app/main.py`
+  - `static/app.js`
+  - `app/pdf_generator.py`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El detalle API ahora expone `prokey_not_applicable` y solo marca `prokey_pending` cuando la requisicion esta realmente en `liquidada` sin referencia.
+  - El modal deja de mostrar `Prokey pendiente` en `no_entregada`; ahora renderiza `No aplica`.
+  - El timeline del detalle distingue ese cierre como `Cierre no entregada`, en lugar de simular una entrega normal.
+  - El PDF queda habilitado tambien para `estado=no_entregada`, y la card `Ref ProKey` ya muestra `No aplica` en ese caso.
+  - Validacion ejecutada: `python -m py_compile app/main.py app/pdf_generator.py`, `python -m compileall tests/test_liquidacion.py` y `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k \"detalle_no_entregada_no_marca_prokey_pendiente or detalle_liquidada_en_prokey_incluye_campos\"` -> `2 passed`.
+- Proximo paso:
+  - Ejecutar `REQ-166`, quitando dependencias residuales de `delivery_result=no_entregada` en homes y metricas para que el estado nuevo sea la fuente principal de conteo.
+
+## 2026-03-17 11:12 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-164` para que el flujo real de bodega use ya el nuevo estado terminal `no_entregada`.
+- Tareas: `REQ-164`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `tests/test_liquidacion_integration.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `/entregar/{req_id}` ahora decide `nuevo_estado=\"no_entregada\"` cuando el resultado seleccionado es `No entregada`; solo `completa/parcial` siguen usando `estado=entregada`.
+  - Las pruebas del flujo HTTP de bodega se actualizan para esperar `estado=no_entregada`.
+  - El caso de integracion que valida que una requisicion `no_entregada` no puede liquidarse ya usa el nuevo estado terminal.
+  - Validacion ejecutada: `python -m py_compile app/main.py`, `python -m compileall tests/test_basic_flow.py tests/test_liquidacion_integration.py` y `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -k no_liquidar_delivery_no_entregada` -> `1 passed`.
+  - El foco en `tests/test_basic_flow.py` volvio a quedar sin salida util antes del timeout en este entorno, consistente con corridas previas del repo.
+- Proximo paso:
+  - Ejecutar `REQ-165`, alineando detalle, timeline, badges y PDF para que `no_entregada` deje de verse como cierre pendiente de Prokey.
+
+## 2026-03-17 10:58 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-163` para introducir `no_entregada` como estado final real antes de ajustar la transicion web y el detalle.
+- Tareas: `REQ-163`
+- Cambios:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/crud.py`
+  - `app/main.py`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El modelo y el `CHECK` de SQLite ya aceptan `estado=no_entregada`.
+  - `run_migrations()` ahora reconstruye la tabla historica si el CHECK viejo no incluye `no_entregada` y ejecuta una conversion de datos para mover registros legacy `entregada + delivery_result=no_entregada` al nuevo estado final.
+  - `transicionar_requisicion()` ya soporta `nuevo_estado=\"no_entregada\"` e inmoviliza tambien ese cierre como estado final.
+  - Los listados base y conteos principales (`Mis Requisiciones`, `Todas las Requisiciones`, home y `/bodega` historial) quedan compatibles para reconocer tanto el estado nuevo como historico residual durante la transicion.
+  - Validacion ejecutada: `python -m py_compile app/models.py app/database.py app/crud.py app/main.py`, `python -m compileall tests/test_basic_flow.py tests/test_liquidacion.py tests/test_liquidacion_integration.py` y `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k \"no_entregada or transicionar_requisicion_permite_estado_no_entregada\"` -> `2 passed`.
+- Proximo paso:
+  - Ejecutar `REQ-164`, haciendo que la ruta de bodega use ya el nuevo estado final cuando el resultado sea `No entregada`.
+
+## 2026-03-17 10:32 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar la correccion semantica del cierre `no entregada` antes de implementarla, ya que hoy el sistema mezcla `estado=entregada` con `delivery_result=no_entregada` y eso deja residuos como `Prokey pendiente`.
+- Tareas: `EPIC-UI-06`, `REQ-163`, `REQ-164`, `REQ-165`, `REQ-166`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se documenta una nueva epica para convertir `no_entregada` en estado final real y eliminar el workaround actual basado solo en `delivery_result`.
+  - La implementacion queda dividida entre modelo/migracion, transicion de bodega, alineacion de vistas/detalle/PDF y ajuste posterior de metricas/homes.
+  - Se deja explicitado que el problema actual no es solo de UI: hay una inconsistencia semantica de flujo que conviene resolver en el modelo de estados.
+- Proximo paso:
+  - Ejecutar `REQ-163` primero, introduciendo el nuevo estado y dejando compatibilidad defensiva con registros historicos.
+
 ## 2026-03-16 17:05 UTC-6 | tool: Codex CLI
 - Objetivo: dejar un mecanismo de backup completo desde servidor para el despliegue Docker productivo, independiente de la UI admin.
 - Tareas: `REQ-162`
