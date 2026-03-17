@@ -1,5 +1,40 @@
 # Worklog (append-only)
 
+## 2026-03-17 10:58 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-163` para introducir `no_entregada` como estado final real antes de ajustar la transicion web y el detalle.
+- Tareas: `REQ-163`
+- Cambios:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/crud.py`
+  - `app/main.py`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El modelo y el `CHECK` de SQLite ya aceptan `estado=no_entregada`.
+  - `run_migrations()` ahora reconstruye la tabla historica si el CHECK viejo no incluye `no_entregada` y ejecuta una conversion de datos para mover registros legacy `entregada + delivery_result=no_entregada` al nuevo estado final.
+  - `transicionar_requisicion()` ya soporta `nuevo_estado=\"no_entregada\"` e inmoviliza tambien ese cierre como estado final.
+  - Los listados base y conteos principales (`Mis Requisiciones`, `Todas las Requisiciones`, home y `/bodega` historial) quedan compatibles para reconocer tanto el estado nuevo como historico residual durante la transicion.
+  - Validacion ejecutada: `python -m py_compile app/models.py app/database.py app/crud.py app/main.py`, `python -m compileall tests/test_basic_flow.py tests/test_liquidacion.py tests/test_liquidacion_integration.py` y `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k \"no_entregada or transicionar_requisicion_permite_estado_no_entregada\"` -> `2 passed`.
+- Proximo paso:
+  - Ejecutar `REQ-164`, haciendo que la ruta de bodega use ya el nuevo estado final cuando el resultado sea `No entregada`.
+
+## 2026-03-17 10:32 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar la correccion semantica del cierre `no entregada` antes de implementarla, ya que hoy el sistema mezcla `estado=entregada` con `delivery_result=no_entregada` y eso deja residuos como `Prokey pendiente`.
+- Tareas: `EPIC-UI-06`, `REQ-163`, `REQ-164`, `REQ-165`, `REQ-166`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se documenta una nueva epica para convertir `no_entregada` en estado final real y eliminar el workaround actual basado solo en `delivery_result`.
+  - La implementacion queda dividida entre modelo/migracion, transicion de bodega, alineacion de vistas/detalle/PDF y ajuste posterior de metricas/homes.
+  - Se deja explicitado que el problema actual no es solo de UI: hay una inconsistencia semantica de flujo que conviene resolver en el modelo de estados.
+- Proximo paso:
+  - Ejecutar `REQ-163` primero, introduciendo el nuevo estado y dejando compatibilidad defensiva con registros historicos.
+
 ## 2026-03-16 17:05 UTC-6 | tool: Codex CLI
 - Objetivo: dejar un mecanismo de backup completo desde servidor para el despliegue Docker productivo, independiente de la UI admin.
 - Tareas: `REQ-162`

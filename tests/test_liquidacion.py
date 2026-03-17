@@ -154,10 +154,10 @@ def create_req_entregada(
         justificacion="Test liquidacion",
         approved_by=aprob.id,
         approved_at=datetime.now(),
-        delivered_by=bode.id if estado in ("entregada", "liquidada", "liquidada_en_prokey") else None,
-        delivered_at=datetime.now() if estado in ("entregada", "liquidada", "liquidada_en_prokey") else None,
-        delivered_to="Cliente Test" if estado in ("entregada", "liquidada", "liquidada_en_prokey") else None,
-        delivery_result=delivery_result if estado in ("entregada", "liquidada", "liquidada_en_prokey") else None,
+        delivered_by=bode.id if estado in ("entregada", "no_entregada", "liquidada", "liquidada_en_prokey") else None,
+        delivered_at=datetime.now() if estado in ("entregada", "no_entregada", "liquidada", "liquidada_en_prokey") else None,
+        delivered_to="Cliente Test" if estado in ("entregada", "no_entregada", "liquidada", "liquidada_en_prokey") else None,
+        delivery_result=delivery_result if estado in ("entregada", "no_entregada", "liquidada", "liquidada_en_prokey") else None,
     )
     db_session.add(req)
     db_session.commit()
@@ -193,9 +193,30 @@ def test_puede_liquidar_rechaza_estado_aprobada(db_session: Session):
 
 
 def test_puede_liquidar_rechaza_no_entregada(db_session: Session):
-    req = create_req_entregada(db_session, delivery_result="no_entregada")
+    req = create_req_entregada(db_session, estado="no_entregada", delivery_result="no_entregada")
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     assert puede_liquidar(req, bodega) is False
+
+
+def test_transicionar_requisicion_permite_estado_no_entregada(db_session: Session):
+    req = create_req_entregada(db_session, estado="preparado")
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    updated = transicionar_requisicion(
+        db_session,
+        req,
+        nuevo_estado="no_entregada",
+        actor_id=bodega.id,
+        delivery_comment="Sin inventario",
+    )
+
+    assert updated.estado == "no_entregada"
+    assert updated.delivered_by == bodega.id
+    assert updated.delivered_at is not None
+    assert updated.delivery_result == "no_entregada"
+    assert updated.delivery_comment == "Sin inventario"
+    assert updated.delivered_to is None
+    assert updated.recibido_por_id is None
 
 
 def test_puede_liquidar_rechaza_rol_user(db_session: Session):
