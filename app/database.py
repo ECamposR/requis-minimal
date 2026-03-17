@@ -338,9 +338,11 @@ def run_migrations() -> None:
                 "liquidada_en_prokey" not in table_sql
                 or "preparado" not in table_sql
                 or "no_entregada" not in table_sql
+                or "pendiente_prokey" not in table_sql
+                or "finalizada_sin_prokey" not in table_sql
             ):
                 logger.warning(
-                    "Detectado CHECK antiguo en requisiciones.estado; reconstruyendo tabla para incluir preparado/no_entregada/liquidada_en_prokey"
+                    "Detectado CHECK antiguo en requisiciones.estado; reconstruyendo tabla para incluir estados operativos y finales nuevos"
                 )
                 conn.execute(text("PRAGMA foreign_keys=OFF"))
                 try:
@@ -387,7 +389,7 @@ def run_migrations() -> None:
                                 rejection_reason TEXT,
                                 rejection_comment TEXT,
                                 CONSTRAINT ck_requisiciones_estado CHECK (
-                                    estado in ('pendiente', 'aprobada', 'preparado', 'rechazada', 'entregada', 'no_entregada', 'liquidada', 'liquidada_en_prokey')
+                                    estado in ('pendiente', 'aprobada', 'preparado', 'rechazada', 'entregada', 'no_entregada', 'liquidada', 'pendiente_prokey', 'finalizada_sin_prokey', 'liquidada_en_prokey')
                                 )
                             )
                             """
@@ -401,8 +403,7 @@ def run_migrations() -> None:
                                 estado, motivo_requisicion, justificacion, created_at, approved_at, approved_by, approval_comment,
                                 prepared_at, prepared_by,
                                 delivered_at, delivered_by, recibido_por_id, delivered_to, recibido_at, delivery_result,
-                                delivery_comment, receptor_designado_id, prokey_ref, prokey_ref_actualizada_at, prokey_ref_actualizada_por, liquidation_comment, liquidated_by,
-                                prokey_no_aplica,
+                                delivery_comment, receptor_designado_id, prokey_ref, prokey_no_aplica, prokey_ref_actualizada_at, prokey_ref_actualizada_por, liquidation_comment, liquidated_by,
                                 liquidated_at, prokey_liquidada_at, prokey_liquidada_por, rejected_at, rejected_by,
                                 rejection_reason, rejection_comment
                             )
@@ -436,7 +437,7 @@ def run_migrations() -> None:
                     """
                     UPDATE requisiciones
                     SET prokey_no_aplica = 1
-                    WHERE estado = 'liquidada'
+                    WHERE estado IN ('liquidada', 'finalizada_sin_prokey')
                       AND EXISTS (
                         SELECT 1
                         FROM items
@@ -448,6 +449,24 @@ def run_migrations() -> None:
                         WHERE items.requisicion_id = requisiciones.id
                           AND COALESCE(items.qty_used, 0) > 0
                       )
+                    """
+                )
+            )
+            conn.execute(
+                text(
+                    """
+                    UPDATE requisiciones
+                    SET estado = 'finalizada_sin_prokey'
+                    WHERE estado = 'liquidada' AND COALESCE(prokey_no_aplica, 0) = 1
+                    """
+                )
+            )
+            conn.execute(
+                text(
+                    """
+                    UPDATE requisiciones
+                    SET estado = 'pendiente_prokey'
+                    WHERE estado = 'liquidada' AND COALESCE(prokey_no_aplica, 0) = 0
                     """
                 )
             )

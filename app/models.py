@@ -142,7 +142,7 @@ class Requisicion(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "estado in ('pendiente', 'aprobada', 'preparado', 'rechazada', 'entregada', 'no_entregada', 'liquidada', 'liquidada_en_prokey')",
+            "estado in ('pendiente', 'aprobada', 'preparado', 'rechazada', 'entregada', 'no_entregada', 'liquidada', 'pendiente_prokey', 'finalizada_sin_prokey', 'liquidada_en_prokey')",
             name="ck_requisiciones_estado",
         ),
     )

@@ -4206,3 +4206,12 @@
   - Se acordo mantener `no_entregada` y `liquidada_en_prokey` como cierres finales diferenciados.
   - Se establecio que la palabra `Finalizada` se reforzara solo a nivel de UI y labels visibles, no como requisito de nombre tecnico en backend.
   - El frente queda preparado para implementarse por etapas sin seguir acumulando excepciones sobre `liquidada`.
+
+- Objetivo: ejecutar `REQ-168` para introducir los nuevos estados semanticos en modelo/migraciones antes de tocar el flujo de liquidacion.
+- Tareas: `REQ-168`
+- Resultado:
+  - `Requisicion.estado` ya admite `pendiente_prokey` y `finalizada_sin_prokey` sin retirar todavia `liquidada`, para mantener compatibilidad transitoria hasta `REQ-169`.
+  - La migracion SQLite ya reconstruye el `CHECK` con los nuevos estados y corrige el orden de columnas al copiar `prokey_no_aplica`.
+  - Se agrega conversion historica: `liquidada + prokey_no_aplica=1 -> finalizada_sin_prokey`, y `liquidada + prokey_no_aplica=0 -> pendiente_prokey`.
+  - Las consultas base y validaciones globales aceptan ya los nuevos estados para que no queden invisibles tras migrar datos.
+  - Se agrego una prueba de migracion real sobre un esquema legacy para blindar la conversion de historico.
