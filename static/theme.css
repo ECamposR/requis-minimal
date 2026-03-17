@@ -548,6 +548,38 @@ table tbody tr:hover td {
     gap: 0.35rem;
 }
 
+.bodega-requests-table .table-actions,
+.bodega-history-table .table-actions {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.bodega-requests-table .table-actions > *,
+.bodega-history-table .table-actions > * {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    width: 100%;
+}
+
+.bodega-requests-table .table-actions form,
+.bodega-history-table .table-actions form {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.bodega-prokey-confirm-btn {
+    border-radius: 10px !important;
+}
+
+.bodega-status-cell {
+    vertical-align: middle !important;
+}
+
 .table-actions form {
     margin: 0;
 }

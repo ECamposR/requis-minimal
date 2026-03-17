@@ -48,7 +48,7 @@
 <h3>Pendientes de Procesar</h3>
 {% if pendientes_entrega %}
 <section class="panel view-panel table-wrap">
-<table class="table-compact">
+<table class="table-compact bodega-requests-table">
     <thead>
     <tr>
         <th class="col-folio"># Req</th>
@@ -66,7 +66,7 @@
     {% for req in pendientes_entrega %}
     <tr>
         <td>{{ req.folio }}</td>
-        <td>
+        <td class="bodega-status-cell">
             {{ ui.status_badge(req.estado) }}
         </td>
         <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
@@ -97,7 +97,7 @@
                 <form method="POST" action="/requisiciones/{{ req.id }}/liquidar-prokey" style="display:inline">
                     <button
                         type="submit"
-                        class="secondary"
+                        class="secondary bodega-prokey-confirm-btn"
                         onclick="return confirm('¿Confirmar que esta requisición ya fue liquidada en Prokey?')"
                     >
                         Confirmar en Prokey
@@ -124,7 +124,7 @@
 <h3>Historial</h3>
 {% if historial_entregadas %}
 <section class="panel view-panel table-wrap">
-<table class="table-compact">
+<table class="table-compact bodega-history-table">
     <thead>
     <tr>
         <th class="col-folio"># Req</th>
