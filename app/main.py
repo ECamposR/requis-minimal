@@ -2858,10 +2858,12 @@ def entregar(
             if item.cantidad_entregada is None:
                 item.cantidad_entregada = item.cantidad
 
+    nuevo_estado = "no_entregada" if resultado == "no_entregada" else "entregada"
+
     transicionar_requisicion(
         db,
         req,
-        nuevo_estado="entregada",
+        nuevo_estado=nuevo_estado,
         actor_id=current_user.id,
         delivered_to=receptor.nombre if receptor else None,
         delivery_result=resultado,

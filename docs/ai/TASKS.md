@@ -56,7 +56,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-161` | `done` | Ajustar semantica de `/bodega`: el estado `liquidada` deja de caer en historial y pasa a `pendientes` hasta `Confirmar en Prokey`; historial queda solo para cierres definitivos (`liquidada_en_prokey` / `no_entregada`).
 - `EPIC-UI-06` | `in_progress` | Corregir la semantica de cierre para requisiciones marcadas como `no entregada`: dejar de representarlas como `entregada + delivery_result=no_entregada` y convertirlas en un estado final propio, sin pasos posteriores de liquidacion ni Prokey.
 - `REQ-163` | `done` | Introducir `no_entregada` como estado final real en modelo/migraciones SQLite y convertir registros historicos `entregada + delivery_result=no_entregada` al nuevo estado, manteniendo compatibilidad operativa.
-- `REQ-164` | `todo` | Ajustar el flujo de bodega para que una entrega marcada como `no_entregada` transicione directo a `estado=no_entregada`, sin habilitar liquidacion, referencia Prokey ni confirmacion en Prokey.
+- `REQ-164` | `done` | Ajustar el flujo de bodega para que una entrega marcada como `no_entregada` transicione directo a `estado=no_entregada`, sin habilitar liquidacion, referencia Prokey ni confirmacion en Prokey.
 - `REQ-165` | `todo` | Alinear filtros, listados, detalle, timeline, badges y PDF al nuevo estado `no_entregada`, eliminando la semantica de `Prokey pendiente` para este cierre definitivo.
 - `REQ-166` | `todo` | Actualizar conteos, homes y metricas que hoy deducen cierre por `delivery_result=no_entregada` para que prioricen `estado=no_entregada`, manteniendo compatibilidad defensiva con historico viejo hasta completar migracion.
 

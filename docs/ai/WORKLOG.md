@@ -1,5 +1,24 @@
 # Worklog (append-only)
 
+## 2026-03-17 11:12 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-164` para que el flujo real de bodega use ya el nuevo estado terminal `no_entregada`.
+- Tareas: `REQ-164`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `tests/test_liquidacion_integration.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `/entregar/{req_id}` ahora decide `nuevo_estado=\"no_entregada\"` cuando el resultado seleccionado es `No entregada`; solo `completa/parcial` siguen usando `estado=entregada`.
+  - Las pruebas del flujo HTTP de bodega se actualizan para esperar `estado=no_entregada`.
+  - El caso de integracion que valida que una requisicion `no_entregada` no puede liquidarse ya usa el nuevo estado terminal.
+  - Validacion ejecutada: `python -m py_compile app/main.py`, `python -m compileall tests/test_basic_flow.py tests/test_liquidacion_integration.py` y `.venv/bin/python -m pytest -q tests/test_liquidacion_integration.py -k no_liquidar_delivery_no_entregada` -> `1 passed`.
+  - El foco en `tests/test_basic_flow.py` volvio a quedar sin salida util antes del timeout en este entorno, consistente con corridas previas del repo.
+- Proximo paso:
+  - Ejecutar `REQ-165`, alineando detalle, timeline, badges y PDF para que `no_entregada` deje de verse como cierre pendiente de Prokey.
+
 ## 2026-03-17 10:58 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-163` para introducir `no_entregada` como estado final real antes de ajustar la transicion web y el detalle.
 - Tareas: `REQ-163`
