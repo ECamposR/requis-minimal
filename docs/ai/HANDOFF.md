@@ -224,3 +224,9 @@
 - Para ejecucion, usar solo este bloque activo.
 - Rama activa: `fix/ajustes-varios-2`
 - `REQ-167` completada en esta rama: las requisiciones liquidadas donde todo regresa como `no usado` ahora persisten `prokey_no_aplica=1`. En esos casos ya no se muestra `Confirmar en Prokey`, el detalle/PDF reportan `Prokey: No aplica` y el conteo de pendientes de referencia excluye esos cierres.
+- Se define `EPIC-UI-07` como siguiente correccion semantica mayor del flujo: eliminar la ambigüedad del estado `liquidada` y reemplazarlo por `pendiente_prokey` y `finalizada_sin_prokey`, manteniendo `no_entregada` y `liquidada_en_prokey` como cierres finales diferenciados.
+- Descomposicion prevista:
+  - `REQ-168`: modelo + migracion + conversion historica de `liquidada`
+  - `REQ-169`: transicion de liquidacion y confirmacion en Prokey sobre los nuevos estados
+  - `REQ-170`: filtros/listados/detalle/badges/PDF con labels UI reforzados
+  - `REQ-171`: homes, metricas y retiro funcional de `prokey_no_aplica`

@@ -4199,3 +4199,10 @@
   - Se bloqueo `marcar_liquidada_en_prokey()` para requisiciones con `prokey_no_aplica`, y `/bodega` ya muestra `No Aplica Confirmar en Prokey` en lugar de `Confirmar en Prokey`.
   - El detalle API/PDF y los conteos de `Pendientes de Referencia Prokey` quedaron alineados al nuevo flag.
   - Se agregaron pruebas focales para el caso todo-no-usado y para la tabla de bodega.
+- Objetivo: formalizar el siguiente frente semantico sobre estados finales para eliminar la ambigüedad actual de `liquidada`.
+- Tareas: `EPIC-UI-07`, `REQ-168`, `REQ-169`, `REQ-170`, `REQ-171`
+- Resultado:
+  - Se definio la migracion conceptual para reemplazar `liquidada` por dos estados no ambiguos: `pendiente_prokey` y `finalizada_sin_prokey`.
+  - Se acordo mantener `no_entregada` y `liquidada_en_prokey` como cierres finales diferenciados.
+  - Se establecio que la palabra `Finalizada` se reforzara solo a nivel de UI y labels visibles, no como requisito de nombre tecnico en backend.
+  - El frente queda preparado para implementarse por etapas sin seguir acumulando excepciones sobre `liquidada`.
