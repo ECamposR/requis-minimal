@@ -4232,3 +4232,11 @@
   - El detalle API/modal ya muestra `Pendiente Prokey` o `Finalizada sin Prokey` en timeline, y trata `finalizada_sin_prokey` como `Prokey: No aplica`.
   - El PDF ya usa labels semanticos reforzados para estado y timeline de liquidacion.
   - Se actualizaron pruebas focales de detalle y de integracion para reflejar la nueva semantica visible.
+
+- Objetivo: ejecutar `REQ-171` para alinear homes, metricas y conteos con los nuevos estados y reducir el peso funcional de `prokey_no_aplica`.
+- Tareas: `REQ-171`
+- Resultado:
+  - Los homes ahora cuentan `pendiente_prokey` y `finalizada_sin_prokey` como fuentes primarias de estados intermedios/finales, con helpers de compatibilidad solo para historico legacy que siga en `liquidada`.
+  - Los cards operativos de `bodega`, `admin` y `logistica` ya muestran `Finalizadas sin Prokey` y `Finalizadas en Prokey`, y el conteo `Pendientes de Referencia Prokey` deja de depender del flag.
+  - Los paneles de estado y cierres del home ya usan los nuevos estados semanticos en lugar de inferir desde `prokey_no_aplica`.
+  - `puede_editar_prokey_ref()` y `prokey_pending` quedan gobernados por `estado == pendiente_prokey`; el flag solo queda como respaldo de compatibilidad para registros legacy.

@@ -223,8 +223,8 @@ def test_home_bodega_muestra_cards_operativas_compactas(client: TestClient):
     html = response.text
     assert "Pendientes de Procesar" in html
     assert "Pendientes de Liquidar" in html
-    assert "Liquidadas" in html
-    assert "Finalizada en Prokey" in html
+    assert "Finalizadas sin Prokey" in html
+    assert "Finalizadas en Prokey" in html
     assert "Preparadas" not in html
     assert "No Entregadas" not in html
     assert "home-kpi-grid--single-row" in html
@@ -307,7 +307,7 @@ def test_home_bodega_muestra_panel_estado_operativo(client: TestClient, db_sessi
     assert "Resume el estado actual de las requisiciones gestionadas por bodega." in html
     assert "Pendientes de Procesar" in html
     assert "Pendientes de Liquidar" in html
-    assert "Liquidadas en Prokey" in html
+    assert "Finalizadas en Prokey" in html
     assert "No Entregadas" in html
 
 
@@ -1535,7 +1535,7 @@ def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
     assert 'Pendientes de Procesar' in html
     assert 'Pendientes de Liquidar' in html
     assert 'Liquidadas' not in html
-    assert 'Liquidadas en Prokey' in html
+    assert 'Finalizadas en Prokey' in html
     assert '/aprobar' in html
     assert '/bodega' in html
     assert '/bodega?vista=historial' in html
