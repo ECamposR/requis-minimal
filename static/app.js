@@ -494,7 +494,12 @@ function verDetalle(id) {
                 })
                 .join("");
 
-            const resultVal = data.delivery_result || "-";
+            const resultLabels = {
+                completa: "Completa",
+                parcial: "Parcial",
+                no_entregada: "No Entregada",
+            };
+            const resultVal = data.delivery_result ? resultLabels[data.delivery_result] || data.delivery_result : "-";
             const chipCls =
                 { completa: "resultado-completa", parcial: "resultado-parcial", no_entregada: "resultado-no-entregada" }[
                     data.delivery_result

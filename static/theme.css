@@ -1710,6 +1710,34 @@ table tbody tr:hover td,
     border-color: transparent !important;
 }
 
+.resultado-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.resultado-chip.resultado-completa {
+    background: rgba(22, 163, 74, 0.16) !important;
+    color: #166534 !important;
+    border: 1px solid rgba(22, 163, 74, 0.3) !important;
+}
+
+.resultado-chip.resultado-parcial {
+    background: rgba(217, 119, 6, 0.16) !important;
+    color: #92400e !important;
+    border: 1px solid rgba(217, 119, 6, 0.3) !important;
+}
+
+.resultado-chip.resultado-no-entregada {
+    background: rgba(220, 38, 38, 0.14) !important;
+    color: #991b1b !important;
+    border: 1px solid rgba(220, 38, 38, 0.32) !important;
+}
+
 .badge-success,
 .badge.success {
     background: rgba(22, 163, 74, 0.16) !important;
