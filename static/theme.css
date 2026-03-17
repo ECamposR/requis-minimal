@@ -580,6 +580,11 @@ table tbody tr:hover td {
     vertical-align: middle !important;
 }
 
+.bodega-requests-table td:not(.bodega-status-cell):not(.table-actions),
+.bodega-history-table td:not(.table-actions) {
+    vertical-align: middle !important;
+}
+
 .table-actions form {
     margin: 0;
 }
