@@ -555,6 +555,11 @@ table tbody tr:hover td {
     text-align: center;
 }
 
+.bodega-requests-table thead th,
+.bodega-history-table thead th {
+    text-align: center;
+}
+
 .bodega-requests-table .table-actions > *,
 .bodega-history-table .table-actions > * {
     display: inline-flex;
@@ -583,6 +588,7 @@ table tbody tr:hover td {
 .bodega-requests-table td:not(.bodega-status-cell):not(.table-actions),
 .bodega-history-table td:not(.table-actions) {
     vertical-align: middle !important;
+    text-align: center;
 }
 
 .table-actions form {
