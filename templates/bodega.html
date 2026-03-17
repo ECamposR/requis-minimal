@@ -132,11 +132,10 @@
         <th>Departamento</th>
         <th>Aprobado por</th>
         <th>Entregado por</th>
-        <th>Resultado</th>
         <th>Recibio</th>
         <th class="col-fecha">Entregada en</th>
         <th class="col-detalle">Detalle</th>
-        <th class="col-acciones">Liquidacion</th>
+        <th class="col-acciones">Estado de Liquidación</th>
     </tr>
     </thead>
     <tbody>
@@ -147,15 +146,6 @@
         <td>{{ req.departamento }}</td>
         <td>{{ req.aprobador.nombre if req.aprobador else '-' }}</td>
         <td>{{ req.entregador.nombre if req.entregador else '-' }}</td>
-        <td>
-            {% if req.delivery_result == 'parcial' %}
-            {{ ui.status_badge('parcial') }}
-            {% elif req.delivery_result == 'no_entregada' %}
-            {{ ui.status_badge('no entregada') }}
-            {% else %}
-            {{ ui.status_badge('completa') }}
-            {% endif %}
-        </td>
         <td>{{ req.delivered_to or '-' }}</td>
         <td>{{ req.delivered_at | fmt_dt }}</td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
