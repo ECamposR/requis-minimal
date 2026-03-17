@@ -1011,6 +1011,36 @@ async def test_detalle_liquidada_instalacion_inicial_no_genera_ingreso_pk(db_ses
 
 
 @pytest.mark.anyio
+async def test_liquidacion_todo_no_usado_marca_prokey_no_aplica(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=3)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "3",
+                f"qty_used_{item.id}": "0",
+                f"qty_left_{item.id}": "3",
+                f"mode_{item.id}": "RETORNABLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    db_session.refresh(req)
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+
+    assert req.estado == "liquidada"
+    assert req.prokey_no_aplica is True
+    assert req.prokey_ref is None
+    assert payload["prokey_not_applicable"] is True
+    assert payload["prokey_pending"] is False
+
+
+@pytest.mark.anyio
 async def test_liquidada_es_solo_lectura(db_session: Session):
     req = create_req_entregada(db_session, cantidad=8)
     item = get_item(db_session, req)
@@ -1310,6 +1340,17 @@ def test_marcar_liquidada_en_prokey_requiere_estado_liquidada(db_session: Sessio
     with pytest.raises(ValueError) as exc_info:
         marcar_liquidada_en_prokey(db_session, req.id, jefe.id)
     assert "estado liquidada" in str(exc_info.value).lower()
+
+
+def test_marcar_liquidada_en_prokey_bloquea_caso_no_aplica(db_session: Session):
+    req = create_req_entregada(db_session, estado="liquidada")
+    req.prokey_no_aplica = True
+    db_session.commit()
+    jefe = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
+
+    with pytest.raises(ValueError) as exc_info:
+        marcar_liquidada_en_prokey(db_session, req.id, jefe.id)
+    assert "no requiere confirmacion en prokey" in str(exc_info.value).lower()
 
 
 def test_marcar_liquidada_en_prokey_es_inmutable(db_session: Session):

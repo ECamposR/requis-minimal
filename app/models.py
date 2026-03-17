@@ -76,6 +76,7 @@ class Requisicion(Base):
         nullable=True,
     )
     prokey_ref: Mapped[str | None] = mapped_column(String, nullable=True)
+    prokey_no_aplica: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
     prokey_ref_actualizada_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     prokey_ref_actualizada_por: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     liquidation_comment: Mapped[str | None] = mapped_column(String, nullable=True)

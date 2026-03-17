@@ -222,3 +222,5 @@
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  
 - Para ejecucion, usar solo este bloque activo.
+- Rama activa: `fix/ajustes-varios-2`
+- `REQ-167` completada en esta rama: las requisiciones liquidadas donde todo regresa como `no usado` ahora persisten `prokey_no_aplica=1`. En esos casos ya no se muestra `Confirmar en Prokey`, el detalle/PDF reportan `Prokey: No aplica` y el conteo de pendientes de referencia excluye esos cierres.

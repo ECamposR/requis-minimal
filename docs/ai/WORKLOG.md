@@ -4191,3 +4191,11 @@
   - `python -m compileall static`
 - Resultado:
   - `Resultado entrega` vuelve a leerse con claridad dentro de la tarjeta `Estado liquidacion`.
+- Objetivo: ejecutar `REQ-167` para que las liquidaciones sin uso real (`qty_used` total = 0) no sigan apareciendo como pendientes de Prokey.
+- Tareas: `REQ-167`
+- Resultado:
+  - Se agrego el flag persistido `prokey_no_aplica` a `requisiciones` con migracion SQLite y normalizacion historica para liquidaciones ya guardadas sin uso real.
+  - `ejecutar_liquidacion()` ahora calcula el total usado y marca `No Aplica Confirmar en Prokey` cuando todo vuelve como `no usado`, ignorando cualquier referencia Prokey en ese caso.
+  - Se bloqueo `marcar_liquidada_en_prokey()` para requisiciones con `prokey_no_aplica`, y `/bodega` ya muestra `No Aplica Confirmar en Prokey` en lugar de `Confirmar en Prokey`.
+  - El detalle API/PDF y los conteos de `Pendientes de Referencia Prokey` quedaron alineados al nuevo flag.
+  - Se agregaron pruebas focales para el caso todo-no-usado y para la tabla de bodega.

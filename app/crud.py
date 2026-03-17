@@ -322,6 +322,7 @@ def ejecutar_liquidacion(
     if requisicion.estado == "liquidada":
         raise ValueError("Esta requisición ya fue liquidada")
 
+    total_qty_used = 0.0
     for item in requisicion.items:
         data = items_data.get(item.id, {})
         qty_returned = round(float(data.get("qty_returned_to_warehouse", 0)), 4)
@@ -343,11 +344,14 @@ def ejecutar_liquidacion(
 
         alertas = calcular_alertas_item(item)
         item.liquidation_alerts = json.dumps(alertas)
+        total_qty_used += qty_used
 
     requisicion.estado = "liquidada"
-    requisicion.prokey_ref = prokey_ref or None
-    requisicion.prokey_ref_actualizada_at = now_sv() if prokey_ref else None
-    requisicion.prokey_ref_actualizada_por = usuario.id if prokey_ref else None
+    prokey_no_aplica = total_qty_used == 0
+    requisicion.prokey_no_aplica = prokey_no_aplica
+    requisicion.prokey_ref = None if prokey_no_aplica else (prokey_ref or None)
+    requisicion.prokey_ref_actualizada_at = now_sv() if prokey_ref and not prokey_no_aplica else None
+    requisicion.prokey_ref_actualizada_por = usuario.id if prokey_ref and not prokey_no_aplica else None
     requisicion.liquidation_comment = liquidation_comment or None
     requisicion.liquidated_by = usuario.id
     requisicion.liquidated_at = now_sv()
@@ -361,6 +365,8 @@ def marcar_liquidada_en_prokey(db: Session, req_id: int, usuario_id: int) -> Req
         raise ValueError("Requisicion no encontrada")
     if req.estado != "liquidada":
         raise ValueError("Solo se puede confirmar en Prokey una requisicion en estado liquidada")
+    if bool(getattr(req, "prokey_no_aplica", False)):
+        raise ValueError("Esta requisicion no requiere confirmacion en Prokey")
 
     req.estado = "liquidada_en_prokey"
     req.prokey_liquidada_at = now_sv()

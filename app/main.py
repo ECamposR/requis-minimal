@@ -477,7 +477,7 @@ def redirect_with_message(url: str, message: str, level: str = "success") -> Red
 
 
 def puede_editar_prokey_ref(req: Requisicion, current_user: Usuario) -> bool:
-    return req.estado == "liquidada" and (
+    return req.estado == "liquidada" and not bool(getattr(req, "prokey_no_aplica", False)) and (
         current_user.rol in ("admin", "logistica") or req.solicitante_id == current_user.id
     )
 
@@ -545,6 +545,7 @@ def build_home_cards(current_user: Usuario, db: Session) -> list[dict[str, objec
     no_entregadas = db.query(Requisicion).filter(filtro_cierre_no_entregada()).count()
     pendientes_ref_prokey = db.query(Requisicion).filter(
         Requisicion.estado == "liquidada",
+        Requisicion.prokey_no_aplica.is_(False),
         or_(Requisicion.prokey_ref.is_(None), Requisicion.prokey_ref == ""),
     ).count()
     todas_requisiciones = db.query(Requisicion).count()
@@ -4174,8 +4175,12 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "rejected_at": req.rejected_at,
         "delivered_at": req.delivered_at,
         "prokey_ref": req.prokey_ref,
-        "prokey_not_applicable": req.estado == "no_entregada",
-        "prokey_pending": req.estado == "liquidada" and not bool(req.prokey_ref),
+        "prokey_not_applicable": req.estado == "no_entregada" or bool(getattr(req, "prokey_no_aplica", False)),
+        "prokey_pending": (
+            req.estado == "liquidada"
+            and not bool(req.prokey_ref)
+            and not bool(getattr(req, "prokey_no_aplica", False))
+        ),
         "prokey_ref_actualizada_at": prokey_ref_actualizada_at,
         "prokey_ref_actualizada_por_nombre": prokey_ref_editor.nombre if prokey_ref_editor else None,
         "prokey_ref_actualizada_por_rol": prokey_ref_editor.rol if prokey_ref_editor else None,
@@ -4284,7 +4289,7 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         "liquidado_por_nombre": req.liquidator.nombre if req.liquidator else None,
         "recibido_por_nombre": req.recibido_por.nombre if req.recibido_por else None,
         "prokey_ref": req.prokey_ref,
-        "prokey_not_applicable": req.estado == "no_entregada",
+        "prokey_not_applicable": req.estado == "no_entregada" or bool(getattr(req, "prokey_no_aplica", False)),
         "justificacion": req.justificacion,
         "comentario_liquidacion": req.liquidation_comment,
         "items": items_data,

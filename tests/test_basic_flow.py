@@ -2844,6 +2844,36 @@ def test_bodega_trata_liquidada_como_pendiente_hasta_prokey(client: TestClient, 
     assert "REQ-BOD-LIQ-1" not in response_historial.text
 
 
+def test_bodega_no_muestra_confirmar_en_prokey_si_no_aplica(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req_liquidada = Requisicion(
+        folio="REQ-BOD-LIQ-NA-1",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        justificacion="Todo regreso sin uso",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        liquidated_by=bodega.id,
+        liquidated_at=datetime.now(),
+        prokey_no_aplica=True,
+    )
+    db_session.add(req_liquidada)
+    db_session.commit()
+
+    login(client, "jefe.bodega", "pass123")
+
+    response = client.get("/bodega?vista=pendientes")
+    assert response.status_code == 200
+    assert "REQ-BOD-LIQ-NA-1" in response.text
+    assert "No Aplica Confirmar en Prokey" in response.text
+
+
 def test_bodega_expone_departamento_y_fechas_en_filtros(client: TestClient):
     login(client, "bodega.1", "pass123")
     response = client.get("/bodega")

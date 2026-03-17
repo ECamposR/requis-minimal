@@ -90,7 +90,9 @@
             {% elif req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
             <a href="/liquidar/{{ req.id }}" role="button" class="secondary">Liquidar</a>
             {% elif req.estado == 'liquidada' %}
-                {% if current_user.rol in ['jefe_bodega', 'admin'] %}
+                {% if req.prokey_no_aplica %}
+                <span class="muted">No Aplica Confirmar en Prokey</span>
+                {% elif current_user.rol in ['jefe_bodega', 'admin'] %}
                 <form method="POST" action="/requisiciones/{{ req.id }}/liquidar-prokey" style="display:inline">
                     <button
                         type="submit"
