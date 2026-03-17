@@ -275,7 +275,7 @@ async def test_liquidar_flujo_feliz_sin_alertas(db_session: Session):
     assert response.status_code == 303
     db_session.refresh(req)
     db_session.refresh(item)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
     assert req.prokey_ref == "PK-001"
     assert json.loads(item.liquidation_alerts) == []
 
@@ -330,7 +330,7 @@ async def test_liquidar_con_retorno_extra(db_session: Session):
     assert response.status_code == 303
     db_session.refresh(req)
     db_session.refresh(item)
-    assert req.estado == "liquidada"
+    assert req.estado == "finalizada_sin_prokey"
     tipos = {a["type"] for a in json.loads(item.liquidation_alerts)}
     assert {"ALERTA_SOBRANTE", "ALERTA_RETORNO_EXTRA"}.issubset(tipos)
 
@@ -497,7 +497,7 @@ async def test_liquidar_no_bloquea_por_delta(db_session: Session):
     )
     assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
 
 
 @pytest.mark.anyio
@@ -521,7 +521,7 @@ async def test_liquidar_permite_prokey_ref_vacio(db_session: Session):
     )
     assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
     assert req.prokey_ref is None
 
 
@@ -575,7 +575,7 @@ async def test_si_permite_cuando_delivered_es_0(db_session: Session):
 
     assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
 
 
 @pytest.mark.anyio
@@ -680,7 +680,7 @@ async def test_permite_retornable_con_retorno_incompleto_pero_cobertura_ok(db_se
     assert response.status_code == 303
     db_session.refresh(req)
     db_session.refresh(item)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
     assert any(a["type"] == "ALERTA_RETORNO_INCOMPLETO" for a in json.loads(item.liquidation_alerts))
 
 
@@ -708,7 +708,7 @@ async def test_permite_retornable_con_retorno_extra_no_bloquea_y_alerta(db_sessi
     assert response.status_code == 303
     db_session.refresh(req)
     db_session.refresh(item)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
     tipos = {a["type"] for a in json.loads(item.liquidation_alerts)}
     assert "ALERTA_RETORNO_EXTRA" in tipos
 
@@ -767,7 +767,7 @@ async def test_liquidacion_permite_decimales_para_concentrado_habilitado(db_sess
     assert response.status_code == 303
     db_session.refresh(req)
     db_session.refresh(item)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
     assert item.qty_returned_to_warehouse == 0.5
 
 
@@ -809,7 +809,7 @@ async def test_liquidar_inmutable_no_reliquidar(db_session: Session):
     )
     assert second.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "liquidada"
+    assert req.estado == "finalizada_sin_prokey"
     assert req.prokey_ref == first_ref
 
 
@@ -864,7 +864,7 @@ async def test_detalle_liquidada_incluye_campos(db_session: Session):
     assert payload["prokey_ref"] == "PK-DET-01"
     assert payload["liquidated_by_name"] == bodega.nombre
     assert payload["liquidated_at"] is not None
-    assert any(t["evento"] == "Requisicion liquidada" for t in payload["timeline"])
+    assert any(t["evento"] == "Pendiente Prokey" for t in payload["timeline"])
     liq_item = payload["items"][0]
     assert "qty_returned_to_warehouse" in liq_item
     assert "qty_used" in liq_item
@@ -1011,6 +1011,36 @@ async def test_detalle_liquidada_instalacion_inicial_no_genera_ingreso_pk(db_ses
 
 
 @pytest.mark.anyio
+async def test_liquidacion_todo_no_usado_marca_prokey_no_aplica(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=3)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "3",
+                f"qty_used_{item.id}": "0",
+                f"qty_left_{item.id}": "3",
+                f"mode_{item.id}": "RETORNABLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+    db_session.refresh(req)
+    payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
+
+    assert req.estado == "finalizada_sin_prokey"
+    assert req.prokey_no_aplica is True
+    assert req.prokey_ref is None
+    assert payload["prokey_not_applicable"] is True
+    assert payload["prokey_pending"] is False
+
+
+@pytest.mark.anyio
 async def test_liquidada_es_solo_lectura(db_session: Session):
     req = create_req_entregada(db_session, cantidad=8)
     item = get_item(db_session, req)
@@ -1052,7 +1082,7 @@ async def test_liquidada_es_solo_lectura(db_session: Session):
 
 
 def test_liquidar_get_redirige_si_ya_liquidada(db_session: Session):
-    req = create_req_entregada(db_session, estado="liquidada")
+    req = create_req_entregada(db_session, estado="pendiente_prokey")
     req.prokey_ref = "PK-LIQ"
     db_session.commit()
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
@@ -1098,7 +1128,7 @@ async def test_update_prokey_ref_permite_admin(db_session: Session):
     assert response.status_code == 303
     db_session.refresh(req)
     db_session.refresh(item)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
     assert req.prokey_ref == "PK-POST-001"
     assert item.qty_used == original_qty_used
     assert item.liquidation_alerts == original_alerts
@@ -1280,7 +1310,7 @@ async def test_api_detalle_refleja_prokey_ref_actualizado(db_session: Session):
 
 
 def test_update_prokey_ref_get_form_permitido(db_session: Session):
-    req = create_req_entregada(db_session, estado="liquidada")
+    req = create_req_entregada(db_session, estado="pendiente_prokey")
     owner = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
 
     class ReqStub:
@@ -1293,7 +1323,7 @@ def test_update_prokey_ref_get_form_permitido(db_session: Session):
 
 
 def test_marcar_liquidada_en_prokey_ok(db_session: Session):
-    req = create_req_entregada(db_session, estado="liquidada")
+    req = create_req_entregada(db_session, estado="pendiente_prokey")
     jefe = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
 
     updated = marcar_liquidada_en_prokey(db_session, req.id, jefe.id)
@@ -1303,17 +1333,28 @@ def test_marcar_liquidada_en_prokey_ok(db_session: Session):
     assert updated.prokey_liquidada_at is not None
 
 
-def test_marcar_liquidada_en_prokey_requiere_estado_liquidada(db_session: Session):
+def test_marcar_liquidada_en_prokey_requiere_estado_pendiente_prokey(db_session: Session):
     req = create_req_entregada(db_session, estado="entregada")
     jefe = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
 
     with pytest.raises(ValueError) as exc_info:
         marcar_liquidada_en_prokey(db_session, req.id, jefe.id)
-    assert "estado liquidada" in str(exc_info.value).lower()
+    assert "estado pendiente_prokey" in str(exc_info.value).lower()
+
+
+def test_marcar_liquidada_en_prokey_bloquea_caso_no_aplica(db_session: Session):
+    req = create_req_entregada(db_session, estado="pendiente_prokey")
+    req.prokey_no_aplica = True
+    db_session.commit()
+    jefe = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
+
+    with pytest.raises(ValueError) as exc_info:
+        marcar_liquidada_en_prokey(db_session, req.id, jefe.id)
+    assert "no requiere confirmacion en prokey" in str(exc_info.value).lower()
 
 
 def test_marcar_liquidada_en_prokey_es_inmutable(db_session: Session):
-    req = create_req_entregada(db_session, estado="liquidada")
+    req = create_req_entregada(db_session, estado="pendiente_prokey")
     jefe = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
     bode = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
 
@@ -1326,7 +1367,7 @@ def test_marcar_liquidada_en_prokey_es_inmutable(db_session: Session):
 
 
 def test_marcar_liquidada_en_prokey_permite_admin_y_jefe_bodega(db_session: Session):
-    req = create_req_entregada(db_session, estado="liquidada")
+    req = create_req_entregada(db_session, estado="pendiente_prokey")
     admin = db_session.query(Usuario).filter(Usuario.username == "admin.1").first()
     bode = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     aprob = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
@@ -1336,7 +1377,7 @@ def test_marcar_liquidada_en_prokey_permite_admin_y_jefe_bodega(db_session: Sess
     db_session.refresh(req)
     assert req.estado == "liquidada_en_prokey"
 
-    req2 = create_req_entregada(db_session, estado="liquidada")
+    req2 = create_req_entregada(db_session, estado="pendiente_prokey")
 
     with pytest.raises(HTTPException) as exc_bode:
         liquidar_en_prokey(req2.id, current_user=bode, db=db_session)
@@ -1348,7 +1389,7 @@ def test_marcar_liquidada_en_prokey_permite_admin_y_jefe_bodega(db_session: Sess
 
 
 def test_detalle_liquidada_en_prokey_incluye_campos(db_session: Session):
-    req = create_req_entregada(db_session, estado="liquidada")
+    req = create_req_entregada(db_session, estado="pendiente_prokey")
     jefe = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
     owner = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
 

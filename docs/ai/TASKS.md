@@ -59,6 +59,12 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-164` | `done` | Ajustar el flujo de bodega para que una entrega marcada como `no_entregada` transicione directo a `estado=no_entregada`, sin habilitar liquidacion, referencia Prokey ni confirmacion en Prokey.
 - `REQ-165` | `done` | Alinear filtros, listados, detalle, timeline, badges y PDF al nuevo estado `no_entregada`, eliminando la semantica de `Prokey pendiente` para este cierre definitivo.
 - `REQ-166` | `done` | Actualizar conteos, homes y metricas que hoy deducen cierre por `delivery_result=no_entregada` para que prioricen `estado=no_entregada`, manteniendo compatibilidad defensiva con historico viejo hasta completar migracion.
+- `REQ-167` | `done` | Marcar `No Aplica Confirmar en Prokey` en liquidaciones donde todo regresa como `no usado` (`qty_used` total = 0), persistiendo el flag, evitando `Confirmar en Prokey` y alineando detalle/PDF/conteos.
+- `EPIC-UI-07` | `todo` | Reemplazar el estado ambiguo `liquidada` por dos estados semanticos puros: `pendiente_prokey` y `finalizada_sin_prokey`, manteniendo `no_entregada` y `liquidada_en_prokey` como cierres finales diferenciados.
+- `REQ-168` | `done` | Actualizar modelo/migraciones SQLite para introducir `pendiente_prokey` y `finalizada_sin_prokey`, migrando historico actual de `liquidada` segun corresponda y dejando compatibilidad transitoria con `prokey_no_aplica`.
+- `REQ-169` | `done` | Ajustar `ejecutar_liquidacion()` y `marcar_liquidada_en_prokey()` para que la liquidacion cierre en `pendiente_prokey` o `finalizada_sin_prokey`, y para que solo `pendiente_prokey` pueda confirmarse en Prokey.
+- `REQ-170` | `done` | Alinear listados, filtros, detalle, badges, tabla de bodega y PDF a los nuevos estados, reforzando labels UI de cierre (`Pendiente Prokey`, `Finalizada sin Prokey`, `Finalizada en Prokey`, `No Entregada - Finalizada`).
+- `REQ-171` | `done` | Actualizar homes, metricas y conteos a la nueva semantica y retirar dependencias funcionales del flag `prokey_no_aplica`, dejandolo solo como puente de migracion si fuera necesario.
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

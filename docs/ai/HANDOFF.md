@@ -222,3 +222,11 @@
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  
 - Para ejecucion, usar solo este bloque activo.
+- Rama activa: `fix/ajustes-varios-2`
+- `REQ-167` completada en esta rama: las requisiciones liquidadas donde todo regresa como `no usado` ahora persisten `prokey_no_aplica=1`. En esos casos ya no se muestra `Confirmar en Prokey`, el detalle/PDF reportan `Prokey: No aplica` y el conteo de pendientes de referencia excluye esos cierres.
+- Se define `EPIC-UI-07` como siguiente correccion semantica mayor del flujo: eliminar la ambigüedad del estado `liquidada` y reemplazarlo por `pendiente_prokey` y `finalizada_sin_prokey`, manteniendo `no_entregada` y `liquidada_en_prokey` como cierres finales diferenciados.
+- Descomposicion prevista:
+  - `REQ-168` completada: el modelo y la migracion SQLite ya introducen `pendiente_prokey` y `finalizada_sin_prokey`. El historico legado en `liquidada` se convierte segun `prokey_no_aplica`, manteniendo compatibilidad transitoria con el flujo actual mientras `REQ-169` reemplaza definitivamente la escritura de `liquidada`.
+  - `REQ-169` completada: la liquidacion ya deja de escribir `liquidada`; ahora cierra en `pendiente_prokey` si hubo uso real y en `finalizada_sin_prokey` si todo regreso como `no usado`. Confirmar/editar referencia Prokey queda limitado al estado `pendiente_prokey`.
+  - `REQ-170` completada: filtros de `Mis Requisiciones`, `Todas las Requisiciones` y `Bodega`, badges, detalle API/modal y PDF ya muestran labels semanticos reforzados (`Pendiente Prokey`, `Finalizada sin Prokey`, `Finalizada en Prokey`, `No Entregada - Finalizada`) y mantienen compatibilidad temporal con `liquidada` solo como alias de backend.
+  - `REQ-171` completada: homes, paneles y conteos operativos ya usan `pendiente_prokey` / `finalizada_sin_prokey` como fuente principal; `prokey_no_aplica` queda solo como puente de compatibilidad para historico legacy aun no normalizado.

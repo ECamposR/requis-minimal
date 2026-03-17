@@ -150,19 +150,19 @@ async def test_flujo_completo_liquidacion_sin_alertas(db_session: Session):
         db_session,
         req,
         {
-            items[0].id: {"returned": "2", "used": "5", "left": "2", "mode": "CONSUMIBLE"},
-            items[1].id: {"returned": "2", "used": "2", "left": "2", "mode": "CONSUMIBLE"},
+            items[0].id: {"returned": "5", "used": "5", "left": "5", "mode": "CONSUMIBLE"},
+            items[1].id: {"returned": "3", "used": "2", "left": "3", "mode": "CONSUMIBLE"},
         },
         "PK-INT-001",
     )
     assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
     assert req.prokey_ref == "PK-INT-001"
 
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
-    assert payload["estado"] == "liquidada"
+    assert payload["estado"] == "pendiente_prokey"
     assert payload["prokey_ref"] == "PK-INT-001"
     total_alerts = sum(len(item.get("liquidation_alerts", [])) for item in payload["items"])
     assert total_alerts == 0
@@ -249,7 +249,7 @@ async def test_flujo_completo_con_faltante(db_session: Session):
     )
     assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "liquidada"
+    assert req.estado == "finalizada_sin_prokey"
 
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
@@ -335,7 +335,7 @@ async def test_liquidar_sin_prokey_ref_guarda_null(db_session: Session):
     )
     assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
     assert req.prokey_ref is None
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
@@ -395,7 +395,7 @@ async def test_liquidada_inmutable(db_session: Session):
     first = await liquidar(
         db_session,
         req,
-        {item.id: {"returned": "2", "used": "2", "left": "2"}},
+        {item.id: {"returned": "2", "used": "2", "left": "4"}},
         "PK-INT-007",
     )
     assert first.status_code == 303
@@ -410,7 +410,7 @@ async def test_liquidada_inmutable(db_session: Session):
     )
     assert second.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
     assert req.prokey_ref == original_ref
 
 
@@ -423,21 +423,21 @@ async def test_timeline_incluye_liquidacion(db_session: Session):
     await liquidar(
         db_session,
         req,
-        {item.id: {"returned": "1", "used": "2", "left": "1"}},
+        {item.id: {"returned": "1", "used": "2", "left": "2"}},
         "PK-INT-008",
     )
 
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
     eventos = payload.get("timeline", [])
-    evento_liq = [e for e in eventos if "liquidada" in (e.get("evento") or "").lower()]
+    evento_liq = [e for e in eventos if (e.get("evento") or "") in {"Pendiente Prokey", "Finalizada sin Prokey", "Liquidación registrada"}]
     assert evento_liq
     assert any((e.get("actor") or "") == "Bodega Uno" for e in evento_liq)
 
 
 def test_get_liquidar_redirige_si_ya_liquidada(db_session: Session):
     req = build_req(db_session, [("Item A", 1)])
-    req.estado = "liquidada"
+    req.estado = "pendiente_prokey"
     req.prokey_ref = "PK-INT-009"
     req.liquidated_at = datetime.now()
     db_session.commit()

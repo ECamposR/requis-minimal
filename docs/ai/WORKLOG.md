@@ -4191,3 +4191,52 @@
   - `python -m compileall static`
 - Resultado:
   - `Resultado entrega` vuelve a leerse con claridad dentro de la tarjeta `Estado liquidacion`.
+- Objetivo: ejecutar `REQ-167` para que las liquidaciones sin uso real (`qty_used` total = 0) no sigan apareciendo como pendientes de Prokey.
+- Tareas: `REQ-167`
+- Resultado:
+  - Se agrego el flag persistido `prokey_no_aplica` a `requisiciones` con migracion SQLite y normalizacion historica para liquidaciones ya guardadas sin uso real.
+  - `ejecutar_liquidacion()` ahora calcula el total usado y marca `No Aplica Confirmar en Prokey` cuando todo vuelve como `no usado`, ignorando cualquier referencia Prokey en ese caso.
+  - Se bloqueo `marcar_liquidada_en_prokey()` para requisiciones con `prokey_no_aplica`, y `/bodega` ya muestra `No Aplica Confirmar en Prokey` en lugar de `Confirmar en Prokey`.
+  - El detalle API/PDF y los conteos de `Pendientes de Referencia Prokey` quedaron alineados al nuevo flag.
+  - Se agregaron pruebas focales para el caso todo-no-usado y para la tabla de bodega.
+- Objetivo: formalizar el siguiente frente semantico sobre estados finales para eliminar la ambigüedad actual de `liquidada`.
+- Tareas: `EPIC-UI-07`, `REQ-168`, `REQ-169`, `REQ-170`, `REQ-171`
+- Resultado:
+  - Se definio la migracion conceptual para reemplazar `liquidada` por dos estados no ambiguos: `pendiente_prokey` y `finalizada_sin_prokey`.
+  - Se acordo mantener `no_entregada` y `liquidada_en_prokey` como cierres finales diferenciados.
+  - Se establecio que la palabra `Finalizada` se reforzara solo a nivel de UI y labels visibles, no como requisito de nombre tecnico en backend.
+  - El frente queda preparado para implementarse por etapas sin seguir acumulando excepciones sobre `liquidada`.
+
+- Objetivo: ejecutar `REQ-168` para introducir los nuevos estados semanticos en modelo/migraciones antes de tocar el flujo de liquidacion.
+- Tareas: `REQ-168`
+- Resultado:
+  - `Requisicion.estado` ya admite `pendiente_prokey` y `finalizada_sin_prokey` sin retirar todavia `liquidada`, para mantener compatibilidad transitoria hasta `REQ-169`.
+  - La migracion SQLite ya reconstruye el `CHECK` con los nuevos estados y corrige el orden de columnas al copiar `prokey_no_aplica`.
+  - Se agrega conversion historica: `liquidada + prokey_no_aplica=1 -> finalizada_sin_prokey`, y `liquidada + prokey_no_aplica=0 -> pendiente_prokey`.
+  - Las consultas base y validaciones globales aceptan ya los nuevos estados para que no queden invisibles tras migrar datos.
+  - Se agrego una prueba de migracion real sobre un esquema legacy para blindar la conversion de historico.
+
+- Objetivo: ejecutar `REQ-169` para que el flujo ya escriba los nuevos estados y deje de generar nuevas requisiciones en `liquidada`.
+- Tareas: `REQ-169`
+- Resultado:
+  - `ejecutar_liquidacion()` ahora escribe `pendiente_prokey` si hubo uso real y `finalizada_sin_prokey` si todo regreso como `no usado`.
+  - `marcar_liquidada_en_prokey()` solo acepta `pendiente_prokey` como estado previo valido.
+  - La edicion manual de referencia Prokey y el flag `prokey_pending` ya dependen de `pendiente_prokey`, no de `liquidada`.
+  - Se ajustaron pruebas unitarias y de integracion para reflejar los nuevos estados de salida del flujo.
+
+- Objetivo: ejecutar `REQ-170` para alinear filtros, listados, detalle, badges y PDF con los nuevos estados semanticos visibles.
+- Tareas: `REQ-170`
+- Resultado:
+  - Los filtros visibles de `Mis Requisiciones`, `Todas las Requisiciones` y `Bodega` ya exponen `Pendiente Prokey`, `Finalizada sin Prokey` y `Finalizada en Prokey`.
+  - Los badges UI y la tabla de `Bodega` dejaron de mostrar `Liquidada` como estado visible principal; `liquidada` queda solo como alias legacy de compatibilidad.
+  - El detalle API/modal ya muestra `Pendiente Prokey` o `Finalizada sin Prokey` en timeline, y trata `finalizada_sin_prokey` como `Prokey: No aplica`.
+  - El PDF ya usa labels semanticos reforzados para estado y timeline de liquidacion.
+  - Se actualizaron pruebas focales de detalle y de integracion para reflejar la nueva semantica visible.
+
+- Objetivo: ejecutar `REQ-171` para alinear homes, metricas y conteos con los nuevos estados y reducir el peso funcional de `prokey_no_aplica`.
+- Tareas: `REQ-171`
+- Resultado:
+  - Los homes ahora cuentan `pendiente_prokey` y `finalizada_sin_prokey` como fuentes primarias de estados intermedios/finales, con helpers de compatibilidad solo para historico legacy que siga en `liquidada`.
+  - Los cards operativos de `bodega`, `admin` y `logistica` ya muestran `Finalizadas sin Prokey` y `Finalizadas en Prokey`, y el conteo `Pendientes de Referencia Prokey` deja de depender del flag.
+  - Los paneles de estado y cierres del home ya usan los nuevos estados semanticos en lugar de inferir desde `prokey_no_aplica`.
+  - `puede_editar_prokey_ref()` y `prokey_pending` quedan gobernados por `estado == pendiente_prokey`; el flag solo queda como respaldo de compatibilidad para registros legacy.

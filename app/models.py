@@ -76,6 +76,7 @@ class Requisicion(Base):
         nullable=True,
     )
     prokey_ref: Mapped[str | None] = mapped_column(String, nullable=True)
+    prokey_no_aplica: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
     prokey_ref_actualizada_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
     prokey_ref_actualizada_por: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     liquidation_comment: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -141,7 +142,7 @@ class Requisicion(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "estado in ('pendiente', 'aprobada', 'preparado', 'rechazada', 'entregada', 'no_entregada', 'liquidada', 'liquidada_en_prokey')",
+            "estado in ('pendiente', 'aprobada', 'preparado', 'rechazada', 'entregada', 'no_entregada', 'liquidada', 'pendiente_prokey', 'finalizada_sin_prokey', 'liquidada_en_prokey')",
             name="ck_requisiciones_estado",
         ),
     )

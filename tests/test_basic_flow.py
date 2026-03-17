@@ -223,8 +223,8 @@ def test_home_bodega_muestra_cards_operativas_compactas(client: TestClient):
     html = response.text
     assert "Pendientes de Procesar" in html
     assert "Pendientes de Liquidar" in html
-    assert "Liquidadas" in html
-    assert "Liquidadas en Prokey" in html
+    assert "Finalizadas sin Prokey" in html
+    assert "Finalizadas en Prokey" in html
     assert "Preparadas" not in html
     assert "No Entregadas" not in html
     assert "home-kpi-grid--single-row" in html
@@ -307,7 +307,7 @@ def test_home_bodega_muestra_panel_estado_operativo(client: TestClient, db_sessi
     assert "Resume el estado actual de las requisiciones gestionadas por bodega." in html
     assert "Pendientes de Procesar" in html
     assert "Pendientes de Liquidar" in html
-    assert "Liquidadas en Prokey" in html
+    assert "Finalizadas en Prokey" in html
     assert "No Entregadas" in html
 
 
@@ -1535,7 +1535,7 @@ def test_home_jefe_bodega_muestra_links_de_aprobar_y_bodega(client: TestClient):
     assert 'Pendientes de Procesar' in html
     assert 'Pendientes de Liquidar' in html
     assert 'Liquidadas' not in html
-    assert 'Liquidadas en Prokey' in html
+    assert 'Finalizadas en Prokey' in html
     assert '/aprobar' in html
     assert '/bodega' in html
     assert '/bodega?vista=historial' in html
@@ -2808,7 +2808,8 @@ def test_bodega_puede_filtrar_historial_por_etapa_no_entregada(client: TestClien
     assert "REQ-BOD-HET-1" in html
     assert "REQ-BOD-HET-2" not in html
     assert "No entregadas" in html
-    assert 'option value="liquidada"' not in html
+    assert 'option value="pendiente_prokey"' not in html
+    assert 'option value="finalizada_sin_prokey"' in html
 
 
 def test_bodega_trata_liquidada_como_pendiente_hasta_prokey(client: TestClient, db_session: Session):
@@ -2842,6 +2843,36 @@ def test_bodega_trata_liquidada_como_pendiente_hasta_prokey(client: TestClient, 
     response_historial = client.get("/bodega?vista=historial")
     assert response_historial.status_code == 200
     assert "REQ-BOD-LIQ-1" not in response_historial.text
+
+
+def test_bodega_no_muestra_confirmar_en_prokey_si_no_aplica(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req_liquidada = Requisicion(
+        folio="REQ-BOD-LIQ-NA-1",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada",
+        justificacion="Todo regreso sin uso",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        liquidated_by=bodega.id,
+        liquidated_at=datetime.now(),
+        prokey_no_aplica=True,
+    )
+    db_session.add(req_liquidada)
+    db_session.commit()
+
+    login(client, "jefe.bodega", "pass123")
+
+    response = client.get("/bodega?vista=pendientes")
+    assert response.status_code == 200
+    assert "REQ-BOD-LIQ-NA-1" in response.text
+    assert "No Aplica Confirmar en Prokey" in response.text
 
 
 def test_bodega_expone_departamento_y_fechas_en_filtros(client: TestClient):

@@ -50,7 +50,7 @@
                 {{ req.rechazador.nombre }}
             {% elif req.estado == 'entregada' and req.entregador %}
                 {{ req.entregador.nombre }}
-            {% elif req.estado == 'liquidada' and req.liquidator %}
+            {% elif req.estado in ['liquidada', 'pendiente_prokey', 'finalizada_sin_prokey'] and req.liquidator %}
                 {{ req.liquidator.nombre }}
             {% elif req.estado == 'liquidada_en_prokey' and req.prokey_liquidator %}
                 {{ req.prokey_liquidator.nombre }}

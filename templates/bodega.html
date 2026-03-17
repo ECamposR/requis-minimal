@@ -12,13 +12,14 @@
     <select name="etapa" data-autosubmit-select class="bodega-filter-control bodega-filter-stage">
         <option value="todos" {% if filtro_etapa == 'todos' %}selected{% endif %}>Todas las etapas visibles</option>
         {% if filtro_vista == 'historial' %}
-        <option value="liquidada_en_prokey" {% if filtro_etapa == 'liquidada_en_prokey' %}selected{% endif %}>Liquidadas en Prokey</option>
+        <option value="liquidada_en_prokey" {% if filtro_etapa == 'liquidada_en_prokey' %}selected{% endif %}>Finalizadas en Prokey</option>
+        <option value="finalizada_sin_prokey" {% if filtro_etapa == 'finalizada_sin_prokey' %}selected{% endif %}>Finalizadas sin Prokey</option>
         <option value="no_entregada" {% if filtro_etapa == 'no_entregada' %}selected{% endif %}>No entregadas</option>
         {% else %}
         <option value="aprobada" {% if filtro_etapa == 'aprobada' %}selected{% endif %}>Aprobadas</option>
         <option value="preparado" {% if filtro_etapa == 'preparado' %}selected{% endif %}>Preparadas</option>
         <option value="entregada" {% if filtro_etapa == 'entregada' %}selected{% endif %}>Entregadas pendientes de liquidar</option>
-        <option value="liquidada" {% if filtro_etapa == 'liquidada' %}selected{% endif %}>Liquidadas pendientes de Prokey</option>
+        <option value="pendiente_prokey" {% if filtro_etapa in ['pendiente_prokey', 'liquidada'] %}selected{% endif %}>Pendientes de Prokey</option>
         {% endif %}
     </select>
     <select name="departamento" data-autosubmit-select class="bodega-filter-control bodega-filter-department">
@@ -89,8 +90,10 @@
             <a href="/bodega/{{ req.id }}/gestionar" role="button" class="secondary">Entregar</a>
             {% elif req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
             <a href="/liquidar/{{ req.id }}" role="button" class="secondary">Liquidar</a>
-            {% elif req.estado == 'liquidada' %}
-                {% if current_user.rol in ['jefe_bodega', 'admin'] %}
+            {% elif req.estado in ['liquidada', 'pendiente_prokey'] %}
+                {% if req.prokey_no_aplica %}
+                <span class="muted">No Aplica Confirmar en Prokey</span>
+                {% elif current_user.rol in ['jefe_bodega', 'admin'] %}
                 <form method="POST" action="/requisiciones/{{ req.id }}/liquidar-prokey" style="display:inline">
                     <button
                         type="submit"
@@ -101,7 +104,7 @@
                     </button>
                 </form>
                 {% else %}
-                {{ ui.status_badge('liquidada') }}
+                {{ ui.status_badge('pendiente_prokey') }}
                 {% endif %}
             {% else %}
             -
@@ -159,8 +162,12 @@
         <td class="table-actions">
             {% if req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
             <a href="/liquidar/{{ req.id }}" role="button" class="secondary">Liquidar</a>
+            {% elif req.estado == 'finalizada_sin_prokey' %}
+            {{ ui.status_badge('finalizada_sin_prokey') }}
             {% elif req.estado == 'liquidada_en_prokey' %}
             {{ ui.status_badge('liquidada_en_prokey') }}
+            {% elif req.estado == 'no_entregada' %}
+            {{ ui.status_badge('no_entregada') }}
             {% else %}
             -
             {% endif %}

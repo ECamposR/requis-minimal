@@ -166,6 +166,8 @@ def _estado_style(estado):
     """(fg, bg, border)"""
     return {
         "liquidada": (C_GREEN,    C_GREEN_BG,  C_GREEN_BD),
+        "pendiente_prokey": (C_PRI, C_PRI_LIGHT, C_PRI_BORDER),
+        "finalizada_sin_prokey": (C_GREEN, C_GREEN_BG, C_GREEN_BD),
         "entregada": (C_PRI,      C_PRI_LIGHT, C_PRI_BORDER),
         "no_entregada": (C_RED,   C_RED_BG,   C_RED_BD),
         "aprobada":  (colors.HexColor("#7c3aed"),
@@ -213,6 +215,26 @@ def _wrap(text, max_ch=55):
             cur = t
     if cur: lines.append(cur)
     return lines
+
+
+def _estado_label(estado: str | None) -> str:
+    estado_norm = str(estado or "").lower()
+    return {
+        "pendiente_prokey": "Pendiente Prokey",
+        "finalizada_sin_prokey": "Finalizada sin Prokey",
+        "liquidada_en_prokey": "Finalizada en Prokey",
+        "no_entregada": "No Entregada - Finalizada",
+        "liquidada": "Pendiente Prokey",
+    }.get(estado_norm, str(estado or ""))
+
+
+def _timeline_liquidation_label(req: dict) -> str:
+    estado_norm = str(req.get("estado") or "").lower()
+    if estado_norm == "pendiente_prokey":
+        return "Pend. Prokey"
+    if estado_norm == "finalizada_sin_prokey":
+        return "Finalizada"
+    return "Liquidación"
 
 
 # ─── Generador principal ─────────────────────────────────────────────────────
@@ -307,7 +329,7 @@ def _header(cv, req, folio, top):
     b_top = top - H / 2 + BH / 2
     _box(cv, bx, b_top, BW, BH, fill=bg, stroke=bd, lw=0.8, r=3)
     _str(cv, bx + BW / 2, b_top - (BH - 7) / 2,
-         estado.upper(), font="Helvetica-Bold",
+         _estado_label(estado).upper(), font="Helvetica-Bold",
          size=7, color=fc, align="center")
 
     return top - H
@@ -728,7 +750,7 @@ def _timeline(cv, req, top):
         ("Prep. bodega",   "preparador_nombre", "prepared_at"),
         ("Entregada",      "jefe_bodega_nombre", "delivered_at"),
         ("Recibido firma", "recibido_por_nombre","recibido_at"),
-        ("Liquidada",      "liquidado_por_nombre","liquidated_at"),
+        (_timeline_liquidation_label(req), "liquidado_por_nombre","liquidated_at"),
     ]:
         ts = (req.get(ts_key)
               or (req.get("delivered_at") if ts_key == "recibido_at" else None))

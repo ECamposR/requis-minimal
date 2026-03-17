@@ -242,3 +242,130 @@ def test_migracion_idempotente(isolated_migration_engine):
     with isolated_migration_engine.connect() as conn:
         req_cols = {row[1] for row in conn.execute(text("PRAGMA table_info(requisiciones)")).fetchall()}
     assert "liquidated_at" in req_cols
+
+
+def test_migracion_convierte_liquidada_a_estados_semanticos(isolated_migration_engine):
+    with isolated_migration_engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE usuarios (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    username VARCHAR(80) NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    nombre VARCHAR(120) NOT NULL,
+                    rol VARCHAR(20) NOT NULL,
+                    departamento VARCHAR(80) NOT NULL,
+                    activo BOOLEAN NOT NULL DEFAULT 1,
+                    pin_hash VARCHAR(255),
+                    puede_iniciar_sesion BOOLEAN NOT NULL DEFAULT 1
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE requisiciones (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    folio VARCHAR(30) NOT NULL UNIQUE,
+                    solicitante_id INTEGER NOT NULL REFERENCES usuarios(id),
+                    departamento VARCHAR(80) NOT NULL,
+                    cliente_codigo VARCHAR(40),
+                    cliente_nombre VARCHAR(160),
+                    cliente_ruta_principal VARCHAR(4),
+                    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+                    motivo_requisicion VARCHAR(80),
+                    justificacion TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    approved_at DATETIME,
+                    approved_by INTEGER REFERENCES usuarios(id),
+                    approval_comment TEXT,
+                    prepared_at DATETIME,
+                    prepared_by INTEGER REFERENCES usuarios(id),
+                    delivered_at DATETIME,
+                    delivered_by INTEGER REFERENCES usuarios(id),
+                    recibido_por_id INTEGER REFERENCES usuarios(id),
+                    delivered_to VARCHAR(120),
+                    recibido_at TEXT,
+                    delivery_result VARCHAR(20),
+                    delivery_comment TEXT,
+                    receptor_designado_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+                    prokey_ref TEXT,
+                    prokey_ref_actualizada_at TIMESTAMP,
+                    prokey_ref_actualizada_por INTEGER REFERENCES usuarios(id),
+                    liquidation_comment TEXT,
+                    liquidated_by INTEGER REFERENCES usuarios(id),
+                    liquidated_at TIMESTAMP,
+                    prokey_liquidada_at TIMESTAMP,
+                    prokey_liquidada_por INTEGER REFERENCES usuarios(id),
+                    rejected_at DATETIME,
+                    rejected_by INTEGER,
+                    rejection_reason TEXT,
+                    rejection_comment TEXT,
+                    CONSTRAINT ck_requisiciones_estado CHECK (
+                        estado in ('pendiente', 'aprobada', 'preparado', 'rechazada', 'entregada', 'no_entregada', 'liquidada', 'liquidada_en_prokey')
+                    )
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE items (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    requisicion_id INTEGER NOT NULL REFERENCES requisiciones(id) ON DELETE CASCADE,
+                    descripcion TEXT NOT NULL,
+                    cantidad FLOAT NOT NULL,
+                    cantidad_entregada FLOAT,
+                    qty_returned_to_warehouse FLOAT,
+                    qty_used FLOAT,
+                    qty_left_at_client FLOAT,
+                    liquidation_mode VARCHAR(20),
+                    contexto_operacion VARCHAR(30),
+                    es_demo BOOLEAN NOT NULL DEFAULT 0,
+                    item_liquidation_note VARCHAR,
+                    liquidation_alerts VARCHAR,
+                    unidad VARCHAR(40) NOT NULL,
+                    CONSTRAINT ck_items_cantidad_positive CHECK (cantidad > 0)
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                "INSERT INTO usuarios (id, username, password, nombre, rol, departamento, activo, puede_iniciar_sesion) "
+                "VALUES (1, 'user.ops', 'hash', 'Usuario Ops', 'user', 'Operaciones', 1, 1)"
+            )
+        )
+        conn.execute(
+            text(
+                """
+                INSERT INTO requisiciones (id, folio, solicitante_id, departamento, estado, justificacion)
+                VALUES
+                    (1, 'REQ-MIG-001', 1, 'Operaciones', 'liquidada', 'Debe pasar a pendiente_prokey'),
+                    (2, 'REQ-MIG-002', 1, 'Operaciones', 'liquidada', 'Debe pasar a finalizada_sin_prokey')
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                INSERT INTO items (requisicion_id, descripcion, cantidad, cantidad_entregada, qty_used, qty_left_at_client, qty_returned_to_warehouse, unidad)
+                VALUES
+                    (1, 'Item 1', 3, 3, 1, 2, 3, 'unidad'),
+                    (2, 'Item 2', 4, 4, 0, 4, 4, 'unidad')
+                """
+            )
+        )
+
+    run_migrations()
+
+    with isolated_migration_engine.connect() as conn:
+        rows = conn.execute(
+            text("SELECT folio, estado, prokey_no_aplica FROM requisiciones ORDER BY id")
+        ).fetchall()
+
+    assert rows[0] == ("REQ-MIG-001", "pendiente_prokey", 0)
+    assert rows[1] == ("REQ-MIG-002", "finalizada_sin_prokey", 1)
