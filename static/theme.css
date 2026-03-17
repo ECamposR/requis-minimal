@@ -172,19 +172,19 @@ body {
 }
 
 .bodega-filters .bodega-filter-view {
-    width: 8.2rem;
+    width: 12.6rem;
 }
 
 .bodega-filters .bodega-filter-stage {
-    width: 10.4rem;
+    width: 12.6rem;
 }
 
 .bodega-filters .bodega-filter-department {
-    width: 8.9rem;
+    width: 12.6rem;
 }
 
 .bodega-filters .bodega-filter-result {
-    width: 8.5rem;
+    width: 10.2rem;
 }
 
 .bodega-filters .bodega-filter-date {
@@ -546,6 +546,50 @@ table tbody tr:hover td {
     flex-wrap: wrap;
     align-items: center;
     gap: 0.35rem;
+}
+
+.bodega-requests-table .table-actions,
+.bodega-history-table .table-actions {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.bodega-requests-table thead th,
+.bodega-history-table thead th {
+    text-align: center;
+}
+
+.bodega-requests-table .table-actions > *,
+.bodega-history-table .table-actions > * {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    width: 100%;
+}
+
+.bodega-requests-table .table-actions form,
+.bodega-history-table .table-actions form {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.bodega-prokey-confirm-btn {
+    border-radius: 10px !important;
+}
+
+.bodega-status-cell {
+    vertical-align: middle !important;
+    text-align: center;
+}
+
+.bodega-requests-table td:not(.bodega-status-cell):not(.table-actions),
+.bodega-history-table td:not(.table-actions) {
+    vertical-align: middle !important;
+    text-align: center;
 }
 
 .table-actions form {
@@ -1698,6 +1742,32 @@ table tbody tr:hover td,
 .detalle-items-table tbody tr:hover td,
 .liquidacion-paper-table tbody tr:hover td {
     background: rgba(183, 212, 249, 0.32) !important;
+}
+
+.all-requests-table th.col-estado,
+.all-requests-table td.col-estado {
+    min-width: 12.6rem;
+    width: 12.6rem;
+}
+
+.all-requests-table th.col-departamento,
+.all-requests-table td.col-departamento {
+    min-width: 11.6rem;
+    width: 11.6rem;
+}
+
+.all-requests-table thead th,
+.all-requests-table td {
+    text-align: center;
+    vertical-align: middle !important;
+}
+
+.all-requests-table td.col-estado {
+    vertical-align: middle !important;
+}
+
+.all-requests-table .badge-no-entregada-finalizada {
+    white-space: nowrap;
 }
 
 .badge,

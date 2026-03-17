@@ -22,7 +22,7 @@
 {% elif s in ['finalizada_sin_prokey'] %}
 <span class="badge success">Finalizada sin Prokey</span>
 {% elif s in ['rechazada', 'no entregada', 'no_entregada'] %}
-<span class="badge danger">{{ 'No Entregada - Finalizada' if s in ['no entregada', 'no_entregada'] else 'Rechazada' }}</span>
+<span class="badge danger {% if s in ['no entregada', 'no_entregada'] %}badge-no-entregada-finalizada{% endif %}">{{ 'No Entregada - Finalizada' if s in ['no entregada', 'no_entregada'] else 'Rechazada' }}</span>
 {% elif s in ['parcial'] %}
 <span class="badge warning">Parcial</span>
 {% elif s in ['pendiente', 'pendiente de aprobar'] %}
