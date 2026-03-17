@@ -12,8 +12,9 @@
         <option value="preparado" {% if filtro_estado == 'preparado' %}selected{% endif %}>Preparado</option>
         <option value="rechazada" {% if filtro_estado == 'rechazada' %}selected{% endif %}>Rechazada</option>
         <option value="entregada" {% if filtro_estado == 'entregada' %}selected{% endif %}>Entregada</option>
-        <option value="liquidada" {% if filtro_estado == 'liquidada' %}selected{% endif %}>Liquidada</option>
-        <option value="liquidada_en_prokey" {% if filtro_estado == 'liquidada_en_prokey' %}selected{% endif %}>Liquidada en Prokey</option>
+        <option value="pendiente_prokey" {% if filtro_estado in ['pendiente_prokey', 'liquidada'] %}selected{% endif %}>Pendiente Prokey</option>
+        <option value="finalizada_sin_prokey" {% if filtro_estado == 'finalizada_sin_prokey' %}selected{% endif %}>Finalizada sin Prokey</option>
+        <option value="liquidada_en_prokey" {% if filtro_estado == 'liquidada_en_prokey' %}selected{% endif %}>Finalizada en Prokey</option>
     </select>
     <select name="departamento" data-autosubmit-select>
         <option value="todos" {% if filtro_departamento == 'todos' %}selected{% endif %}>Todos los departamentos</option>
@@ -64,7 +65,7 @@
                 {{ req.rechazador.nombre }}
             {% elif req.estado == 'entregada' and req.entregador %}
                 {{ req.entregador.nombre }}
-            {% elif req.estado == 'liquidada' and req.liquidator %}
+            {% elif req.estado in ['liquidada', 'pendiente_prokey', 'finalizada_sin_prokey'] and req.liquidator %}
                 {{ req.liquidator.nombre }}
             {% elif req.estado == 'liquidada_en_prokey' and req.prokey_liquidator %}
                 {{ req.prokey_liquidator.nombre }}

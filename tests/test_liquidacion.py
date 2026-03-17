@@ -864,7 +864,7 @@ async def test_detalle_liquidada_incluye_campos(db_session: Session):
     assert payload["prokey_ref"] == "PK-DET-01"
     assert payload["liquidated_by_name"] == bodega.nombre
     assert payload["liquidated_at"] is not None
-    assert any(t["evento"] == "Requisicion liquidada" for t in payload["timeline"])
+    assert any(t["evento"] == "Pendiente Prokey" for t in payload["timeline"])
     liq_item = payload["items"][0]
     assert "qty_returned_to_warehouse" in liq_item
     assert "qty_used" in liq_item
@@ -1128,7 +1128,7 @@ async def test_update_prokey_ref_permite_admin(db_session: Session):
     assert response.status_code == 303
     db_session.refresh(req)
     db_session.refresh(item)
-    assert req.estado == "liquidada"
+    assert req.estado == "pendiente_prokey"
     assert req.prokey_ref == "PK-POST-001"
     assert item.qty_used == original_qty_used
     assert item.liquidation_alerts == original_alerts
@@ -1323,7 +1323,7 @@ def test_update_prokey_ref_get_form_permitido(db_session: Session):
 
 
 def test_marcar_liquidada_en_prokey_ok(db_session: Session):
-    req = create_req_entregada(db_session, estado="liquidada")
+    req = create_req_entregada(db_session, estado="pendiente_prokey")
     jefe = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
 
     updated = marcar_liquidada_en_prokey(db_session, req.id, jefe.id)
@@ -1333,7 +1333,7 @@ def test_marcar_liquidada_en_prokey_ok(db_session: Session):
     assert updated.prokey_liquidada_at is not None
 
 
-def test_marcar_liquidada_en_prokey_requiere_estado_liquidada(db_session: Session):
+def test_marcar_liquidada_en_prokey_requiere_estado_pendiente_prokey(db_session: Session):
     req = create_req_entregada(db_session, estado="entregada")
     jefe = db_session.query(Usuario).filter(Usuario.username == "jefe.bodega").first()
 

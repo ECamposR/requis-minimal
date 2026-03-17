@@ -419,7 +419,7 @@ function verDetalle(id) {
             }
 
             const items = Array.isArray(data.items) ? data.items : [];
-            const isLiquidada = data.estado === "liquidada" || data.estado === "liquidada_en_prokey";
+            const isLiquidada = ["liquidada", "pendiente_prokey", "finalizada_sin_prokey", "liquidada_en_prokey"].includes(data.estado);
             const showDelivered = items.some(
                 (i) => i.cantidad_entregada !== null && i.cantidad_entregada !== undefined
             );
@@ -591,7 +591,7 @@ function verDetalle(id) {
                         </table>
                     </div>
                 </section>`;
-            const isPdfEnabled = ["aprobada", "preparado", "entregada", "no_entregada", "liquidada", "liquidada_en_prokey"].includes(data.estado) && !!data.pdf_url;
+            const isPdfEnabled = ["aprobada", "preparado", "entregada", "no_entregada", "liquidada", "pendiente_prokey", "finalizada_sin_prokey", "liquidada_en_prokey"].includes(data.estado) && !!data.pdf_url;
             const pdfAction = isPdfEnabled
                 ? `<a class="secondary" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer">Ver PDF</a>`
                 : `<button type="button" class="secondary btn-disabled" disabled title="${data.estado === "pendiente" ? "Disponible al aprobar" : "No disponible para este estado"}">Ver PDF</button>`;

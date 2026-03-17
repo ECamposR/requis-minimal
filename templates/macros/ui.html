@@ -16,11 +16,13 @@
 {% elif s in ['aprobada'] %}
 <span class="badge info">Aprobada</span>
 {% elif s in ['liquidada_en_prokey'] %}
-<span class="badge success badge-prokey-final">✔✔ Liquidada en Prokey</span>
-{% elif s in ['liquidada'] %}
-<span class="badge info">Liquidada</span>
+<span class="badge success badge-prokey-final">✔✔ Finalizada en Prokey</span>
+{% elif s in ['pendiente_prokey', 'liquidada'] %}
+<span class="badge info">Pendiente Prokey</span>
+{% elif s in ['finalizada_sin_prokey'] %}
+<span class="badge success">Finalizada sin Prokey</span>
 {% elif s in ['rechazada', 'no entregada', 'no_entregada'] %}
-<span class="badge danger">{{ 'No entregada' if s in ['no entregada', 'no_entregada'] else 'Rechazada' }}</span>
+<span class="badge danger">{{ 'No Entregada - Finalizada' if s in ['no entregada', 'no_entregada'] else 'Rechazada' }}</span>
 {% elif s in ['parcial'] %}
 <span class="badge warning">Parcial</span>
 {% elif s in ['pendiente', 'pendiente de aprobar'] %}

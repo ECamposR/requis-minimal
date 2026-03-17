@@ -4223,3 +4223,12 @@
   - `marcar_liquidada_en_prokey()` solo acepta `pendiente_prokey` como estado previo valido.
   - La edicion manual de referencia Prokey y el flag `prokey_pending` ya dependen de `pendiente_prokey`, no de `liquidada`.
   - Se ajustaron pruebas unitarias y de integracion para reflejar los nuevos estados de salida del flujo.
+
+- Objetivo: ejecutar `REQ-170` para alinear filtros, listados, detalle, badges y PDF con los nuevos estados semanticos visibles.
+- Tareas: `REQ-170`
+- Resultado:
+  - Los filtros visibles de `Mis Requisiciones`, `Todas las Requisiciones` y `Bodega` ya exponen `Pendiente Prokey`, `Finalizada sin Prokey` y `Finalizada en Prokey`.
+  - Los badges UI y la tabla de `Bodega` dejaron de mostrar `Liquidada` como estado visible principal; `liquidada` queda solo como alias legacy de compatibilidad.
+  - El detalle API/modal ya muestra `Pendiente Prokey` o `Finalizada sin Prokey` en timeline, y trata `finalizada_sin_prokey` como `Prokey: No aplica`.
+  - El PDF ya usa labels semanticos reforzados para estado y timeline de liquidacion.
+  - Se actualizaron pruebas focales de detalle y de integracion para reflejar la nueva semantica visible.

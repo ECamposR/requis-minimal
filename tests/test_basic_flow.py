@@ -224,7 +224,7 @@ def test_home_bodega_muestra_cards_operativas_compactas(client: TestClient):
     assert "Pendientes de Procesar" in html
     assert "Pendientes de Liquidar" in html
     assert "Liquidadas" in html
-    assert "Liquidadas en Prokey" in html
+    assert "Finalizada en Prokey" in html
     assert "Preparadas" not in html
     assert "No Entregadas" not in html
     assert "home-kpi-grid--single-row" in html
@@ -2808,7 +2808,8 @@ def test_bodega_puede_filtrar_historial_por_etapa_no_entregada(client: TestClien
     assert "REQ-BOD-HET-1" in html
     assert "REQ-BOD-HET-2" not in html
     assert "No entregadas" in html
-    assert 'option value="liquidada"' not in html
+    assert 'option value="pendiente_prokey"' not in html
+    assert 'option value="finalizada_sin_prokey"' in html
 
 
 def test_bodega_trata_liquidada_como_pendiente_hasta_prokey(client: TestClient, db_session: Session):

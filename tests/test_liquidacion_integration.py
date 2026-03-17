@@ -423,14 +423,14 @@ async def test_timeline_incluye_liquidacion(db_session: Session):
     await liquidar(
         db_session,
         req,
-        {item.id: {"returned": "1", "used": "2", "left": "1"}},
+        {item.id: {"returned": "1", "used": "2", "left": "2"}},
         "PK-INT-008",
     )
 
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
     payload = detalle_requisicion(req.id, current_user=bodega, db=db_session)
     eventos = payload.get("timeline", [])
-    evento_liq = [e for e in eventos if "liquidada" in (e.get("evento") or "").lower()]
+    evento_liq = [e for e in eventos if (e.get("evento") or "") in {"Pendiente Prokey", "Finalizada sin Prokey", "Liquidación registrada"}]
     assert evento_liq
     assert any((e.get("actor") or "") == "Bodega Uno" for e in evento_liq)
 

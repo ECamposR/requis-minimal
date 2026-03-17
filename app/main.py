@@ -2038,6 +2038,8 @@ def mis_requisiciones(
     vista_param = request.query_params.get("vista", "mias").strip().lower()
     estado = request.query_params.get("estado", "todas").strip().lower()
     vista_global = puede_ver_todas_las_requisiciones(current_user) and vista_param == "todas"
+    if estado == "liquidada":
+        estado = "pendiente_prokey"
     query = db.query(Requisicion).options(joinedload(Requisicion.solicitante))
     if not vista_global:
         query = query.filter(Requisicion.solicitante_id == current_user.id)
@@ -2330,6 +2332,7 @@ def todas_requisiciones_view(
     alias_estado = {
         "pendiente_aprobar": "pendiente",
         "pendiente_entregar": "aprobada",
+        "liquidada": "pendiente_prokey",
     }
     estado_real = alias_estado.get(estado, estado)
     estados_validos = {"pendiente", "aprobada", "preparado", "rechazada", "entregada", "no_entregada", "liquidada", "pendiente_prokey", "finalizada_sin_prokey", "liquidada_en_prokey"}
@@ -2556,7 +2559,9 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         except ValueError as exc:
             raise HTTPException(status_code=400, detail="Fecha hasta invalida") from exc
         pendientes_query = pendientes_query.filter(Requisicion.created_at < fecha_hasta)
-    if etapa in {"aprobada", "preparado", "entregada", "liquidada", "pendiente_prokey"}:
+    if etapa == "liquidada":
+        etapa = "pendiente_prokey"
+    if etapa in {"aprobada", "preparado", "entregada", "pendiente_prokey"}:
         pendientes_query = pendientes_query.filter(Requisicion.estado == etapa)
     if q:
         patron = f"%{q}%"
@@ -4044,9 +4049,14 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
                 }
             )
     if req.liquidated_at:
+        liquidacion_evento = "Liquidación registrada"
+        if req.estado == "pendiente_prokey":
+            liquidacion_evento = "Pendiente Prokey"
+        elif req.estado == "finalizada_sin_prokey":
+            liquidacion_evento = "Finalizada sin Prokey"
         timeline.append(
             {
-                "evento": "Requisicion liquidada",
+                "evento": liquidacion_evento,
                 "actor": req.liquidator.nombre if req.liquidator else None,
                 "fecha_hora": req.liquidated_at,
             }
@@ -4181,7 +4191,7 @@ def detalle_requisicion(req_id: int, current_user: Usuario = Depends(get_current
         "rejected_at": req.rejected_at,
         "delivered_at": req.delivered_at,
         "prokey_ref": req.prokey_ref,
-        "prokey_not_applicable": req.estado == "no_entregada" or bool(getattr(req, "prokey_no_aplica", False)),
+        "prokey_not_applicable": req.estado in ("no_entregada", "finalizada_sin_prokey") or bool(getattr(req, "prokey_no_aplica", False)),
         "prokey_pending": (
             req.estado == "pendiente_prokey"
             and not bool(req.prokey_ref)

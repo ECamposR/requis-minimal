@@ -18,8 +18,9 @@
         <option value="aprobada" {% if filtro_estado == 'aprobada' %}selected{% endif %}>Aprobada</option>
         <option value="preparado" {% if filtro_estado == 'preparado' %}selected{% endif %}>Preparado</option>
         <option value="entregada" {% if filtro_estado == 'entregada' %}selected{% endif %}>Entregada</option>
-        <option value="liquidada" {% if filtro_estado == 'liquidada' %}selected{% endif %}>Liquidada</option>
-        <option value="liquidada_en_prokey" {% if filtro_estado == 'liquidada_en_prokey' %}selected{% endif %}>Liquidada en Prokey</option>
+        <option value="pendiente_prokey" {% if filtro_estado in ['pendiente_prokey', 'liquidada'] %}selected{% endif %}>Pendiente Prokey</option>
+        <option value="finalizada_sin_prokey" {% if filtro_estado == 'finalizada_sin_prokey' %}selected{% endif %}>Finalizada sin Prokey</option>
+        <option value="liquidada_en_prokey" {% if filtro_estado == 'liquidada_en_prokey' %}selected{% endif %}>Finalizada en Prokey</option>
     </select>
     <a href="{{ '/mis-requisiciones?vista=todas' if vista_global else '/mis-requisiciones' }}" role="button" class="secondary">Limpiar</a>
 </form>

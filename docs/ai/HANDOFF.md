@@ -228,5 +228,5 @@
 - Descomposicion prevista:
   - `REQ-168` completada: el modelo y la migracion SQLite ya introducen `pendiente_prokey` y `finalizada_sin_prokey`. El historico legado en `liquidada` se convierte segun `prokey_no_aplica`, manteniendo compatibilidad transitoria con el flujo actual mientras `REQ-169` reemplaza definitivamente la escritura de `liquidada`.
   - `REQ-169` completada: la liquidacion ya deja de escribir `liquidada`; ahora cierra en `pendiente_prokey` si hubo uso real y en `finalizada_sin_prokey` si todo regreso como `no usado`. Confirmar/editar referencia Prokey queda limitado al estado `pendiente_prokey`.
-  - `REQ-170`: filtros/listados/detalle/badges/PDF con labels UI reforzados
+  - `REQ-170` completada: filtros de `Mis Requisiciones`, `Todas las Requisiciones` y `Bodega`, badges, detalle API/modal y PDF ya muestran labels semanticos reforzados (`Pendiente Prokey`, `Finalizada sin Prokey`, `Finalizada en Prokey`, `No Entregada - Finalizada`) y mantienen compatibilidad temporal con `liquidada` solo como alias de backend.
   - `REQ-171`: homes, metricas y retiro funcional de `prokey_no_aplica`
