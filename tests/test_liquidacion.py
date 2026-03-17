@@ -16,6 +16,7 @@ from app.crud import (
     transicionar_requisicion,
 )
 from app.main import (
+    build_home_cards,
     detalle_requisicion,
     editar_prokey_ref_form,
     editar_prokey_ref_guardar,
@@ -1371,3 +1372,31 @@ def test_detalle_no_entregada_no_marca_prokey_pendiente(db_session: Session):
     assert payload["prokey_pending"] is False
     assert payload["pdf_url"] == f"/requisiciones/{req.id}/pdf"
     assert any((e.get("evento") or "") == "Cierre no entregada" for e in payload.get("timeline", []))
+
+
+def test_home_cards_trata_no_entregada_como_requisicion_finalizada(db_session: Session):
+    owner = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprob = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bode = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req = Requisicion(
+        folio=f"REQ-NOENT-{datetime.now().timestamp()}",
+        solicitante_id=owner.id,
+        departamento="Operaciones",
+        estado="no_entregada",
+        justificacion="Cierre final sin entrega",
+        approved_by=aprob.id,
+        approved_at=datetime.now(),
+        delivered_by=bode.id,
+        delivered_at=datetime.now(),
+        delivery_result="no_entregada",
+        delivery_comment="Sin stock",
+    )
+    db_session.add(req)
+    db_session.commit()
+
+    cards = {card["label"]: card["value"] for card in build_home_cards(owner, db_session)}
+
+    assert cards["Todas Mis Requisiciones"] == 1
+    assert cards["Requisiciones Pendientes"] == 0
+    assert cards["Requisiciones Finalizadas"] == 1

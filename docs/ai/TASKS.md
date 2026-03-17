@@ -54,11 +54,11 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-159` | `done` | Mejorar el buscador `q` de `/bodega` para cubrir folio, cliente, solicitante, receptor designado y actores operativos clave (`aprobador`, `entregador`, `liquidador`) con placeholder honesto respecto al alcance real.
 - `REQ-160` | `todo` | Pulir la UI de filtros de `/bodega`: autosubmit en selectores, orden claro de controles, boton `Buscar` reservado para texto/fechas y copy contextual que explique cuando un filtro solo afecta historial.
 - `REQ-161` | `done` | Ajustar semantica de `/bodega`: el estado `liquidada` deja de caer en historial y pasa a `pendientes` hasta `Confirmar en Prokey`; historial queda solo para cierres definitivos (`liquidada_en_prokey` / `no_entregada`).
-- `EPIC-UI-06` | `in_progress` | Corregir la semantica de cierre para requisiciones marcadas como `no entregada`: dejar de representarlas como `entregada + delivery_result=no_entregada` y convertirlas en un estado final propio, sin pasos posteriores de liquidacion ni Prokey.
+- `EPIC-UI-06` | `done` | Corregir la semantica de cierre para requisiciones marcadas como `no entregada`: dejar de representarlas como `entregada + delivery_result=no_entregada` y convertirlas en un estado final propio, sin pasos posteriores de liquidacion ni Prokey.
 - `REQ-163` | `done` | Introducir `no_entregada` como estado final real en modelo/migraciones SQLite y convertir registros historicos `entregada + delivery_result=no_entregada` al nuevo estado, manteniendo compatibilidad operativa.
 - `REQ-164` | `done` | Ajustar el flujo de bodega para que una entrega marcada como `no_entregada` transicione directo a `estado=no_entregada`, sin habilitar liquidacion, referencia Prokey ni confirmacion en Prokey.
 - `REQ-165` | `done` | Alinear filtros, listados, detalle, timeline, badges y PDF al nuevo estado `no_entregada`, eliminando la semantica de `Prokey pendiente` para este cierre definitivo.
-- `REQ-166` | `todo` | Actualizar conteos, homes y metricas que hoy deducen cierre por `delivery_result=no_entregada` para que prioricen `estado=no_entregada`, manteniendo compatibilidad defensiva con historico viejo hasta completar migracion.
+- `REQ-166` | `done` | Actualizar conteos, homes y metricas que hoy deducen cierre por `delivery_result=no_entregada` para que prioricen `estado=no_entregada`, manteniendo compatibilidad defensiva con historico viejo hasta completar migracion.
 
 ## Monitor de Actividad
 - `EPIC-BI-01` | `done` | Fase 1: Configuracion del Monitor de Actividad orientado a auditoria gerencial del uso de esta app como sistema de contingencias frente al cierre de Prokey. El objetivo es explicar `por que`, `quien`, `que` y `cuando` ocurren las requisiciones para reducir su necesidad con el tiempo.

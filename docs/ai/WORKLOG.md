@@ -1,5 +1,23 @@
 # Worklog (append-only)
 
+## 2026-03-17 11:37 UTC-6 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-166` para que homes y metricas dejen de depender primariamente de inferencias por `delivery_result=no_entregada`.
+- Tareas: `REQ-166`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega `filtro_cierre_no_entregada()` como helper de compatibilidad semantica: prioriza `estado=no_entregada` y conserva fallback para historico residual `entregada + delivery_result=no_entregada`.
+  - Los conteos del home, los paneles SSR y los filtros cerrados relevantes ya usan esa helper en lugar de consultar `delivery_result` en bruto.
+  - Las metricas de `No Entregada` en los homes de `bodega` y `jefe_bodega` tambien quedan alineadas al nuevo estado final.
+  - Se agrega prueba unitaria para validar que el home del rol `user` cuenta una requisicion `no_entregada` como `Requisiciones Finalizadas`.
+  - Validacion ejecutada: `python -m py_compile app/main.py`, `python -m compileall tests/test_liquidacion.py` y `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k \"no_entregada and (home_cards or detalle_no_entregada_no_marca_prokey_pendiente or transicionar_requisicion_permite_estado_no_entregada)\"` -> `3 passed`.
+- Proximo paso:
+  - Hacer un smoke manual de una requisicion `no_entregada` migrada desde datos legacy para confirmar que detalle, historial y PDF no dejan residuos semanticos de Prokey.
+
 ## 2026-03-17 11:24 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-165` para eliminar los residuos semanticos de Prokey y cierre parcial en el detalle/PDF de requisiciones `no_entregada`.
 - Tareas: `REQ-165`
