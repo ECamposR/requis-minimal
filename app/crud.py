@@ -297,12 +297,6 @@ def validar_liquidacion_item(
             f"Entregado={delivered}, Usado+No usado={coverage_total}"
         )
 
-    if mode == "CONSUMIBLE" and returned != not_used:
-        return (
-            "En consumible, Regresa debe ser igual a No usado. "
-            f"Regresa={returned}, No usado={not_used}"
-        )
-
     return None
 
 

@@ -26,7 +26,7 @@
     <div class="field-help-inline liquidacion-help-inline">
         <button type="button" class="field-help-trigger" aria-label="Ayuda sobre reglas de liquidacion">?</button>
         <div class="field-help-popover" role="note">
-            Para liquidar, <strong>Usado + No usado</strong> debe ser igual a <strong>Entregado</strong>. En items <strong>consumibles</strong>, ademas <strong>Regresa</strong> debe ser igual a <strong>No usado</strong>.
+            Para liquidar, <strong>Usado + No usado</strong> debe ser igual a <strong>Entregado</strong>. <strong>Regresa</strong> puede diferir del valor esperado y, si ocurre, se registrara como diferencia.
         </div>
     </div>
     <article class="liquidacion-inline-error liquidacion-inline-error-client" role="alert" data-client-error hidden>
@@ -157,7 +157,6 @@
         const ocupo = used + notUsed;
         const diferencia = expectedReturn - returned;
         const coverageOk = numbersEqual(ocupo, delivered);
-        const returnOk = mode === "CONSUMIBLE" ? numbersEqual(returned, notUsed) : true;
         const retornoExtraRetornable = mode === "RETORNABLE" && returned > ocupo;
         const integerOk = allowsDecimal
             ? true
@@ -178,7 +177,7 @@
         }
 
         row.classList.toggle("row-incomplete", !coverageOk);
-        row.classList.toggle("row-return-invalid", integerOk && coverageOk && !returnOk);
+        row.classList.toggle("row-return-invalid", false);
         row.classList.toggle("row-decimal-invalid", !integerOk);
         let reason = null;
         if (hint) {
@@ -190,12 +189,6 @@
                 reason = "coverage";
                 hint.textContent = `Falta distribuir entregado: Entregado ${formatNum(delivered)}, Usado+No usado ${formatNum(ocupo)}`;
                 hint.hidden = false;
-            } else if (!returnOk) {
-                reason = "return";
-                hint.textContent = mode === "CONSUMIBLE"
-                    ? `En consumible, Regresa debe ser igual a No usado. Regresa ${formatNum(returned)}, No usado ${formatNum(notUsed)}`
-                    : `En retornable, Regresa no puede superar lo distribuido. Regresa ${formatNum(returned)}, Cobertura ${formatNum(ocupo)}`;
-                hint.hidden = false;
             } else if (retornoExtraRetornable) {
                 hint.textContent = `Advertencia: en retornable, Regresa supera la cobertura. Regresa ${formatNum(returned)}, Cobertura ${formatNum(ocupo)}. Se guardara con alerta.`;
                 hint.hidden = false;
@@ -203,7 +196,7 @@
                 hint.hidden = true;
             }
         }
-        return { isInvalid: !integerOk || !coverageOk || !returnOk, reason };
+        return { isInvalid: !integerOk || !coverageOk, reason };
     }
 
     function bindLiquidacion() {

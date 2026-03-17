@@ -631,7 +631,7 @@ async def test_bloquea_si_no_cubre_entregado_consumible(db_session: Session):
 
 
 @pytest.mark.anyio
-async def test_bloquea_consumible_si_regresa_distinto_de_no_usado(db_session: Session):
+async def test_permite_consumible_con_diferencia_si_cobertura_ok(db_session: Session):
     req = create_req_entregada(db_session, cantidad=10)
     item = get_item(db_session, req)
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
@@ -651,9 +651,35 @@ async def test_bloquea_consumible_si_regresa_distinto_de_no_usado(db_session: Se
         db=db_session,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "entregada"
+    assert req.estado == "pendiente_prokey"
+
+
+@pytest.mark.anyio
+async def test_permite_consumible_faltante_totalmente_no_usado(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=15)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "14",
+                f"qty_used_{item.id}": "0",
+                f"qty_not_used_{item.id}": "15",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "finalizada_sin_prokey"
 
 
 @pytest.mark.anyio
