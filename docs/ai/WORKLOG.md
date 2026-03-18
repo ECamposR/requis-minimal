@@ -1,5 +1,20 @@
 # Worklog (append-only)
 
+## 2026-03-18 10:05 CST-0600 | tool: Codex CLI
+- Objetivo: dividir la futura confirmación SSR de liquidación con diferencias en subtareas implementables sin ambigüedad antes de tocar código.
+- Tareas: `EPIC-UI-10`, `REQ-178`, `REQ-179`, `REQ-180`, `REQ-181`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se documenta una nueva épica para que el backend detecte faltantes/sobrantes en liquidación y exija un segundo submit explícito antes de ejecutar `ejecutar_liquidacion`.
+  - La implementación queda separada entre detección backend, lectura de `confirmar_diferencias`, actualización SSR de `liquidar.html` y cobertura de pruebas.
+  - Se deja explícito que el cálculo usa `float`, por lo que la detección de diferencias no debe usar igualdad exacta; deberá emplear tolerancia numérica (`epsilon`) para evitar falsos positivos por precisión.
+  - También queda fijado como requisito arquitectónico que el formulario preserve íntegramente los valores ya digitados cuando el backend devuelva la vista para confirmar.
+- Próximo paso:
+  - Ejecutar `REQ-178`, preparando la detección backend de diferencias con tolerancia antes de tocar la UI SSR.
+
 ## 2026-03-18 08:20 CST-0600 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-177` para cerrar la cobertura del SLA visual con CSS global y pruebas de modelo/vista.
 - Tareas: `REQ-177`

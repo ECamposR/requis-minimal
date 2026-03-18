@@ -8,6 +8,11 @@
   - `REQ-175` completada: la logica de `sla_reference_at` e `is_delayed_sla` ya vive en `Requisicion` como `@property`, usando los timestamps reales del flujo y devolviendo `False` inmediato para estados terminales.
   - `REQ-176` completada: la alerta SSR ya pinta las filas con `row-alert-bg` cuando `req.is_delayed_sla` es verdadero, y el badge `⚠️ SLA > 48h` aparece en `Fecha clave` en bodega y debajo del estado en `Todas las Requisiciones` sin tocar `Fecha de Creación`.
   - `REQ-177` completada: las clases `.row-alert-bg` y `.badge-danger` ya estan en `static/style.css` y se agregaron pruebas de modelo/vista para estados activos/terminales y la ubicacion del badge en ambas tablas.
+- Se abre `EPIC-UI-10` en esta rama para introducir una confirmación SSR no bloqueante en liquidaciones con diferencias.
+  - `REQ-178` pendiente: detectar diferencias en `liquidar_guardar` antes de `ejecutar_liquidacion`, usando la semántica real de retorno esperado por ítem y comparaciones con tolerancia numérica para evitar falsos positivos por `float`.
+  - `REQ-179` pendiente: si hay diferencias y no llega `confirmar_diferencias`, re-renderizar `liquidar.html` con todos los valores digitados preservados y una bandera SSR de confirmación.
+  - `REQ-180` pendiente: actualizar `liquidar.html` para mostrar alerta `warning`, un hidden input de confirmación y el botón `Confirmar y Liquidar con Diferencias` en el segundo intento.
+  - `REQ-181` pendiente: cubrir casos sin diferencias, con diferencias sin confirmar y con diferencias confirmadas, validando también la tolerancia numérica.
 - `REQ-127` completada en esta rama: `Aprobar` queda como bandeja de pendientes y la consulta global se mueve a `Todas las Requisiciones` (`/todas-requisiciones`) con filtros por estado, departamento y rango de fechas para roles de supervision.
 - `REQ-128` completada en esta rama: los filtros basados en selectores (`estado`/`departamento`) ahora se autoaplican en `Aprobar` y `Todas las Requisiciones`; el boton `Buscar` se conserva para texto libre y fechas.
 - `REQ-129` completada en esta rama: los filtros de fecha en `Todas las Requisiciones` mantienen el `input[type=date]` nativo, pero ahora intentan abrir el calendario con `showPicker()` en navegadores compatibles como mejora progresiva.
