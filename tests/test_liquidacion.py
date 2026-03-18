@@ -17,6 +17,7 @@ from app.crud import (
 )
 from app.main import (
     build_home_cards,
+    calcular_diferencias_liquidacion,
     detalle_requisicion,
     editar_prokey_ref_form,
     editar_prokey_ref_guardar,
@@ -695,6 +696,26 @@ async def test_permite_consumible_con_diferencia_si_cobertura_ok(db_session: Ses
     assert response.status_code == 303
     db_session.refresh(req)
     assert req.estado == "pendiente_prokey"
+
+
+def test_calcular_diferencias_liquidacion_ignora_ruido_float(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=1)
+    item = get_item(db_session, req)
+
+    diferencias = calcular_diferencias_liquidacion(
+        req,
+        {
+            item.id: {
+                "qty_returned_to_warehouse": 0.3,
+                "qty_used": 0.1,
+                "qty_left_at_client": 0.2,
+                "liquidation_mode": "RETORNABLE",
+                "item_liquidation_note": None,
+            }
+        },
+    )
+
+    assert diferencias == []
 
 
 @pytest.mark.anyio
