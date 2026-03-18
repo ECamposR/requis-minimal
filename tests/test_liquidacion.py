@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from fastapi import HTTPException
@@ -419,6 +419,47 @@ def test_salida_sin_soporte(db_session: Session):
     item.liquidation_mode = "CONSUMIBLE"
     alertas = calcular_alertas_item(item)
     assert any(a["type"] == "ALERTA_SALIDA_SIN_SOPORTE" and a["severity"] == "high" for a in alertas)
+
+
+def test_sla_reference_at_usa_fecha_del_estado_activo(db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    ahora = datetime.now()
+    req = Requisicion(
+        folio="REQ-SLA-MODEL-01",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="SLA activo",
+        created_at=ahora - timedelta(hours=60),
+        approved_at=ahora - timedelta(hours=49),
+    )
+
+    assert req.sla_reference_at == req.approved_at
+    assert req.is_delayed_sla is True
+
+
+@pytest.mark.parametrize(
+    "estado, fecha_kwargs",
+    [
+        ("rechazada", {"rejected_at": datetime.now() - timedelta(hours=72)}),
+        ("liquidada_en_prokey", {"prokey_liquidada_at": datetime.now() - timedelta(hours=72)}),
+        ("finalizada_sin_prokey", {"liquidated_at": datetime.now() - timedelta(hours=72)}),
+        ("no_entregada", {"delivered_at": datetime.now() - timedelta(hours=72)}),
+    ],
+)
+def test_is_delayed_sla_devuelve_false_en_estados_terminales(db_session: Session, estado: str, fecha_kwargs: dict[str, datetime]):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    req = Requisicion(
+        folio=f"REQ-SLA-TERM-{estado}",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado=estado,
+        justificacion="SLA terminal",
+        created_at=datetime.now() - timedelta(hours=72),
+        **fecha_kwargs,
+    )
+
+    assert req.is_delayed_sla is False
 
 
 def test_retornable_alerta_retorno_incompleto(db_session: Session):
