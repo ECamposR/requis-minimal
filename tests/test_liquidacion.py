@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from fastapi import HTTPException
@@ -17,6 +17,7 @@ from app.crud import (
 )
 from app.main import (
     build_home_cards,
+    calcular_diferencias_liquidacion,
     detalle_requisicion,
     editar_prokey_ref_form,
     editar_prokey_ref_guardar,
@@ -421,6 +422,47 @@ def test_salida_sin_soporte(db_session: Session):
     assert any(a["type"] == "ALERTA_SALIDA_SIN_SOPORTE" and a["severity"] == "high" for a in alertas)
 
 
+def test_sla_reference_at_usa_fecha_del_estado_activo(db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    ahora = datetime.now()
+    req = Requisicion(
+        folio="REQ-SLA-MODEL-01",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="SLA activo",
+        created_at=ahora - timedelta(hours=60),
+        approved_at=ahora - timedelta(hours=49),
+    )
+
+    assert req.sla_reference_at == req.approved_at
+    assert req.is_delayed_sla is True
+
+
+@pytest.mark.parametrize(
+    "estado, fecha_kwargs",
+    [
+        ("rechazada", {"rejected_at": datetime.now() - timedelta(hours=72)}),
+        ("liquidada_en_prokey", {"prokey_liquidada_at": datetime.now() - timedelta(hours=72)}),
+        ("finalizada_sin_prokey", {"liquidated_at": datetime.now() - timedelta(hours=72)}),
+        ("no_entregada", {"delivered_at": datetime.now() - timedelta(hours=72)}),
+    ],
+)
+def test_is_delayed_sla_devuelve_false_en_estados_terminales(db_session: Session, estado: str, fecha_kwargs: dict[str, datetime]):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    req = Requisicion(
+        folio=f"REQ-SLA-TERM-{estado}",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado=estado,
+        justificacion="SLA terminal",
+        created_at=datetime.now() - timedelta(hours=72),
+        **fecha_kwargs,
+    )
+
+    assert req.is_delayed_sla is False
+
+
 def test_retornable_alerta_retorno_incompleto(db_session: Session):
     req = create_req_entregada(db_session, cantidad=3)
     item = get_item(db_session, req)
@@ -645,6 +687,112 @@ async def test_permite_consumible_con_diferencia_si_cobertura_ok(db_session: Ses
                 f"qty_not_used_{item.id}": "3",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "",
+                "confirmar_diferencias": "1",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "pendiente_prokey"
+
+
+def test_calcular_diferencias_liquidacion_ignora_ruido_float(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=1)
+    item = get_item(db_session, req)
+
+    diferencias = calcular_diferencias_liquidacion(
+        req,
+        {
+            item.id: {
+                "qty_returned_to_warehouse": 0.3,
+                "qty_used": 0.1,
+                "qty_left_at_client": 0.2,
+                "liquidation_mode": "RETORNABLE",
+                "item_liquidation_note": None,
+            }
+        },
+    )
+
+    assert diferencias == []
+
+
+@pytest.mark.anyio
+async def test_liquidar_requiere_confirmacion_cuando_hay_diferencias(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "7",
+                f"qty_used_{item.id}": "8",
+                f"qty_not_used_{item.id}": "2",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+                "liquidation_comment": "Con diferencias",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 200
+    assert response.context["difference_confirmation_required"] is True
+    assert response.context["difference_warning_message"].startswith("La liquidacion presenta")
+    assert response.context["liquidacion_values"][item.id]["qty_returned"] == "7"
+    assert response.context["liquidacion_meta"]["liquidation_comment"] == "Con diferencias"
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+
+
+@pytest.mark.anyio
+async def test_liquidar_sin_diferencias_no_requiere_confirmacion(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "4",
+                f"qty_used_{item.id}": "6",
+                f"qty_not_used_{item.id}": "4",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "pendiente_prokey"
+
+
+@pytest.mark.anyio
+async def test_liquidar_confirma_diferencias_y_procesa_cierre(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "7",
+                f"qty_used_{item.id}": "8",
+                f"qty_not_used_{item.id}": "2",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+                "liquidation_comment": "Con diferencias",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -671,6 +819,7 @@ async def test_permite_consumible_faltante_totalmente_no_usado(db_session: Sessi
                 f"qty_not_used_{item.id}": "15",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,

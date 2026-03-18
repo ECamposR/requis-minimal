@@ -3,7 +3,16 @@
 ## Estado actual
 - La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
-- Rama activa: `fix/ajustes-varios`, destinada a fixes incrementales de semantica y flujo sobre `main`.
+- Rama activa: `chore/ui-fixes-2`, destinada a fixes visuales SSR y ajustes acotados de tablas/vistas sobre `main`.
+- Se abre `EPIC-UI-09` en esta rama para agregar alerta visual de brecha SLA (`>48h` sin cambio de estado) en `Pendientes de Procesar` y `Todas las Requisiciones`, con arquitectura estricta: calculo de fecha solo en backend y encapsulado como `@property` del modelo `Requisicion`.
+  - `REQ-175` completada: la logica de `sla_reference_at` e `is_delayed_sla` ya vive en `Requisicion` como `@property`, usando los timestamps reales del flujo y devolviendo `False` inmediato para estados terminales.
+  - `REQ-176` completada: la alerta SSR ya pinta las filas con `row-alert-bg` cuando `req.is_delayed_sla` es verdadero, y el badge `⚠️ SLA > 48h` aparece en `Fecha clave` en bodega y debajo del estado en `Todas las Requisiciones` sin tocar `Fecha de Creación`.
+  - `REQ-177` completada: las clases `.row-alert-bg` y `.badge-danger` ya estan en `static/style.css` y se agregaron pruebas de modelo/vista para estados activos/terminales y la ubicacion del badge en ambas tablas.
+- Se abre `EPIC-UI-10` en esta rama para introducir una confirmación SSR no bloqueante en liquidaciones con diferencias.
+  - `REQ-178` pendiente: detectar diferencias en `liquidar_guardar` antes de `ejecutar_liquidacion`, usando la semántica real de retorno esperado por ítem y comparaciones con tolerancia numérica para evitar falsos positivos por `float`.
+  - `REQ-179` completada: si hay diferencias y no llega `confirmar_diferencias`, `liquidar_guardar` re-renderiza `liquidar.html` con todos los valores digitados preservados y una bandera SSR de confirmación.
+  - `REQ-180` completada: `liquidar.html` ya muestra alerta `warning`, un hidden input `confirmar_diferencias` y el botón `Confirmar y Liquidar con Diferencias` cuando el backend marca diferencias.
+  - `REQ-181` completada: la feature ya cuenta con pruebas backend/SSR para caso sin diferencias, caso con diferencias sin confirmar, caso con diferencias confirmadas y tolerancia numérica frente a ruido de `float`.
 - `REQ-127` completada en esta rama: `Aprobar` queda como bandeja de pendientes y la consulta global se mueve a `Todas las Requisiciones` (`/todas-requisiciones`) con filtros por estado, departamento y rango de fechas para roles de supervision.
 - `REQ-128` completada en esta rama: los filtros basados en selectores (`estado`/`departamento`) ahora se autoaplican en `Aprobar` y `Todas las Requisiciones`; el boton `Buscar` se conserva para texto libre y fechas.
 - `REQ-129` completada en esta rama: los filtros de fecha en `Todas las Requisiciones` mantienen el `input[type=date]` nativo, pero ahora intentan abrir el calendario con `showPicker()` en navegadores compatibles como mejora progresiva.

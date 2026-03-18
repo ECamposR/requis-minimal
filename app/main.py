@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import math
 import secrets
 import unicodedata
 import uuid
@@ -467,6 +468,53 @@ def normalize_contexto_operacion(value: str | None) -> str | None:
     if lowered not in ("reposicion", "instalacion_inicial"):
         return None
     return lowered
+
+
+LIQUIDACION_DIFFERENCE_EPSILON = 0.0001
+
+
+def calcular_diferencias_liquidacion(
+    requisicion: Requisicion,
+    items_data: dict[int, dict[str, int | str | None]],
+) -> list[dict[str, object]]:
+    diferencias: list[dict[str, object]] = []
+    for item in requisicion.items:
+        item_data = items_data.get(item.id)
+        if not item_data:
+            continue
+
+        qty_returned = float(item_data.get("qty_returned_to_warehouse", 0) or 0)
+        qty_used = float(item_data.get("qty_used", 0) or 0)
+        qty_not_used = float(item_data.get("qty_left_at_client", 0) or 0)
+        mode = str(item_data.get("liquidation_mode", "RETORNABLE") or "RETORNABLE").upper()
+        if mode not in ("RETORNABLE", "CONSUMIBLE"):
+            mode = "RETORNABLE"
+
+        contexto_operacion = normalize_contexto_operacion(item.contexto_operacion)
+        expected_return = float(
+            calcular_retorno_esperado(
+                mode,
+                qty_used,
+                qty_not_used,
+                contexto_operacion,
+            )
+        )
+        difference = expected_return - qty_returned
+        if math.isclose(expected_return, qty_returned, rel_tol=0.0, abs_tol=LIQUIDACION_DIFFERENCE_EPSILON):
+            continue
+
+        diferencias.append(
+            {
+                "item_id": item.id,
+                "descripcion": item.descripcion,
+                "mode": mode,
+                "contexto_operacion": contexto_operacion,
+                "expected_return": expected_return,
+                "returned": qty_returned,
+                "difference": difference,
+            }
+        )
+    return diferencias
 
 
 def redirect_with_message(url: str, message: str, level: str = "success") -> RedirectResponse:
@@ -3108,6 +3156,7 @@ async def liquidar_guardar(
     form_data = await request.form()
     prokey_ref = str(form_data.get("prokey_ref", "")).strip() or None
     liquidation_comment = str(form_data.get("liquidation_comment", "")).strip() or None
+    confirmar_diferencias = str(form_data.get("confirmar_diferencias", "")).strip().lower() in {"1", "true", "on", "yes"}
     liquidacion_meta = {
         "prokey_ref": str(form_data.get("prokey_ref", "")).strip(),
         "liquidation_comment": str(form_data.get("liquidation_comment", "")).strip(),
@@ -3229,6 +3278,36 @@ async def liquidar_guardar(
                 ),
             status_code=200,
         )
+
+    diferencias_liquidacion = calcular_diferencias_liquidacion(req, items_data)
+    has_diferencias = bool(diferencias_liquidacion)
+    if has_diferencias:
+        logger.debug(
+            "Liquidacion detecta diferencias de retorno",
+            extra={"req_id": req.id, "difference_count": len(diferencias_liquidacion)},
+        )
+        if not confirmar_diferencias:
+            attach_catalog_item_defaults(req.items, db)
+            return templates.TemplateResponse(
+                "liquidar.html",
+                template_context(
+                    request,
+                    current_user,
+                    req=req,
+                    error_message=None,
+                    item_incompletos=[],
+                    liquidacion_values=liquidacion_values,
+                    liquidacion_meta=liquidacion_meta,
+                    difference_confirmation_required=True,
+                    difference_warning_message=(
+                        f"La liquidacion presenta {len(diferencias_liquidacion)} diferencias respecto a lo esperado. "
+                        "Revisa los datos y confirma si deseas continuar."
+                    ),
+                    difference_alerts=diferencias_liquidacion,
+                    confirmar_diferencias="1",
+                ),
+                status_code=200,
+            )
 
     try:
         ejecutar_liquidacion(

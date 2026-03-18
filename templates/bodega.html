@@ -64,8 +64,13 @@
     </thead>
     <tbody>
     {% for req in pendientes_entrega %}
-    <tr>
-        <td>{{ req.folio }}</td>
+    <tr {% if req.is_delayed_sla %}class="row-alert-border"{% endif %}>
+        <td>
+            {% if req.is_delayed_sla %}
+            <svg class="icon-warning" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+            {% endif %}
+            <strong>{{ req.folio }}</strong>
+        </td>
         <td class="bodega-status-cell">
             {{ ui.status_badge(req.estado) }}
         </td>
@@ -80,6 +85,9 @@
             {{ req.prepared_at | fmt_dt }}
             {% else %}
             {{ req.delivered_at | fmt_dt }}
+            {% endif %}
+            {% if req.is_delayed_sla %}
+            <span class="badge-danger">⚠️ +48h Sin Avance</span>
             {% endif %}
         </td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>

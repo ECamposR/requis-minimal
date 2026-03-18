@@ -1,7 +1,11 @@
+from datetime import datetime, timezone, timedelta
+
 from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
+
+_TZ_SV = timezone(timedelta(hours=-6))
 
 
 class Usuario(Base):
@@ -139,6 +143,50 @@ class Requisicion(Base):
         back_populates="requisicion",
         cascade="all, delete-orphan",
     )
+
+    @property
+    def sla_reference_at(self) -> datetime | None:
+        estado = str(self.estado or "").strip().lower()
+        if estado == "pendiente":
+            return self.created_at
+        if estado == "aprobada":
+            return self.approved_at or self.created_at
+        if estado == "preparado":
+            return self.prepared_at or self.approved_at or self.created_at
+        if estado == "entregada":
+            return self.delivered_at or self.prepared_at or self.approved_at or self.created_at
+        if estado == "pendiente_prokey":
+            return self.liquidated_at or self.delivered_at or self.created_at
+        if estado == "rechazada":
+            return self.rejected_at or self.created_at
+        if estado == "no_entregada":
+            return self.delivered_at or self.created_at
+        if estado == "finalizada_sin_prokey":
+            return self.liquidated_at or self.delivered_at or self.created_at
+        if estado == "liquidada_en_prokey":
+            return self.prokey_liquidada_at or self.liquidated_at or self.delivered_at or self.created_at
+        if estado == "liquidada":
+            return self.liquidated_at or self.delivered_at or self.created_at
+        return (
+            self.created_at
+            or self.approved_at
+            or self.prepared_at
+            or self.delivered_at
+            or self.liquidated_at
+            or self.prokey_liquidada_at
+            or self.rejected_at
+        )
+
+    @property
+    def is_delayed_sla(self) -> bool:
+        estado = str(self.estado or "").strip().lower()
+        if estado in {"rechazada", "liquidada_en_prokey", "finalizada_sin_prokey", "no_entregada"}:
+            return False
+        reference_at = self.sla_reference_at
+        if reference_at is None:
+            return False
+        ahora = datetime.now(_TZ_SV).replace(tzinfo=None)
+        return ahora - reference_at > timedelta(hours=48)
 
     __table_args__ = (
         CheckConstraint(

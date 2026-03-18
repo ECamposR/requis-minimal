@@ -1,4 +1,5 @@
-from datetime import datetime
+import re
+from datetime import datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -3055,3 +3056,83 @@ def test_bodega_no_duplica_entregadas_activas_en_historial(client: TestClient, d
     html_historial = response_historial.text
     assert "REQ-0304" not in html_historial
     assert "REQ-0303" not in html_historial
+
+
+def test_todas_requisiciones_muestra_alerta_sla_en_estado_y_fecha_de_auditoria(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    ahora = datetime.now()
+
+    db_session.add(
+        Requisicion(
+            folio="REQ-SLA-001",
+            solicitante_id=user.id,
+            departamento="Operaciones",
+            estado="aprobada",
+            justificacion="Brecha SLA",
+            approved_by=aprobador.id,
+            approved_at=ahora - timedelta(hours=49),
+            created_at=ahora - timedelta(hours=60),
+        )
+    )
+    db_session.commit()
+
+    login(client, "admin.1", "pass123")
+    response = client.get("/todas-requisiciones")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Fecha de Creación" in html
+    assert "REQ-SLA-001" in html
+    assert "row-alert-bg" in html
+    assert "badge-danger" in html
+    assert "⚠️ SLA &gt; 48h" in html
+
+    row_match = re.search(r'<tr[^>]*class="row-alert-bg"[^>]*>.*?REQ-SLA-001.*?</tr>', html, re.S)
+    assert row_match is not None
+    row_html = row_match.group(0)
+    cells = re.findall(r'<td(?: class="[^"]+")?>(.*?)</td>', row_html, re.S)
+    assert len(cells) >= 10
+    assert "badge-danger" in cells[1]
+    assert "badge-danger" not in cells[6]
+    assert "badge-danger" not in cells[7]
+
+
+def test_bodega_muestra_alerta_sla_en_fecha_clave(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    ahora = datetime.now()
+
+    db_session.add(
+        Requisicion(
+            folio="REQ-SLA-002",
+            solicitante_id=user.id,
+            departamento="Operaciones",
+            estado="aprobada",
+            justificacion="Brecha SLA bodega",
+            approved_by=aprobador.id,
+            approved_at=ahora - timedelta(hours=50),
+            created_at=ahora - timedelta(hours=60),
+        )
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega?vista=pendientes")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Pendientes de Procesar" in html
+    assert "REQ-SLA-002" in html
+    assert "row-alert-bg" in html
+    assert "badge-danger" in html
+    assert "⚠️ SLA &gt; 48h" in html
+
+    row_match = re.search(r'<tr[^>]*class="row-alert-bg"[^>]*>.*?REQ-SLA-002.*?</tr>', html, re.S)
+    assert row_match is not None
+    row_html = row_match.group(0)
+    cells = re.findall(r'<td(?: class="[^"]+")?>(.*?)</td>', row_html, re.S)
+    assert len(cells) >= 9
+    assert "badge-danger" in cells[6]
+    assert "badge-danger" not in cells[1]

@@ -1,5 +1,117 @@
 # Worklog (append-only)
 
+## 2026-03-18 10:28 CST-0600 | tool: Codex CLI
+- Objetivo: cerrar `REQ-181` con la cobertura que faltaba para la confirmación SSR de liquidación con diferencias.
+- Tareas: `REQ-181`
+- Cambios:
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega prueba para el caso sin diferencias, confirmando que la liquidación sigue directa cuando no existe brecha y no hace falta reintentar.
+  - Se mantienen y validan los casos con diferencias sin confirmación y con confirmación explícita.
+  - Se conserva la cobertura de tolerancia numérica para no disparar alertas por ruido de `float`.
+- Validación:
+  - `python -m compileall tests/test_liquidacion.py`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k \"liquidar_sin_diferencias_no_requiere_confirmacion or liquidar_requiere_confirmacion_cuando_hay_diferencias or liquidar_confirma_diferencias_y_procesa_cierre or calcular_diferencias_liquidacion_ignora_ruido_float\"`
+- Próximo paso:
+  - Publicar el cierre de `REQ-181` sin arrastrar los cambios ajenos que siguen en `bodega`.
+
+## 2026-03-18 10:16 CST-0600 | tool: Codex CLI
+- Objetivo: completar `REQ-180` dejando la UI SSR de liquidación lista para el segundo submit cuando el backend detecta diferencias.
+- Tareas: `REQ-180`
+- Cambios:
+  - `templates/liquidar.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - La pantalla de liquidación ahora muestra un `alert alert-warning` cuando el backend devuelve `difference_confirmation_required`.
+  - El formulario preserva el segundo submit con `confirmar_diferencias` oculto y el botón cambia a `Confirmar y Liquidar con Diferencias`.
+  - La vista sigue manteniendo intactos los valores ya digitados, porque la preservación de estado ya viene de `liquidacion_values` y `liquidacion_meta` desde backend.
+- Próximo paso:
+  - Ejecutar `REQ-181` para cerrar la cobertura backend/SSR de la confirmación no bloqueante.
+
+## 2026-03-18 10:05 CST-0600 | tool: Codex CLI
+- Objetivo: dividir la futura confirmación SSR de liquidación con diferencias en subtareas implementables sin ambigüedad antes de tocar código.
+- Tareas: `EPIC-UI-10`, `REQ-178`, `REQ-179`, `REQ-180`, `REQ-181`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se documenta una nueva épica para que el backend detecte faltantes/sobrantes en liquidación y exija un segundo submit explícito antes de ejecutar `ejecutar_liquidacion`.
+  - La implementación queda separada entre detección backend, lectura de `confirmar_diferencias`, actualización SSR de `liquidar.html` y cobertura de pruebas.
+  - Se deja explícito que el cálculo usa `float`, por lo que la detección de diferencias no debe usar igualdad exacta; deberá emplear tolerancia numérica (`epsilon`) para evitar falsos positivos por precisión.
+  - También queda fijado como requisito arquitectónico que el formulario preserve íntegramente los valores ya digitados cuando el backend devuelva la vista para confirmar.
+- Próximo paso:
+  - Ejecutar `REQ-178`, preparando la detección backend de diferencias con tolerancia antes de tocar la UI SSR.
+
+## 2026-03-18 08:20 CST-0600 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-177` para cerrar la cobertura del SLA visual con CSS global y pruebas de modelo/vista.
+- Tareas: `REQ-177`
+- Cambios:
+  - `tests/test_basic_flow.py`
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agregaron pruebas para `sla_reference_at` y `is_delayed_sla` en estados activos y terminales.
+  - Se agregaron pruebas SSR para `Todas las Requisiciones` y `Bodega`, validando `row-alert-bg` y la ubicacion del badge `⚠️ SLA > 48h`.
+  - Validaciones verdes: `python -m py_compile app/models.py`, `python -m compileall tests/test_basic_flow.py tests/test_liquidacion.py` y `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k \"sla_reference_at_usa_fecha_del_estado_activo or is_delayed_sla_devuelve_false_en_estados_terminales\"`.
+  - Limitacion de entorno: el runner de `pytest` sobre `tests/test_basic_flow.py::test_bodega_muestra_alerta_sla_en_fecha_clave` alcanza `timeout` en este sandbox; la logica y el HTML de la vista ya quedaron implementados y cubiertos por el test agregado, pero la ejecucion completa no termina aqui.
+- Proximo paso:
+  - Cometer y publicar el frente de SLA visual, dejando abierta solo la mejora del entorno de pruebas si se requiere un runner mas estable para `basic_flow`.
+
+## 2026-03-18 08:17 CST-0600 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-176` para pintar la alerta visual SSR de brecha SLA en las dos vistas objetivo, consumiendo exclusivamente la property del modelo.
+- Tareas: `REQ-176`
+- Cambios:
+  - `templates/bodega.html`
+  - `templates/todas_requisiciones.html`
+  - `static/style.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `Pendientes de Procesar` ahora pinta `row-alert-bg` y muestra `⚠️ SLA > 48h` en la columna `Fecha clave` cuando `req.is_delayed_sla` es verdadero.
+  - `Todas las Requisiciones` conserva `Fecha de Creación` como auditoria, marca la fila con `row-alert-bg` y agrega el badge debajo del badge de `Estado`.
+  - Se agregaron las clases CSS requeridas para fondo, texto, hover y badge de alerta.
+  - Validación ejecutada: `python -m py_compile app/models.py` y `python -m compileall templates/bodega.html templates/todas_requisiciones.html`.
+- Proximo paso:
+  - Ejecutar `REQ-177`, agregando pruebas de modelo/vista para estados activos y terminales y dejando el CSS aislado si hace falta un ajuste fino.
+
+## 2026-03-18 08:16 CST-0600 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-175` para encapsular la logica de SLA en el modelo `Requisicion`, sin helpers en `main.py` ni calculos de fecha en frontend.
+- Tareas: `REQ-175`
+- Cambios:
+  - `app/models.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `Requisicion` ahora expone `sla_reference_at` e `is_delayed_sla` como `@property`, usando la hora local fija del proyecto y un fallback por estado para resolver la fecha de referencia.
+  - `is_delayed_sla` retorna `False` de inmediato para estados terminales (`rechazada`, `liquidada_en_prokey`, `finalizada_sin_prokey`, `no_entregada`) como parte de la regla arquitectonica aprobada.
+  - Se mantiene el alcance acotado al modelo; la capa de templates y CSS queda reservada para `REQ-176` y `REQ-177`.
+- Proximo paso:
+  - Ejecutar `REQ-176`, aplicando la alerta visual en `bodega.html` y `todas_requisiciones.html` sin tocar `Fecha de Creación`.
+
+## 2026-03-18 09:12 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar la feature de brecha SLA visual antes de escribir código, fijando la arquitectura correcta para evitar lógica de fechas en frontend o en endpoints.
+- Tareas: `EPIC-UI-09`, `REQ-175`, `REQ-176`, `REQ-177`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se documenta una nueva épica para alertar requisiciones con más de `48h` sin cambio de estado en `Pendientes de Procesar` y `Todas las Requisiciones`.
+  - Queda fijada como restricción arquitectónica que el cálculo vive en `@property` del modelo `Requisicion`, no en `main.py` ni en JavaScript.
+  - También queda fijado que `Todas las Requisiciones` conserva `Fecha de Creación` como columna de auditoría, y que el badge de SLA se renderiza debajo del badge de `Estado`.
+- Proximo paso:
+  - Ejecutar `REQ-175`, implementando `sla_reference_at` e `is_delayed_sla` dentro de `app/models.py` con exclusión explícita de estados terminales.
+
 ## 2026-03-17 11:37 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-166` para que homes y metricas dejen de depender primariamente de inferencias por `delivery_result=no_entregada`.
 - Tareas: `REQ-166`

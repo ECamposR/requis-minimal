@@ -23,6 +23,11 @@
         {{ error_message }}
     </article>
     {% endif %}
+    {% if difference_confirmation_required %}
+    <article class="alert alert-warning" role="alert">
+        {{ difference_warning_message or 'La liquidacion presenta diferencias respecto a lo esperado. Revisa los datos y confirma si deseas continuar.' }}
+    </article>
+    {% endif %}
     <div class="field-help-inline liquidacion-help-inline">
         <button type="button" class="field-help-trigger" aria-label="Ayuda sobre reglas de liquidacion">?</button>
         <div class="field-help-popover" role="note">
@@ -106,8 +111,15 @@
             <textarea name="liquidation_comment" rows="3" placeholder="Observaciones de cierre">{{ liquidacion_meta.get('liquidation_comment', '') if liquidacion_meta else '' }}</textarea>
         </label>
 
+        <input type="hidden" name="confirmar_diferencias" value="{{ confirmar_diferencias or '0' }}">
         <div class="form-actions">
-            <button type="submit" data-liquidacion-submit>Liquidar</button>
+            <button type="submit" data-liquidacion-submit>
+                {% if difference_confirmation_required %}
+                Confirmar y Liquidar con Diferencias
+                {% else %}
+                Liquidar
+                {% endif %}
+            </button>
             <a href="/bodega" role="button" class="secondary">Cancelar</a>
         </div>
     </form>
