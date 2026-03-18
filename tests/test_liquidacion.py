@@ -687,6 +687,7 @@ async def test_permite_consumible_con_diferencia_si_cobertura_ok(db_session: Ses
                 f"qty_not_used_{item.id}": "3",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -719,6 +720,65 @@ def test_calcular_diferencias_liquidacion_ignora_ruido_float(db_session: Session
 
 
 @pytest.mark.anyio
+async def test_liquidar_requiere_confirmacion_cuando_hay_diferencias(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "7",
+                f"qty_used_{item.id}": "8",
+                f"qty_not_used_{item.id}": "2",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+                "liquidation_comment": "Con diferencias",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 200
+    assert response.context["difference_confirmation_required"] is True
+    assert response.context["difference_warning_message"].startswith("La liquidacion presenta")
+    assert response.context["liquidacion_values"][item.id]["qty_returned"] == "7"
+    assert response.context["liquidacion_meta"]["liquidation_comment"] == "Con diferencias"
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+
+
+@pytest.mark.anyio
+async def test_liquidar_confirma_diferencias_y_procesa_cierre(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "7",
+                f"qty_used_{item.id}": "8",
+                f"qty_not_used_{item.id}": "2",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+                "liquidation_comment": "Con diferencias",
+                "confirmar_diferencias": "1",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "pendiente_prokey"
+
+
+@pytest.mark.anyio
 async def test_permite_consumible_faltante_totalmente_no_usado(db_session: Session):
     req = create_req_entregada(db_session, cantidad=15)
     item = get_item(db_session, req)
@@ -733,6 +793,7 @@ async def test_permite_consumible_faltante_totalmente_no_usado(db_session: Sessi
                 f"qty_not_used_{item.id}": "15",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
