@@ -665,6 +665,32 @@ table td {
     width: 14.8rem;
 }
 
+.row-alert-bg {
+    background-color: #fef2f2;
+    transition: background-color 0.2s;
+}
+
+.row-alert-bg td {
+    color: #991b1b;
+    border-bottom-color: #fca5a5;
+}
+
+.row-alert-bg:hover {
+    background-color: #fee2e2;
+}
+
+.badge-danger {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #f87171;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 4px;
+}
+
 .all-requests-table .col-acciones {
     width: 7.4rem;
 }

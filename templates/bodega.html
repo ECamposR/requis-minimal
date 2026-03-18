@@ -64,7 +64,7 @@
     </thead>
     <tbody>
     {% for req in pendientes_entrega %}
-    <tr>
+    <tr {% if req.is_delayed_sla %}class="row-alert-bg"{% endif %}>
         <td>{{ req.folio }}</td>
         <td class="bodega-status-cell">
             {{ ui.status_badge(req.estado) }}
@@ -80,6 +80,9 @@
             {{ req.prepared_at | fmt_dt }}
             {% else %}
             {{ req.delivered_at | fmt_dt }}
+            {% endif %}
+            {% if req.is_delayed_sla %}
+            <span class="badge-danger">⚠️ SLA &gt; 48h</span>
             {% endif %}
         </td>
         <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>

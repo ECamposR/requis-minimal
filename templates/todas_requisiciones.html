@@ -47,9 +47,14 @@
     </thead>
     <tbody>
     {% for req in requisiciones %}
-    <tr>
+    <tr {% if req.is_delayed_sla %}class="row-alert-bg"{% endif %}>
         <td>{{ req.folio }}</td>
-        <td class="col-estado">{{ ui.status_badge(req.estado) }}</td>
+        <td class="col-estado">
+            {{ ui.status_badge(req.estado) }}
+            {% if req.is_delayed_sla %}
+            <span class="badge-danger">⚠️ SLA &gt; 48h</span>
+            {% endif %}
+        </td>
         <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
         <td>{{ req.receptor_designado.nombre if req.receptor_designado else '-' }}</td>
         <td class="col-departamento">{{ req.departamento }}</td>
