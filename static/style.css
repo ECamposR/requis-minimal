@@ -665,30 +665,31 @@ table td {
     width: 14.8rem;
 }
 
-.row-alert-bg {
-    background-color: #fef2f2;
-    transition: background-color 0.2s;
+/* Alertas SLA 48h - Nuevo Diseño de Acento Profesional */
+tr.row-alert-bg td:first-child,
+tr.row-alert-border td:first-child {
+    position: relative;
+    border-left: 6px solid #b91c1c !important;
+    padding-left: 0.75rem !important;
 }
 
-.row-alert-bg td {
-    color: #991b1b;
-    border-bottom-color: #fca5a5;
+.badge-danger { 
+    background-color: #fef2f2; 
+    color: #b91c1c; 
+    border: 1px solid #f87171; 
+    padding: 2px 6px; 
+    border-radius: 4px; 
+    font-size: 0.7rem; 
+    font-weight: bold; 
+    display: inline-block; 
+    margin-top: 4px; 
 }
 
-.row-alert-bg:hover {
-    background-color: #fee2e2;
-}
-
-.badge-danger {
-    background-color: #fef2f2;
+/* Opcional: Icono de alerta en el # Req */
+.icon-warning {
     color: #b91c1c;
-    border: 1px solid #f87171;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: bold;
-    display: inline-block;
-    margin-top: 4px;
+    vertical-align: middle;
+    margin-right: 0.25rem;
 }
 
 .all-requests-table .col-acciones {
