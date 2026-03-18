@@ -1,5 +1,23 @@
 # Worklog (append-only)
 
+## 2026-03-18 10:28 CST-0600 | tool: Codex CLI
+- Objetivo: cerrar `REQ-181` con la cobertura que faltaba para la confirmación SSR de liquidación con diferencias.
+- Tareas: `REQ-181`
+- Cambios:
+  - `tests/test_liquidacion.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrega prueba para el caso sin diferencias, confirmando que la liquidación sigue directa cuando no existe brecha y no hace falta reintentar.
+  - Se mantienen y validan los casos con diferencias sin confirmación y con confirmación explícita.
+  - Se conserva la cobertura de tolerancia numérica para no disparar alertas por ruido de `float`.
+- Validación:
+  - `python -m compileall tests/test_liquidacion.py`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k \"liquidar_sin_diferencias_no_requiere_confirmacion or liquidar_requiere_confirmacion_cuando_hay_diferencias or liquidar_confirma_diferencias_y_procesa_cierre or calcular_diferencias_liquidacion_ignora_ruido_float\"`
+- Próximo paso:
+  - Publicar el cierre de `REQ-181` sin arrastrar los cambios ajenos que siguen en `bodega`.
+
 ## 2026-03-18 10:16 CST-0600 | tool: Codex CLI
 - Objetivo: completar `REQ-180` dejando la UI SSR de liquidación lista para el segundo submit cuando el backend detecta diferencias.
 - Tareas: `REQ-180`

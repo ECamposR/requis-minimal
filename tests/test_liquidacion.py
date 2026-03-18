@@ -751,6 +751,32 @@ async def test_liquidar_requiere_confirmacion_cuando_hay_diferencias(db_session:
 
 
 @pytest.mark.anyio
+async def test_liquidar_sin_diferencias_no_requiere_confirmacion(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "4",
+                f"qty_used_{item.id}": "6",
+                f"qty_not_used_{item.id}": "4",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(req)
+    assert req.estado == "pendiente_prokey"
+
+
+@pytest.mark.anyio
 async def test_liquidar_confirma_diferencias_y_procesa_cierre(db_session: Session):
     req = create_req_entregada(db_session, cantidad=10)
     item = get_item(db_session, req)
