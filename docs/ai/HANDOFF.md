@@ -3,7 +3,11 @@
 ## Estado actual
 - La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
-- Rama activa: `fix/ajustes-varios`, destinada a fixes incrementales de semantica y flujo sobre `main`.
+- Rama activa: `chore/ui-fixes-2`, destinada a fixes visuales SSR y ajustes acotados de tablas/vistas sobre `main`.
+- Se abre `EPIC-UI-09` en esta rama para agregar alerta visual de brecha SLA (`>48h` sin cambio de estado) en `Pendientes de Procesar` y `Todas las Requisiciones`, con arquitectura estricta: calculo de fecha solo en backend y encapsulado como `@property` del modelo `Requisicion`.
+  - `REQ-175` completada: la logica de `sla_reference_at` e `is_delayed_sla` ya vive en `Requisicion` como `@property`, usando los timestamps reales del flujo y devolviendo `False` inmediato para estados terminales.
+  - `REQ-176` pendiente: aplicar la alerta SSR en `bodega.html` y `todas_requisiciones.html`, pintando fila y badge sin renombrar `Fecha de Creación` ni calcular fechas en frontend.
+  - `REQ-177` pendiente: inyectar CSS global en `static/style.css` y cubrir con pruebas el comportamiento de SLA para estados activos/terminales y la ubicacion correcta del badge.
 - `REQ-127` completada en esta rama: `Aprobar` queda como bandeja de pendientes y la consulta global se mueve a `Todas las Requisiciones` (`/todas-requisiciones`) con filtros por estado, departamento y rango de fechas para roles de supervision.
 - `REQ-128` completada en esta rama: los filtros basados en selectores (`estado`/`departamento`) ahora se autoaplican en `Aprobar` y `Todas las Requisiciones`; el boton `Buscar` se conserva para texto libre y fechas.
 - `REQ-129` completada en esta rama: los filtros de fecha en `Todas las Requisiciones` mantienen el `input[type=date]` nativo, pero ahora intentan abrir el calendario con `showPicker()` en navegadores compatibles como mejora progresiva.

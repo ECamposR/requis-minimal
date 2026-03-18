@@ -1,5 +1,34 @@
 # Worklog (append-only)
 
+## 2026-03-18 09:13 CST-0600 | tool: Codex CLI
+- Objetivo: ejecutar `REQ-175` para encapsular la logica de SLA en el modelo `Requisicion`, sin helpers en `main.py` ni calculos de fecha en frontend.
+- Tareas: `REQ-175`
+- Cambios:
+  - `app/models.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `Requisicion` ahora expone `sla_reference_at` e `is_delayed_sla` como `@property`, usando la hora local fija del proyecto y un fallback por estado para resolver la fecha de referencia.
+  - `is_delayed_sla` retorna `False` de inmediato para estados terminales (`rechazada`, `liquidada_en_prokey`, `finalizada_sin_prokey`, `no_entregada`) como parte de la regla arquitectonica aprobada.
+  - Se mantiene el alcance acotado al modelo; la capa de templates y CSS queda reservada para `REQ-176` y `REQ-177`.
+- Proximo paso:
+  - Ejecutar `REQ-176`, aplicando la alerta visual en `bodega.html` y `todas_requisiciones.html` sin tocar `Fecha de Creación`.
+
+## 2026-03-18 09:12 UTC-6 | tool: Codex CLI
+- Objetivo: formalizar la feature de brecha SLA visual antes de escribir código, fijando la arquitectura correcta para evitar lógica de fechas en frontend o en endpoints.
+- Tareas: `EPIC-UI-09`, `REQ-175`, `REQ-176`, `REQ-177`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se documenta una nueva épica para alertar requisiciones con más de `48h` sin cambio de estado en `Pendientes de Procesar` y `Todas las Requisiciones`.
+  - Queda fijada como restricción arquitectónica que el cálculo vive en `@property` del modelo `Requisicion`, no en `main.py` ni en JavaScript.
+  - También queda fijado que `Todas las Requisiciones` conserva `Fecha de Creación` como columna de auditoría, y que el badge de SLA se renderiza debajo del badge de `Estado`.
+- Proximo paso:
+  - Ejecutar `REQ-175`, implementando `sla_reference_at` e `is_delayed_sla` dentro de `app/models.py` con exclusión explícita de estados terminales.
+
 ## 2026-03-17 11:37 UTC-6 | tool: Codex CLI
 - Objetivo: ejecutar `REQ-166` para que homes y metricas dejen de depender primariamente de inferencias por `delivery_result=no_entregada`.
 - Tareas: `REQ-166`
