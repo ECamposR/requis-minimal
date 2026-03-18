@@ -665,6 +665,10 @@ table td {
     width: 14.8rem;
 }
 
+.all-requests-table .col-acciones {
+    width: 7.4rem;
+}
+
 .btn-danger-sm {
     display: inline-block;
     padding: 0.2rem 0.55rem;
