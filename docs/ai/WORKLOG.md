@@ -1,5 +1,20 @@
 # Worklog (append-only)
 
+## 2026-03-18 10:16 CST-0600 | tool: Codex CLI
+- Objetivo: completar `REQ-180` dejando la UI SSR de liquidación lista para el segundo submit cuando el backend detecta diferencias.
+- Tareas: `REQ-180`
+- Cambios:
+  - `templates/liquidar.html`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - La pantalla de liquidación ahora muestra un `alert alert-warning` cuando el backend devuelve `difference_confirmation_required`.
+  - El formulario preserva el segundo submit con `confirmar_diferencias` oculto y el botón cambia a `Confirmar y Liquidar con Diferencias`.
+  - La vista sigue manteniendo intactos los valores ya digitados, porque la preservación de estado ya viene de `liquidacion_values` y `liquidacion_meta` desde backend.
+- Próximo paso:
+  - Ejecutar `REQ-181` para cerrar la cobertura backend/SSR de la confirmación no bloqueante.
+
 ## 2026-03-18 10:05 CST-0600 | tool: Codex CLI
 - Objetivo: dividir la futura confirmación SSR de liquidación con diferencias en subtareas implementables sin ambigüedad antes de tocar código.
 - Tareas: `EPIC-UI-10`, `REQ-178`, `REQ-179`, `REQ-180`, `REQ-181`
