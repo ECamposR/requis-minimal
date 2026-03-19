@@ -1339,6 +1339,19 @@ body:has(form.req-create-form) .items-table {
     table-layout: fixed;
 }
 
+body:has(form.req-create-form) .items-table .item-row {
+    display: table-row;
+    grid-template-columns: none;
+    gap: 0;
+    margin-bottom: 0;
+}
+
+body:has(form.req-create-form) .items-table .item-row > td {
+    display: table-cell;
+    vertical-align: top;
+    padding: 0.5rem 1rem;
+}
+
 body:has(form.req-create-form) .items-table thead th {
     background-color: rgba(230, 232, 234, 0.5);
     color: #414751;
@@ -1355,6 +1368,10 @@ body:has(form.req-create-form) .items-table tbody td {
     border-bottom: 1px solid rgba(230, 232, 234, 0.8);
     padding: 0.5rem 1rem;
     vertical-align: middle;
+}
+
+body:has(form.req-create-form) .items-table .item-context-block {
+    width: 100%;
 }
 
 body:has(form.req-create-form) .items-table tbody td input:not([type="checkbox"]),
@@ -1499,6 +1516,8 @@ body:has(form.req-create-form) .form-actions {
 }
 
 body:has(form.req-create-form) .form-actions button[type="submit"] {
+    width: auto;
+    min-width: 12rem;
     background: linear-gradient(to right, #005a9c, #1e73be);
     border: none;
     box-shadow: 0 4px 15px rgba(0, 90, 156, 0.2);
@@ -1515,4 +1534,8 @@ body:has(form.req-create-form) .form-actions button[type="submit"]:hover {
 
 body:has(form.req-create-form) .form-actions button[type="submit"]:active {
     transform: scale(0.96);
+}
+
+body:has(form.req-create-form) .form-actions {
+    justify-content: center;
 }
