@@ -16,6 +16,7 @@ from .crud import now_sv
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -250,6 +251,55 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
         return RedirectResponse(url="/login", status_code=303)
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = exc.errors()
+    form_fields: list[str] = []
+    try:
+        form = await request.form()
+        form_fields = sorted(str(key) for key in form.keys())
+    except Exception:
+        form_fields = []
+
+    missing_receptor_designado = any(
+        tuple(error.get("loc") or ()) == ("body", "receptor_designado_id")
+        and error.get("type") == "missing"
+        for error in errors
+    )
+    form_path = request.url.path
+    is_requisition_form = form_path == "/crear" or form_path.endswith("/editar")
+
+    logger.warning(
+        "request_validation_error",
+        extra={
+            "event": "request_validation_error",
+            "method": request.method,
+            "path": form_path,
+            "status_code": 422,
+            "client_ip": get_client_ip(request),
+            "user_id": get_session_user_id(request),
+            "user_agent": request.headers.get("user-agent", "-"),
+            "referer": request.headers.get("referer", "-"),
+            "errors": errors,
+            "form_fields": form_fields,
+            "missing_receptor_designado_id": missing_receptor_designado,
+        },
+    )
+
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(status_code=422, content={"detail": errors})
+
+    if missing_receptor_designado and is_requisition_form:
+        redirect_path = "/crear" if form_path == "/crear" else form_path
+        return redirect_with_message(
+            redirect_path,
+            "La pagina del formulario quedo desactualizada. Recargala e intenta nuevamente.",
+            "warning",
+        )
+
+    return JSONResponse(status_code=422, content={"detail": errors})
 
 
 @app.on_event("startup")

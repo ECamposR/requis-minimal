@@ -1124,6 +1124,28 @@ def test_crear_requisicion(client: TestClient, db_session: Session):
     assert req.items[0].descripcion == "Cable UTP Cat6"
 
 
+def test_crear_requisicion_redirige_si_falta_receptor_designado(client: TestClient):
+    login(client, "user.ops", "pass123")
+    response = client.post(
+        "/crear",
+        data={
+            "cliente_codigo": "C-1001",
+            "cliente_nombre": "Cliente Uno",
+            "cliente_ruta_principal": "RA02",
+            "motivo_requisicion": "Servicio pendiente",
+            "justificacion": "Formulario desactualizado",
+            "items[0][descripcion]": "Cable UTP Cat6",
+            "items[0][cantidad]": "25",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    location = response.headers["location"]
+    assert location.startswith("/crear?")
+    assert "msg=" in location
+    assert "type=warning" in location
+
+
 def test_crear_requisicion_requiere_motivo(client: TestClient):
     login(client, "user.ops", "pass123")
     response = client.post(
