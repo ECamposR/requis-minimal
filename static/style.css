@@ -1304,6 +1304,10 @@ body:has(form.req-create-form) .req-section-header {
     gap: 0.75rem;
 }
 
+body:has(form.req-create-form) .req-section-header button.secondary {
+    font-weight: 700;
+}
+
 body:has(form.req-create-form) .req-section-title {
     color: var(--pico-primary);
     font-weight: 700;
@@ -1494,6 +1498,28 @@ body:has(form.req-create-form) .items-table .item-action-cell button:focus-visib
     background: rgba(185, 28, 28, 0.16);
     border-color: rgba(185, 28, 28, 0.5);
     transform: translateY(-1px);
+}
+
+/* Centrar exactamente la cabecera "Acción" (última columna) */
+body:has(form.req-create-form) .items-table th:last-child {
+    text-align: center !important;
+}
+
+/* Centrar el contenedor de la celda de Acción */
+body:has(form.req-create-form) .items-table td.item-action-cell {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* Evitar que el botón de eliminar herede el width: 100% de PicoCSS y centrarlo */
+body:has(form.req-create-form) .items-table td.item-action-cell button {
+    width: auto !important;
+    margin: 0 auto !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
 }
 
 body:has(form.req-create-form) .field-help-inline {
