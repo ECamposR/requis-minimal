@@ -255,9 +255,77 @@ function syncItemInputs() {
     setItemError("");
 }
 
-function eliminarItem(button) {
-    const row = button.closest(".item-row");
-    if (row) row.remove();
+function bindDeleteButton(button) {
+    if (!button) return;
+    button.onclick = function () {
+        eliminarItem(this);
+    };
+}
+
+function renumberItemRows() {
+    const rows = Array.from(document.querySelectorAll("#items-container .item-row"));
+    rows.forEach((row, index) => {
+        const itemInput = row.querySelector("input[name*='[descripcion]']");
+        const qtyInput = row.querySelector("input[name*='[cantidad]']");
+        const contextoInput = row.querySelector("select[name*='[contexto_operacion]']");
+        const demoInput = row.querySelector("input[type='checkbox']");
+        const deleteButton = row.querySelector(".item-action-cell button");
+
+        if (itemInput) itemInput.name = `items[${index}][descripcion]`;
+        if (qtyInput) qtyInput.name = `items[${index}][cantidad]`;
+        if (contextoInput) contextoInput.name = `items[${index}][contexto_operacion]`;
+        if (demoInput) demoInput.name = `es_demo_${index}`;
+        bindDeleteButton(deleteButton);
+    });
+    itemCount = rows.length;
+}
+
+function buildItemRowMarkup(index) {
+    return `
+        <td>
+            <input type="text" name="items[${index}][descripcion]" list="catalogo-items" placeholder="Buscar item..." autocomplete="off" required>
+        </td>
+        <td>
+            <input type="number" step="1" min="1" name="items[${index}][cantidad]" placeholder="Cantidad" required>
+        </td>
+        <td>
+            <div class="item-context-block">
+                <div class="field-help-row">
+                    <select name="items[${index}][contexto_operacion]" aria-label="Contexto operativo del item">
+                        <option value="reposicion" selected>Reposicion</option>
+                        <option value="instalacion_inicial">Instalacion inicial</option>
+                    </select>
+                    <div class="field-help-inline">
+                        <button type="button" class="field-help-trigger" aria-label="Ayuda sobre contexto operativo">?</button>
+                        <div class="field-help-popover" role="note">
+                            Usa <strong>Instalacion inicial</strong> solo para <strong>R1E</strong> o <strong>Demostracion</strong>, cuando el equipo se instala por primera vez en el cliente. Para el resto, usa <strong>Reposicion</strong>.
+                        </div>
+                    </div>
+                </div>
+                <label class="item-demo-check">
+                    <input type="checkbox" name="es_demo_${index}" value="on">
+                    Para Demo
+                </label>
+            </div>
+        </td>
+        <td class="item-action-cell">
+            <button type="button" aria-label="Eliminar item">X</button>
+        </td>
+    `;
+}
+
+function eliminarItem(btn) {
+    const row = btn?.closest?.(".item-row");
+    if (!row) return;
+    const container = document.getElementById("items-container");
+    if (!container) return;
+    const rows = Array.from(container.querySelectorAll(".item-row"));
+    if (rows.length <= 1) {
+        setItemError("Debes conservar al menos un item.");
+        return;
+    }
+    row.remove();
+    renumberItemRows();
     syncItemInputs();
 }
 
@@ -290,76 +358,37 @@ function agregarItem() {
     if (!container) return;
     if (!canAddItemRow(container)) return;
 
-    const div = document.createElement("div");
-    div.className = "item-row";
-    const input = document.createElement("input");
-    input.type = "text";
-    input.name = `items[${itemCount}][descripcion]`;
+    const index = container.querySelectorAll(".item-row").length;
+    const tr = document.createElement("tr");
+    tr.className = "item-row";
+    tr.innerHTML = buildItemRowMarkup(index);
+
+    const input = tr.querySelector("input[name*='[descripcion]']");
+    const qty = tr.querySelector("input[name*='[cantidad]']");
+    const contexto = tr.querySelector("select[name*='[contexto_operacion]']");
+    const btn = tr.querySelector(".item-action-cell button");
+
+    input.name = `items[${index}][descripcion]`;
     input.setAttribute("list", "catalogo-items");
     input.placeholder = "Buscar item...";
     input.autocomplete = "off";
     input.required = true;
     input.addEventListener("change", () => handleItemInputChange(input));
     input.addEventListener("blur", () => handleItemInputChange(input));
-    input.addEventListener("input", () => syncQtyInputForRow(div));
+    input.addEventListener("input", () => syncQtyInputForRow(tr));
 
-    const qty = document.createElement("input");
-    qty.type = "number";
-    qty.name = `items[${itemCount}][cantidad]`;
-    qty.placeholder = "Cantidad entera";
+    qty.placeholder = "Cantidad";
     qty.step = "1";
     qty.min = "1";
     qty.required = true;
     qty.addEventListener("input", () => validateQtyInput(qty, false));
     qty.addEventListener("blur", () => validateQtyInput(qty, false));
 
-    const contexto = document.createElement("select");
-    contexto.name = `items[${itemCount}][contexto_operacion]`;
     contexto.setAttribute("aria-label", "Contexto operativo del item");
+    bindDeleteButton(btn);
 
-    const reposicion = document.createElement("option");
-    reposicion.value = "reposicion";
-    reposicion.textContent = "Reposicion";
-    reposicion.selected = true;
-
-    const instalacion = document.createElement("option");
-    instalacion.value = "instalacion_inicial";
-    instalacion.textContent = "Instalacion inicial";
-
-    contexto.append(reposicion, instalacion);
-
-    const contextoWrap = document.createElement("div");
-    contextoWrap.className = "item-context-block";
-    const contextoRow = document.createElement("div");
-    contextoRow.className = "field-help-row";
-    const contextoHelp = document.createElement("div");
-    contextoHelp.className = "field-help-inline";
-    contextoHelp.innerHTML = `
-        <button type="button" class="field-help-trigger" aria-label="Ayuda sobre contexto operativo">?</button>
-        <div class="field-help-popover" role="note">
-            Usa <strong>Instalacion inicial</strong> solo para <strong>R1E</strong> o <strong>Demostracion</strong>, cuando el equipo se instala por primera vez en el cliente. Para el resto, usa <strong>Reposicion</strong>.
-        </div>
-    `;
-    contextoRow.append(contexto, contextoHelp);
-    contextoWrap.appendChild(contextoRow);
-
-    const demoLabel = document.createElement("label");
-    demoLabel.className = "item-demo-check";
-    const demoCheck = document.createElement("input");
-    demoCheck.type = "checkbox";
-    demoCheck.name = `es_demo_${itemCount}`;
-    demoCheck.value = "on";
-    demoLabel.append(demoCheck, document.createTextNode(" Para Demo"));
-    contextoWrap.appendChild(demoLabel);
-
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = "X";
-    btn.addEventListener("click", () => eliminarItem(btn));
-
-    div.append(input, qty, contextoWrap, btn);
-    container.appendChild(div);
-    itemCount++;
+    container.appendChild(tr);
+    itemCount = container.querySelectorAll(".item-row").length;
     syncItemInputs();
 }
 
@@ -373,6 +402,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const itemRows = document.querySelectorAll("#items-container .item-row");
     if (itemRows.length > 0) {
         itemCount = itemRows.length;
+    }
+    for (const row of itemRows) {
+        bindDeleteButton(row.querySelector(".item-action-cell button"));
     }
     const requisicionForm = document.querySelector("form[data-requisicion-form='true']");
     if (requisicionForm) {

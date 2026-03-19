@@ -2,99 +2,230 @@
 {% import "macros/ui.html" as ui %}
 {% block title %}Nueva Requisicion{% endblock %}
 {% block content %}
-{{ ui.page_header("Nueva Requisicion", "Registra la solicitud para cliente y agrega los items requeridos.") }}
-<article class="panel view-panel">
-    <form method="POST" action="/crear" data-requisicion-form="true">
-        <div class="form-grid-3">
-            <label>
-                Departamento
-                <input type="text" value="{{ current_user.departamento }}" readonly>
-            </label>
-            <label>
-                Codigo cliente
-                <input type="text" name="cliente_codigo" class="req-client-field" required minlength="2" placeholder="Ej: C-1023">
-            </label>
-            <label>
-                Nombre cliente
-                <input type="text" name="cliente_nombre" class="req-client-field" required minlength="3" placeholder="Nombre cliente">
-            </label>
-            <label>
-                Ruta Principal del Cliente
-                <input
-                    type="text"
-                    name="cliente_ruta_principal"
-                    class="req-client-field"
-                    required
-                    minlength="4"
-                    maxlength="4"
-                    pattern="[A-Za-z]{2}[0-9]{2}"
-                    placeholder="Ej: RA02"
-                >
-            </label>
-            <label>
-                Receptor designado
-                <input
-                    type="text"
-                    placeholder="Buscar receptor..."
-                    data-select-search="receptor-designado-select"
-                    autocomplete="off"
-                >
-                <select id="receptor-designado-select" name="receptor_designado_id" required>
-                    <option value="">Seleccionar...</option>
-                    {% for usuario in usuarios_activos %}
-                    <option value="{{ usuario.id }}">{{ usuario.nombre }} ({{ usuario.rol }})</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label>
-                Motivo / Clasificacion
-                <select name="motivo_requisicion" required>
-                    <option value="">Seleccionar motivo...</option>
-                    {% for motivo in motivos_requisicion %}
-                    <option value="{{ motivo }}">{{ motivo }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-        </div>
-        <label>
-            Justificacion
-            <textarea name="justificacion" rows="4" required></textarea>
-        </label>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
+<style>
+.material-symbols-outlined {
+    font-family: "Material Symbols Outlined";
+    font-weight: normal;
+    font-style: normal;
+    font-size: 1.1rem;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    vertical-align: middle;
+}
 
-        <fieldset id="items-container">
-            <legend>Items</legend>
-            <div class="item-row">
-                <input type="text" name="items[0][descripcion]" list="catalogo-items" placeholder="Buscar item..." autocomplete="off" required>
-                <input type="number" step="1" min="1" name="items[0][cantidad]" placeholder="Cantidad" required>
-                <div class="item-context-block">
-                    <div class="field-help-row">
-                        <select name="items[0][contexto_operacion]" aria-label="Contexto operativo del item">
-                            <option value="reposicion" selected>Reposicion</option>
-                            <option value="instalacion_inicial">Instalacion inicial</option>
-                        </select>
-                        <div class="field-help-inline">
-                            <button type="button" class="field-help-trigger" aria-label="Ayuda sobre contexto operativo">?</button>
-                            <div class="field-help-popover" role="note">
-                                Usa <strong>Instalacion inicial</strong> solo para <strong>R1E</strong> o <strong>Demostracion</strong>, cuando el equipo se instala por primera vez en el cliente. Para el resto, usa <strong>Reposicion</strong>.
-                            </div>
-                        </div>
-                    </div>
-                    <label class="item-demo-check">
-                        <input type="checkbox" name="es_demo_0" value="on">
-                        Para Demo
-                    </label>
-                </div>
+.req-create-form {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.req-section {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.req-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.req-section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+}
+
+.items-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.items-table thead th {
+    white-space: nowrap;
+}
+
+.items-table .item-row {
+    display: table-row;
+}
+
+.items-table .item-row > * {
+    display: table-cell;
+    vertical-align: top;
+    padding: 0.55rem 0.7rem;
+}
+
+.items-table .item-row > input,
+.items-table .item-row > select {
+    width: 100%;
+    min-width: 0;
+}
+
+.items-table .item-context-block {
+    min-width: 0;
+}
+
+.items-table .item-action-cell {
+    width: 6rem;
+    text-align: center;
+    vertical-align: middle;
+}
+</style>
+
+{{ ui.page_header("Nueva Requisicion", "Registra la solicitud para cliente y agrega los items requeridos.") }}
+
+<article class="panel view-panel">
+    <form method="POST" action="/crear" data-requisicion-form="true" class="req-create-form">
+        <section class="req-section" aria-labelledby="req-info-general">
+            <h2 id="req-info-general" class="req-section-title">
+                <span class="material-symbols-outlined" aria-hidden="true">business</span>
+                Información General
+            </h2>
+
+            <div class="grid">
+                <label>
+                    Departamento
+                    <input type="text" value="{{ current_user.departamento }}" readonly>
+                </label>
+                <label>
+                    Codigo cliente
+                    <input type="text" name="cliente_codigo" class="req-client-field" required minlength="2" placeholder="Ej: C-1023">
+                </label>
+                <label>
+                    Nombre cliente
+                    <input type="text" name="cliente_nombre" class="req-client-field" required minlength="3" placeholder="Nombre cliente">
+                </label>
             </div>
-        </fieldset>
+
+            <div class="grid">
+                <label>
+                    Ruta Principal del Cliente
+                    <input
+                        type="text"
+                        name="cliente_ruta_principal"
+                        class="req-client-field"
+                        required
+                        minlength="4"
+                        maxlength="4"
+                        pattern="[A-Za-z]{2}[0-9]{2}"
+                        placeholder="Ej: RA02"
+                    >
+                </label>
+                <label>
+                    Receptor designado
+                    <input
+                        type="text"
+                        placeholder="Buscar receptor..."
+                        data-select-search="receptor-designado-select"
+                        autocomplete="off"
+                    >
+                    <select id="receptor-designado-select" name="receptor_designado_id" required>
+                        <option value="">Seleccionar...</option>
+                        {% for usuario in usuarios_activos %}
+                        <option value="{{ usuario.id }}">{{ usuario.nombre }} ({{ usuario.rol }})</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    Motivo / Clasificacion
+                    <select name="motivo_requisicion" required>
+                        <option value="">Seleccionar motivo...</option>
+                        {% for motivo in motivos_requisicion %}
+                        <option value="{{ motivo }}">{{ motivo }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+        </section>
+
+        <section class="req-section" aria-labelledby="req-justificacion">
+            <h2 id="req-justificacion" class="req-section-title">
+                <span class="material-symbols-outlined" aria-hidden="true">description</span>
+                Justificacion
+            </h2>
+            <label>
+                Justificacion
+                <textarea name="justificacion" rows="4" required></textarea>
+            </label>
+        </section>
+
+        <section class="req-section" aria-labelledby="req-items">
+            <div class="req-section-header">
+                <h2 id="req-items" class="req-section-title">
+                    <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+                    Items
+                </h2>
+                <button type="button" class="secondary" onclick="agregarItem()">+ Agregar item</button>
+            </div>
+
+            <table class="striped items-table">
+                <colgroup>
+                    <col style="width: 40%;">
+                    <col style="width: 12%;">
+                    <col style="width: 34%;">
+                    <col style="width: 14%;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Descripción del Item</th>
+                        <th>Cantidad</th>
+                        <th>Contexto</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="items-container">
+                    <tr class="item-row">
+                        <td>
+                            <input type="text" name="items[0][descripcion]" list="catalogo-items" placeholder="Buscar item..." autocomplete="off" required>
+                        </td>
+                        <td>
+                            <input type="number" step="1" min="1" name="items[0][cantidad]" placeholder="Cantidad" required>
+                        </td>
+                        <td>
+                            <div class="item-context-block">
+                                <div class="field-help-row">
+                                    <select name="items[0][contexto_operacion]" aria-label="Contexto operativo del item">
+                                        <option value="reposicion" selected>Reposicion</option>
+                                        <option value="instalacion_inicial">Instalacion inicial</option>
+                                    </select>
+                                    <div class="field-help-inline">
+                                        <button type="button" class="field-help-trigger" aria-label="Ayuda sobre contexto operativo">?</button>
+                                        <div class="field-help-popover" role="note">
+                                            Usa <strong>Instalacion inicial</strong> solo para <strong>R1E</strong> o <strong>Demostracion</strong>, cuando el equipo se instala por primera vez en el cliente. Para el resto, usa <strong>Reposicion</strong>.
+                                        </div>
+                                    </div>
+                                </div>
+                                <label class="item-demo-check">
+                                    <input type="checkbox" name="es_demo_0" value="on">
+                                    Para Demo
+                                </label>
+                            </div>
+                        </td>
+                        <td class="item-action-cell">
+                            <button type="button" aria-label="Eliminar item">X</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
         <datalist id="catalogo-items">
             {% for item in catalogo_items %}
             <option value="{{ item.nombre }}"></option>
             {% endfor %}
         </datalist>
+
         <p id="item-error" class="page-subtitle" role="alert" aria-live="polite"></p>
 
         <div class="form-actions">
-            <button type="button" class="secondary" onclick="agregarItem()">+ Agregar item</button>
             <button type="submit">Crear y enviar</button>
         </div>
     </form>
