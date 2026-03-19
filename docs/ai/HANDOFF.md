@@ -4,6 +4,8 @@
 - La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
 - Rama activa: `chore/ui-fixes-2`, destinada a fixes visuales SSR y ajustes acotados de tablas/vistas sobre `main`.
+- Rama visual de apoyo: `chore/ui-only-fixes`, reservada para la refactorizacion de `Nueva Requisición` y ajustes de presentacion asociados, sin tocar logica de negocio.
+- `REQ-182` completada en esa rama: `crear_requisicion.html` quedo reestructurada con layout superior de dos columnas, `Receptor designado` via datalist, tabla de items en formato semantico, boton de borrado y columna `Acción` centrados, mas ajustes de espaciado/jerarquia para acercarse al mockup aprobado.
 - Se abre `EPIC-UI-09` en esta rama para agregar alerta visual de brecha SLA (`>48h` sin cambio de estado) en `Pendientes de Procesar` y `Todas las Requisiciones`, con arquitectura estricta: calculo de fecha solo en backend y encapsulado como `@property` del modelo `Requisicion`.
   - `REQ-175` completada: la logica de `sla_reference_at` e `is_delayed_sla` ya vive en `Requisicion` como `@property`, usando los timestamps reales del flujo y devolviendo `False` inmediato para estados terminales.
   - `REQ-176` completada: la alerta SSR ya pinta las filas con `row-alert-bg` cuando `req.is_delayed_sla` es verdadero, y el badge `⚠️ SLA > 48h` aparece en `Fecha clave` en bodega y debajo del estado en `Todas las Requisiciones` sin tocar `Fecha de Creación`.

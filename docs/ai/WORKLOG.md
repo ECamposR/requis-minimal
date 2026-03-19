@@ -1,5 +1,25 @@
 # Worklog (append-only)
 
+## 2026-03-19 09:15 CST-0600 | tool: Codex CLI
+- Objetivo: dejar trazabilidad de los ajustes visuales realizados en la rama `chore/ui-only-fixes` para la vista `Nueva Requisición`, sin tocar lógica de negocio.
+- Tareas: `REQ-182`
+- Cambios:
+  - `templates/crear_requisicion.html`
+  - `templates/editar_requisicion.html`
+  - `static/app.js`
+  - `static/style.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - La vista `crear_requisicion` quedo compactada con layout superior de dos columnas, secciones semanticas y tabla de items.
+  - `Receptor designado` paso a un selector tipo datalist con validacion por JS y el bloque de items quedo alineado para trabajo dinamico.
+  - La columna `Acción`, el boton `Eliminar Item` y la fila de contexto se ajustaron para quedar visualmente centrados y consistentes con el mockup aprobado.
+- Validación:
+  - `node --check static/app.js`
+- Próximo paso:
+  - Mantener esta rama solo para pulidos visuales de `Nueva Requisición` si aparecen nuevos detalles, sin mezclar cambios funcionales de otras areas.
+
 ## 2026-03-18 10:28 CST-0600 | tool: Codex CLI
 - Objetivo: cerrar `REQ-181` con la cobertura que faltaba para la confirmación SSR de liquidación con diferencias.
 - Tareas: `REQ-181`
