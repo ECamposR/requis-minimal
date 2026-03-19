@@ -11,7 +11,7 @@
         <li><a href="/crear" class="nav-item {% if request.url.path.startswith('/crear') %}is-active{% endif %}"><span class="nav-label-stack"><span>Nueva</span><span>Requisicion</span></span></a></li>
         <li><a href="/mis-requisiciones" class="nav-item {% if request.url.path.startswith('/mis-requisiciones') and request.query_params.get('vista') != 'todas' %}is-active{% endif %}"><span class="nav-label-stack"><span>Mis</span><span>Requisiciones</span></span></a></li>
         {% endif %}
-        {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega', 'logistica'] %}
+        {% if current_user.rol in ['admin', 'aprobador', 'jefe_bodega', 'logistica', 'bodega'] %}
         <li><a href="/todas-requisiciones" class="nav-item {% if request.url.path.startswith('/todas-requisiciones') %}is-active{% endif %}"><span class="nav-label-stack"><span>Todas las</span><span>Requisiciones</span></span></a></li>
         {% endif %}
         {% if current_user.rol in ['aprobador', 'admin', 'jefe_bodega'] %}

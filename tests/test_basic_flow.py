@@ -2694,6 +2694,42 @@ def test_todas_requisiciones_permita_buscar_por_motivo_receptor_actor_y_prokey(c
     assert "REQ-0203" in response_prokey.text
 
 
+def test_bodega_puede_ver_todas_las_requisiciones(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    db_session.add_all(
+        [
+            Requisicion(
+                folio="REQ-BOD-TODAS-1",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente visible para bodega",
+            ),
+            Requisicion(
+                folio="REQ-BOD-TODAS-2",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="liquidada_en_prokey",
+                justificacion="Liquidada visible para bodega",
+                approved_by=aprobador.id,
+                approved_at=datetime.now(),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/todas-requisiciones")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Todas las Requisiciones" in html
+    assert "REQ-BOD-TODAS-1" in html
+    assert "REQ-BOD-TODAS-2" in html
+
+
 def test_bodega_permita_filtrar_historial_por_resultado(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
@@ -3078,6 +3114,53 @@ def test_bodega_no_duplica_entregadas_activas_en_historial(client: TestClient, d
     html_historial = response_historial.text
     assert "REQ-0304" not in html_historial
     assert "REQ-0303" not in html_historial
+
+
+def test_bodega_ve_historial_completo_de_liquidaciones_ajenas(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    admin = db_session.query(Usuario).filter(Usuario.username == "admin.1").first()
+
+    req_finalizada = Requisicion(
+        folio="REQ-BOD-HIST-ALL-1",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="finalizada_sin_prokey",
+        justificacion="Cierre visible a toda bodega",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=admin.id,
+        delivered_at=datetime.now(),
+        liquidated_by=admin.id,
+        liquidated_at=datetime.now(),
+        delivery_result="completa",
+    )
+    req_prokey = Requisicion(
+        folio="REQ-BOD-HIST-ALL-2",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        justificacion="Prokey visible a toda bodega",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=admin.id,
+        delivered_at=datetime.now(),
+        liquidated_by=admin.id,
+        liquidated_at=datetime.now(),
+        prokey_liquidada_por=admin.id,
+        prokey_liquidada_at=datetime.now(),
+        delivery_result="completa",
+    )
+    db_session.add_all([req_finalizada, req_prokey])
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+    response = client.get("/bodega?vista=historial")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "REQ-BOD-HIST-ALL-1" in html
+    assert "REQ-BOD-HIST-ALL-2" in html
 
 
 def test_todas_requisiciones_muestra_alerta_sla_en_estado_y_fecha_de_auditoria(client: TestClient, db_session: Session):

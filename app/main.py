@@ -606,11 +606,11 @@ def es_bodega_plano(current_user: Usuario) -> bool:
 
 
 def puede_ver_todas_las_requisiciones(current_user: Usuario) -> bool:
-    return current_user.rol == "logistica"
+    return current_user.rol in ("logistica", "bodega")
 
 
 def ensure_all_requests_access(current_user: Usuario) -> None:
-    if current_user.rol not in ["admin", "aprobador", "jefe_bodega", "logistica"]:
+    if current_user.rol not in ["admin", "aprobador", "jefe_bodega", "logistica", "bodega"]:
         raise HTTPException(status_code=403, detail="No autorizado")
 
 
@@ -785,7 +785,7 @@ def build_home_actions(current_user: Usuario) -> list[dict[str, str]]:
     if current_user.rol != "bodega":
         actions.append({"label": "Nueva Requisición", "href": "/crear", "icon": "new"})
 
-    if current_user.rol in ["admin", "aprobador", "jefe_bodega", "logistica"]:
+    if current_user.rol in ["admin", "aprobador", "jefe_bodega", "logistica", "bodega"]:
         actions.append({"label": "Todas las Requisiciones", "href": "/todas-requisiciones", "icon": "search"})
     elif current_user.rol == "bodega":
         actions.append({"label": "Bodega", "href": "/bodega", "icon": "warehouse"})
@@ -2752,15 +2752,6 @@ def bodega_view(request: Request, current_user: Usuario = Depends(get_current_us
         historial_query = historial_query.filter(Requisicion.estado == "finalizada_sin_prokey")
     elif etapa == "no_entregada":
         historial_query = historial_query.filter(filtro_cierre_no_entregada())
-    if current_user.rol == "bodega":
-        historial_query = historial_query.filter(
-            or_(
-                Requisicion.prepared_by == current_user.id,
-                Requisicion.delivered_by == current_user.id,
-                Requisicion.liquidated_by == current_user.id,
-            )
-        )
-    # jefe_bodega ve el historial completo (sin filtro por usuario)
     if resultado in {"completa", "parcial", "no_entregada"}:
         historial_query = historial_query.filter(Requisicion.delivery_result == resultado)
     if q:
