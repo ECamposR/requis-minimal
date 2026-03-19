@@ -35,6 +35,52 @@ function initSearchableSelects(root = document) {
     }
 }
 
+function findDatalistOptionByValue(list, rawValue) {
+    if (!list) return null;
+    const term = normalizeSearchText(rawValue);
+    if (!term) return null;
+    return Array.from(list.options || []).find((option) => normalizeSearchText(option.value) === term) || null;
+}
+
+function validateReceptorDesignadoInput(input, report = false) {
+    if (!input) return false;
+    const hiddenId = input.getAttribute("data-receptor-picker");
+    const hidden = hiddenId ? document.getElementById(hiddenId) : null;
+    const listId = input.getAttribute("list");
+    const list = listId ? document.getElementById(listId) : null;
+    const value = String(input.value || "").trim();
+    const option = findDatalistOptionByValue(list, value);
+    const receptorId = option?.dataset?.id ? String(option.dataset.id).trim() : "";
+
+    if (!value) {
+        if (hidden) hidden.value = "";
+        input.setCustomValidity("Debes seleccionar receptor designado.");
+        if (report) input.reportValidity();
+        return false;
+    }
+    if (!option || !receptorId) {
+        if (hidden) hidden.value = "";
+        input.setCustomValidity("Selecciona un receptor válido del catálogo.");
+        if (report) input.reportValidity();
+        return false;
+    }
+
+    if (hidden) hidden.value = receptorId;
+    input.setCustomValidity("");
+    return true;
+}
+
+function initReceptorDesignadoPickers(root = document) {
+    const inputs = root.querySelectorAll("[data-receptor-picker]");
+    for (const input of inputs) {
+        const sync = () => validateReceptorDesignadoInput(input, false);
+        input.addEventListener("input", sync);
+        input.addEventListener("change", sync);
+        input.addEventListener("blur", () => validateReceptorDesignadoInput(input, true));
+        sync();
+    }
+}
+
 function escapeHtml(text) {
     const value = String(text ?? "");
     return value
@@ -409,6 +455,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const requisicionForm = document.querySelector("form[data-requisicion-form='true']");
     if (requisicionForm) {
         requisicionForm.addEventListener("submit", (event) => {
+            const receptorInput = requisicionForm.querySelector("[data-receptor-picker]");
+            if (receptorInput && !validateReceptorDesignadoInput(receptorInput, false)) {
+                event.preventDefault();
+                receptorInput.reportValidity();
+                return;
+            }
             const rows = Array.from(document.querySelectorAll("#items-container .item-row"));
             const invalidInput = rows
                 .map((row) => row.querySelector("input[name*='[descripcion]']"))
@@ -429,6 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+    initReceptorDesignadoPickers(document);
     const qtyInputs = document.querySelectorAll("#items-container input[name*='[cantidad]']");
     for (const qtyInput of qtyInputs) {
         qtyInput.addEventListener("input", () => validateQtyInput(qtyInput, false));

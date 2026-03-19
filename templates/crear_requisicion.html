@@ -8,76 +8,75 @@
 
 <article class="panel view-panel">
     <form method="POST" action="/crear" data-requisicion-form="true" class="req-create-form">
-        <section class="req-section" aria-labelledby="req-info-general">
-            <h2 id="req-info-general" class="req-section-title">
-                <span class="material-symbols-outlined" aria-hidden="true">business</span>
-                Información General
-            </h2>
+        <div class="req-top-grid">
+            <section class="req-section" aria-labelledby="req-info-general">
+                <h2 id="req-info-general" class="req-section-title">
+                    <span class="material-symbols-outlined" aria-hidden="true">business</span>
+                    Información General
+                </h2>
 
-            <div class="grid">
-                <label>
-                    Codigo cliente
-                    <input type="text" name="cliente_codigo" class="req-client-field" required minlength="2" placeholder="Ej: C-1023">
-                </label>
-                <label>
-                    Nombre cliente
-                    <input type="text" name="cliente_nombre" class="req-client-field" required minlength="3" placeholder="Nombre cliente">
-                </label>
-                <label>
-                    Ruta Principal del Cliente
-                    <input
-                        type="text"
-                        name="cliente_ruta_principal"
-                        class="req-client-field"
-                        required
-                        minlength="4"
-                        maxlength="4"
-                        pattern="[A-Za-z]{2}[0-9]{2}"
-                        placeholder="Ej: RA02"
-                    >
-                </label>
-            </div>
-
-            <div class="grid grid-items-compact">
-                <label>
-                    Motivo / Clasificacion
-                    <select name="motivo_requisicion" required>
-                        <option value="">Seleccionar motivo...</option>
-                        {% for motivo in motivos_requisicion %}
-                        <option value="{{ motivo }}">{{ motivo }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label>
-                    Receptor designado
-                    <span class="receptor-designado-inline">
+                <div class="grid req-info-grid">
+                    <label>
+                        Codigo cliente
+                        <input type="text" name="cliente_codigo" class="req-client-field" required minlength="2" placeholder="Ej: C-1023">
+                    </label>
+                    <label>
+                        Nombre cliente
+                        <input type="text" name="cliente_nombre" class="req-client-field" required minlength="3" placeholder="Nombre cliente">
+                    </label>
+                    <label>
+                        Ruta Principal del Cliente
                         <input
                             type="text"
-                            placeholder="Buscar receptor..."
-                            data-select-search="receptor-designado-select"
-                            autocomplete="off"
+                            name="cliente_ruta_principal"
+                            class="req-client-field"
+                            required
+                            minlength="4"
+                            maxlength="4"
+                            pattern="[A-Za-z]{2}[0-9]{2}"
+                            placeholder="Ej: RA02"
                         >
-                        <select id="receptor-designado-select" name="receptor_designado_id" required>
-                            <option value="">Seleccionar...</option>
-                            {% for usuario in usuarios_activos %}
-                            <option value="{{ usuario.id }}">{{ usuario.nombre }} ({{ usuario.rol }})</option>
+                    </label>
+                </div>
+
+                <div class="grid grid-items-compact req-info-meta-grid">
+                    <label>
+                        Motivo / Clasificacion
+                        <select name="motivo_requisicion" required>
+                            <option value="">Seleccionar motivo...</option>
+                            {% for motivo in motivos_requisicion %}
+                            <option value="{{ motivo }}">{{ motivo }}</option>
                             {% endfor %}
                         </select>
-                    </span>
-                </label>
-            </div>
-        </section>
+                    </label>
+                    <label>
+                        Receptor designado
+                        <span class="receptor-designado-inline">
+                            <input
+                                type="text"
+                                placeholder="Buscar receptor..."
+                                list="catalogo-receptores"
+                                data-receptor-picker="receptor-designado-id"
+                                autocomplete="off"
+                                required
+                            >
+                            <input type="hidden" id="receptor-designado-id" name="receptor_designado_id" value="">
+                        </span>
+                    </label>
+                </div>
+            </section>
 
-        <section class="req-section" aria-labelledby="req-justificacion">
-            <h2 id="req-justificacion" class="req-section-title">
-                <span class="material-symbols-outlined" aria-hidden="true">description</span>
-                Justificacion
-            </h2>
-            <label>
-                Justificacion
-                <textarea name="justificacion" rows="2" required></textarea>
-            </label>
-        </section>
+            <section class="req-section" aria-labelledby="req-justificacion">
+                <h2 id="req-justificacion" class="req-section-title">
+                    <span class="material-symbols-outlined" aria-hidden="true">description</span>
+                    Justificacion
+                </h2>
+                <label>
+                    Justificacion
+                    <textarea name="justificacion" rows="2" required></textarea>
+                </label>
+            </section>
+        </div>
 
         <section class="req-section" aria-labelledby="req-items">
             <div class="req-section-header">
@@ -142,6 +141,12 @@
         <datalist id="catalogo-items">
             {% for item in catalogo_items %}
             <option value="{{ item.nombre }}"></option>
+            {% endfor %}
+        </datalist>
+
+        <datalist id="catalogo-receptores">
+            {% for usuario in usuarios_activos %}
+            <option value="{{ usuario.nombre }} ({{ usuario.rol }})" data-id="{{ usuario.id }}"></option>
             {% endfor %}
         </datalist>
 

@@ -1238,13 +1238,24 @@ body:has(form.req-create-form) .view-panel {
     background-color: #ffffff !important;
     box-shadow: 0px 10px 30px rgba(25, 28, 30, 0.06) !important;
     border: none !important;
-    padding: 2rem !important;
+    padding: 1.35rem 1.45rem 0.9rem !important;
     border-radius: var(--pico-border-radius) !important;
 }
 
 body:has(form.req-create-form) .req-create-form {
     display: grid;
-    gap: 1.25rem;
+    gap: 0.55rem;
+}
+
+body:has(form.req-create-form) .req-top-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr);
+    gap: 1rem;
+    align-items: stretch;
+}
+
+body:has(form.req-create-form) .req-top-grid > .req-section {
+    height: 100%;
 }
 
 body:has(form.req-create-form) .grid-items-compact {
@@ -1252,9 +1263,38 @@ body:has(form.req-create-form) .grid-items-compact {
     gap: 0.75rem;
 }
 
+body:has(form.req-create-form) .req-info-grid,
+body:has(form.req-create-form) .req-info-meta-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+body:has(form.req-create-form) .req-info-meta-grid {
+    align-items: stretch;
+}
+
+body:has(form.req-create-form) .req-info-grid > label,
+body:has(form.req-create-form) .req-info-meta-grid > label {
+    min-width: 0;
+}
+
+body:has(form.req-create-form) .req-info-meta-grid > label {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    grid-column: span 1;
+    height: 100%;
+}
+
 body:has(form.req-create-form) .req-section {
     display: grid;
-    gap: 0.8rem;
+    gap: 0.55rem;
+    padding: 0.82rem 1rem;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(113, 119, 130, 0.12);
+    border-radius: 0.9rem;
+    box-shadow: 0 8px 22px rgba(25, 28, 30, 0.03);
+    min-width: 0;
 }
 
 body:has(form.req-create-form) .req-section-header {
@@ -1267,16 +1307,33 @@ body:has(form.req-create-form) .req-section-header {
 body:has(form.req-create-form) .req-section-title {
     color: var(--pico-primary);
     font-weight: 700;
-    font-size: 1.1rem;
-    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    margin: 0 0 0.55rem;
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
 }
 
 body:has(form.req-create-form) .req-section-title .material-symbols-outlined {
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     color: var(--pico-primary);
+}
+
+body:has(form.req-create-form) .req-top-grid .req-section:last-child {
+    display: flex;
+    flex-direction: column;
+}
+
+body:has(form.req-create-form) .req-top-grid .req-section:last-child > label {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
+body:has(form.req-create-form) .req-top-grid .req-section:last-child textarea {
+    min-height: 100%;
+    flex: 1 1 auto;
 }
 
 body:has(form.req-create-form) .req-create-form label {
@@ -1285,25 +1342,18 @@ body:has(form.req-create-form) .req-create-form label {
     color: #414751;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.2rem;
 }
 
 body:has(form.req-create-form) .receptor-designado-inline {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    flex-wrap: nowrap;
+    display: block;
+    width: 100%;
 }
 
 body:has(form.req-create-form) .receptor-designado-inline input {
-    flex: 1 1 auto;
+    width: 100%;
     min-width: 0;
-}
-
-body:has(form.req-create-form) .receptor-designado-inline select {
-    flex: 0 0 12rem;
-    min-width: 12rem;
-    max-width: 12rem;
+    max-width: none;
 }
 
 body:has(form.req-create-form) .req-create-form input:not([type="checkbox"]),
@@ -1334,7 +1384,7 @@ body:has(form.req-create-form) .req-create-form input[readonly] {
 
 body:has(form.req-create-form) .items-table {
     border-collapse: collapse;
-    margin-top: 1rem;
+    margin-top: 0.25rem;
     width: 100%;
     table-layout: fixed;
 }
@@ -1508,11 +1558,16 @@ body:has(form.req-create-form) .item-demo-check input[type="checkbox"]:checked::
     opacity: 1;
 }
 
+body:has(form.req-create-form) #item-error {
+    margin: 0.15rem 0 0;
+}
+
 body:has(form.req-create-form) .form-actions {
     display: flex;
     justify-content: flex-end;
     gap: 0.75rem;
     flex-wrap: wrap;
+    margin-top: 0.15rem;
 }
 
 body:has(form.req-create-form) .form-actions button[type="submit"] {
@@ -1538,4 +1593,16 @@ body:has(form.req-create-form) .form-actions button[type="submit"]:active {
 
 body:has(form.req-create-form) .form-actions {
     justify-content: center;
+}
+
+@media (max-width: 1024px) {
+    body:has(form.req-create-form) .req-top-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    body:has(form.req-create-form) .receptor-designado-inline input {
+        width: 100%;
+    }
 }

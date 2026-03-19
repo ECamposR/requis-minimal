@@ -37,15 +37,13 @@
                 <input
                     type="text"
                     placeholder="Buscar receptor..."
-                    data-select-search="receptor-designado-select"
+                    list="catalogo-receptores"
+                    data-receptor-picker="receptor-designado-id"
                     autocomplete="off"
+                    required
+                    value="{% if req.receptor_designado %}{{ req.receptor_designado.nombre }} ({{ req.receptor_designado.rol }}){% endif %}"
                 >
-                <select id="receptor-designado-select" name="receptor_designado_id" required>
-                    <option value="">Seleccionar...</option>
-                    {% for usuario in usuarios_activos %}
-                    <option value="{{ usuario.id }}" {% if req.receptor_designado_id == usuario.id %}selected{% endif %}>{{ usuario.nombre }} ({{ usuario.rol }})</option>
-                    {% endfor %}
-                </select>
+                <input type="hidden" id="receptor-designado-id" name="receptor_designado_id" value="{{ req.receptor_designado_id or '' }}">
             </label>
             <label>
                 Motivo / Clasificacion
@@ -93,6 +91,11 @@
         <datalist id="catalogo-items">
             {% for item in catalogo_items %}
             <option value="{{ item.nombre }}"></option>
+            {% endfor %}
+        </datalist>
+        <datalist id="catalogo-receptores">
+            {% for usuario in usuarios_activos %}
+            <option value="{{ usuario.nombre }} ({{ usuario.rol }})" data-id="{{ usuario.id }}"></option>
             {% endfor %}
         </datalist>
         <p id="item-error" class="page-subtitle" role="alert" aria-live="polite"></p>
