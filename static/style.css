@@ -1442,6 +1442,12 @@ body:has(form.req-create-form) .items-table tbody td select:focus {
     box-shadow: none;
 }
 
+body:has(form.req-create-form) .items-table .field-help-row select {
+    width: 50%;
+    max-width: 50%;
+    justify-self: start;
+}
+
 body:has(form.req-create-form) .items-table .item-action-cell {
     width: 6rem;
     text-align: center;
