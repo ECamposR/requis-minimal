@@ -1213,3 +1213,306 @@ tr.row-alert-border td:first-child {
         grid-template-columns: 1fr;
     }
 }
+
+/* =========================================
+   VISTA: NUEVA REQUISICIÓN (MOCKUP REFACTOR)
+   ========================================= */
+
+.material-symbols-outlined {
+    font-family: "Material Symbols Outlined";
+    font-weight: normal;
+    font-style: normal;
+    font-size: 1.1rem;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    vertical-align: middle;
+}
+
+body:has(form.req-create-form) .view-panel {
+    background-color: #ffffff !important;
+    box-shadow: 0px 10px 30px rgba(25, 28, 30, 0.06) !important;
+    border: none !important;
+    padding: 2rem !important;
+    border-radius: var(--pico-border-radius) !important;
+}
+
+body:has(form.req-create-form) .req-create-form {
+    display: grid;
+    gap: 1.25rem;
+}
+
+body:has(form.req-create-form) .grid-items-compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+body:has(form.req-create-form) .req-section {
+    display: grid;
+    gap: 0.8rem;
+}
+
+body:has(form.req-create-form) .req-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+body:has(form.req-create-form) .req-section-title {
+    color: var(--pico-primary);
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin: 0 0 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+body:has(form.req-create-form) .req-section-title .material-symbols-outlined {
+    font-size: 1.3rem;
+    color: var(--pico-primary);
+}
+
+body:has(form.req-create-form) .req-create-form label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #414751;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+}
+
+body:has(form.req-create-form) .receptor-designado-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: nowrap;
+}
+
+body:has(form.req-create-form) .receptor-designado-inline input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+body:has(form.req-create-form) .receptor-designado-inline select {
+    flex: 0 0 12rem;
+    min-width: 12rem;
+    max-width: 12rem;
+}
+
+body:has(form.req-create-form) .req-create-form input:not([type="checkbox"]),
+body:has(form.req-create-form) .req-create-form select,
+body:has(form.req-create-form) .req-create-form textarea {
+    background-color: #f2f4f6;
+    border: none;
+    border-bottom: 1px solid rgba(113, 119, 130, 0.3);
+    border-radius: 0.25rem 0.25rem 0 0;
+    box-shadow: none;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+body:has(form.req-create-form) .req-create-form input:not([type="checkbox"]):focus,
+body:has(form.req-create-form) .req-create-form select:focus,
+body:has(form.req-create-form) .req-create-form textarea:focus {
+    border-bottom: 2px solid var(--pico-primary);
+    background-color: #eceef0;
+    box-shadow: none;
+    outline: none;
+}
+
+body:has(form.req-create-form) .req-create-form input[readonly] {
+    color: #414751;
+}
+
+body:has(form.req-create-form) .items-table {
+    border-collapse: collapse;
+    margin-top: 1rem;
+    width: 100%;
+    table-layout: fixed;
+}
+
+body:has(form.req-create-form) .items-table thead th {
+    background-color: rgba(230, 232, 234, 0.5);
+    color: #414751;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: none;
+    padding: 0.75rem 1rem;
+}
+
+body:has(form.req-create-form) .items-table tbody td {
+    background-color: #ffffff;
+    border-bottom: 1px solid rgba(230, 232, 234, 0.8);
+    padding: 0.5rem 1rem;
+    vertical-align: middle;
+}
+
+body:has(form.req-create-form) .items-table tbody td input:not([type="checkbox"]),
+body:has(form.req-create-form) .items-table tbody td select {
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(113, 119, 130, 0.2);
+    padding: 0.4rem;
+    width: 100%;
+    min-width: 0;
+    box-shadow: none;
+}
+
+body:has(form.req-create-form) .items-table tbody td input:not([type="checkbox"]):focus,
+body:has(form.req-create-form) .items-table tbody td select:focus {
+    border-bottom: 2px solid var(--pico-primary);
+    background-color: transparent;
+    box-shadow: none;
+}
+
+body:has(form.req-create-form) .items-table .item-action-cell {
+    width: 6rem;
+    text-align: center;
+    vertical-align: middle;
+}
+
+body:has(form.req-create-form) .field-help-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+body:has(form.req-create-form) .field-help-inline {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: fit-content;
+}
+
+body:has(form.req-create-form) .field-help-trigger {
+    width: 1.35rem;
+    height: 1.35rem;
+    min-width: 1.35rem;
+    padding: 0;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 90, 156, 0.35);
+    background: rgba(0, 90, 156, 0.12);
+    color: #005a9c;
+    font-size: 0.8rem;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+}
+
+body:has(form.req-create-form) .field-help-trigger:hover,
+body:has(form.req-create-form) .field-help-trigger:focus-visible {
+    background: rgba(0, 90, 156, 0.2);
+    border-color: rgba(0, 90, 156, 0.55);
+}
+
+body:has(form.req-create-form) .field-help-popover {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.35rem);
+    z-index: 20;
+    width: min(320px, 70vw);
+    padding: 0.7rem 0.8rem;
+    border-radius: 10px;
+    border: 1px solid rgba(113, 119, 130, 0.28);
+    background: #ffffff;
+    color: #191c1e;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    box-shadow: 0 16px 32px rgba(25, 28, 30, 0.12);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
+}
+
+body:has(form.req-create-form) .field-help-inline:hover .field-help-popover,
+body:has(form.req-create-form) .field-help-inline:focus-within .field-help-popover {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+body:has(form.req-create-form) .item-demo-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    color: #414751;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-bottom: 0;
+}
+
+body:has(form.req-create-form) .item-demo-check input[type="checkbox"] {
+    margin: 0 !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    border: 1.5px solid #64748b !important;
+    border-radius: 3px !important;
+    background: #ffffff !important;
+    cursor: pointer !important;
+    flex-shrink: 0;
+    display: inline-grid !important;
+    place-content: center;
+    transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+body:has(form.req-create-form) .item-demo-check input[type="checkbox"]:checked {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+}
+
+body:has(form.req-create-form) .item-demo-check input[type="checkbox"]::before {
+    content: "✓";
+    font-size: 0.65rem;
+    color: #ffffff;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+body:has(form.req-create-form) .item-demo-check input[type="checkbox"]:checked::before {
+    opacity: 1;
+}
+
+body:has(form.req-create-form) .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+body:has(form.req-create-form) .form-actions button[type="submit"] {
+    background: linear-gradient(to right, #005a9c, #1e73be);
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 90, 156, 0.2);
+    font-weight: 700;
+    padding: 0.75rem 2.5rem;
+    border-radius: 0.5rem;
+    transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+body:has(form.req-create-form) .form-actions button[type="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0, 90, 156, 0.24);
+}
+
+body:has(form.req-create-form) .form-actions button[type="submit"]:active {
+    transform: scale(0.96);
+}
