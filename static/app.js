@@ -347,15 +347,15 @@ function buildItemRowMarkup(index) {
                             Usa <strong>Instalacion inicial</strong> solo para <strong>R1E</strong> o <strong>Demostracion</strong>, cuando el equipo se instala por primera vez en el cliente. Para el resto, usa <strong>Reposicion</strong>.
                         </div>
                     </div>
+                    <label class="item-demo-check">
+                        <input type="checkbox" name="es_demo_${index}" value="on">
+                        Para Demo
+                    </label>
                 </div>
-                <label class="item-demo-check">
-                    <input type="checkbox" name="es_demo_${index}" value="on">
-                    Para Demo
-                </label>
             </div>
         </td>
         <td class="item-action-cell">
-            <button type="button" aria-label="Eliminar item">X</button>
+            <button type="button" aria-label="Eliminar item">Eliminar Item</button>
         </td>
     `;
 }

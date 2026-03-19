@@ -1387,6 +1387,7 @@ body:has(form.req-create-form) .items-table {
     margin-top: 0.25rem;
     width: 100%;
     table-layout: fixed;
+    overflow: visible;
 }
 
 body:has(form.req-create-form) .items-table .item-row {
@@ -1418,10 +1419,14 @@ body:has(form.req-create-form) .items-table tbody td {
     border-bottom: 1px solid rgba(230, 232, 234, 0.8);
     padding: 0.5rem 1rem;
     vertical-align: middle;
+    overflow: visible;
 }
 
 body:has(form.req-create-form) .items-table .item-context-block {
     width: 100%;
+    display: grid;
+    gap: 0.25rem;
+    overflow: visible;
 }
 
 body:has(form.req-create-form) .items-table tbody td input:not([type="checkbox"]),
@@ -1443,30 +1448,68 @@ body:has(form.req-create-form) .items-table tbody td select:focus {
 }
 
 body:has(form.req-create-form) .items-table .field-help-row select {
-    width: 50%;
-    max-width: 50%;
+    width: 10.8rem;
+    max-width: 10.8rem;
+    flex: 0 0 10.8rem;
     justify-self: start;
-}
-
-body:has(form.req-create-form) .items-table .item-action-cell {
-    width: 6rem;
-    text-align: center;
-    vertical-align: middle;
+    min-height: 2.35rem;
 }
 
 body:has(form.req-create-form) .field-help-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.35rem;
+    display: flex;
     align-items: center;
+    gap: 0.24rem;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow: visible;
+}
+
+body:has(form.req-create-form) .items-table .item-action-cell {
+    width: 7.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    vertical-align: middle;
+    padding-inline: 0.25rem;
+}
+
+body:has(form.req-create-form) .items-table .item-action-cell button {
+    min-width: 6.8rem;
+    min-height: 2.35rem;
+    margin: 0 auto;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid rgba(185, 28, 28, 0.35);
+    background: rgba(185, 28, 28, 0.08);
+    color: #b91c1c;
+    font-size: 0.8rem;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: none;
+}
+
+body:has(form.req-create-form) .items-table .item-action-cell button:hover,
+body:has(form.req-create-form) .items-table .item-action-cell button:focus-visible {
+    background: rgba(185, 28, 28, 0.16);
+    border-color: rgba(185, 28, 28, 0.5);
+    transform: translateY(-1px);
 }
 
 body:has(form.req-create-form) .field-help-inline {
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.24rem;
     width: fit-content;
+    z-index: 4;
+    flex: 0 0 auto;
+}
+
+body:has(form.req-create-form) .field-help-row .item-demo-check {
+    justify-self: start;
+    white-space: nowrap;
+    flex: 0 0 auto;
 }
 
 body:has(form.req-create-form) .field-help-trigger {
@@ -1494,7 +1537,7 @@ body:has(form.req-create-form) .field-help-popover {
     position: absolute;
     left: 0;
     top: calc(100% + 0.35rem);
-    z-index: 20;
+    z-index: 9999;
     width: min(320px, 70vw);
     padding: 0.7rem 0.8rem;
     border-radius: 10px;
