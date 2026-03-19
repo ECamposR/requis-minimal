@@ -1,5 +1,23 @@
 # Worklog (append-only)
 
+## 2026-03-19 16:34 CST-0600 | tool: Codex CLI
+- Objetivo: ampliar visibilidad de lectura para el rol `bodega` sin tocar el permiso operativo de `Confirmar en Prokey`.
+- Tareas: `REQ-183`
+- Cambios:
+  - `app/main.py`
+  - `templates/partials/navbar.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - `bodega` ya puede entrar a `Todas las Requisiciones`, ver el historial completo de `/bodega` y navegar a esas vistas desde home/navbar.
+  - El permiso de `Confirmar en Prokey` no se altero y sigue acotado a `jefe_bodega` y `admin`.
+- Validación:
+  - `python -m py_compile app/main.py tests/test_basic_flow.py`
+- Próximo paso:
+  - Commit/push del frente de permisos y, si hace falta, evaluar smoke manual de `/bodega` y `/todas-requisiciones` con usuario `bodega`.
+
 ## 2026-03-19 09:15 CST-0600 | tool: Codex CLI
 - Objetivo: dejar trazabilidad de los ajustes visuales realizados en la rama `chore/ui-only-fixes` para la vista `Nueva Requisición`, sin tocar lógica de negocio.
 - Tareas: `REQ-182`
