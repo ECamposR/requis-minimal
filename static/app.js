@@ -685,31 +685,32 @@ function verDetalle(id) {
             const pdfAction = isPdfEnabled
                 ? `<a class="detail-action-btn detail-action-btn--pdf" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>Ver PDF</a>`
                 : `<button type="button" class="detail-action-btn detail-action-btn--disabled" disabled title="${data.estado === "pendiente" ? "Disponible al aprobar" : "No disponible para este estado"}"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>Ver PDF</button>`;
-            const commentsToggleHtml = `
-                <details class="detail-card detail-accordion">
-                    <summary>
-                        <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
-                        Otros comentarios y proceso
-                    </summary>
-                    <div class="detail-accordion__content">
-                        <div class="detail-comment-block">
-                            <span class="detail-kv-label">Aprobación</span>
-                            <p>${escapeHtml(data.approval_comment || "-")}</p>
+            const otherCommentItems = [
+                ["Aprobación", data.approval_comment || "-"],
+                ["Razón rechazo", data.rejection_reason || "-"],
+                ["Comentario rechazo", data.rejection_comment || "-"],
+                ["Comentario entrega", data.delivery_comment || "-"],
+            ];
+            const commentsTimelineHtml = otherCommentItems
+                .map(([label, value]) => {
+                    const cleanValue = escapeHtml(value || "-");
+                    return `<li class="detail-comments-timeline__item">
+                        <div class="detail-comments-timeline__body">
+                            <div class="detail-comments-timeline__title">${escapeHtml(label)}</div>
+                            <div class="detail-comments-timeline__text">${cleanValue}</div>
                         </div>
-                        <div class="detail-comment-block">
-                            <span class="detail-kv-label">Razón rechazo</span>
-                            <p>${escapeHtml(data.rejection_reason || "-")}</p>
-                        </div>
-                        <div class="detail-comment-block">
-                            <span class="detail-kv-label">Comentario rechazo</span>
-                            <p>${escapeHtml(data.rejection_comment || "-")}</p>
-                        </div>
-                        <div class="detail-comment-block">
-                            <span class="detail-kv-label">Comentario entrega</span>
-                            <p>${escapeHtml(data.delivery_comment || "-")}</p>
-                        </div>
+                    </li>`;
+                })
+                .join("");
+            const commentsPanelHtml = `
+                <div class="detail-card detail-card--comments">
+                    <h3 class="detail-card__title"><span class="material-symbols-outlined" aria-hidden="true">history</span>Otros comentarios y proceso</h3>
+                    <div class="detail-comments-wrap">
+                        <ol class="detail-comments-timeline">
+                            ${commentsTimelineHtml}
+                        </ol>
                     </div>
-                </details>
+                </div>
             `;
 
             modal.classList.add("modal--detail-dashboard");
@@ -776,8 +777,8 @@ function verDetalle(id) {
                             <h3 class="detail-card__title"><span class="material-symbols-outlined" aria-hidden="true">chat</span>Comentario de liquidación</h3>
                             <p class="detail-copy detail-copy--muted">${liquidationComment}</p>
                         </div>
+                        ${commentsPanelHtml}
                     </section>
-                    ${commentsToggleHtml}
                 </div>
             `;
             modal.showModal();
