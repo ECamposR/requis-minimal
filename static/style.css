@@ -1793,6 +1793,7 @@ body:has(form.req-create-form) .form-actions {
 #modal-detalle.modal--detail-dashboard .detail-card {
     display: grid;
     gap: 0.85rem;
+    align-content: start;
 }
 
 #modal-detalle.modal--detail-dashboard .detail-card--alert {
@@ -1812,6 +1813,8 @@ body:has(form.req-create-form) .form-actions {
     font-size: 0.92rem;
     font-weight: 800;
     color: #0b3b8e;
+    align-self: start;
+    line-height: 1.15;
 }
 
 #modal-detalle.modal--detail-dashboard .detail-card__title .material-symbols-outlined {
