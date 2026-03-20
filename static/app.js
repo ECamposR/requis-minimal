@@ -35,6 +35,16 @@ function initSearchableSelects(root = document) {
     }
 }
 
+function ensureMaterialSymbolsFont() {
+    const linkId = "material-symbols-outlined-font";
+    if (document.getElementById(linkId)) return;
+    const link = document.createElement("link");
+    link.id = linkId;
+    link.rel = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap";
+    document.head.appendChild(link);
+}
+
 function findDatalistOptionByValue(list, rawValue) {
     if (!list) return null;
     const term = normalizeSearchText(rawValue);
@@ -492,6 +502,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function verDetalle(id) {
+    ensureMaterialSymbolsFont();
     fetch(`/api/requisiciones/${id}`)
         .then((r) => r.json())
         .then((data) => {
@@ -499,34 +510,29 @@ function verDetalle(id) {
             const modal = document.getElementById("modal-detalle");
             if (!content || !modal) return;
             const headerTitle = modal.querySelector("header h3");
-            if (headerTitle) {
-                headerTitle.textContent = `Detalle de Requisici\u00f3n: ${data.folio || "-"}`;
-            }
+            if (headerTitle) headerTitle.textContent = "Detalle";
 
             const items = Array.isArray(data.items) ? data.items : [];
             const isLiquidada = ["liquidada", "pendiente_prokey", "finalizada_sin_prokey", "liquidada_en_prokey"].includes(data.estado);
-            const showDelivered = items.some(
-                (i) => i.cantidad_entregada !== null && i.cantidad_entregada !== undefined
-            );
+            const showDelivered = items.some((i) => i.cantidad_entregada !== null && i.cantidad_entregada !== undefined);
+            const itemEmptyColspan = showDelivered ? 3 : 2;
+
             const itemRows = items
                 .map((i) => {
                     const qe = i.cantidad_entregada;
                     const hasQe = qe !== null && qe !== undefined;
                     const isZero = hasQe && Number(qe) === 0;
                     const contexto = contextoOperacionLabel(i.contexto_operacion);
-                    const demoBadge = i.es_demo
-                        ? '<span class="badge warning item-demo-badge">Para Demo</span>'
-                        : "";
-                    const despCls = isZero
-                        ? "qty-col qty-despachada qty-zero"
-                        : "qty-col qty-despachada";
+                    const demoBadge = i.es_demo ? '<span class="detail-badge detail-badge--demo">Para Demo</span>' : "";
+                    const despCls = isZero ? "qty-col qty-despachada qty-zero" : "qty-col qty-despachada";
                     return `<tr>
-                    <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${demoBadge}${contexto ? `<div class="liq-type-context muted">${escapeHtml(contexto)}</div>` : ""}</td>
+                    <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${demoBadge}${contexto ? `<div class="detail-type-context detail-muted">${escapeHtml(contexto)}</div>` : ""}</td>
                     <td class="qty-col qty-solicitada">${fmtQty(i.cantidad)}</td>
                     ${showDelivered ? `<td class="${despCls}">${fmtQty(qe)}</td>` : ""}
                 </tr>`;
                 })
                 .join("");
+
             const liquidacionRows = items
                 .map((i) => {
                     const difference = Number(i.difference ?? i.delta ?? 0);
@@ -541,23 +547,21 @@ function verDetalle(id) {
                                   const detail = alertMessage(a);
                                   const detailText = detail ? `${escapeHtml(detail)} · ` : "";
                                   const title = `${label}: ${detailText}(interno: ${code})`;
-                                  return `<span class="alert-badge alert-badge--${sev} liq-alert-badge ${sev}" title="${title}">${label}</span>`;
+                                  return `<span class="detail-alert-badge detail-alert-badge--${sev}" title="${title}">${label}</span>`;
                               })
                               .join("")
-                        : '<span class="liq-alert-empty">Sin alertas</span>';
-                    const noteAttentionClass = alerts.length ? "item-note--attention" : "";
+                        : '<span class="detail-muted">Sin alertas</span>';
+                    const noteAttentionClass = alerts.length ? "detail-item-note--attention" : "";
                     const noteHtml = i.item_liquidation_note
-                        ? `<div class="liq-item-note item-note ${noteAttentionClass}">${escapeHtml(i.item_liquidation_note)}</div>`
+                        ? `<div class="detail-item-note ${noteAttentionClass}">${escapeHtml(i.item_liquidation_note)}</div>`
                         : "";
-                    const demoBadge = i.es_demo
-                        ? '<span class="badge warning item-demo-badge">Para Demo</span>'
-                        : "";
+                    const demoBadge = i.es_demo ? '<span class="detail-badge detail-badge--demo">Para Demo</span>' : "";
                     const mode = (i.mode || "RETORNABLE").toUpperCase();
                     const contexto = contextoOperacionLabel(i.contexto_operacion);
                     const tipoContexto = contexto
-                        ? `<div class="liq-type-main">${escapeHtml(mode)}</div><div class="liq-type-context muted">${escapeHtml(contexto)}</div>`
+                        ? `<div class="detail-type-main">${escapeHtml(mode)}</div><div class="detail-type-context detail-muted">${escapeHtml(contexto)}</div>`
                         : escapeHtml(mode);
-                    const ingresoPk = mode === "RETORNABLE" ? fmtQty(i.pk_ingreso_qty) : '<span class="muted">—</span>';
+                    const ingresoPk = mode === "RETORNABLE" ? fmtQty(i.pk_ingreso_qty) : '<span class="detail-muted">—</span>';
                     const differenceText = difference > 0
                         ? `Falta ${fmtQty(difference)}`
                         : difference < 0
@@ -585,19 +589,16 @@ function verDetalle(id) {
                 no_entregada: "No Entregada",
             };
             const resultVal = data.delivery_result ? resultLabels[data.delivery_result] || data.delivery_result : "-";
-            const chipCls =
-                { completa: "resultado-completa", parcial: "resultado-parcial", no_entregada: "resultado-no-entregada" }[
-                    data.delivery_result
-                ] || "";
+            const chipCls = { completa: "resultado-completa", parcial: "resultado-parcial", no_entregada: "resultado-no-entregada" }[data.delivery_result] || "";
             const resultHtml = data.delivery_result
                 ? `<span class="resultado-chip ${chipCls}">${escapeHtml(resultVal)}</span>`
                 : `<span class="flujo-value">${escapeHtml(resultVal)}</span>`;
             const timeline = Array.isArray(data.timeline) ? data.timeline : [];
             const timelineRows = timeline
                 .map(
-                    (event) => `<li class="dd-timeline__item">
-                                    <div class="dd-timeline__title">${escapeHtml(event.evento || "-")}</div>
-                                    <div class="dd-timeline__meta">${escapeHtml(event.actor || "-")} · ${fmtDateTime(event.fecha_hora)}</div>
+                    (event) => `<li class="detail-timeline__item">
+                                    <div class="detail-timeline__title">${escapeHtml(event.evento || "-")}</div>
+                                    <div class="detail-timeline__meta">${escapeHtml(event.actor || "-")} · ${fmtDateTime(event.fecha_hora)}</div>
                                 </li>`
                 )
                 .join("");
@@ -614,18 +615,18 @@ function verDetalle(id) {
             const topAlertTypes = topAlertEntries.length
                 ? topAlertEntries.map(([label, count]) => `${escapeHtml(label)} (${count})`).join(", ")
                 : "Ninguno";
-            const alertCardClass = highAlerts > 0 ? "dd-card--alert dd-card--alert-high" : allAlerts.length > 0 ? "dd-card--alert" : "";
+            const alertCardClass = highAlerts > 0 ? "detail-card--alert detail-card--alert-high" : allAlerts.length > 0 ? "detail-card--alert" : "";
             const prokeyEditorNote = data.prokey_ref_actualizada_por_nombre
-                ? `<div class="dd-kv-note">Registrada por ${escapeHtml(data.prokey_ref_actualizada_por_nombre)}${data.prokey_ref_actualizada_por_rol ? ` (${escapeHtml(data.prokey_ref_actualizada_por_rol)})` : ""}</div>`
+                ? `<div class="detail-kv-note">Registrada por ${escapeHtml(data.prokey_ref_actualizada_por_nombre)}${data.prokey_ref_actualizada_por_rol ? ` (${escapeHtml(data.prokey_ref_actualizada_por_rol)})` : ""}</div>`
                 : "";
             const prokeyRefHtml = data.prokey_not_applicable
-                ? 'No aplica'
+                ? "No aplica"
                 : data.prokey_ref
-                ? `${escapeHtml(data.prokey_ref)}${prokeyEditorNote}`
-                : data.puede_editar_prokey_ref
-                    ? `Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>
-                       <a href="/requisiciones/${data.id}/prokey-ref" class="prokey-add-link">Agregar referencia Prokey</a>`
-                    : 'Pendiente <span class="badge warning prokey-pending-badge">Prokey pendiente</span>';
+                    ? `${escapeHtml(data.prokey_ref)}${prokeyEditorNote}`
+                    : data.puede_editar_prokey_ref
+                        ? `Pendiente <span class="detail-badge detail-badge--warn">Prokey pendiente</span>
+                           <a href="/requisiciones/${data.id}/prokey-ref" class="detail-inline-link">Agregar referencia Prokey</a>`
+                        : 'Pendiente <span class="detail-badge detail-badge--warn">Prokey pendiente</span>';
             const receptorDesignadoHtml = data.receptor_designado
                 ? `${escapeHtml(data.receptor_designado.nombre || "-")} (${escapeHtml(data.receptor_designado.rol || "-")})`
                 : "-";
@@ -634,70 +635,77 @@ function verDetalle(id) {
                 : data.delivered_to
                     ? escapeHtml(data.delivered_to)
                     : "Pendiente";
-            const liquidationComment = data.liquidation_comment
-                ? escapeHtml(data.liquidation_comment)
-                : "—";
-            const prokeyClosedBy = escapeHtml(data.prokey_liquidado_por_nombre || "-");
-            const prokeyClosedAt = fmtDateTime(data.prokey_liquidada_at);
+            const liquidationComment = data.liquidation_comment ? escapeHtml(data.liquidation_comment) : "—";
             const itemsSection = isLiquidada
-                ? `<section class="detalle-items-section">
-                    <h4><span class="icon-items">\u2299</span> Items Liquidados</h4>
-                    <div class="detalle-items-wrap liquidacion-paper-wrap">
-                        <table class="detalle-items-table liquidacion-paper-table">
-                            <thead><tr>
-                                <th>Descripcion</th>
-                                <th class="qty-col">Entregado</th>
-                                <th class="qty-col">Tipo</th>
-                                <th class="qty-col">Usado</th>
-                                <th class="qty-col">No usado</th>
-                                <th class="qty-col">Regresa</th>
-                                <th class="qty-col" title="Diferencia de retorno: si falta equipo por regresar muestra 'Falta'; si regresó de más muestra 'Extra'">DIF</th>
-                                <th class="qty-col" title="Retornables en reposición usados que regresaron, más excedentes recibidos en bodega. Instalación inicial no genera ingreso PK.">Ingreso PK (Bodega)</th>
-                                <th>Alertas</th>
-                            </tr></thead>
+                ? `<section class="detail-card detail-items-panel">
+                    <div class="detail-panel-bar">
+                        <h3 class="detail-card__title"><span class="material-symbols-outlined" aria-hidden="true">list</span>Items liquidados</h3>
+                    </div>
+                    <div class="detail-table-shell">
+                        <table class="detail-items-table detail-items-table--liquidation">
+                            <thead>
+                                <tr>
+                                    <th>Descripción del Item</th>
+                                    <th class="qty-col">Entregado</th>
+                                    <th class="qty-col">Tipo</th>
+                                    <th class="qty-col">Usado</th>
+                                    <th class="qty-col">No usado</th>
+                                    <th class="qty-col">Regresa</th>
+                                    <th class="qty-col" title="Diferencia de retorno: si falta equipo por regresar muestra 'Falta'; si regresó de más muestra 'Extra'">DIF</th>
+                                    <th class="qty-col" title="Retornables en reposición usados que regresaron, más excedentes recibidos en bodega. Instalación inicial no genera ingreso PK.">Ingreso PK (Bodega)</th>
+                                    <th>Alertas</th>
+                                </tr>
+                            </thead>
                             <tbody>
-                                ${liquidacionRows || '<tr><td colspan="9">Sin items</td></tr>'}
+                                ${liquidacionRows || '<tr><td colspan="9" class="detail-empty-row">Sin items</td></tr>'}
                             </tbody>
                         </table>
                     </div>
                 </section>`
-                : `<section class="detalle-items-section">
-                    <h4><span class="icon-items">\u2299</span> Items Solicitados</h4>
-                    <div class="detalle-items-wrap">
-                        <table class="detalle-items-table">
-                            <thead><tr>
-                                <th>Item / Producto</th>
-                                <th class="qty-col">Cant. Solicitada</th>
-                                ${showDelivered ? '<th class="qty-col">Cant. Despachada</th>' : ""}
-                            </tr></thead>
+                : `<section class="detail-card detail-items-panel">
+                    <div class="detail-panel-bar">
+                        <h3 class="detail-card__title"><span class="material-symbols-outlined" aria-hidden="true">list</span>Items solicitados</h3>
+                    </div>
+                    <div class="detail-table-shell">
+                        <table class="detail-items-table detail-items-table--requested">
+                            <thead>
+                                <tr>
+                                    <th>Descripción del Item</th>
+                                    <th class="qty-col">Cantidad</th>
+                                    ${showDelivered ? '<th class="qty-col">Cant. Despachada</th>' : ""}
+                                </tr>
+                            </thead>
                             <tbody>
-                                ${itemRows || '<tr><td colspan="3">Sin items</td></tr>'}
+                                ${itemRows || `<tr><td colspan="${itemEmptyColspan}" class="detail-empty-row">Sin items</td></tr>`}
                             </tbody>
                         </table>
                     </div>
                 </section>`;
             const isPdfEnabled = ["aprobada", "preparado", "entregada", "no_entregada", "liquidada", "pendiente_prokey", "finalizada_sin_prokey", "liquidada_en_prokey"].includes(data.estado) && !!data.pdf_url;
             const pdfAction = isPdfEnabled
-                ? `<a class="secondary" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer">Ver PDF</a>`
-                : `<button type="button" class="secondary btn-disabled" disabled title="${data.estado === "pendiente" ? "Disponible al aprobar" : "No disponible para este estado"}">Ver PDF</button>`;
+                ? `<a class="detail-action-btn detail-action-btn--pdf" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>Ver PDF</a>`
+                : `<button type="button" class="detail-action-btn detail-action-btn--disabled" disabled title="${data.estado === "pendiente" ? "Disponible al aprobar" : "No disponible para este estado"}"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>Ver PDF</button>`;
             const commentsToggleHtml = `
-                <details class="detalle-collapsible dd-collapse">
-                    <summary>Otros comentarios y proceso</summary>
-                    <div class="comentarios-list">
-                        <div class="comentario-item">
-                            <span class="meta-label label-muted">APROBACIÓN</span>
+                <details class="detail-card detail-accordion">
+                    <summary>
+                        <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+                        Otros comentarios y proceso
+                    </summary>
+                    <div class="detail-accordion__content">
+                        <div class="detail-comment-block">
+                            <span class="detail-kv-label">Aprobación</span>
                             <p>${escapeHtml(data.approval_comment || "-")}</p>
                         </div>
-                        <div class="comentario-item">
-                            <span class="meta-label label-muted">RAZÓN RECHAZO</span>
+                        <div class="detail-comment-block">
+                            <span class="detail-kv-label">Razón rechazo</span>
                             <p>${escapeHtml(data.rejection_reason || "-")}</p>
                         </div>
-                        <div class="comentario-item">
-                            <span class="meta-label label-muted">COMENTARIO RECHAZO</span>
+                        <div class="detail-comment-block">
+                            <span class="detail-kv-label">Comentario rechazo</span>
                             <p>${escapeHtml(data.rejection_comment || "-")}</p>
                         </div>
-                        <div class="comentario-item">
-                            <span class="meta-label label-muted">COMENTARIO ENTREGA</span>
+                        <div class="detail-comment-block">
+                            <span class="detail-kv-label">Comentario entrega</span>
                             <p>${escapeHtml(data.delivery_comment || "-")}</p>
                         </div>
                     </div>
@@ -706,59 +714,70 @@ function verDetalle(id) {
 
             modal.classList.add("modal--detail-dashboard");
             content.innerHTML = `
-                <div class="detail-dashboard">
-                <section class="detalle-dashboard-header">
-                    <div>
-                        <h4 class="detalle-dashboard-title">Requisición ${escapeHtml(data.folio || "-")}</h4>
-                        <span class="badge info">Creada: ${fmtDateTime(data.created_at)}</span>
-                    </div>
-                    <div class="detalle-dashboard-actions">
-                        ${pdfAction}
-                    </div>
-                </section>
-                <section class="detalle-dashboard-grid dd-grid">
-                    <article class="detalle-block dashboard-card dd-card">
-                        <h4 class="dd-card-title">Información general</h4>
-                        <div class="dd-kv"><div class="dd-kv-label">Cliente</div><div class="dd-kv-value">${escapeHtml(data.cliente_nombre || "-")}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Código cliente</div><div class="dd-kv-value">${escapeHtml(data.cliente_codigo || "-")}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Ruta principal</div><div class="dd-kv-value">${escapeHtml(data.cliente_ruta_principal || "-")}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Solicitante</div><div class="dd-kv-value">${escapeHtml(data.solicitante || "-")}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Receptor designado</div><div class="dd-kv-value">${receptorDesignadoHtml}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Recibió / firmó</div><div class="dd-kv-value">${receptorRealHtml}</div></div>
-                    </article>
-                    <article class="detalle-block dashboard-card dd-card">
-                        <h4 class="dd-card-title">Estado liquidación</h4>
-                        <div class="dd-kv"><div class="dd-kv-label">Estado</div><div class="dd-kv-value">${escapeHtml(data.estado || "-")}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Resultado entrega</div><div class="dd-kv-value">${resultHtml}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Ref Prokey</div><div class="dd-kv-value">${prokeyRefHtml}</div></div>
-                    </article>
-                    <article class="detalle-block dashboard-card dd-card ${alertCardClass}">
-                        <h4 class="dd-card-title">Alertas de conciliación</h4>
-                        <div class="dd-kv"><div class="dd-kv-label">Total</div><div class="dd-kv-value">${allAlerts.length} detectadas</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Alta severidad</div><div class="dd-kv-value">${highAlerts}</div></div>
-                        <div class="dd-kv"><div class="dd-kv-label">Tipos frecuentes</div><div class="dd-kv-value">${topAlertTypes}</div></div>
-                    </article>
-                    <article class="detalle-block dashboard-card dd-card dashboard-timeline">
-                        <h4 class="dd-card-title">Línea de tiempo del flujo</h4>
-                        <div class="dd-timeline-scroll">
-                            <ol class="dd-timeline">
-                                ${timelineRows || '<li class="dd-timeline__item"><div class="dd-timeline__title">Sin movimientos</div><div class="dd-timeline__meta">-</div></li>'}
-                            </ol>
+                <div class="detail-dashboard detail-dashboard--stitch">
+                    <section class="detail-dashboard-header">
+                        <div class="detail-dashboard-heading">
+                            <div class="detail-dashboard-title-row">
+                                <span class="material-symbols-outlined detail-dashboard-icon" aria-hidden="true">assignment</span>
+                                <div>
+                                    <h2 class="detail-dashboard-title">Requisición ${escapeHtml(data.folio || "-")}</h2>
+                                    <span class="badge info detail-dashboard-created">Creada: ${fmtDateTime(data.created_at)}</span>
+                                </div>
+                            </div>
                         </div>
-                    </article>
-                </section>
-                ${itemsSection}
-                <section class="detalle-bottom-grid">
-                    <article class="detalle-block dashboard-card dd-card">
-                        <h4 class="dd-card-title">Justificación</h4>
-                        <p>${escapeHtml(data.justificacion || "-")}</p>
-                    </article>
-                    <article class="detalle-block dashboard-card dd-card">
-                        <h4 class="dd-card-title">Comentario de liquidación</h4>
-                        <p class="liquidation-comment">${liquidationComment}</p>
-                    </article>
-                </section>
-                ${commentsToggleHtml}
+                        <div class="detail-dashboard-actions">
+                            ${pdfAction}
+                        </div>
+                    </section>
+                    <section class="detail-dashboard-grid detail-dashboard-grid--top">
+                        <div class="detail-card detail-card--general">
+                            <h3 class="detail-card__title"><span class="material-symbols-outlined" aria-hidden="true">business</span>Información general</h3>
+                            <div class="detail-kv-list">
+                                <div class="detail-kv"><span class="detail-kv-label">Cliente</span><span class="detail-kv-value">${escapeHtml(data.cliente_nombre || "-")}</span></div>
+                                <div class="detail-kv"><span class="detail-kv-label">Código cliente</span><span class="detail-kv-value">${escapeHtml(data.cliente_codigo || "-")}</span></div>
+                                <div class="detail-kv"><span class="detail-kv-label">Ruta principal</span><span class="detail-kv-value">${escapeHtml(data.cliente_ruta_principal || "-")}</span></div>
+                                <div class="detail-kv"><span class="detail-kv-label">Solicitante</span><span class="detail-kv-value">${escapeHtml(data.solicitante || "-")}</span></div>
+                                <div class="detail-kv"><span class="detail-kv-label">Receptor designado</span><span class="detail-kv-value">${receptorDesignadoHtml}</span></div>
+                                <div class="detail-kv"><span class="detail-kv-label">Recibió / firmó</span><span class="detail-kv-value">${receptorRealHtml}</span></div>
+                            </div>
+                        </div>
+                        <div class="detail-card detail-card--status">
+                            <h3 class="detail-card__title"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span>Estado liquidación</h3>
+                            <div class="detail-kv-list">
+                                <div class="detail-kv"><span class="detail-kv-label">Estado</span><span class="detail-kv-value">${escapeHtml(data.estado || "-")}</span></div>
+                                <div class="detail-kv"><span class="detail-kv-label">Resultado entrega</span><span class="detail-kv-value">${resultHtml}</span></div>
+                                <div class="detail-kv"><span class="detail-kv-label">Ref Prokey</span><span class="detail-kv-value">${prokeyRefHtml}</span></div>
+                            </div>
+                        </div>
+                        <div class="detail-card detail-card--alerts ${alertCardClass}">
+                            <h3 class="detail-card__title"><span class="material-symbols-outlined" aria-hidden="true">warning</span>Alertas de conciliación</h3>
+                            <div class="detail-kv-list">
+                                <div class="detail-kv"><span class="detail-kv-label">Total</span><span class="detail-kv-value">${allAlerts.length} detectadas</span></div>
+                                <div class="detail-kv"><span class="detail-kv-label">Alta severidad</span><span class="detail-kv-value">${highAlerts}</span></div>
+                                <div class="detail-kv"><span class="detail-kv-label">Tipos frecuentes</span><span class="detail-kv-value">${topAlertTypes}</span></div>
+                            </div>
+                        </div>
+                        <div class="detail-card detail-card--timeline">
+                            <h3 class="detail-card__title"><span class="material-symbols-outlined" aria-hidden="true">schedule</span>Línea de tiempo del flujo</h3>
+                            <div class="detail-timeline-wrap">
+                                <ol class="detail-timeline">
+                                    ${timelineRows || '<li class="detail-timeline__item detail-timeline__item--empty"><div class="detail-timeline__title">Sin movimientos</div><div class="detail-timeline__meta">-</div></li>'}
+                                </ol>
+                            </div>
+                        </div>
+                    </section>
+                    ${itemsSection}
+                    <section class="detail-dashboard-grid detail-dashboard-grid--bottom">
+                        <div class="detail-card detail-card--text">
+                            <h3 class="detail-card__title"><span class="material-symbols-outlined" aria-hidden="true">description</span>Justificación</h3>
+                            <p class="detail-copy">${escapeHtml(data.justificacion || "-")}</p>
+                        </div>
+                        <div class="detail-card detail-card--text">
+                            <h3 class="detail-card__title"><span class="material-symbols-outlined" aria-hidden="true">chat</span>Comentario de liquidación</h3>
+                            <p class="detail-copy detail-copy--muted">${liquidationComment}</p>
+                        </div>
+                    </section>
+                    ${commentsToggleHtml}
                 </div>
             `;
             modal.showModal();
