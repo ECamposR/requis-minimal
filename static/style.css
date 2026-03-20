@@ -1777,7 +1777,8 @@ body:has(form.req-create-form) .form-actions {
 }
 
 #modal-detalle.modal--detail-dashboard .detail-dashboard-grid--bottom {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
 }
 
 #modal-detalle.modal--detail-dashboard .detail-card,
@@ -1794,6 +1795,11 @@ body:has(form.req-create-form) .form-actions {
     display: grid;
     gap: 0.85rem;
     align-content: start;
+}
+
+#modal-detalle.modal--detail-dashboard .detail-card--text,
+#modal-detalle.modal--detail-dashboard .detail-card--comments {
+    min-height: 12.5rem;
 }
 
 #modal-detalle.modal--detail-dashboard .detail-card--alert {
@@ -2015,6 +2021,56 @@ body:has(form.req-create-form) .form-actions {
     color: #475569;
 }
 
+#modal-detalle.modal--detail-dashboard .detail-card--comments {
+    display: grid;
+    gap: 0.85rem;
+}
+
+#modal-detalle.modal--detail-dashboard .detail-comments-wrap {
+    max-height: 7.8rem;
+    overflow: auto;
+    padding-right: 0.15rem;
+}
+
+#modal-detalle.modal--detail-dashboard .detail-comments-timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+#modal-detalle.modal--detail-dashboard .detail-comments-timeline__item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+}
+
+#modal-detalle.modal--detail-dashboard .detail-comments-timeline__body {
+    padding: 0.7rem 0.8rem;
+    border: 1px solid rgba(162, 174, 196, 0.45);
+    border-radius: 0.85rem;
+    background: #f8fbff;
+}
+
+#modal-detalle.modal--detail-dashboard .detail-comments-timeline__title {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6c7a8f;
+}
+
+#modal-detalle.modal--detail-dashboard .detail-comments-timeline__text {
+    margin-top: 0.18rem;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: #1f2937;
+    white-space: pre-wrap;
+}
+
 #modal-detalle.modal--detail-dashboard .detail-timeline-wrap {
     max-height: 18rem;
     overflow: auto;
@@ -2069,58 +2125,6 @@ body:has(form.req-create-form) .form-actions {
     margin-top: 0.12rem;
     font-size: 0.75rem;
     color: #64748b;
-}
-
-#modal-detalle.modal--detail-dashboard .detail-accordion {
-    padding: 0;
-    overflow: hidden;
-}
-
-#modal-detalle.modal--detail-dashboard .detail-accordion > summary {
-    list-style: none;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.9rem 1.05rem;
-    font-weight: 800;
-    color: #0b3b8e;
-    cursor: pointer;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.95);
-}
-
-#modal-detalle.modal--detail-dashboard .detail-accordion > summary::-webkit-details-marker {
-    display: none;
-}
-
-#modal-detalle.modal--detail-dashboard .detail-accordion > summary .material-symbols-outlined {
-    transition: transform 0.18s ease;
-}
-
-#modal-detalle.modal--detail-dashboard .detail-accordion[open] > summary .material-symbols-outlined {
-    transform: rotate(180deg);
-}
-
-#modal-detalle.modal--detail-dashboard .detail-accordion__content {
-    display: grid;
-    gap: 0.75rem;
-    padding: 1rem 1.05rem 1.05rem;
-}
-
-#modal-detalle.modal--detail-dashboard .detail-comment-block {
-    display: grid;
-    gap: 0.2rem;
-    padding: 0.75rem 0.8rem;
-    border-radius: 0.75rem;
-    background: #f8fbff;
-    border: 1px solid rgba(195, 198, 210, 0.45);
-}
-
-#modal-detalle.modal--detail-dashboard .detail-comment-block p {
-    margin: 0;
-    font-size: 0.92rem;
-    line-height: 1.5;
-    color: #1f2937;
-    white-space: pre-wrap;
 }
 
 #modal-detalle.modal--detail-dashboard .detail-empty-row {
