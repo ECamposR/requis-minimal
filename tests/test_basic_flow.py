@@ -1,5 +1,6 @@
 import re
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,6 +14,19 @@ from app.models import Base, CatalogoItem, Item, Requisicion, Usuario
 from app.pdf_generator import generate_requisicion_pdf
 
 TEST_DB_URL = "sqlite:///./test_requisiciones.db"
+
+
+def fixed_datetime_class(fixed_now: datetime):
+    class FixedDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            if tz is None:
+                return fixed_now
+            if fixed_now.tzinfo is None:
+                return fixed_now.replace(tzinfo=tz)
+            return fixed_now.astimezone(tz)
+
+    return FixedDateTime
 
 
 @pytest.fixture
@@ -3166,7 +3180,7 @@ def test_bodega_ve_historial_completo_de_liquidaciones_ajenas(client: TestClient
 def test_todas_requisiciones_muestra_alerta_sla_en_estado_y_fecha_de_auditoria(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
-    ahora = datetime.now()
+    fixed_now = datetime(2026, 3, 26, 12, 0)
 
     db_session.add(
         Requisicion(
@@ -3176,14 +3190,15 @@ def test_todas_requisiciones_muestra_alerta_sla_en_estado_y_fecha_de_auditoria(c
             estado="aprobada",
             justificacion="Brecha SLA",
             approved_by=aprobador.id,
-            approved_at=ahora - timedelta(hours=49),
-            created_at=ahora - timedelta(hours=60),
+            approved_at=datetime(2026, 3, 23, 11, 0),
+            created_at=datetime(2026, 3, 23, 10, 0),
         )
     )
     db_session.commit()
 
     login(client, "admin.1", "pass123")
-    response = client.get("/todas-requisiciones")
+    with patch("app.models.datetime", fixed_datetime_class(fixed_now)):
+        response = client.get("/todas-requisiciones")
 
     assert response.status_code == 200
     html = response.text
@@ -3207,7 +3222,7 @@ def test_bodega_muestra_alerta_sla_en_fecha_clave(client: TestClient, db_session
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
     bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
-    ahora = datetime.now()
+    fixed_now = datetime(2026, 3, 26, 12, 0)
 
     db_session.add(
         Requisicion(
@@ -3217,14 +3232,15 @@ def test_bodega_muestra_alerta_sla_en_fecha_clave(client: TestClient, db_session
             estado="aprobada",
             justificacion="Brecha SLA bodega",
             approved_by=aprobador.id,
-            approved_at=ahora - timedelta(hours=50),
-            created_at=ahora - timedelta(hours=60),
+            approved_at=datetime(2026, 3, 23, 11, 0),
+            created_at=datetime(2026, 3, 23, 10, 0),
         )
     )
     db_session.commit()
 
     login(client, "bodega.1", "pass123")
-    response = client.get("/bodega?vista=pendientes")
+    with patch("app.models.datetime", fixed_datetime_class(fixed_now)):
+        response = client.get("/bodega?vista=pendientes")
 
     assert response.status_code == 200
     html = response.text
