@@ -177,16 +177,40 @@ class Requisicion(Base):
             or self.rejected_at
         )
 
+    @staticmethod
+    def _normalize_to_local_naive(value: datetime | None) -> datetime | None:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            return value
+        return value.astimezone(_TZ_SV).replace(tzinfo=None)
+
+    @staticmethod
+    def _business_hours_between(start: datetime, end: datetime) -> float:
+        if end <= start:
+            return 0.0
+        total_hours = 0.0
+        current = start
+        while current < end:
+            next_midnight = datetime(current.year, current.month, current.day) + timedelta(days=1)
+            segment_end = min(end, next_midnight)
+            if current.weekday() < 5:
+                total_hours += (segment_end - current).total_seconds() / 3600
+            current = segment_end
+        return total_hours
+
     @property
     def is_delayed_sla(self) -> bool:
         estado = str(self.estado or "").strip().lower()
         if estado in {"rechazada", "liquidada_en_prokey", "finalizada_sin_prokey", "no_entregada"}:
             return False
-        reference_at = self.sla_reference_at
+        reference_at = self._normalize_to_local_naive(self.sla_reference_at)
         if reference_at is None:
             return False
-        ahora = datetime.now(_TZ_SV).replace(tzinfo=None)
-        return ahora - reference_at > timedelta(hours=48)
+        ahora = self._normalize_to_local_naive(datetime.now(_TZ_SV))
+        if ahora is None:
+            return False
+        return self._business_hours_between(reference_at, ahora) > 48
 
     __table_args__ = (
         CheckConstraint(

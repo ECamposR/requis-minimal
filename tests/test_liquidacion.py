@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from fastapi import HTTPException
@@ -28,6 +29,19 @@ from app.main import (
 from app.models import Base, CatalogoItem, Item, Requisicion, Usuario
 
 TEST_DB_URL = "sqlite://"
+
+
+def fixed_datetime_class(fixed_now: datetime):
+    class FixedDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            if tz is None:
+                return fixed_now
+            if fixed_now.tzinfo is None:
+                return fixed_now.replace(tzinfo=tz)
+            return fixed_now.astimezone(tz)
+
+    return FixedDateTime
 
 
 @pytest.fixture
@@ -424,43 +438,65 @@ def test_salida_sin_soporte(db_session: Session):
 
 def test_sla_reference_at_usa_fecha_del_estado_activo(db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
-    ahora = datetime.now()
+    fixed_now = datetime(2026, 3, 26, 12, 0)
     req = Requisicion(
         folio="REQ-SLA-MODEL-01",
         solicitante_id=user.id,
         departamento="Operaciones",
         estado="aprobada",
         justificacion="SLA activo",
-        created_at=ahora - timedelta(hours=60),
-        approved_at=ahora - timedelta(hours=49),
+        created_at=datetime(2026, 3, 23, 10, 0),
+        approved_at=datetime(2026, 3, 23, 11, 0),
     )
 
-    assert req.sla_reference_at == req.approved_at
-    assert req.is_delayed_sla is True
+    with patch("app.models.datetime", fixed_datetime_class(fixed_now)):
+        assert req.sla_reference_at == req.approved_at
+        assert req.is_delayed_sla is True
+
+
+def test_is_delayed_sla_no_cuenta_fin_de_semana(db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    fixed_now = datetime(2026, 3, 23, 12, 0)
+    req = Requisicion(
+        folio="REQ-SLA-WEEKEND-01",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="aprobada",
+        justificacion="SLA fin de semana",
+        created_at=datetime(2026, 3, 19, 9, 0),
+        approved_at=datetime(2026, 3, 20, 11, 0),
+    )
+
+    with patch("app.models.datetime", fixed_datetime_class(fixed_now)):
+        assert req.sla_reference_at == req.approved_at
+        assert req.is_delayed_sla is False
 
 
 @pytest.mark.parametrize(
-    "estado, fecha_kwargs",
+    "estado, campo_fecha",
     [
-        ("rechazada", {"rejected_at": datetime.now() - timedelta(hours=72)}),
-        ("liquidada_en_prokey", {"prokey_liquidada_at": datetime.now() - timedelta(hours=72)}),
-        ("finalizada_sin_prokey", {"liquidated_at": datetime.now() - timedelta(hours=72)}),
-        ("no_entregada", {"delivered_at": datetime.now() - timedelta(hours=72)}),
+        ("rechazada", "rejected_at"),
+        ("liquidada_en_prokey", "prokey_liquidada_at"),
+        ("finalizada_sin_prokey", "liquidated_at"),
+        ("no_entregada", "delivered_at"),
     ],
 )
-def test_is_delayed_sla_devuelve_false_en_estados_terminales(db_session: Session, estado: str, fecha_kwargs: dict[str, datetime]):
+def test_is_delayed_sla_devuelve_false_en_estados_terminales(db_session: Session, estado: str, campo_fecha: str):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    fixed_now = datetime(2026, 3, 26, 12, 0)
+    fecha_kwargs = {campo_fecha: datetime(2026, 3, 23, 12, 0)}
     req = Requisicion(
         folio=f"REQ-SLA-TERM-{estado}",
         solicitante_id=user.id,
         departamento="Operaciones",
         estado=estado,
         justificacion="SLA terminal",
-        created_at=datetime.now() - timedelta(hours=72),
+        created_at=datetime(2026, 3, 19, 12, 0),
         **fecha_kwargs,
     )
 
-    assert req.is_delayed_sla is False
+    with patch("app.models.datetime", fixed_datetime_class(fixed_now)):
+        assert req.is_delayed_sla is False
 
 
 def test_retornable_alerta_retorno_incompleto(db_session: Session):
