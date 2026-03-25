@@ -94,6 +94,9 @@ MOTIVOS_REQUISICION = [
 ]
 MAINTENANCE_STATE = {"active": False, "reason": None}
 BACKUP_OPERATION_LOCK = Lock()
+BODEGA_PENDING_PREPARE_ALERT_ROLES = {"bodega", "jefe_bodega"}
+BODEGA_PENDING_PREPARE_ALERT_POLL_MS = 20000
+BODEGA_PENDING_PREPARE_ALERT_VIEW_URL = "/bodega?vista=pendientes&etapa=aprobada"
 
 
 def build_catalog_payload(items: list[CatalogoItem]) -> list[dict[str, object]]:
@@ -825,6 +828,49 @@ def normalize_optional_text(value: str | None) -> str | None:
         return None
     cleaned = value.strip()
     return cleaned or None
+
+
+def can_receive_bodega_pending_prepare_alert(current_user: Usuario | None) -> bool:
+    return bool(current_user and current_user.rol in BODEGA_PENDING_PREPARE_ALERT_ROLES)
+
+
+def build_bodega_pending_prepare_alert_snapshot(db: Session, current_user: Usuario) -> dict[str, object]:
+    alert_timestamp = func.coalesce(Requisicion.approved_at, Requisicion.created_at)
+    dismissed_at = current_user.bodega_pending_prepare_dismissed_at
+
+    count_query = db.query(func.count(Requisicion.id)).filter(Requisicion.estado == "aprobada")
+    if dismissed_at is not None:
+        count_query = count_query.filter(alert_timestamp > dismissed_at)
+    visible_count = int(count_query.scalar() or 0)
+
+    folio_rows_query = (
+        db.query(Requisicion.folio)
+        .filter(Requisicion.estado == "aprobada")
+    )
+    if dismissed_at is not None:
+        folio_rows_query = folio_rows_query.filter(alert_timestamp > dismissed_at)
+    folio_rows = (
+        folio_rows_query
+        .order_by(alert_timestamp.desc(), Requisicion.id.desc())
+        .limit(3)
+        .all()
+    )
+
+    latest_event_at = (
+        db.query(func.max(alert_timestamp))
+        .filter(Requisicion.estado == "aprobada")
+        .scalar()
+    )
+
+    return {
+        "visible": visible_count > 0,
+        "count": visible_count,
+        "folios": [str(row.folio) for row in folio_rows if row.folio],
+        "view_url": BODEGA_PENDING_PREPARE_ALERT_VIEW_URL,
+        "poll_interval_ms": BODEGA_PENDING_PREPARE_ALERT_POLL_MS,
+        "latest_event_at": format_datetime(latest_event_at),
+        "dismissed_at": format_datetime(dismissed_at),
+    }
 
 
 def can_view_requisicion(req: Requisicion, current_user: Usuario) -> bool:
@@ -2075,6 +2121,30 @@ def get_monitor_actividad(request: Request, current_user: Usuario = Depends(get_
         "monitor_actividad.html",
         template_context(request, current_user, monitor_period=monitor_period),
     )
+
+
+@app.get("/api/bodega/notificaciones/aprobadas-pendientes")
+def bodega_pending_prepare_alert_status(
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not can_receive_bodega_pending_prepare_alert(current_user):
+        raise HTTPException(status_code=403, detail="No autorizado")
+    return build_bodega_pending_prepare_alert_snapshot(db, current_user)
+
+
+@app.post("/api/bodega/notificaciones/aprobadas-pendientes/descartar")
+def dismiss_bodega_pending_prepare_alert(
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not can_receive_bodega_pending_prepare_alert(current_user):
+        raise HTTPException(status_code=403, detail="No autorizado")
+    current_user.bodega_pending_prepare_dismissed_at = now_sv()
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return build_bodega_pending_prepare_alert_snapshot(db, current_user)
 
 
 @app.get("/api/dashboard/basicos")

@@ -249,6 +249,77 @@ def test_home_bodega_muestra_cards_operativas_compactas(client: TestClient):
     assert "/bodega?vista=historial" in html
 
 
+def test_home_bodega_renderiza_banner_global_de_aprobadas_pendientes(client: TestClient):
+    login(client, "bodega.1", "pass123")
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert 'id="bodega-pending-prepare-banner"' in html
+    assert '/api/bodega/notificaciones/aprobadas-pendientes' in html
+    assert 'data-banner-dismiss' in html
+    assert 'Ver pendientes' in html
+
+
+def test_bodega_alerta_aprobadas_pendientes_se_descarta_y_reaparece_con_nueva_aprobacion(
+    client: TestClient,
+    db_session: Session,
+):
+    solicitante = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+    approved_at_1 = datetime(2026, 3, 24, 9, 0, 0)
+
+    db_session.add(
+        Requisicion(
+            folio="REQ-BAN-001",
+            solicitante_id=solicitante.id,
+            departamento="Operaciones",
+            estado="aprobada",
+            justificacion="Pendiente de preparar visible",
+            approved_by=aprobador.id,
+            approved_at=approved_at_1,
+        )
+    )
+    db_session.commit()
+
+    login(client, "bodega.1", "pass123")
+
+    status_response = client.get("/api/bodega/notificaciones/aprobadas-pendientes")
+    assert status_response.status_code == 200
+    status_payload = status_response.json()
+    assert status_payload["visible"] is True
+    assert status_payload["count"] == 1
+    assert status_payload["folios"] == ["REQ-BAN-001"]
+
+    dismiss_response = client.post("/api/bodega/notificaciones/aprobadas-pendientes/descartar")
+    assert dismiss_response.status_code == 200
+    dismiss_payload = dismiss_response.json()
+    assert dismiss_payload["visible"] is False
+    db_session.refresh(bodega)
+    assert bodega.bodega_pending_prepare_dismissed_at is not None
+
+    db_session.add(
+        Requisicion(
+            folio="REQ-BAN-002",
+            solicitante_id=solicitante.id,
+            departamento="Operaciones",
+            estado="aprobada",
+            justificacion="Nueva aprobacion posterior al descarte",
+            approved_by=aprobador.id,
+            approved_at=bodega.bodega_pending_prepare_dismissed_at + timedelta(minutes=1),
+        )
+    )
+    db_session.commit()
+
+    refreshed_response = client.get("/api/bodega/notificaciones/aprobadas-pendientes")
+    assert refreshed_response.status_code == 200
+    refreshed_payload = refreshed_response.json()
+    assert refreshed_payload["visible"] is True
+    assert refreshed_payload["count"] == 1
+    assert refreshed_payload["folios"] == ["REQ-BAN-002"]
+
+
 def test_home_bodega_muestra_panel_estado_operativo(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()

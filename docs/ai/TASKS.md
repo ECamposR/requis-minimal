@@ -41,6 +41,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-194` | `done` | Agregar pruebas de exportacion para el monitor: headers `Content-Disposition`, tipo de archivo, respeto del `periodo` y contenido minimo esperado.
 - `REQ-195` | `done` | Actualizar la gobernanza IA con el alcance final, endpoints de exportacion y decisiones de formato del monitor.
 - `REQ-196` | `done` | Ajustar el `XLSX` consolidado del monitor para que las hojas tabulares (`Solicitantes`, `Items`, `Dif Producto`, `Dif Tecnico`) exporten el universo completo del periodo, manteniendo el dashboard visual en top-N.
+- `REQ-197` | `done` | Banner global por polling para usuarios de bodega: notifica requisiciones `aprobada` pendientes de preparar sin requerir `F5`, con descarte persistente por usuario y reaparicion solo ante nuevas aprobaciones.
 - `REQ-127` | `done` | Separar `Aprobar` de la consulta global: la vista de aprobacion queda solo para pendientes y se crea `Todas las Requisiciones` con filtros de estado/departamento/fecha para `admin`, `aprobador`, `jefe_bodega` y `logistica`, sin tocar la logica de negocio.
 - `REQ-128` | `done` | Mejorar UX de filtros SSR: en `Aprobar` y `Todas las Requisiciones`, los selectores aplican el filtro automaticamente al cambiar, manteniendo `Buscar` para texto libre y fechas.
 - `REQ-129` | `done` | Mejorar UX del filtro de fechas en `Todas las Requisiciones`: mantener `input[type=date]` nativo y abrir el picker con `showPicker()` cuando el navegador lo soporte, sin perder captura manual como fallback.

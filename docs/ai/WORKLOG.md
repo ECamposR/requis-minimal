@@ -4524,3 +4524,25 @@
   - Los cards operativos de `bodega`, `admin` y `logistica` ya muestran `Finalizadas sin Prokey` y `Finalizadas en Prokey`, y el conteo `Pendientes de Referencia Prokey` deja de depender del flag.
   - Los paneles de estado y cierres del home ya usan los nuevos estados semanticos en lugar de inferir desde `prokey_no_aplica`.
   - `puede_editar_prokey_ref()` y `prokey_pending` quedan gobernados por `estado == pendiente_prokey`; el flag solo queda como respaldo de compatibilidad para registros legacy.
+## 2026-03-25 00:00 UTC-06:00 | tool: Codex CLI
+- Objetivo: agregar una alerta operativa persistente para bodega cuando existan requisiciones aprobadas pendientes de preparar, visible sin recargar la pagina.
+- Tareas: `REQ-197`
+- Archivos tocados:
+  - `app/models.py`
+  - `app/database.py`
+  - `app/main.py`
+  - `templates/base.html`
+  - `static/style.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Cambios:
+  - se agrego persistencia por usuario con `bodega_pending_prepare_dismissed_at` para recordar el descarte del banner
+  - se expusieron endpoints livianos para consultar y descartar la alerta de requisiciones `aprobada` pendientes de preparar
+  - `base.html` ahora monta un banner global solo para `bodega` y `jefe_bodega`, con polling en Vanilla JS, chequeo al volver a foco y accion `Descartar`
+  - el banner reaparece solo cuando entra una aprobacion posterior al ultimo descarte del usuario
+- Comandos:
+  - pendiente de compilacion/pruebas al cierre de la tarea
+- Resultado:
+  - la operacion de bodega ya puede enterarse de nuevas requisiciones aprobadas sin depender de `F5` ni cambio de vista, manteniendo un costo bajo mediante polling controlado.

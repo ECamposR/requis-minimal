@@ -248,6 +248,8 @@ def run_migrations() -> None:
                 conn.execute(text("ALTER TABLE usuarios ADD COLUMN pin_hash TEXT"))
             if "puede_iniciar_sesion" not in user_columns:
                 conn.execute(text("ALTER TABLE usuarios ADD COLUMN puede_iniciar_sesion INTEGER NOT NULL DEFAULT 1"))
+            if "bodega_pending_prepare_dismissed_at" not in user_columns:
+                conn.execute(text("ALTER TABLE usuarios ADD COLUMN bodega_pending_prepare_dismissed_at DATETIME"))
             conn.execute(text("UPDATE usuarios SET rol = 'logistica' WHERE rol = 'auditor'"))
 
         if "requisiciones" in tables:

@@ -766,6 +766,45 @@ tr.row-alert-border td:first-child {
     color: #ffc4cd;
 }
 
+.bodega-live-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.bodega-live-banner[hidden] {
+    display: none !important;
+}
+
+.bodega-live-banner__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.bodega-live-banner__copy strong {
+    font-size: 0.95rem;
+}
+
+.bodega-live-banner__copy span {
+    font-size: 0.82rem;
+    opacity: 0.92;
+}
+
+.bodega-live-banner__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.bodega-live-banner__actions [role="button"],
+.bodega-live-banner__actions button {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
 .badge {
     display: inline-block;
     padding: 0.15rem 0.45rem;

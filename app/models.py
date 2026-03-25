@@ -20,6 +20,7 @@ class Usuario(Base):
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     pin_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     puede_iniciar_sesion: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    bodega_pending_prepare_dismissed_at: Mapped[DateTime | None] = mapped_column(DateTime, nullable=True)
 
     requisiciones: Mapped[list["Requisicion"]] = relationship(
         "Requisicion",
