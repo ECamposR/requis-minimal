@@ -3,8 +3,73 @@
 {% block title %}Monitor de Actividad{% endblock %}
 {% block content %}
 {{ ui.page_header("Monitor de Actividad", "Audita por que, quien, que y cuando se activan requisiciones fuera del flujo normal para reducir contingencias alrededor del cierre de Prokey.") }}
+{% set monitor_period_key = monitor_period.get("period_key", "all") if monitor_period else "all" %}
+{% set monitor_period_label = monitor_period.get("label", "Historial completo") if monitor_period else "Historial completo" %}
+
+<section class="panel view-panel monitor-period-toolbar" aria-label="Periodo del monitor">
+    <div class="monitor-period-toolbar__summary">
+        <span class="monitor-period-toolbar__eyebrow">Periodo activo</span>
+        <strong class="monitor-period-toolbar__value" id="monitor-period-label">{{ monitor_period_label }}</strong>
+        <p class="monitor-period-toolbar__note" id="monitor-period-note">Las metricas y los drilldowns usan esta misma ventana temporal.</p>
+    </div>
+    <label class="monitor-period-toolbar__field" for="monitor-period-select">
+        <span>Ventana temporal</span>
+        <select id="monitor-period-select" name="periodo" aria-label="Ventana temporal del monitor">
+            <option value="all" {% if monitor_period_key == "all" %}selected{% endif %}>Historial completo</option>
+            <option value="7d" {% if monitor_period_key == "7d" %}selected{% endif %}>Ultimos 7 dias</option>
+            <option value="30d" {% if monitor_period_key == "30d" %}selected{% endif %}>Ultimos 30 dias</option>
+            <option value="90d" {% if monitor_period_key == "90d" %}selected{% endif %}>Ultimos 90 dias</option>
+            <option value="ytd" {% if monitor_period_key == "ytd" %}selected{% endif %}>Ano en curso</option>
+        </select>
+    </label>
+</section>
 
 <style>
+.monitor-period-toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 1rem 0 1.4rem;
+    padding: 1rem 1.1rem;
+}
+.monitor-period-toolbar__summary {
+    display: grid;
+    gap: 0.3rem;
+}
+.monitor-period-toolbar__eyebrow {
+    color: var(--ui-muted, var(--muted, #475569));
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.monitor-period-toolbar__value {
+    color: var(--text, var(--ui-text, #0f172a));
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+.monitor-period-toolbar__note {
+    color: var(--ui-muted, var(--muted, #475569));
+    font-size: 0.93rem;
+    margin: 0;
+}
+.monitor-period-toolbar__field {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 16rem;
+}
+.monitor-period-toolbar__field span {
+    color: var(--ui-muted, var(--muted, #475569));
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.monitor-period-toolbar__field select {
+    margin-bottom: 0;
+}
 .monitor-section {
     margin-top: 1.4rem;
 }
@@ -140,6 +205,13 @@
     color: var(--ui-muted, var(--muted, #475569));
 }
 @media (max-width: 960px) {
+    .monitor-period-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .monitor-period-toolbar__field {
+        min-width: 0;
+    }
     .dashboard-bi-kpi-grid,
     .dashboard-bi-grid {
         grid-template-columns: 1fr;
@@ -294,9 +366,90 @@
 <script>
 const dashboardCharts = {};
 
+const MONITOR_PERIOD_LABELS = {
+    all: "Historial completo",
+    "7d": "Ultimos 7 dias",
+    "30d": "Ultimos 30 dias",
+    "90d": "Ultimos 90 dias",
+    ytd: "Ano en curso",
+};
+
 function getThemeToken(name, fallback) {
     const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     return value || fallback;
+}
+
+function getMonitorPeriodSelect() {
+    return document.getElementById("monitor-period-select");
+}
+
+function getMonitorPeriodValue() {
+    const select = getMonitorPeriodSelect();
+    if (select && String(select.value || "").trim()) {
+        return String(select.value).trim().toLowerCase();
+    }
+    const params = new URLSearchParams(window.location.search);
+    return String(params.get("periodo") || "all").trim().toLowerCase() || "all";
+}
+
+function getMonitorPeriodLabel(periodKey = getMonitorPeriodValue()) {
+    return MONITOR_PERIOD_LABELS[String(periodKey || "all").toLowerCase()] || MONITOR_PERIOD_LABELS.all;
+}
+
+function syncMonitorPeriodBanner(periodo) {
+    const select = getMonitorPeriodSelect();
+    const periodKey = String(periodo?.period_key || "").trim().toLowerCase();
+    const label = String(periodo?.label || "").trim() || getMonitorPeriodLabel(periodKey || undefined);
+    if (select && periodKey) {
+        select.value = periodKey;
+    }
+    const labelNode = document.getElementById("monitor-period-label");
+    if (labelNode) {
+        labelNode.textContent = label;
+    }
+    const noteNode = document.getElementById("monitor-period-note");
+    if (noteNode) {
+        noteNode.textContent = `Las metricas y los drilldowns usan ${label.toLowerCase()}.`;
+    }
+}
+
+function syncMonitorPeriodUrl(periodKey = getMonitorPeriodValue()) {
+    const url = new URL(window.location.href);
+    if (periodKey && periodKey !== "all") {
+        url.searchParams.set("periodo", periodKey);
+    } else {
+        url.searchParams.delete("periodo");
+    }
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function buildMonitorApiUrl(path) {
+    const url = new URL(path, window.location.origin);
+    const periodKey = getMonitorPeriodValue();
+    if (periodKey) {
+        url.searchParams.set("periodo", periodKey);
+    }
+    return `${url.pathname}${url.search}`;
+}
+
+function resetMonitorDrilldown() {
+    const panel = document.getElementById("dashboard-bi-drilldown");
+    const content = document.getElementById("dashboard-bi-drilldown-content");
+    if (panel) panel.hidden = true;
+    if (content) content.innerHTML = "";
+    setDrilldownStatus("");
+}
+
+function handleMonitorPeriodChange() {
+    const currentPeriod = getMonitorPeriodValue();
+    syncMonitorPeriodUrl(currentPeriod);
+    syncMonitorPeriodBanner({
+        period_key: currentPeriod,
+        label: getMonitorPeriodLabel(currentPeriod),
+    });
+    resetMonitorDrilldown();
+    cargarDatosBasicos();
+    cargarDatosAuditoria();
 }
 
 function setChartStatus(key, message, isError = false) {
@@ -341,25 +494,26 @@ function fmtUsageKpiNumber(value, fractionDigits = 2) {
     });
 }
 
-function renderUsageKpis(kpis) {
+function renderUsageKpis(kpis, periodo = null) {
     const avgHours = Number(kpis?.promedio_horas_hasta_prokey ?? 0);
     const prokeyCount = Number(kpis?.requisiciones_liquidadas_en_prokey ?? 0);
     const avgPerDay = Number(kpis?.requisiciones_promedio_por_dia ?? 0);
     const observedDays = Number(kpis?.dias_observados ?? 0);
     const totalReqs = Number(kpis?.total_requisiciones ?? 0);
     const avgDays = avgHours / 24;
+    const periodLabel = String(periodo?.label || getMonitorPeriodLabel()).trim();
 
     setAuditKpi(
         "kpi-tiempo-promedio-prokey",
         `${fmtUsageKpiNumber(avgHours)}h / ${fmtUsageKpiNumber(avgDays)} días`,
         "kpi-tiempo-promedio-prokey-note",
-        `Promedio desde creación hasta <strong>Liquidada en Prokey</strong>, calculado sobre <strong>${fmtAuditNumber(prokeyCount)}</strong> requisiciones cerradas definitivamente.`
+        `Periodo activo: <strong>${periodLabel}</strong>. Promedio desde creación hasta <strong>Liquidada en Prokey</strong>, calculado sobre <strong>${fmtAuditNumber(prokeyCount)}</strong> requisiciones cerradas definitivamente.`
     );
     setAuditKpi(
         "kpi-promedio-requisiciones-dia",
         fmtUsageKpiNumber(avgPerDay),
         "kpi-promedio-requisiciones-dia-note",
-        `Promedio histórico observado sobre <strong>${fmtAuditNumber(observedDays)}</strong> días hábiles y <strong>${fmtAuditNumber(totalReqs)}</strong> requisiciones creadas.`
+        `Periodo activo: <strong>${periodLabel}</strong>. Promedio observado sobre <strong>${fmtAuditNumber(observedDays)}</strong> días hábiles y <strong>${fmtAuditNumber(totalReqs)}</strong> requisiciones creadas.`
     );
 }
 
@@ -435,7 +589,7 @@ async function cargarDrilldownAuditoria(kind) {
     setDrilldownStatus("Cargando requisiciones relacionadas...");
 
     try {
-        const response = await fetch(config.url, {
+        const response = await fetch(buildMonitorApiUrl(config.url), {
             headers: { "Accept": "application/json" },
             credentials: "same-origin",
         });
@@ -659,23 +813,24 @@ function renderHorarioChart(data) {
     clearChartStatus("horario");
 }
 
-function renderAuditKpis(kpis) {
+function renderAuditKpis(kpis, periodo = null) {
     const cerradas = Number(kpis?.requisiciones_cerradas ?? 0);
     const conDiferencia = Number(kpis?.requisiciones_con_diferencia ?? 0);
     const indice = Number(kpis?.indice_discrepancia_pct ?? 0);
     const inversion = Number(kpis?.inversion_demos ?? 0);
+    const periodLabel = String(periodo?.label || getMonitorPeriodLabel()).trim();
 
     setAuditKpi(
         "kpi-indice-discrepancia",
         `${fmtAuditNumber(indice)}%`,
         "kpi-indice-discrepancia-note",
-        `<strong>${fmtAuditNumber(conDiferencia)}</strong> de <strong>${fmtAuditNumber(cerradas)}</strong> requisiciones cerradas presentan al menos una diferencia.`
+        `Periodo activo: <strong>${periodLabel}</strong>. <strong>${fmtAuditNumber(conDiferencia)}</strong> de <strong>${fmtAuditNumber(cerradas)}</strong> requisiciones cerradas presentan al menos una diferencia.`
     );
     setAuditKpi(
         "kpi-inversion-demos",
         fmtAuditNumber(inversion),
         "kpi-inversion-demos-note",
-        `Suma acumulada de <strong>cantidad entregada</strong> en ítems marcados como demo dentro de requisiciones cerradas.`
+        `Periodo activo: <strong>${periodLabel}</strong>. Suma acumulada de <strong>cantidad entregada</strong> en ítems marcados como demo dentro de requisiciones cerradas.`
     );
 }
 
@@ -753,7 +908,7 @@ async function cargarDatosBasicos() {
     setAuditKpi("kpi-tiempo-promedio-prokey", "--", "kpi-tiempo-promedio-prokey-note", "Cargando métricas de uso...");
     setAuditKpi("kpi-promedio-requisiciones-dia", "--", "kpi-promedio-requisiciones-dia-note", "Cargando métricas de uso...");
     try {
-        const response = await fetch("/api/dashboard/basicos", {
+        const response = await fetch(buildMonitorApiUrl("/api/dashboard/basicos"), {
             headers: { "Accept": "application/json" },
             credentials: "same-origin",
         });
@@ -761,7 +916,8 @@ async function cargarDatosBasicos() {
             throw new Error(`No se pudo cargar el Monitor de Actividad (${response.status})`);
         }
         const payload = await response.json();
-        renderUsageKpis(payload.kpis);
+        syncMonitorPeriodBanner(payload.periodo || null);
+        renderUsageKpis(payload.kpis, payload.periodo || null);
         renderMotivosChart(payload.motivos);
         renderSolicitantesChart(payload.top_solicitantes);
         renderItemsChart(payload.top_items);
@@ -781,7 +937,7 @@ async function cargarDatosAuditoria() {
     setAuditKpi("kpi-indice-discrepancia", "--", "kpi-indice-discrepancia-note", "Cargando datos de auditoría...");
     setAuditKpi("kpi-inversion-demos", "--", "kpi-inversion-demos-note", "Cargando datos de auditoría...");
     try {
-        const response = await fetch("/api/dashboard/auditoria", {
+        const response = await fetch(buildMonitorApiUrl("/api/dashboard/auditoria"), {
             headers: { "Accept": "application/json" },
             credentials: "same-origin",
         });
@@ -789,7 +945,8 @@ async function cargarDatosAuditoria() {
             throw new Error(`No se pudo cargar auditoría (${response.status})`);
         }
         const payload = await response.json();
-        renderAuditKpis(payload.kpis);
+        syncMonitorPeriodBanner(payload.periodo || null);
+        renderAuditKpis(payload.kpis, payload.periodo || null);
         renderDiferenciaProductoChart(payload.diferencia_por_producto);
         renderDiferenciaTecnicoChart(payload.diferencias_por_tecnico);
     } catch (error) {
@@ -803,6 +960,14 @@ async function cargarDatosAuditoria() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    const select = getMonitorPeriodSelect();
+    if (select) {
+        select.addEventListener("change", handleMonitorPeriodChange);
+    }
+    syncMonitorPeriodBanner({
+        period_key: getMonitorPeriodValue(),
+        label: getMonitorPeriodLabel(),
+    });
     cargarDatosBasicos();
     cargarDatosAuditoria();
     document.querySelectorAll("[data-drilldown-kind]").forEach((button) => {

@@ -1,5 +1,74 @@
 # Worklog (append-only)
 
+## 2026-03-25 08:27 CST-0600 | tool: Codex CLI
+- Objetivo: cerrar la cobertura de pruebas del Monitor de Actividad y dejar documentado el estado final del periodo configurable.
+- Tareas: `REQ-189`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El monitor ya queda documentado como cubierto a nivel de helper, inclusion/exclusion por ventana y consistencia entre KPIs, graficos y drilldowns.
+  - No se toco logica adicional porque la cobertura funcional ya estaba presente en `tests/test_basic_flow.py`.
+- Validación:
+  - Revision manual de las pruebas existentes de `dashboard_basicos`, `dashboard_auditoria`, drilldowns y render del monitor.
+- Próximo paso:
+  - Si el usuario lo pide, preparar commit/push del frente del Monitor de Actividad.
+
+## 2026-03-25 08:24 CST-0600 | tool: Codex CLI
+- Objetivo: cerrar la segunda fase del Monitor de Actividad y exponer la ventana temporal activa en la UI.
+- Tareas: `REQ-186`, `REQ-187`, `REQ-188`
+- Cambios:
+  - `app/main.py`
+  - `templates/monitor_actividad.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - La API de auditoria y sus drilldowns ahora aceptan `periodo` y reutilizan la misma ventana temporal que la Fase 1.
+  - La vista `monitor_actividad.html` ya muestra un selector de periodo y un banner con el periodo activo.
+  - Los KPIs del monitor muestran el periodo activo en su copy para evitar ambiguedad entre historial completo y ventanas acotadas.
+- Validación:
+  - `python -m py_compile app/main.py tests/test_basic_flow.py`
+  - Smoke directo de `build_dashboard_auditoria_snapshot()` con periodo `7d` y `now_sv` fijado.
+- Próximo paso:
+  - Ejecutar `REQ-189` con cobertura explícita de ventana temporal e inclusión/exclusión en el monitor.
+
+## 2026-03-25 08:15 CST-0600 | tool: Codex CLI
+- Objetivo: aplicar el primer tramo funcional del periodo configurable del Monitor de Actividad.
+- Tareas: `REQ-184`, `REQ-185`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se agrego `resolve_monitor_period()` como helper comun para presets `7d`, `30d`, `90d`, `ytd` y `all`, devolviendo `period_key`, `label`, `start_at` y `end_at`.
+  - La API de Fase 1 del monitor (`/api/dashboard/basicos`) ahora acepta `periodo`, filtra motivos, solicitantes, items, heatmap, total, dias observados y promedio a Prokey con la misma ventana temporal.
+  - El payload de Fase 1 ya incluye metadata del periodo activo para que la UI pueda mostrarlo mas adelante.
+  - Se agrego cobertura de helper y un smoke directo del endpoint con periodo `7d`, verificando inclusion/exclusion de datos y el conteo de KPIs.
+- Validación:
+  - `python -m py_compile app/main.py tests/test_basic_flow.py`
+  - Smoke directo del endpoint `dashboard_basicos_api(periodo="7d")` con datos de prueba y `now_sv` fijado.
+- Próximo paso:
+  - Ejecutar `REQ-186` para aplicar el mismo rango temporal a la auditoria del monitor y a sus drilldowns.
+
+## 2026-03-25 08:05 CST-0600 | tool: Codex CLI
+- Objetivo: dejar documentado el nuevo frente del `Monitor de Actividad` antes de implementar el soporte de periodos temporales en las metricas.
+- Tareas: `EPIC-BI-03`, `REQ-184`, `REQ-185`, `REQ-186`, `REQ-187`, `REQ-188`, `REQ-189`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se abre un nuevo frente para que el monitor deje de trabajar solo con historial completo y pueda consumir ventanas operativas (`7d`, `30d`, `90d`, `ytd`, `all`).
+  - Se deja explicitado que el filtro temporal debe vivir en backend y compartirse entre la Fase 1 (`/api/dashboard/basicos`) y la Fase 2 (`/api/dashboard/auditoria` y drilldowns).
+  - Se documenta la necesidad de un selector simple en la UI y de cobertura de pruebas por rango temporal.
+- Próximo paso:
+  - Implementar `REQ-184` en `app/main.py` con el helper comun de periodo y el esquema de metadata para el monitor.
+
 ## 2026-03-19 16:34 CST-0600 | tool: Codex CLI
 - Objetivo: ampliar visibilidad de lectura para el rol `bodega` sin tocar el permiso operativo de `Confirmar en Prokey`.
 - Tareas: `REQ-183`

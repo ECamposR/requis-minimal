@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.auth import hash_password
 from app.database import get_db
-from app.main import app
+from app.main import app, resolve_monitor_period
 from app.models import Base, CatalogoItem, Item, Requisicion, Usuario
 from app.pdf_generator import generate_requisicion_pdf
 
@@ -536,6 +536,37 @@ def test_dashboard_backend_habilita_acceso_para_aprobador(client: TestClient):
     assert "diferencias_por_tecnico" in payload_auditoria
 
 
+def test_resolve_monitor_period_presets():
+    fixed_now = datetime(2026, 3, 25, 8, 5, 0)
+
+    seven_days = resolve_monitor_period("7d", fixed_now)
+    thirty_days = resolve_monitor_period("30d", fixed_now)
+    ninety_days = resolve_monitor_period("90d", fixed_now)
+    ytd = resolve_monitor_period("ytd", fixed_now)
+    fallback = resolve_monitor_period("periodo-invalido", fixed_now)
+
+    assert seven_days["period_key"] == "7d"
+    assert seven_days["label"] == "Ultimos 7 dias"
+    assert seven_days["start_at"] == datetime(2026, 3, 18, 8, 5, 0)
+    assert seven_days["end_at"] == fixed_now
+
+    assert thirty_days["period_key"] == "30d"
+    assert thirty_days["start_at"] == datetime(2026, 2, 23, 8, 5, 0)
+
+    assert ninety_days["period_key"] == "90d"
+    assert ninety_days["start_at"] == datetime(2025, 12, 25, 8, 5, 0)
+
+    assert ytd["period_key"] == "ytd"
+    assert ytd["label"] == "Ano en curso"
+    assert ytd["start_at"] == datetime(2026, 1, 1, 0, 0, 0)
+    assert ytd["end_at"] == fixed_now
+
+    assert fallback["period_key"] == "all"
+    assert fallback["label"] == "Historial completo"
+    assert fallback["start_at"] is None
+    assert fallback["end_at"] is None
+
+
 def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: Session):
     user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
     aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
@@ -639,6 +670,77 @@ def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: 
     assert payload["horario"]["values"][13] == 1
     assert payload["horario"]["values"][15] == 2
     assert payload["horario"]["alert_from_hour"] == 14
+
+
+def test_dashboard_basicos_aplica_periodo_temporal(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    fixed_now = datetime(2026, 3, 25, 8, 5, 0)
+
+    req_in = Requisicion(
+        folio="REQ-DASH-PER-01",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Demostración",
+        justificacion="Dentro del rango",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 20, 12, 0, 0),
+        created_at=datetime(2026, 3, 20, 10, 0, 0),
+        liquidated_at=datetime(2026, 3, 20, 18, 0, 0),
+        prokey_liquidada_at=datetime(2026, 3, 21, 10, 0, 0),
+    )
+    req_out = Requisicion(
+        folio="REQ-DASH-PER-02",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Reposición",
+        justificacion="Fuera del rango",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 10, 12, 0, 0),
+        created_at=datetime(2026, 3, 10, 10, 0, 0),
+        liquidated_at=datetime(2026, 3, 10, 18, 0, 0),
+        prokey_liquidada_at=datetime(2026, 3, 11, 10, 0, 0),
+    )
+    db_session.add_all([req_in, req_out])
+    db_session.commit()
+    db_session.refresh(req_in)
+    db_session.refresh(req_out)
+
+    db_session.add_all(
+        [
+            Item(requisicion_id=req_in.id, descripcion="Item Dentro", cantidad=2, unidad="unidad"),
+            Item(requisicion_id=req_out.id, descripcion="Item Fuera", cantidad=5, unidad="unidad"),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    with patch("app.main.now_sv", return_value=fixed_now):
+        response = client.get("/api/dashboard/basicos?periodo=7d")
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["periodo"]["period_key"] == "7d"
+    assert payload["periodo"]["label"] == "Ultimos 7 dias"
+    assert payload["kpis"]["total_requisiciones"] == 1
+    assert payload["kpis"]["requisiciones_liquidadas_en_prokey"] == 1
+    assert payload["kpis"]["promedio_horas_hasta_prokey"] == 24.0
+    assert payload["kpis"]["dias_observados"] == 1
+    assert payload["kpis"]["requisiciones_promedio_por_dia"] == 1.0
+
+    motivos = dict(zip(payload["motivos"]["labels"], payload["motivos"]["values"]))
+    assert motivos == {"Demostración": 1}
+    assert "Reposición" not in motivos
+
+    solicitantes = dict(zip(payload["top_solicitantes"]["labels"], payload["top_solicitantes"]["values"]))
+    assert solicitantes[user.nombre] == 1
+
+    items = dict(zip(payload["top_items"]["labels"], payload["top_items"]["values"]))
+    assert items == {"Item Dentro": 2.0}
+    assert "Item Fuera" not in items
 
 
 def test_dashboard_basicos_excluye_fines_de_semana_del_promedio_diario(client: TestClient, db_session: Session):
@@ -816,6 +918,110 @@ def test_dashboard_auditoria_agrega_kpis_y_diferencias(client: TestClient, db_se
     assert {item["folio"] for item in payload_drilldown_demos["items"]} == {"REQ-AUD-01", "REQ-AUD-02"}
 
 
+def test_dashboard_auditoria_aplica_periodo_temporal(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    tecnico_1 = db_session.query(Usuario).filter(Usuario.username == "tecnico.1").first()
+    tecnico_2 = db_session.query(Usuario).filter(Usuario.username == "tecnico.2").first()
+    fixed_now = datetime(2026, 3, 25, 8, 5, 0)
+
+    req_in = Requisicion(
+        folio="REQ-AUD-PER-01",
+        solicitante_id=user.id,
+        receptor_designado_id=tecnico_1.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Demostración",
+        justificacion="Dentro del periodo",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 19, 10, 0, 0),
+        liquidated_at=datetime(2026, 3, 20, 10, 0, 0),
+        prokey_liquidada_at=datetime(2026, 3, 21, 10, 0, 0),
+    )
+    req_out = Requisicion(
+        folio="REQ-AUD-PER-02",
+        solicitante_id=user.id,
+        receptor_designado_id=tecnico_2.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Reposición",
+        justificacion="Fuera del periodo",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 9, 10, 0, 0),
+        liquidated_at=datetime(2026, 3, 10, 10, 0, 0),
+        prokey_liquidada_at=datetime(2026, 3, 11, 10, 0, 0),
+    )
+    db_session.add_all([req_in, req_out])
+    db_session.commit()
+    db_session.refresh(req_in)
+    db_session.refresh(req_out)
+
+    db_session.add_all(
+        [
+            Item(
+                requisicion_id=req_in.id,
+                descripcion="Cable UTP Cat6",
+                cantidad=5,
+                cantidad_entregada=5,
+                qty_used=3,
+                qty_left_at_client=1,
+                qty_returned_to_warehouse=2,
+                liquidation_mode="RETORNABLE",
+                contexto_operacion="reposicion",
+                unidad="unidad",
+                es_demo=True,
+            ),
+            Item(
+                requisicion_id=req_out.id,
+                descripcion="Conector RJ45",
+                cantidad=4,
+                cantidad_entregada=4,
+                qty_used=2,
+                qty_left_at_client=1,
+                qty_returned_to_warehouse=1,
+                liquidation_mode="RETORNABLE",
+                contexto_operacion="reposicion",
+                unidad="unidad",
+                es_demo=True,
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    with patch("app.main.now_sv", return_value=fixed_now):
+        response = client.get("/api/dashboard/auditoria?periodo=7d")
+        response_drilldown_diferencias = client.get("/api/dashboard/auditoria/discrepancias?periodo=7d")
+        response_drilldown_demos = client.get("/api/dashboard/auditoria/demos?periodo=7d")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["periodo"]["period_key"] == "7d"
+    assert payload["periodo"]["label"] == "Ultimos 7 dias"
+    assert payload["kpis"]["requisiciones_cerradas"] == 1
+    assert payload["kpis"]["requisiciones_con_diferencia"] == 1
+    assert payload["kpis"]["indice_discrepancia_pct"] == 100.0
+    assert payload["kpis"]["inversion_demos"] == 5.0
+    assert dict(zip(payload["diferencia_por_producto"]["labels"], payload["diferencia_por_producto"]["values"])) == {
+        "Cable UTP Cat6": 1.0
+    }
+    assert dict(zip(payload["diferencias_por_tecnico"]["labels"], payload["diferencias_por_tecnico"]["values"])) == {
+        "Tecnico Uno": 1.0
+    }
+
+    assert response_drilldown_diferencias.status_code == 200
+    payload_drilldown_diferencias = response_drilldown_diferencias.json()
+    assert payload_drilldown_diferencias["periodo"]["period_key"] == "7d"
+    assert payload_drilldown_diferencias["total"] == 1
+    assert {item["folio"] for item in payload_drilldown_diferencias["items"]} == {"REQ-AUD-PER-01"}
+
+    assert response_drilldown_demos.status_code == 200
+    payload_drilldown_demos = response_drilldown_demos.json()
+    assert payload_drilldown_demos["periodo"]["period_key"] == "7d"
+    assert payload_drilldown_demos["total"] == 1
+    assert {item["folio"] for item in payload_drilldown_demos["items"]} == {"REQ-AUD-PER-01"}
+
+
 def test_navbar_muestra_contingencias_solo_para_roles_autorizados(client: TestClient):
     login(client, "aprob.ops", "pass123")
     response_aprobador = client.get("/")
@@ -849,10 +1055,22 @@ def test_monitor_renderiza_fase_2_de_auditoria(client: TestClient):
     assert response.status_code == 200
     html = response.text
     assert "Auditoría y Diferencias" in html
+    assert 'id="monitor-period-select"' in html
     assert "/api/dashboard/auditoria" in html
     assert "dashboard-bi-drilldown" in html
     assert "Ranking de Diferencia por Producto" in html
     assert "Diferencias por Tecnico" in html
+
+
+def test_monitor_renderiza_periodo_activo_en_ui(client: TestClient):
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/monitor?periodo=30d")
+    assert response.status_code == 200
+    html = response.text
+    assert 'id="monitor-period-label"' in html
+    assert 'value="30d" selected' in html
+    assert "Periodo activo" in html
+    assert "Ultimos 30 dias" in html
 
 
 def test_home_aprobador_muestra_cards_operativas_globales(client: TestClient, db_session: Session):

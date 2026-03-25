@@ -120,6 +120,76 @@ PUESTO_MAP = {
 }
 
 
+def resolve_monitor_period(period_key: str | None, reference_now: datetime | None = None) -> dict[str, object]:
+    """
+    Translate a monitor period preset into a reusable time window.
+
+    The window is intentionally centralized here so the monitor's Fase 1 and
+    Fase 2 can share the same semantics later without duplicating date logic.
+    """
+    normalized_key = str(period_key or "all").strip().lower()
+    aliases = {
+        "": "all",
+        "all": "all",
+        "historial": "all",
+        "historico": "all",
+        "7d": "7d",
+        "30d": "30d",
+        "90d": "90d",
+        "ytd": "ytd",
+    }
+    period_code = aliases.get(normalized_key, "all")
+    now_value = reference_now or now_sv()
+
+    if period_code == "7d":
+        return {
+            "period_key": period_code,
+            "label": "Ultimos 7 dias",
+            "start_at": now_value - timedelta(days=7),
+            "end_at": now_value,
+        }
+    if period_code == "30d":
+        return {
+            "period_key": period_code,
+            "label": "Ultimos 30 dias",
+            "start_at": now_value - timedelta(days=30),
+            "end_at": now_value,
+        }
+    if period_code == "90d":
+        return {
+            "period_key": period_code,
+            "label": "Ultimos 90 dias",
+            "start_at": now_value - timedelta(days=90),
+            "end_at": now_value,
+        }
+    if period_code == "ytd":
+        return {
+            "period_key": period_code,
+            "label": "Ano en curso",
+            "start_at": datetime(now_value.year, 1, 1, 0, 0, 0),
+            "end_at": now_value,
+        }
+    return {
+        "period_key": "all",
+        "label": "Historial completo",
+        "start_at": None,
+        "end_at": None,
+    }
+
+
+def build_monitor_period_filter(column, monitor_period: dict[str, object]):
+    start_at = monitor_period.get("start_at")
+    end_at = monitor_period.get("end_at")
+    clauses = []
+    if start_at is not None:
+        clauses.append(column >= start_at)
+    if end_at is not None:
+        clauses.append(column <= end_at)
+    if not clauses:
+        return None
+    return and_(*clauses)
+
+
 def get_client_ip(request: Request) -> str:
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
@@ -1741,56 +1811,103 @@ def home(request: Request, current_user: Usuario = Depends(get_current_user), db
 @app.get("/monitor")
 def get_monitor_actividad(request: Request, current_user: Usuario = Depends(get_current_user)):
     ensure_dashboard_access(current_user)
+    monitor_period = resolve_monitor_period(request.query_params.get("periodo"))
     return templates.TemplateResponse(
         "monitor_actividad.html",
-        template_context(request, current_user),
+        template_context(request, current_user, monitor_period=monitor_period),
     )
 
 
 @app.get("/api/dashboard/basicos")
-def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+def dashboard_basicos_api(
+    periodo: str | None = None,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     # Datos base para el Monitor de Actividad (Fase 1).
     ensure_dashboard_access(current_user)
+    monitor_period = resolve_monitor_period(periodo)
+    created_at_filter = build_monitor_period_filter(Requisicion.created_at, monitor_period)
 
-    motivos_rows = (
-        db.query(
-            func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").label("motivo"),
-            func.count(Requisicion.id).label("total"),
+    if created_at_filter is not None:
+        motivos_query = (
+            db.query(
+                func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").label("motivo"),
+                func.count(Requisicion.id).label("total"),
+            )
+            .filter(created_at_filter)
+            .group_by(func.coalesce(Requisicion.motivo_requisicion, "Sin motivo"))
+            .order_by(func.count(Requisicion.id).desc(), func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").asc())
         )
-        .group_by(func.coalesce(Requisicion.motivo_requisicion, "Sin motivo"))
-        .order_by(func.count(Requisicion.id).desc(), func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").asc())
-        .all()
-    )
-
-    solicitantes_rows = (
-        db.query(
-            Usuario.nombre.label("nombre"),
-            func.count(Requisicion.id).label("total"),
+    else:
+        motivos_query = (
+            db.query(
+                func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").label("motivo"),
+                func.count(Requisicion.id).label("total"),
+            )
+            .group_by(func.coalesce(Requisicion.motivo_requisicion, "Sin motivo"))
+            .order_by(func.count(Requisicion.id).desc(), func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").asc())
         )
-        .join(Usuario, Usuario.id == Requisicion.solicitante_id)
-        .group_by(Usuario.id, Usuario.nombre)
-        .order_by(func.count(Requisicion.id).desc(), Usuario.nombre.asc())
-        .limit(10)
-        .all()
-    )
+    motivos_rows = motivos_query.all()
 
-    items_rows = (
-        db.query(
-            Item.descripcion.label("descripcion"),
-            func.sum(Item.cantidad).label("total_cantidad"),
+    if created_at_filter is not None:
+        solicitantes_query = (
+            db.query(
+                Usuario.nombre.label("nombre"),
+                func.count(Requisicion.id).label("total"),
+            )
+            .join(Usuario, Usuario.id == Requisicion.solicitante_id)
+            .filter(created_at_filter)
+            .group_by(Usuario.id, Usuario.nombre)
+            .order_by(func.count(Requisicion.id).desc(), Usuario.nombre.asc())
+            .limit(10)
         )
-        .join(Requisicion, Requisicion.id == Item.requisicion_id)
-        .group_by(Item.descripcion)
-        .order_by(func.sum(Item.cantidad).desc(), Item.descripcion.asc())
-        .limit(10)
-        .all()
-    )
+    else:
+        solicitantes_query = (
+            db.query(
+                Usuario.nombre.label("nombre"),
+                func.count(Requisicion.id).label("total"),
+            )
+            .join(Usuario, Usuario.id == Requisicion.solicitante_id)
+            .group_by(Usuario.id, Usuario.nombre)
+            .order_by(func.count(Requisicion.id).desc(), Usuario.nombre.asc())
+            .limit(10)
+        )
+    solicitantes_rows = solicitantes_query.all()
 
+    if created_at_filter is not None:
+        items_query = (
+            db.query(
+                Item.descripcion.label("descripcion"),
+                func.sum(Item.cantidad).label("total_cantidad"),
+            )
+            .join(Requisicion, Requisicion.id == Item.requisicion_id)
+            .filter(created_at_filter)
+            .group_by(Item.descripcion)
+            .order_by(func.sum(Item.cantidad).desc(), Item.descripcion.asc())
+            .limit(10)
+        )
+    else:
+        items_query = (
+            db.query(
+                Item.descripcion.label("descripcion"),
+                func.sum(Item.cantidad).label("total_cantidad"),
+            )
+            .join(Requisicion, Requisicion.id == Item.requisicion_id)
+            .group_by(Item.descripcion)
+            .order_by(func.sum(Item.cantidad).desc(), Item.descripcion.asc())
+            .limit(10)
+        )
+    items_rows = items_query.all()
+
+    hourly_query = db.query(
+        extract("hour", Requisicion.created_at).label("hora"),
+        func.count(Requisicion.id).label("total"),
+    )
+    if created_at_filter is not None:
+        hourly_query = hourly_query.filter(created_at_filter)
     hourly_rows = (
-        db.query(
-            extract("hour", Requisicion.created_at).label("hora"),
-            func.count(Requisicion.id).label("total"),
-        )
+        hourly_query
         .group_by(extract("hour", Requisicion.created_at))
         .order_by(extract("hour", Requisicion.created_at).asc())
         .all()
@@ -1798,11 +1915,17 @@ def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db:
     heatmap_counts = {int(row.hora): int(row.total) for row in hourly_rows if row.hora is not None}
     heatmap_labels = [f"{hour:02d}:00" for hour in range(24)]
     heatmap_values = [heatmap_counts.get(hour, 0) for hour in range(24)]
-    total_requisiciones = db.query(func.count(Requisicion.id)).scalar() or 0
-    rango_fechas = db.query(
+    total_query = db.query(func.count(Requisicion.id))
+    if created_at_filter is not None:
+        total_query = total_query.filter(created_at_filter)
+    total_requisiciones = total_query.scalar() or 0
+    rango_query = db.query(
         func.min(Requisicion.created_at).label("min_created_at"),
         func.max(Requisicion.created_at).label("max_created_at"),
-    ).one()
+    )
+    if created_at_filter is not None:
+        rango_query = rango_query.filter(created_at_filter)
+    rango_fechas = rango_query.one()
     dias_observados = 0
     if rango_fechas.min_created_at and rango_fechas.max_created_at:
         current_day = rango_fechas.min_created_at.date()
@@ -1813,15 +1936,14 @@ def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db:
             current_day += timedelta(days=1)
     promedio_requisiciones_por_dia = round(total_requisiciones / dias_observados, 2) if dias_observados else 0.0
 
-    prokey_cycle_rows = (
-        db.query(Requisicion.created_at, Requisicion.prokey_liquidada_at)
-        .filter(
-            Requisicion.estado == "liquidada_en_prokey",
-            Requisicion.created_at.is_not(None),
-            Requisicion.prokey_liquidada_at.is_not(None),
-        )
-        .all()
+    prokey_cycle_query = db.query(Requisicion.created_at, Requisicion.prokey_liquidada_at).filter(
+        Requisicion.estado == "liquidada_en_prokey",
+        Requisicion.created_at.is_not(None),
+        Requisicion.prokey_liquidada_at.is_not(None),
     )
+    if created_at_filter is not None:
+        prokey_cycle_query = prokey_cycle_query.filter(created_at_filter)
+    prokey_cycle_rows = prokey_cycle_query.all()
     cycle_hours = [
         max((row.prokey_liquidada_at - row.created_at).total_seconds() / 3600.0, 0.0)
         for row in prokey_cycle_rows
@@ -1830,6 +1952,7 @@ def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db:
     promedio_horas_hasta_prokey = round(sum(cycle_hours) / len(cycle_hours), 2) if cycle_hours else 0.0
 
     return {
+        "periodo": monitor_period,
         "kpis": {
             "promedio_horas_hasta_prokey": promedio_horas_hasta_prokey,
             "requisiciones_liquidadas_en_prokey": len(cycle_hours),
@@ -1858,19 +1981,31 @@ def dashboard_basicos_api(current_user: Usuario = Depends(get_current_user), db:
 
 
 @app.get("/api/dashboard/auditoria")
-def dashboard_auditoria_api(current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+def dashboard_auditoria_api(
+    periodo: str | None = None,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     # Datos de auditoria y diferencias para el Monitor de Actividad (Fase 2).
     ensure_dashboard_access(current_user)
 
-    auditoria = build_dashboard_auditoria_snapshot(db)
+    monitor_period = resolve_monitor_period(periodo)
+    auditoria = build_dashboard_auditoria_snapshot(db, monitor_period)
     return {
+        "periodo": monitor_period,
         "kpis": auditoria["kpis"],
         "diferencia_por_producto": auditoria["diferencia_por_producto"],
         "diferencias_por_tecnico": auditoria["diferencias_por_tecnico"],
     }
 
 
-def build_dashboard_auditoria_snapshot(db: Session) -> dict[str, object]:
+def build_dashboard_auditoria_snapshot(
+    db: Session,
+    monitor_period: dict[str, object] | None = None,
+) -> dict[str, object]:
+    monitor_period = monitor_period or resolve_monitor_period("all")
+    cierre_at = func.coalesce(Requisicion.liquidated_at, Requisicion.prokey_liquidada_at, Requisicion.created_at)
+    cierre_filter = build_monitor_period_filter(cierre_at, monitor_period)
     requisiciones_cerradas = (
         db.query(Requisicion)
         .options(
@@ -1879,8 +2014,10 @@ def build_dashboard_auditoria_snapshot(db: Session) -> dict[str, object]:
             joinedload(Requisicion.receptor_designado),
         )
         .filter(or_(filtro_pendiente_prokey(), filtro_finalizada_sin_prokey(), Requisicion.estado == "liquidada_en_prokey"))
-        .all()
     )
+    if cierre_filter is not None:
+        requisiciones_cerradas = requisiciones_cerradas.filter(cierre_filter)
+    requisiciones_cerradas = requisiciones_cerradas.all()
 
     total_requisiciones_cerradas = len(requisiciones_cerradas)
     requisiciones_con_diferencia = 0
@@ -1994,6 +2131,7 @@ def build_dashboard_auditoria_snapshot(db: Session) -> dict[str, object]:
     )
 
     return {
+        "periodo": monitor_period,
         "kpis": {
             "indice_discrepancia_pct": indice_discrepancia,
             "requisiciones_con_diferencia": requisiciones_con_diferencia,
@@ -2015,29 +2153,39 @@ def build_dashboard_auditoria_snapshot(db: Session) -> dict[str, object]:
 
 @app.get("/api/dashboard/auditoria/discrepancias")
 def dashboard_auditoria_discrepancias_api(
-    current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)
+    periodo: str | None = None,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     ensure_dashboard_access(current_user)
-    auditoria = build_dashboard_auditoria_snapshot(db)
+    monitor_period = resolve_monitor_period(periodo)
+    auditoria = build_dashboard_auditoria_snapshot(db, monitor_period)
     items = auditoria["requisiciones_con_diferencia_detalle"]
     return {
         "kind": "discrepancias",
         "title": "Requisiciones con diferencia",
         "description": "Requisiciones cerradas que presentan al menos un item con diferencia positiva.",
+        "periodo": monitor_period,
         "total": len(items),
         "items": items,
     }
 
 
 @app.get("/api/dashboard/auditoria/demos")
-def dashboard_auditoria_demos_api(current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+def dashboard_auditoria_demos_api(
+    periodo: str | None = None,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     ensure_dashboard_access(current_user)
-    auditoria = build_dashboard_auditoria_snapshot(db)
+    monitor_period = resolve_monitor_period(periodo)
+    auditoria = build_dashboard_auditoria_snapshot(db, monitor_period)
     items = auditoria["requisiciones_demo_detalle"]
     return {
         "kind": "demos",
         "title": "Requisiciones con demo",
         "description": "Requisiciones cerradas con al menos un item marcado para demo y cantidad entregada mayor a cero.",
+        "periodo": monitor_period,
         "total": len(items),
         "items": items,
     }

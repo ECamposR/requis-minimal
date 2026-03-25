@@ -5,6 +5,7 @@
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
 - Rama activa: `fixes`, destinada a fixes funcionales y de permisos sobre `main`.
 - Rama visual de apoyo: `chore/ui-only-fixes`, reservada para la refactorizacion de `Nueva Requisición` y ajustes de presentacion asociados, sin tocar logica de negocio.
+- Rama de trabajo actual: `feat/nuevas-funciones`, preparada para nuevas funciones aisladas desde `main`.
 - `REQ-182` completada en esa rama: `crear_requisicion.html` quedo reestructurada con layout superior de dos columnas, `Receptor designado` via datalist, tabla de items en formato semantico, boton de borrado y columna `Acción` centrados, mas ajustes de espaciado/jerarquia para acercarse al mockup aprobado.
 - `REQ-183` completada en la rama `fixes`: el rol `bodega` ya puede ver `Todas las Requisiciones`, navegar desde home/navbar y consultar el historial completo de liquidaciones en `/bodega`; el permiso de `Confirmar en Prokey` permanece restringido a `jefe_bodega` y `admin`.
 - Se abre `EPIC-UI-09` en esta rama para agregar alerta visual de brecha SLA (`>48h` sin cambio de estado) en `Pendientes de Procesar` y `Todas las Requisiciones`, con arquitectura estricta: calculo de fecha solo en backend y encapsulado como `@property` del modelo `Requisicion`.
@@ -15,7 +16,14 @@
   - `REQ-178` pendiente: detectar diferencias en `liquidar_guardar` antes de `ejecutar_liquidacion`, usando la semántica real de retorno esperado por ítem y comparaciones con tolerancia numérica para evitar falsos positivos por `float`.
   - `REQ-179` completada: si hay diferencias y no llega `confirmar_diferencias`, `liquidar_guardar` re-renderiza `liquidar.html` con todos los valores digitados preservados y una bandera SSR de confirmación.
   - `REQ-180` completada: `liquidar.html` ya muestra alerta `warning`, un hidden input `confirmar_diferencias` y el botón `Confirmar y Liquidar con Diferencias` cuando el backend marca diferencias.
-  - `REQ-181` completada: la feature ya cuenta con pruebas backend/SSR para caso sin diferencias, caso con diferencias sin confirmar, caso con diferencias confirmadas y tolerancia numérica frente a ruido de `float`.
+- `REQ-181` completada: la feature ya cuenta con pruebas backend/SSR para caso sin diferencias, caso con diferencias sin confirmar, caso con diferencias confirmadas y tolerancia numérica frente a ruido de `float`.
+- Se abre `EPIC-BI-03` para agregar periodos configurables al `Monitor de Actividad`; hoy el monitor trabaja sobre historial completo y necesita ventanas operativas (`7d`, `30d`, `90d`, `ytd`, `all`) con calculo exclusivamente en backend.
+  - `REQ-184` completada: el monitor ya resuelve presets de periodo en backend con `resolve_monitor_period()` y devuelve `period_key`, `label`, `start_at` y `end_at`.
+  - `REQ-185` completada: Fase 1 ya acepta `periodo` en `/api/dashboard/basicos` y filtra motivos, top solicitantes, top items, heatmap horario, total, dias observados y promedio a Prokey usando la misma ventana temporal.
+  - `REQ-186` completada: la Fase 2 (`/api/dashboard/auditoria` y drilldowns) ya aplica la misma ventana temporal que Fase 1 para discrepancias y demos, usando la misma metadata de periodo.
+  - `REQ-187` completada: `templates/monitor_actividad.html` ya expone un selector simple de periodo y recarga ambos bloques con el mismo preset activo.
+  - `REQ-188` completada: la UI del monitor ya muestra el periodo activo para evitar ambiguedad entre historico completo y ventana acotada.
+  - `REQ-189` completada: el monitor ya cuenta con pruebas de helper de periodo, inclusion/exclusion temporal y consistencia entre KPIs, graficos y drilldowns.
 - `REQ-127` completada en esta rama: `Aprobar` queda como bandeja de pendientes y la consulta global se mueve a `Todas las Requisiciones` (`/todas-requisiciones`) con filtros por estado, departamento y rango de fechas para roles de supervision.
 - `REQ-128` completada en esta rama: los filtros basados en selectores (`estado`/`departamento`) ahora se autoaplican en `Aprobar` y `Todas las Requisiciones`; el boton `Buscar` se conserva para texto libre y fechas.
 - `REQ-129` completada en esta rama: los filtros de fecha en `Todas las Requisiciones` mantienen el `input[type=date]` nativo, pero ahora intentan abrir el calendario con `showPicker()` en navegadores compatibles como mejora progresiva.
