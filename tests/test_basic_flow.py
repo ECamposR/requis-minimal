@@ -328,6 +328,13 @@ def test_home_bodega_muestra_panel_estado_operativo(client: TestClient, db_sessi
     db_session.add_all(
         [
             Requisicion(
+                folio="REQ-BOD-00",
+                solicitante_id=user.id,
+                departamento="Operaciones",
+                estado="pendiente",
+                justificacion="Pendiente aprobar",
+            ),
+            Requisicion(
                 folio="REQ-BOD-01",
                 solicitante_id=user.id,
                 departamento="Operaciones",
@@ -392,6 +399,7 @@ def test_home_bodega_muestra_panel_estado_operativo(client: TestClient, db_sessi
     html = response.text
     assert "Estado de Operación de Bodega" in html
     assert "Resume el estado actual de las requisiciones gestionadas por bodega." in html
+    assert "Pendiente de aprobación" in html
     assert "Pendientes de Procesar" in html
     assert "Pendientes de Liquidar" in html
     assert "Finalizadas en Prokey" in html

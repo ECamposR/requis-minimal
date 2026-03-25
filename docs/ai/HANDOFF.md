@@ -33,6 +33,8 @@
   - `REQ-195` completada: la gobernanza IA ya refleja el alcance final y las decisiones de formato del frente de exportacion.
 - `REQ-196` completada: el `XLSX` consolidado ya exporta todas las filas del periodo en `Solicitantes`, `Items`, `Dif Producto` y `Dif Tecnico`, sin alterar el top-N del dashboard visual.
 - `REQ-197` completada: usuarios `bodega`/`jefe_bodega` ahora tienen un banner global por polling para requisiciones `aprobada` pendientes de preparar. El descarte queda persistido por usuario (`bodega_pending_prepare_dismissed_at`) y la alerta reaparece solo cuando existe una aprobacion mas nueva que la ultima descartada.
+- `REQ-197A` completada: el banner de bodega quedo alineado al mockup en version naranja vibrante con copy legible, icono de campana con relleno, CTA `Ver pendientes` oscuro y `Descartar` outlined.
+- `REQ-197B` completada: el panel `Estado de Operación de Bodega` ya no deja un tramo blanco en la barra; el total del grafico ahora se calcula solo con los estados representados en los segmentos visibles.
 - `REQ-127` completada en esta rama: `Aprobar` queda como bandeja de pendientes y la consulta global se mueve a `Todas las Requisiciones` (`/todas-requisiciones`) con filtros por estado, departamento y rango de fechas para roles de supervision.
 - `REQ-128` completada en esta rama: los filtros basados en selectores (`estado`/`departamento`) ahora se autoaplican en `Aprobar` y `Todas las Requisiciones`; el boton `Buscar` se conserva para texto libre y fechas.
 - `REQ-129` completada en esta rama: los filtros de fecha en `Todas las Requisiciones` mantienen el `input[type=date]` nativo, pero ahora intentan abrir el calendario con `showPicker()` en navegadores compatibles como mejora progresiva.

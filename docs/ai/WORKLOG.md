@@ -100,6 +100,25 @@
 - Próximo paso:
   - Ejecutar `REQ-189` con cobertura explícita de ventana temporal e inclusión/exclusión en el monitor.
 
+## 2026-03-25 09:10 CST-0600 | tool: Codex CLI
+- Objetivo: documentar el ajuste visual y funcional final del frente de bodega antes de consolidarlo en `main`.
+- Tareas: `REQ-197A`, `REQ-197B`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El banner persistente de bodega quedo refinado con naranja vibrante, texto legible, icono de alerta visible y acciones con contraste correcto.
+  - El panel `Estado de Operación de Bodega` ya no deja un tramo blanco en la barra, porque el total del grafico ahora se calcula solo con los segmentos visibles.
+  - La gobernanza IA ya refleja ambos fixes como completados para trazabilidad futura.
+- Validación:
+  - `python -m py_compile app/main.py tests/test_basic_flow.py`
+  - `git diff --check`
+- Próximo paso:
+  - Consolidar el frente con `commit/push` y, si procede, mergearlo a `main`.
+
 ## 2026-03-25 08:15 CST-0600 | tool: Codex CLI
 - Objetivo: aplicar el primer tramo funcional del periodo configurable del Monitor de Actividad.
 - Tareas: `REQ-184`, `REQ-185`

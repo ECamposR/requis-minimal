@@ -1345,8 +1345,12 @@ def build_home_bodega_status_chart(current_user: Usuario, db: Session) -> dict[s
     if current_user.rol != "bodega":
         return None
 
-    total = db.query(Requisicion).count()
     segmentos_raw = [
+        {
+            "label": "Pendiente de aprobación",
+            "value": db.query(Requisicion).filter(Requisicion.estado == "pendiente").count(),
+            "tone": "pending",
+        },
         {
             "label": "Pendientes de Procesar",
             "value": db.query(Requisicion).filter(Requisicion.estado.in_(["aprobada", "preparado"])).count(),
@@ -1373,6 +1377,7 @@ def build_home_bodega_status_chart(current_user: Usuario, db: Session) -> dict[s
             "tone": "rejected",
         },
     ]
+    total = sum(segmento["value"] for segmento in segmentos_raw)
     segmentos = []
     for segmento in segmentos_raw:
         porcentaje = round((segmento["value"] * 100 / total), 1) if total else 0
