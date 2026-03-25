@@ -75,7 +75,7 @@
             ? "Hay 1 requisicion aprobada pendiente de preparar."
             : `Hay ${count} requisiciones aprobadas pendientes de preparar.`;
         const extra = folios.length
-            ? `Folios recientes: ${folios.join(", ")}.`
+            ? `# Req recientes: ${folios.join(", ")}.`
             : "Ingresa a pendientes para asignar la preparacion.";
 
         if (titleEl) titleEl.textContent = title;
