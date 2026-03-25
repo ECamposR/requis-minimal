@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/theme.css">
@@ -22,7 +23,7 @@
     {% if current_user and current_user.rol in ['bodega', 'jefe_bodega'] %}
         <section
             id="bodega-pending-prepare-banner"
-            class="alert alert-warning bodega-live-banner"
+            class="alert bodega-live-banner"
             hidden
             data-status-url="/api/bodega/notificaciones/aprobadas-pendientes"
             data-dismiss-url="/api/bodega/notificaciones/aprobadas-pendientes/descartar"
@@ -31,8 +32,14 @@
             aria-live="polite"
         >
             <div class="bodega-live-banner__copy">
-                <strong data-banner-title>Hay requisiciones aprobadas pendientes de preparar.</strong>
-                <span data-banner-message></span>
+                <div class="bodega-live-banner__headline">
+                    <span class="material-symbols-outlined bodega-live-banner__icon" aria-hidden="true">notifications_active</span>
+                    <strong data-banner-title>Hay requisiciones aprobadas pendientes de preparar.</strong>
+                </div>
+                <span data-banner-message>
+                    <span class="bodega-live-banner__meta-label"># Req recientes:</span>
+                    <span data-banner-folios></span>
+                </span>
             </div>
             <div class="bodega-live-banner__actions">
                 <a href="/bodega?vista=pendientes&etapa=aprobada" role="button" class="secondary outline">Ver pendientes</a>
@@ -59,6 +66,7 @@
     const pollMs = Math.max(Number(banner.dataset.pollMs || 20000), 10000);
     const titleEl = banner.querySelector("[data-banner-title]");
     const messageEl = banner.querySelector("[data-banner-message]");
+    const foliosEl = banner.querySelector("[data-banner-folios]");
     const dismissButton = banner.querySelector("[data-banner-dismiss]");
     const viewLink = banner.querySelector("a[role='button']");
     let isLoading = false;
@@ -75,11 +83,15 @@
             ? "Hay 1 requisicion aprobada pendiente de preparar."
             : `Hay ${count} requisiciones aprobadas pendientes de preparar.`;
         const extra = folios.length
-            ? `# Req recientes: ${folios.join(", ")}.`
+            ? folios.join(", ")
             : "Ingresa a pendientes para asignar la preparacion.";
 
         if (titleEl) titleEl.textContent = title;
-        if (messageEl) messageEl.textContent = extra;
+        if (foliosEl) {
+            foliosEl.textContent = folios.length
+                ? `${extra}.`
+                : "Ingresa a pendientes para asignar la preparacion.";
+        }
         if (viewLink) viewLink.href = payload.view_url || defaultViewUrl;
     };
 
