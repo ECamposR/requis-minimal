@@ -1,5 +1,70 @@
 # Worklog (append-only)
 
+## 2026-03-25 10:34 CST-0600 | tool: Codex CLI
+- Objetivo: corregir el alcance del `XLSX` consolidado del monitor para que exporte datasets completos y no solo los top-N del dashboard.
+- Tareas: `REQ-196`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se documenta la separacion entre dashboard visual (top-N) y exportacion consolidada (universo completo del periodo).
+- Próximo paso:
+  - Ajustar backend y pruebas del exporte consolidado.
+
+## 2026-03-25 10:36 CST-0600 | tool: Codex CLI
+- Objetivo: cerrar `REQ-196` para que el `XLSX` consolidado exporte datasets completos del periodo.
+- Tareas: `REQ-196`
+- Cambios:
+  - `app/main.py`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Fase 1 ahora conserva datasets completos (`solicitantes_full`, `items_full`) aparte del top-N visual.
+  - Fase 2 ahora conserva datasets completos (`diferencia_por_producto_full`, `diferencias_por_tecnico_full`) aparte del top-N visual.
+  - El `XLSX` consolidado usa las colecciones completas para sus hojas tabulares.
+  - Se agrego una prueba que verifica mas de 10 filas en `Solicitantes` e `Items` dentro del archivo exportado.
+- Validación:
+  - `python -m py_compile app/main.py tests/test_basic_flow.py`
+  - Smoke directo en Python verificando que el `XLSX` consolidado incluya el contenido esperado.
+
+## 2026-03-25 10:23 CST-0600 | tool: Codex CLI
+- Objetivo: implementar reportes descargables del `Monitor de Actividad` con respeto del `periodo` activo.
+- Tareas: `REQ-190`, `REQ-191`, `REQ-192`, `REQ-193`, `REQ-194`, `REQ-195`
+- Cambios:
+  - `app/main.py`
+  - `templates/monitor_actividad.html`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se extrajo un snapshot reusable de Fase 1 y se centralizo el payload de drilldowns para reutilizar la misma logica entre JSON y exportes.
+  - El monitor ahora ofrece un `XLSX` consolidado con hojas de resumen de uso, auditoria, tablas auxiliares y ambos drilldowns.
+  - Los drilldowns de `discrepancias` y `demos` ya pueden descargarse en `CSV` y `XLSX` con nombres de archivo trazables.
+  - La vista `monitor_actividad.html` ya muestra botones de descarga sincronizados con el `periodo` activo.
+  - Se agrego cobertura de exportes y se valido por smoke directo que el `XLSX` generado es legible y que el `CSV` respeta la ventana temporal.
+- Validación:
+  - `python -m py_compile app/main.py tests/test_basic_flow.py`
+  - Smoke directo en Python contra `build_dashboard_basicos_snapshot()`, `build_dashboard_auditoria_snapshot()`, `dashboard_export_consolidado_api()` y `dashboard_export_drilldown_api()`.
+- Próximo paso:
+  - Commit/push del frente si el usuario aprueba el alcance del MVP de exportacion.
+
+## 2026-03-25 10:15 CST-0600 | tool: Codex CLI
+- Objetivo: abrir el frente de reportes descargables del `Monitor de Actividad` antes de implementar exportes reales.
+- Tareas: `EPIC-BI-04`, `REQ-190`, `REQ-191`, `REQ-192`, `REQ-193`, `REQ-194`, `REQ-195`
+- Cambios:
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Se define el nuevo frente de exportacion del monitor con alcance backend-first y respeto obligatorio del `periodo` activo.
+  - Se descompone la implementacion en helpers reutilizables, exporte consolidado `XLSX`, drilldowns `CSV/XLSX`, controles UI y pruebas.
+- Próximo paso:
+  - Implementar `REQ-190` a `REQ-194` sobre el monitor actual.
+
 ## 2026-03-25 08:27 CST-0600 | tool: Codex CLI
 - Objetivo: cerrar la cobertura de pruebas del Monitor de Actividad y dejar documentado el estado final del periodo configurable.
 - Tareas: `REQ-189`

@@ -10,18 +10,23 @@
     <div class="monitor-period-toolbar__summary">
         <span class="monitor-period-toolbar__eyebrow">Periodo activo</span>
         <strong class="monitor-period-toolbar__value" id="monitor-period-label">{{ monitor_period_label }}</strong>
-        <p class="monitor-period-toolbar__note" id="monitor-period-note">Las metricas y los drilldowns usan esta misma ventana temporal.</p>
+        <p class="monitor-period-toolbar__note" id="monitor-period-note">Los graficos y los listados usan esta misma ventana temporal.</p>
     </div>
-    <label class="monitor-period-toolbar__field" for="monitor-period-select">
-        <span>Ventana temporal</span>
-        <select id="monitor-period-select" name="periodo" aria-label="Ventana temporal del monitor">
-            <option value="all" {% if monitor_period_key == "all" %}selected{% endif %}>Historial completo</option>
-            <option value="7d" {% if monitor_period_key == "7d" %}selected{% endif %}>Ultimos 7 dias</option>
-            <option value="30d" {% if monitor_period_key == "30d" %}selected{% endif %}>Ultimos 30 dias</option>
-            <option value="90d" {% if monitor_period_key == "90d" %}selected{% endif %}>Ultimos 90 dias</option>
-            <option value="ytd" {% if monitor_period_key == "ytd" %}selected{% endif %}>Ano en curso</option>
-        </select>
-    </label>
+    <div class="monitor-period-toolbar__controls">
+        <label class="monitor-period-toolbar__field" for="monitor-period-select">
+            <span>Ventana temporal</span>
+            <select id="monitor-period-select" name="periodo" aria-label="Ventana temporal del monitor">
+                <option value="all" {% if monitor_period_key == "all" %}selected{% endif %}>Historial completo</option>
+                <option value="7d" {% if monitor_period_key == "7d" %}selected{% endif %}>Ultimos 7 dias</option>
+                <option value="30d" {% if monitor_period_key == "30d" %}selected{% endif %}>Ultimos 30 dias</option>
+                <option value="90d" {% if monitor_period_key == "90d" %}selected{% endif %}>Ultimos 90 dias</option>
+                <option value="ytd" {% if monitor_period_key == "ytd" %}selected{% endif %}>Ano en curso</option>
+            </select>
+        </label>
+        <div class="monitor-period-toolbar__actions" aria-label="Exportes del monitor">
+            <button type="button" class="secondary" data-monitor-export="consolidado">Descargar Excel</button>
+        </div>
+    </div>
 </section>
 
 <style>
@@ -60,6 +65,11 @@
     gap: 0.35rem;
     min-width: 16rem;
 }
+.monitor-period-toolbar__controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.9rem;
+}
 .monitor-period-toolbar__field span {
     color: var(--ui-muted, var(--muted, #475569));
     font-size: 0.72rem;
@@ -69,6 +79,15 @@
 }
 .monitor-period-toolbar__field select {
     margin-bottom: 0;
+}
+.monitor-period-toolbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+.monitor-period-toolbar__actions button {
+    margin: 0;
+    white-space: nowrap;
 }
 .monitor-section {
     margin-top: 1.4rem;
@@ -212,6 +231,14 @@
     .monitor-period-toolbar__field {
         min-width: 0;
     }
+    .monitor-period-toolbar__controls {
+        align-items: stretch;
+        flex-direction: column;
+        width: 100%;
+    }
+    .monitor-period-toolbar__actions {
+        width: 100%;
+    }
     .dashboard-bi-kpi-grid,
     .dashboard-bi-grid {
         grid-template-columns: 1fr;
@@ -257,10 +284,10 @@
 
     <article class="panel view-panel dashboard-bi-card">
         <header>
-            <div>
-                <h3>Top Usuarios Solicitantes</h3>
-                <p>Identifica quienes generan mas requisiciones</p>
-            </div>
+                <div>
+                <h3>Solicitantes con mas requisiciones</h3>
+                <p>Identifica quienes generan mas solicitudes en el periodo.</p>
+                </div>
         </header>
         <div class="dashboard-bi-canvas-wrap">
             <canvas id="chart-solicitantes" aria-label="Grafico de top usuarios solicitantes"></canvas>
@@ -270,10 +297,10 @@
 
     <article class="panel view-panel dashboard-bi-card">
         <header>
-            <div>
-                <h3>Top Items Solicitados</h3>
-                <p>Muestra los principales items solicitados</p>
-            </div>
+                <div>
+                <h3>Productos mas solicitados</h3>
+                <p>Muestra los productos con mayor salida en el periodo.</p>
+                </div>
         </header>
         <div class="dashboard-bi-canvas-wrap">
             <canvas id="chart-items" aria-label="Grafico de top items solicitados"></canvas>
@@ -283,10 +310,10 @@
 
     <article class="panel view-panel dashboard-bi-card">
         <header>
-            <div>
-                <h3>Mapa de Calor Horario</h3>
-                <p>Visibiliza cuando se generan las requisiciones</p>
-            </div>
+                <div>
+                <h3>Horario de registro</h3>
+                <p>Muestra en que horas se registran mas requisiciones.</p>
+                </div>
         </header>
         <div class="dashboard-bi-canvas-wrap">
             <canvas id="chart-horario" aria-label="Grafico horario de contingencias"></canvas>
@@ -304,19 +331,19 @@
 
     <section class="dashboard-bi-kpi-grid" aria-label="KPIs de auditoria">
         <article class="panel view-panel dashboard-bi-kpi-card">
-            <span class="dashboard-bi-kpi-label">Indice de Discrepancia</span>
+            <span class="dashboard-bi-kpi-label">Porcentaje con diferencias</span>
             <strong class="dashboard-bi-kpi-value" id="kpi-indice-discrepancia">--</strong>
             <p class="dashboard-bi-kpi-note" id="kpi-indice-discrepancia-note">Cargando datos de auditoría...</p>
             <div class="dashboard-bi-kpi-actions">
-                <button type="button" class="secondary" data-drilldown-kind="discrepancias">Ver detalle</button>
+                <button type="button" class="secondary" data-drilldown-kind="discrepancias">Ver listado</button>
             </div>
         </article>
         <article class="panel view-panel dashboard-bi-kpi-card">
-            <span class="dashboard-bi-kpi-label">EQUIPOS PARA DEMOS</span>
+            <span class="dashboard-bi-kpi-label">Productos para demostracion</span>
             <strong class="dashboard-bi-kpi-value" id="kpi-inversion-demos">--</strong>
             <p class="dashboard-bi-kpi-note" id="kpi-inversion-demos-note">Cargando datos de auditoría...</p>
             <div class="dashboard-bi-kpi-actions">
-                <button type="button" class="secondary" data-drilldown-kind="demos">Ver detalle</button>
+                <button type="button" class="secondary" data-drilldown-kind="demos">Ver listado</button>
             </div>
         </article>
     </section>
@@ -324,8 +351,8 @@
     <section class="panel view-panel dashboard-bi-drilldown" id="dashboard-bi-drilldown" hidden aria-live="polite">
         <header class="dashboard-bi-drilldown-header">
             <div>
-                <h3 id="dashboard-bi-drilldown-title">Detalle relacionado</h3>
-                <p id="dashboard-bi-drilldown-description">Selecciona un KPI para ver las requisiciones relacionadas.</p>
+                <h3 id="dashboard-bi-drilldown-title">Listado relacionado</h3>
+                <p id="dashboard-bi-drilldown-description">Selecciona un indicador para ver las requisiciones relacionadas.</p>
             </div>
             <button type="button" class="secondary" id="dashboard-bi-drilldown-close">Cerrar</button>
         </header>
@@ -337,8 +364,8 @@
         <article class="panel view-panel dashboard-bi-card">
             <header>
                 <div>
-                    <h3>Ranking de Diferencia por Producto</h3>
-                    <p>Muestra qué ítems acumulan más unidades faltantes en requisiciones cerradas.</p>
+                    <h3>Productos con mas faltantes</h3>
+                    <p>Muestra que productos acumulan mas unidades faltantes en requisiciones cerradas.</p>
                 </div>
             </header>
             <div class="dashboard-bi-canvas-wrap">
@@ -350,8 +377,8 @@
         <article class="panel view-panel dashboard-bi-card">
             <header>
                 <div>
-                    <h3>Diferencias por Tecnico</h3>
-                    <p>Resalta qué receptores designados acumulan más unidades faltantes reportadas.</p>
+                    <h3>Diferencias por responsable</h3>
+                    <p>Resalta que responsables acumulan mas unidades faltantes reportadas.</p>
                 </div>
             </header>
             <div class="dashboard-bi-canvas-wrap">
@@ -372,6 +399,22 @@ const MONITOR_PERIOD_LABELS = {
     "30d": "Ultimos 30 dias",
     "90d": "Ultimos 90 dias",
     ytd: "Ano en curso",
+};
+
+const MONITOR_EXPORT_CONFIG = {
+    consolidado: {
+        path: "/api/dashboard/export/consolidado",
+    },
+    discrepancias: {
+        path: "/api/dashboard/export/drilldown",
+        kind: "discrepancias",
+        format: "csv",
+    },
+    demos: {
+        path: "/api/dashboard/export/drilldown",
+        kind: "demos",
+        format: "csv",
+    },
 };
 
 function getThemeToken(name, fallback) {
@@ -409,7 +452,7 @@ function syncMonitorPeriodBanner(periodo) {
     }
     const noteNode = document.getElementById("monitor-period-note");
     if (noteNode) {
-        noteNode.textContent = `Las metricas y los drilldowns usan ${label.toLowerCase()}.`;
+        noteNode.textContent = `Los graficos y los listados usan ${label.toLowerCase()}.`;
     }
 }
 
@@ -430,6 +473,29 @@ function buildMonitorApiUrl(path) {
         url.searchParams.set("periodo", periodKey);
     }
     return `${url.pathname}${url.search}`;
+}
+
+function buildMonitorExportUrl(target) {
+    const config = MONITOR_EXPORT_CONFIG[target];
+    if (!config) return "";
+    const url = new URL(config.path, window.location.origin);
+    const periodKey = getMonitorPeriodValue();
+    if (periodKey) {
+        url.searchParams.set("periodo", periodKey);
+    }
+    if (config.kind) {
+        url.searchParams.set("kind", config.kind);
+    }
+    if (config.format) {
+        url.searchParams.set("format", config.format);
+    }
+    return `${url.pathname}${url.search}`;
+}
+
+function triggerMonitorExport(target) {
+    const url = buildMonitorExportUrl(target);
+    if (!url) return;
+    window.location.href = url;
 }
 
 function resetMonitorDrilldown() {
@@ -507,7 +573,7 @@ function renderUsageKpis(kpis, periodo = null) {
         "kpi-tiempo-promedio-prokey",
         `${fmtUsageKpiNumber(avgHours)}h / ${fmtUsageKpiNumber(avgDays)} días`,
         "kpi-tiempo-promedio-prokey-note",
-        `Periodo activo: <strong>${periodLabel}</strong>. Promedio desde creación hasta <strong>Liquidada en Prokey</strong>, calculado sobre <strong>${fmtAuditNumber(prokeyCount)}</strong> requisiciones cerradas definitivamente.`
+        `Periodo activo: <strong>${periodLabel}</strong>. Promedio desde creacion hasta <strong>Liquidada en Prokey</strong>, calculado sobre <strong>${fmtAuditNumber(prokeyCount)}</strong> requisiciones cerradas definitivamente.`
     );
     setAuditKpi(
         "kpi-promedio-requisiciones-dia",
@@ -555,7 +621,7 @@ function renderDrilldownRows(kind, items) {
                     <th>Solicitante</th>
                     <th>Motivo</th>
                     <th>Receptor</th>
-                    <th>Resumen</th>
+                    <th>Detalle</th>
                 </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -573,18 +639,18 @@ async function cargarDrilldownAuditoria(kind) {
     const config = {
         discrepancias: {
             url: "/api/dashboard/auditoria/discrepancias",
-            fallbackTitle: "Requisiciones con diferencia",
+            fallbackTitle: "Requisiciones con diferencias",
         },
         demos: {
             url: "/api/dashboard/auditoria/demos",
-            fallbackTitle: "Requisiciones con demo",
+            fallbackTitle: "Requisiciones con demostracion",
         },
     }[kind];
     if (!config) return;
 
     panel.hidden = false;
     title.textContent = config.fallbackTitle;
-    description.textContent = "Cargando detalle relacionado...";
+    description.textContent = "Cargando listado relacionado...";
     content.innerHTML = "";
     setDrilldownStatus("Cargando requisiciones relacionadas...");
 
@@ -604,7 +670,7 @@ async function cargarDrilldownAuditoria(kind) {
     } catch (error) {
         console.error("monitor_actividad_drilldown_error", error);
         content.innerHTML = "";
-        setDrilldownStatus("No se pudo cargar el detalle relacionado.", true);
+        setDrilldownStatus("No se pudo cargar el listado relacionado.", true);
     }
 }
 
@@ -824,13 +890,13 @@ function renderAuditKpis(kpis, periodo = null) {
         "kpi-indice-discrepancia",
         `${fmtAuditNumber(indice)}%`,
         "kpi-indice-discrepancia-note",
-        `Periodo activo: <strong>${periodLabel}</strong>. <strong>${fmtAuditNumber(conDiferencia)}</strong> de <strong>${fmtAuditNumber(cerradas)}</strong> requisiciones cerradas presentan al menos una diferencia.`
+        `Periodo activo: <strong>${periodLabel}</strong>. <strong>${fmtAuditNumber(conDiferencia)}</strong> de <strong>${fmtAuditNumber(cerradas)}</strong> requisiciones cerradas presentan al menos una diferencia en la conciliacion.`
     );
     setAuditKpi(
         "kpi-inversion-demos",
         fmtAuditNumber(inversion),
         "kpi-inversion-demos-note",
-        `Periodo activo: <strong>${periodLabel}</strong>. Suma acumulada de <strong>cantidad entregada</strong> en ítems marcados como demo dentro de requisiciones cerradas.`
+        `Periodo activo: <strong>${periodLabel}</strong>. Suma acumulada de <strong>cantidad entregada</strong> en productos marcados para demostracion dentro de requisiciones cerradas.`
     );
 }
 
@@ -964,6 +1030,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (select) {
         select.addEventListener("change", handleMonitorPeriodChange);
     }
+    document.querySelectorAll("[data-monitor-export]").forEach((button) => {
+        button.addEventListener("click", () => triggerMonitorExport(button.dataset.monitorExport));
+    });
     syncMonitorPeriodBanner({
         period_key: getMonitorPeriodValue(),
         label: getMonitorPeriodLabel(),

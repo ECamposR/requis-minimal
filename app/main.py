@@ -7,7 +7,7 @@ import unicodedata
 import uuid
 import logging
 from threading import Lock
-from io import BytesIO
+from io import BytesIO, StringIO
 import csv
 import tempfile
 from datetime import datetime, timedelta
@@ -188,6 +188,265 @@ def build_monitor_period_filter(column, monitor_period: dict[str, object]):
     if not clauses:
         return None
     return and_(*clauses)
+
+
+def build_dashboard_basicos_snapshot(
+    db: Session,
+    monitor_period: dict[str, object] | None = None,
+) -> dict[str, object]:
+    monitor_period = monitor_period or resolve_monitor_period("all")
+    created_at_filter = build_monitor_period_filter(Requisicion.created_at, monitor_period)
+
+    if created_at_filter is not None:
+        motivos_query = (
+            db.query(
+                func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").label("motivo"),
+                func.count(Requisicion.id).label("total"),
+            )
+            .filter(created_at_filter)
+            .group_by(func.coalesce(Requisicion.motivo_requisicion, "Sin motivo"))
+            .order_by(func.count(Requisicion.id).desc(), func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").asc())
+        )
+    else:
+        motivos_query = (
+            db.query(
+                func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").label("motivo"),
+                func.count(Requisicion.id).label("total"),
+            )
+            .group_by(func.coalesce(Requisicion.motivo_requisicion, "Sin motivo"))
+            .order_by(func.count(Requisicion.id).desc(), func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").asc())
+        )
+    motivos_rows = motivos_query.all()
+
+    if created_at_filter is not None:
+        solicitantes_query = (
+            db.query(
+                Usuario.nombre.label("nombre"),
+                func.count(Requisicion.id).label("total"),
+            )
+            .join(Usuario, Usuario.id == Requisicion.solicitante_id)
+            .filter(created_at_filter)
+            .group_by(Usuario.id, Usuario.nombre)
+            .order_by(func.count(Requisicion.id).desc(), Usuario.nombre.asc())
+        )
+    else:
+        solicitantes_query = (
+            db.query(
+                Usuario.nombre.label("nombre"),
+                func.count(Requisicion.id).label("total"),
+            )
+            .join(Usuario, Usuario.id == Requisicion.solicitante_id)
+            .group_by(Usuario.id, Usuario.nombre)
+            .order_by(func.count(Requisicion.id).desc(), Usuario.nombre.asc())
+        )
+    solicitantes_rows = solicitantes_query.all()
+
+    if created_at_filter is not None:
+        items_query = (
+            db.query(
+                Item.descripcion.label("descripcion"),
+                func.sum(Item.cantidad).label("total_cantidad"),
+            )
+            .join(Requisicion, Requisicion.id == Item.requisicion_id)
+            .filter(created_at_filter)
+            .group_by(Item.descripcion)
+            .order_by(func.sum(Item.cantidad).desc(), Item.descripcion.asc())
+        )
+    else:
+        items_query = (
+            db.query(
+                Item.descripcion.label("descripcion"),
+                func.sum(Item.cantidad).label("total_cantidad"),
+            )
+            .join(Requisicion, Requisicion.id == Item.requisicion_id)
+            .group_by(Item.descripcion)
+            .order_by(func.sum(Item.cantidad).desc(), Item.descripcion.asc())
+        )
+    items_rows = items_query.all()
+    top_solicitantes_rows = solicitantes_rows[:10]
+    top_items_rows = items_rows[:10]
+
+    hourly_query = db.query(
+        extract("hour", Requisicion.created_at).label("hora"),
+        func.count(Requisicion.id).label("total"),
+    )
+    if created_at_filter is not None:
+        hourly_query = hourly_query.filter(created_at_filter)
+    hourly_rows = (
+        hourly_query
+        .group_by(extract("hour", Requisicion.created_at))
+        .order_by(extract("hour", Requisicion.created_at).asc())
+        .all()
+    )
+    heatmap_counts = {int(row.hora): int(row.total) for row in hourly_rows if row.hora is not None}
+    heatmap_labels = [f"{hour:02d}:00" for hour in range(24)]
+    heatmap_values = [heatmap_counts.get(hour, 0) for hour in range(24)]
+
+    total_query = db.query(func.count(Requisicion.id))
+    if created_at_filter is not None:
+        total_query = total_query.filter(created_at_filter)
+    total_requisiciones = total_query.scalar() or 0
+
+    rango_query = db.query(
+        func.min(Requisicion.created_at).label("min_created_at"),
+        func.max(Requisicion.created_at).label("max_created_at"),
+    )
+    if created_at_filter is not None:
+        rango_query = rango_query.filter(created_at_filter)
+    rango_fechas = rango_query.one()
+
+    dias_observados = 0
+    if rango_fechas.min_created_at and rango_fechas.max_created_at:
+        current_day = rango_fechas.min_created_at.date()
+        end_day = rango_fechas.max_created_at.date()
+        while current_day <= end_day:
+            if current_day.weekday() < 5:
+                dias_observados += 1
+            current_day += timedelta(days=1)
+    promedio_requisiciones_por_dia = round(total_requisiciones / dias_observados, 2) if dias_observados else 0.0
+
+    prokey_cycle_query = db.query(Requisicion.created_at, Requisicion.prokey_liquidada_at).filter(
+        Requisicion.estado == "liquidada_en_prokey",
+        Requisicion.created_at.is_not(None),
+        Requisicion.prokey_liquidada_at.is_not(None),
+    )
+    if created_at_filter is not None:
+        prokey_cycle_query = prokey_cycle_query.filter(created_at_filter)
+    prokey_cycle_rows = prokey_cycle_query.all()
+    cycle_hours = [
+        max((row.prokey_liquidada_at - row.created_at).total_seconds() / 3600.0, 0.0)
+        for row in prokey_cycle_rows
+        if row.created_at and row.prokey_liquidada_at
+    ]
+    promedio_horas_hasta_prokey = round(sum(cycle_hours) / len(cycle_hours), 2) if cycle_hours else 0.0
+
+    return {
+        "periodo": monitor_period,
+        "kpis": {
+            "promedio_horas_hasta_prokey": promedio_horas_hasta_prokey,
+            "requisiciones_liquidadas_en_prokey": len(cycle_hours),
+            "requisiciones_promedio_por_dia": promedio_requisiciones_por_dia,
+            "dias_observados": dias_observados,
+            "total_requisiciones": int(total_requisiciones),
+        },
+        "motivos": {
+            "labels": [str(row.motivo or "Sin motivo") for row in motivos_rows],
+            "values": [int(row.total or 0) for row in motivos_rows],
+        },
+        "top_solicitantes": {
+            "labels": [str(row.nombre or "Sin nombre") for row in top_solicitantes_rows],
+            "values": [int(row.total or 0) for row in top_solicitantes_rows],
+        },
+        "solicitantes_full": {
+            "labels": [str(row.nombre or "Sin nombre") for row in solicitantes_rows],
+            "values": [int(row.total or 0) for row in solicitantes_rows],
+        },
+        "top_items": {
+            "labels": [str(row.descripcion or "Sin descripcion") for row in top_items_rows],
+            "values": [float(row.total_cantidad or 0) for row in top_items_rows],
+        },
+        "items_full": {
+            "labels": [str(row.descripcion or "Sin descripcion") for row in items_rows],
+            "values": [float(row.total_cantidad or 0) for row in items_rows],
+        },
+        "horario": {
+            "labels": heatmap_labels,
+            "values": heatmap_values,
+            "alert_from_hour": 14,
+        },
+    }
+
+
+def build_monitor_drilldown_payload(
+    kind: str,
+    auditoria: dict[str, object],
+    monitor_period: dict[str, object],
+) -> dict[str, object]:
+    normalized_kind = str(kind or "").strip().lower()
+    if normalized_kind == "discrepancias":
+        items = auditoria["requisiciones_con_diferencia_detalle"]
+        return {
+            "kind": "discrepancias",
+            "title": "Requisiciones con diferencias",
+            "description": "Requisiciones cerradas que presentan al menos un producto con diferencia positiva.",
+            "periodo": monitor_period,
+            "total": len(items),
+            "items": items,
+        }
+    if normalized_kind == "demos":
+        items = auditoria["requisiciones_demo_detalle"]
+        return {
+            "kind": "demos",
+            "title": "Requisiciones con demostracion",
+            "description": "Requisiciones cerradas con al menos un producto marcado para demostracion y cantidad entregada mayor a cero.",
+            "periodo": monitor_period,
+            "total": len(items),
+            "items": items,
+        }
+    raise ValueError("Tipo de drilldown no soportado")
+
+
+def _monitor_export_filename(prefix: str, monitor_period: dict[str, object], ext: str) -> str:
+    timestamp = now_sv().strftime("%Y%m%d_%H%M%S")
+    period_key = str(monitor_period.get("period_key") or "all").lower()
+    return f"{prefix}_{period_key}_{timestamp}.{ext}"
+
+
+def _build_csv_download_response(filename: str, headers: list[str], rows: list[list[object]]) -> Response:
+    buffer = StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(headers)
+    writer.writerows(rows)
+    return Response(
+        content=buffer.getvalue().encode("utf-8-sig"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def _safe_xlsx_sheet_title(title: str) -> str:
+    sanitized = re.sub(r'[\\/*?:\[\]]+', " ", str(title or "").strip())
+    sanitized = " ".join(sanitized.split()) or "Hoja"
+    return sanitized[:31]
+
+
+def _append_xlsx_sheet(workbook, title: str, headers: list[str], rows: list[list[object]]):
+    sheet = workbook.create_sheet(title=_safe_xlsx_sheet_title(title))
+    sheet.append(headers)
+    for row in rows:
+        sheet.append(list(row))
+    for index, header in enumerate(headers, start=1):
+        max_len = len(str(header))
+        for row in rows:
+            value = row[index - 1] if index - 1 < len(row) else ""
+            max_len = max(max_len, len(str(value or "")))
+        sheet.column_dimensions[sheet.cell(row=1, column=index).column_letter].width = min(max(max_len + 2, 12), 42)
+    return sheet
+
+
+def _build_xlsx_download_response(filename: str, sheets: list[tuple[str, list[str], list[list[object]]]]) -> Response:
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font
+    except ModuleNotFoundError as exc:
+        raise HTTPException(status_code=500, detail="Falta dependencia openpyxl para exportar XLSX") from exc
+
+    workbook = Workbook()
+    default_sheet = workbook.active
+    workbook.remove(default_sheet)
+    for title, headers, rows in sheets:
+        sheet = _append_xlsx_sheet(workbook, title, headers, rows)
+        for cell in sheet[1]:
+            cell.font = Font(bold=True)
+
+    output = BytesIO()
+    workbook.save(output)
+    workbook.close()
+    return Response(
+        content=output.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 def get_client_ip(request: Request) -> str:
@@ -1827,157 +2086,7 @@ def dashboard_basicos_api(
     # Datos base para el Monitor de Actividad (Fase 1).
     ensure_dashboard_access(current_user)
     monitor_period = resolve_monitor_period(periodo)
-    created_at_filter = build_monitor_period_filter(Requisicion.created_at, monitor_period)
-
-    if created_at_filter is not None:
-        motivos_query = (
-            db.query(
-                func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").label("motivo"),
-                func.count(Requisicion.id).label("total"),
-            )
-            .filter(created_at_filter)
-            .group_by(func.coalesce(Requisicion.motivo_requisicion, "Sin motivo"))
-            .order_by(func.count(Requisicion.id).desc(), func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").asc())
-        )
-    else:
-        motivos_query = (
-            db.query(
-                func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").label("motivo"),
-                func.count(Requisicion.id).label("total"),
-            )
-            .group_by(func.coalesce(Requisicion.motivo_requisicion, "Sin motivo"))
-            .order_by(func.count(Requisicion.id).desc(), func.coalesce(Requisicion.motivo_requisicion, "Sin motivo").asc())
-        )
-    motivos_rows = motivos_query.all()
-
-    if created_at_filter is not None:
-        solicitantes_query = (
-            db.query(
-                Usuario.nombre.label("nombre"),
-                func.count(Requisicion.id).label("total"),
-            )
-            .join(Usuario, Usuario.id == Requisicion.solicitante_id)
-            .filter(created_at_filter)
-            .group_by(Usuario.id, Usuario.nombre)
-            .order_by(func.count(Requisicion.id).desc(), Usuario.nombre.asc())
-            .limit(10)
-        )
-    else:
-        solicitantes_query = (
-            db.query(
-                Usuario.nombre.label("nombre"),
-                func.count(Requisicion.id).label("total"),
-            )
-            .join(Usuario, Usuario.id == Requisicion.solicitante_id)
-            .group_by(Usuario.id, Usuario.nombre)
-            .order_by(func.count(Requisicion.id).desc(), Usuario.nombre.asc())
-            .limit(10)
-        )
-    solicitantes_rows = solicitantes_query.all()
-
-    if created_at_filter is not None:
-        items_query = (
-            db.query(
-                Item.descripcion.label("descripcion"),
-                func.sum(Item.cantidad).label("total_cantidad"),
-            )
-            .join(Requisicion, Requisicion.id == Item.requisicion_id)
-            .filter(created_at_filter)
-            .group_by(Item.descripcion)
-            .order_by(func.sum(Item.cantidad).desc(), Item.descripcion.asc())
-            .limit(10)
-        )
-    else:
-        items_query = (
-            db.query(
-                Item.descripcion.label("descripcion"),
-                func.sum(Item.cantidad).label("total_cantidad"),
-            )
-            .join(Requisicion, Requisicion.id == Item.requisicion_id)
-            .group_by(Item.descripcion)
-            .order_by(func.sum(Item.cantidad).desc(), Item.descripcion.asc())
-            .limit(10)
-        )
-    items_rows = items_query.all()
-
-    hourly_query = db.query(
-        extract("hour", Requisicion.created_at).label("hora"),
-        func.count(Requisicion.id).label("total"),
-    )
-    if created_at_filter is not None:
-        hourly_query = hourly_query.filter(created_at_filter)
-    hourly_rows = (
-        hourly_query
-        .group_by(extract("hour", Requisicion.created_at))
-        .order_by(extract("hour", Requisicion.created_at).asc())
-        .all()
-    )
-    heatmap_counts = {int(row.hora): int(row.total) for row in hourly_rows if row.hora is not None}
-    heatmap_labels = [f"{hour:02d}:00" for hour in range(24)]
-    heatmap_values = [heatmap_counts.get(hour, 0) for hour in range(24)]
-    total_query = db.query(func.count(Requisicion.id))
-    if created_at_filter is not None:
-        total_query = total_query.filter(created_at_filter)
-    total_requisiciones = total_query.scalar() or 0
-    rango_query = db.query(
-        func.min(Requisicion.created_at).label("min_created_at"),
-        func.max(Requisicion.created_at).label("max_created_at"),
-    )
-    if created_at_filter is not None:
-        rango_query = rango_query.filter(created_at_filter)
-    rango_fechas = rango_query.one()
-    dias_observados = 0
-    if rango_fechas.min_created_at and rango_fechas.max_created_at:
-        current_day = rango_fechas.min_created_at.date()
-        end_day = rango_fechas.max_created_at.date()
-        while current_day <= end_day:
-            if current_day.weekday() < 5:
-                dias_observados += 1
-            current_day += timedelta(days=1)
-    promedio_requisiciones_por_dia = round(total_requisiciones / dias_observados, 2) if dias_observados else 0.0
-
-    prokey_cycle_query = db.query(Requisicion.created_at, Requisicion.prokey_liquidada_at).filter(
-        Requisicion.estado == "liquidada_en_prokey",
-        Requisicion.created_at.is_not(None),
-        Requisicion.prokey_liquidada_at.is_not(None),
-    )
-    if created_at_filter is not None:
-        prokey_cycle_query = prokey_cycle_query.filter(created_at_filter)
-    prokey_cycle_rows = prokey_cycle_query.all()
-    cycle_hours = [
-        max((row.prokey_liquidada_at - row.created_at).total_seconds() / 3600.0, 0.0)
-        for row in prokey_cycle_rows
-        if row.created_at and row.prokey_liquidada_at
-    ]
-    promedio_horas_hasta_prokey = round(sum(cycle_hours) / len(cycle_hours), 2) if cycle_hours else 0.0
-
-    return {
-        "periodo": monitor_period,
-        "kpis": {
-            "promedio_horas_hasta_prokey": promedio_horas_hasta_prokey,
-            "requisiciones_liquidadas_en_prokey": len(cycle_hours),
-            "requisiciones_promedio_por_dia": promedio_requisiciones_por_dia,
-            "dias_observados": dias_observados,
-            "total_requisiciones": int(total_requisiciones),
-        },
-        "motivos": {
-            "labels": [str(row.motivo or "Sin motivo") for row in motivos_rows],
-            "values": [int(row.total or 0) for row in motivos_rows],
-        },
-        "top_solicitantes": {
-            "labels": [str(row.nombre or "Sin nombre") for row in solicitantes_rows],
-            "values": [int(row.total or 0) for row in solicitantes_rows],
-        },
-        "top_items": {
-            "labels": [str(row.descripcion or "Sin descripcion") for row in items_rows],
-            "values": [float(row.total_cantidad or 0) for row in items_rows],
-        },
-        "horario": {
-            "labels": heatmap_labels,
-            "values": heatmap_values,
-            "alert_from_hour": 14,
-        },
-    }
+    return build_dashboard_basicos_snapshot(db, monitor_period)
 
 
 @app.get("/api/dashboard/auditoria")
@@ -2106,14 +2215,16 @@ def build_dashboard_auditoria_snapshot(
         else 0.0
     )
 
-    top_productos = sorted(
+    full_productos = sorted(
         diferencias_por_producto.items(),
         key=lambda item: (-item[1], item[0].lower()),
-    )[:10]
-    top_tecnicos = sorted(
+    )
+    full_tecnicos = sorted(
         diferencias_por_tecnico.items(),
         key=lambda item: (-item[1], item[0].lower()),
-    )[:5]
+    )
+    top_productos = full_productos[:10]
+    top_tecnicos = full_tecnicos[:5]
 
     drilldown_diferencias.sort(
         key=lambda item: (
@@ -2142,9 +2253,17 @@ def build_dashboard_auditoria_snapshot(
             "labels": [label for label, _ in top_productos],
             "values": [round(value, 2) for _, value in top_productos],
         },
+        "diferencia_por_producto_full": {
+            "labels": [label for label, _ in full_productos],
+            "values": [round(value, 2) for _, value in full_productos],
+        },
         "diferencias_por_tecnico": {
             "labels": [label for label, _ in top_tecnicos],
             "values": [round(value, 2) for _, value in top_tecnicos],
+        },
+        "diferencias_por_tecnico_full": {
+            "labels": [label for label, _ in full_tecnicos],
+            "values": [round(value, 2) for _, value in full_tecnicos],
         },
         "requisiciones_con_diferencia_detalle": drilldown_diferencias,
         "requisiciones_demo_detalle": drilldown_demos,
@@ -2160,15 +2279,7 @@ def dashboard_auditoria_discrepancias_api(
     ensure_dashboard_access(current_user)
     monitor_period = resolve_monitor_period(periodo)
     auditoria = build_dashboard_auditoria_snapshot(db, monitor_period)
-    items = auditoria["requisiciones_con_diferencia_detalle"]
-    return {
-        "kind": "discrepancias",
-        "title": "Requisiciones con diferencia",
-        "description": "Requisiciones cerradas que presentan al menos un item con diferencia positiva.",
-        "periodo": monitor_period,
-        "total": len(items),
-        "items": items,
-    }
+    return build_monitor_drilldown_payload("discrepancias", auditoria, monitor_period)
 
 
 @app.get("/api/dashboard/auditoria/demos")
@@ -2180,15 +2291,156 @@ def dashboard_auditoria_demos_api(
     ensure_dashboard_access(current_user)
     monitor_period = resolve_monitor_period(periodo)
     auditoria = build_dashboard_auditoria_snapshot(db, monitor_period)
-    items = auditoria["requisiciones_demo_detalle"]
-    return {
-        "kind": "demos",
-        "title": "Requisiciones con demo",
-        "description": "Requisiciones cerradas con al menos un item marcado para demo y cantidad entregada mayor a cero.",
-        "periodo": monitor_period,
-        "total": len(items),
-        "items": items,
-    }
+    return build_monitor_drilldown_payload("demos", auditoria, monitor_period)
+
+
+def _monitor_basicos_summary_rows(snapshot: dict[str, object]) -> list[list[object]]:
+    kpis = snapshot["kpis"]
+    periodo = snapshot["periodo"]
+    return [[
+        periodo["label"],
+        kpis["total_requisiciones"],
+        kpis["dias_observados"],
+        kpis["requisiciones_promedio_por_dia"],
+        kpis["requisiciones_liquidadas_en_prokey"],
+        kpis["promedio_horas_hasta_prokey"],
+    ]]
+
+
+def _monitor_auditoria_summary_rows(snapshot: dict[str, object]) -> list[list[object]]:
+    kpis = snapshot["kpis"]
+    periodo = snapshot["periodo"]
+    return [[
+        periodo["label"],
+        kpis["requisiciones_cerradas"],
+        kpis["requisiciones_con_diferencia"],
+        kpis["indice_discrepancia_pct"],
+        kpis["inversion_demos"],
+    ]]
+
+
+def _monitor_label_value_rows(labels: list[object], values: list[object]) -> list[list[object]]:
+    return [[labels[index], values[index]] for index in range(min(len(labels), len(values)))]
+
+
+def _monitor_drilldown_rows(items: list[dict[str, object]], kind: str) -> list[list[object]]:
+    normalized_kind = str(kind or "").strip().lower()
+    rows: list[list[object]] = []
+    for item in items:
+        base = [
+            item.get("folio") or "-",
+            item.get("estado") or "-",
+            item.get("motivo_requisicion") or "Sin motivo",
+            item.get("solicitante_nombre") or "-",
+            item.get("receptor_designado_nombre") or "-",
+            item.get("liquidated_at") or "-",
+        ]
+        if normalized_kind == "discrepancias":
+            rows.append(base + [item.get("items_con_diferencia") or 0, item.get("total_diferencia") or 0.0])
+        else:
+            rows.append(base + [item.get("items_demo") or 0, item.get("total_demo_entregado") or 0.0])
+    return rows
+
+
+@app.get("/api/dashboard/export/consolidado")
+def dashboard_export_consolidado_api(
+    periodo: str | None = None,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_dashboard_access(current_user)
+    monitor_period = resolve_monitor_period(periodo)
+    basicos = build_dashboard_basicos_snapshot(db, monitor_period)
+    auditoria = build_dashboard_auditoria_snapshot(db, monitor_period)
+
+    sheets = [
+        (
+            "Resumen de uso",
+            ["Periodo", "Total requisiciones", "Dias observados", "Promedio por dia", "Cerradas en Prokey", "Promedio de horas a Prokey"],
+            _monitor_basicos_summary_rows(basicos),
+        ),
+        (
+            "Motivos",
+            ["Motivo", "Total"],
+            _monitor_label_value_rows(basicos["motivos"]["labels"], basicos["motivos"]["values"]),
+        ),
+        (
+            "Solicitantes",
+            ["Solicitante", "Total"],
+            _monitor_label_value_rows(basicos["solicitantes_full"]["labels"], basicos["solicitantes_full"]["values"]),
+        ),
+        (
+            "Items",
+            ["Item", "Cantidad total"],
+            _monitor_label_value_rows(basicos["items_full"]["labels"], basicos["items_full"]["values"]),
+        ),
+        (
+            "Horario",
+            ["Hora", "Total"],
+            _monitor_label_value_rows(basicos["horario"]["labels"], basicos["horario"]["values"]),
+        ),
+        (
+            "Resumen de control",
+            ["Periodo", "Req cerradas", "Req con diferencias", "Porcentaje con diferencias", "Productos para demostracion"],
+            _monitor_auditoria_summary_rows(auditoria),
+        ),
+        (
+            "Productos con faltantes",
+            ["Producto", "Unidades faltantes"],
+            _monitor_label_value_rows(auditoria["diferencia_por_producto_full"]["labels"], auditoria["diferencia_por_producto_full"]["values"]),
+        ),
+        (
+            "Diferencias por responsable",
+            ["Responsable", "Unidades faltantes"],
+            _monitor_label_value_rows(auditoria["diferencias_por_tecnico_full"]["labels"], auditoria["diferencias_por_tecnico_full"]["values"]),
+        ),
+        (
+            "Detalle diferencias",
+            ["Folio", "Estado", "Motivo", "Solicitante", "Receptor", "Cierre", "Productos con diferencia", "Total diferencia"],
+            _monitor_drilldown_rows(auditoria["requisiciones_con_diferencia_detalle"], "discrepancias"),
+        ),
+        (
+            "Detalle demostracion",
+            ["Folio", "Estado", "Motivo", "Solicitante", "Receptor", "Cierre", "Productos para demostracion", "Total entregado"],
+            _monitor_drilldown_rows(auditoria["requisiciones_demo_detalle"], "demos"),
+        ),
+    ]
+    filename = _monitor_export_filename("monitor_actividad", monitor_period, "xlsx")
+    return _build_xlsx_download_response(filename, sheets)
+
+
+@app.get("/api/dashboard/export/drilldown")
+def dashboard_export_drilldown_api(
+    kind: str,
+    format: str = "csv",
+    periodo: str | None = None,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_dashboard_access(current_user)
+    monitor_period = resolve_monitor_period(periodo)
+    auditoria = build_dashboard_auditoria_snapshot(db, monitor_period)
+    try:
+        payload = build_monitor_drilldown_payload(kind, auditoria, monitor_period)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    normalized_kind = payload["kind"]
+    normalized_format = str(format or "csv").strip().lower()
+    headers = (
+        ["Folio", "Estado", "Motivo", "Solicitante", "Receptor", "Cierre", "Items con diferencia", "Total diferencia"]
+        if normalized_kind == "discrepancias"
+        else ["Folio", "Estado", "Motivo", "Solicitante", "Receptor", "Cierre", "Items demo", "Total demo entregado"]
+    )
+    rows = _monitor_drilldown_rows(payload["items"], normalized_kind)
+
+    if normalized_format == "csv":
+        filename = _monitor_export_filename(f"monitor_{normalized_kind}", monitor_period, "csv")
+        return _build_csv_download_response(filename, headers, rows)
+    if normalized_format == "xlsx":
+        filename = _monitor_export_filename(f"monitor_{normalized_kind}", monitor_period, "xlsx")
+        return _build_xlsx_download_response(filename, [(payload["title"], headers, rows)])
+    raise HTTPException(status_code=400, detail="Formato no soportado. Usa csv o xlsx")
 
 
 @app.get("/crear")

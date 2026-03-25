@@ -33,6 +33,14 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-187` | `done` | Exponer en `templates/monitor_actividad.html` un selector simple de periodo que recargue ambos bloques del monitor con el mismo preset activo.
 - `REQ-188` | `done` | Mostrar el periodo activo en la UI del monitor para que el usuario entienda si esta leyendo historial completo o una ventana acotada.
 - `REQ-189` | `done` | Agregar pruebas de rango temporal para el monitor: helper de periodo, inclusion/exclusion por ventana y consistencia entre KPI, graficos y drilldowns.
+- `EPIC-BI-04` | `done` | Agregar exportacion de reportes al `Monitor de Actividad` para descargar datos ya calculados en backend, respetando el `periodo` activo y sin generar archivos en frontend.
+- `REQ-190` | `done` | Extraer helpers reutilizables de snapshot/exportacion para el monitor (`basicos`, `auditoria`, drilldowns), evitando duplicar logica entre JSON y archivos descargables.
+- `REQ-191` | `done` | Implementar exporte consolidado del monitor en `XLSX`, incluyendo resumen de uso, resumen de auditoria y hojas tabulares auxiliares con el mismo `periodo` activo.
+- `REQ-192` | `done` | Implementar exportes tabulares de drilldown (`discrepancias`, `demos`) en `CSV` y `XLSX`, respetando `periodo` y generando nombres de archivo trazables.
+- `REQ-193` | `done` | Exponer controles de descarga en `templates/monitor_actividad.html` para el consolidado y los drilldowns, sincronizados con el selector de periodo activo.
+- `REQ-194` | `done` | Agregar pruebas de exportacion para el monitor: headers `Content-Disposition`, tipo de archivo, respeto del `periodo` y contenido minimo esperado.
+- `REQ-195` | `done` | Actualizar la gobernanza IA con el alcance final, endpoints de exportacion y decisiones de formato del monitor.
+- `REQ-196` | `done` | Ajustar el `XLSX` consolidado del monitor para que las hojas tabulares (`Solicitantes`, `Items`, `Dif Producto`, `Dif Tecnico`) exporten el universo completo del periodo, manteniendo el dashboard visual en top-N.
 - `REQ-127` | `done` | Separar `Aprobar` de la consulta global: la vista de aprobacion queda solo para pendientes y se crea `Todas las Requisiciones` con filtros de estado/departamento/fecha para `admin`, `aprobador`, `jefe_bodega` y `logistica`, sin tocar la logica de negocio.
 - `REQ-128` | `done` | Mejorar UX de filtros SSR: en `Aprobar` y `Todas las Requisiciones`, los selectores aplican el filtro automaticamente al cambiar, manteniendo `Buscar` para texto libre y fechas.
 - `REQ-129` | `done` | Mejorar UX del filtro de fechas en `Todas las Requisiciones`: mantener `input[type=date]` nativo y abrir el picker con `showPicker()` cuando el navegador lo soporte, sin perder captura manual como fallback.

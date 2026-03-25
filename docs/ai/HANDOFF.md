@@ -24,6 +24,14 @@
   - `REQ-187` completada: `templates/monitor_actividad.html` ya expone un selector simple de periodo y recarga ambos bloques con el mismo preset activo.
   - `REQ-188` completada: la UI del monitor ya muestra el periodo activo para evitar ambiguedad entre historico completo y ventana acotada.
   - `REQ-189` completada: el monitor ya cuenta con pruebas de helper de periodo, inclusion/exclusion temporal y consistencia entre KPIs, graficos y drilldowns.
+- `EPIC-BI-04` completada: el `Monitor de Actividad` ya permite descargar reportes backend-first, reutilizando el `periodo` activo y sin generar archivos en frontend.
+  - `REQ-190` completada: Fase 1, Fase 2 y drilldowns ya comparten helpers reutilizables de snapshot/exportacion, evitando duplicacion entre JSON y archivos.
+  - `REQ-191` completada: existe exporte consolidado `XLSX` del monitor con hojas de resumen y tablas auxiliares.
+  - `REQ-192` completada: los drilldowns de `discrepancias` y `demos` ya pueden descargarse en `CSV` y `XLSX`.
+  - `REQ-193` completada: `monitor_actividad.html` ya expone controles de descarga sincronizados con el `periodo` activo.
+  - `REQ-194` completada: hay cobertura de exportes en pruebas y smoke directo para headers, contenido minimo y respeto de ventana temporal.
+  - `REQ-195` completada: la gobernanza IA ya refleja el alcance final y las decisiones de formato del frente de exportacion.
+  - `REQ-196` completada: el `XLSX` consolidado ya exporta todas las filas del periodo en `Solicitantes`, `Items`, `Dif Producto` y `Dif Tecnico`, sin alterar el top-N del dashboard visual.
 - `REQ-127` completada en esta rama: `Aprobar` queda como bandeja de pendientes y la consulta global se mueve a `Todas las Requisiciones` (`/todas-requisiciones`) con filtros por estado, departamento y rango de fechas para roles de supervision.
 - `REQ-128` completada en esta rama: los filtros basados en selectores (`estado`/`departamento`) ahora se autoaplican en `Aprobar` y `Todas las Requisiciones`; el boton `Buscar` se conserva para texto libre y fechas.
 - `REQ-129` completada en esta rama: los filtros de fecha en `Todas las Requisiciones` mantienen el `input[type=date]` nativo, pero ahora intentan abrir el calendario con `showPicker()` en navegadores compatibles como mejora progresiva.

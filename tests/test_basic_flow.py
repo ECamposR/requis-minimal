@@ -1,4 +1,5 @@
 import re
+from io import BytesIO
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
@@ -1022,6 +1023,236 @@ def test_dashboard_auditoria_aplica_periodo_temporal(client: TestClient, db_sess
     assert {item["folio"] for item in payload_drilldown_demos["items"]} == {"REQ-AUD-PER-01"}
 
 
+def test_dashboard_export_consolidado_xlsx_respeta_periodo(client: TestClient, db_session: Session):
+    from openpyxl import load_workbook
+
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    tecnico = db_session.query(Usuario).filter(Usuario.username == "tecnico.1").first()
+    fixed_now = datetime(2026, 3, 25, 8, 5, 0)
+
+    req = Requisicion(
+        folio="REQ-EXP-01",
+        solicitante_id=user.id,
+        receptor_designado_id=tecnico.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Demostración",
+        justificacion="Exporte monitor",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 20, 10, 0, 0),
+        created_at=datetime(2026, 3, 20, 9, 0, 0),
+        liquidated_at=datetime(2026, 3, 20, 18, 0, 0),
+        prokey_liquidada_at=datetime(2026, 3, 21, 9, 0, 0),
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    db_session.add(
+        Item(
+            requisicion_id=req.id,
+            descripcion="Cable UTP Cat6",
+            cantidad=5,
+            cantidad_entregada=5,
+            qty_used=3,
+            qty_left_at_client=1,
+            qty_returned_to_warehouse=2,
+            liquidation_mode="RETORNABLE",
+            contexto_operacion="reposicion",
+            unidad="unidad",
+            es_demo=True,
+        )
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    with patch("app.main.now_sv", return_value=fixed_now):
+        response = client.get("/api/dashboard/export/consolidado?periodo=7d")
+
+    assert response.status_code == 200
+    assert "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" in response.headers["content-type"]
+    assert "attachment;" in response.headers["content-disposition"]
+    assert "monitor_actividad_7d_" in response.headers["content-disposition"]
+
+    workbook = load_workbook(filename=BytesIO(response.content), read_only=True, data_only=True)
+    try:
+        assert "Resumen de uso" in workbook.sheetnames
+        assert "Resumen de control" in workbook.sheetnames
+        assert "Detalle diferencias" in workbook.sheetnames
+
+        resumen_uso = workbook["Resumen de uso"]
+        assert resumen_uso["A2"].value == "Ultimos 7 dias"
+        assert resumen_uso["B2"].value == 1
+
+        drilldown = workbook["Detalle diferencias"]
+        assert drilldown["A2"].value == "REQ-EXP-01"
+    finally:
+        workbook.close()
+
+
+def test_dashboard_export_consolidado_xlsx_incluye_listas_completas(client: TestClient, db_session: Session):
+    from openpyxl import load_workbook
+
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    tecnico = db_session.query(Usuario).filter(Usuario.username == "tecnico.1").first()
+    fixed_now = datetime(2026, 3, 25, 8, 5, 0)
+
+    solicitantes: list[Usuario] = []
+    for index in range(12):
+        usuario = Usuario(
+            username=f"exp.full.{index}",
+            nombre=f"Solicitante {index:02d}",
+            password="pass123",
+            rol="user",
+            departamento="Operaciones",
+        )
+        db_session.add(usuario)
+        solicitantes.append(usuario)
+    db_session.commit()
+    for usuario in solicitantes:
+        db_session.refresh(usuario)
+
+    for index, usuario in enumerate(solicitantes):
+        req = Requisicion(
+            folio=f"REQ-EXP-FULL-{index:02d}",
+            solicitante_id=usuario.id,
+            receptor_designado_id=tecnico.id,
+            departamento="Operaciones",
+            estado="liquidada_en_prokey",
+            motivo_requisicion="Demostración",
+            justificacion="Exporte completo",
+            approved_by=aprobador.id,
+            approved_at=datetime(2026, 3, 20, 10, 0, 0),
+            created_at=datetime(2026, 3, 20, 9, 0, 0),
+            liquidated_at=datetime(2026, 3, 20, 18, 0, 0),
+            prokey_liquidada_at=datetime(2026, 3, 21, 9, 0, 0),
+        )
+        db_session.add(req)
+        db_session.commit()
+        db_session.refresh(req)
+        db_session.add(
+            Item(
+                requisicion_id=req.id,
+                descripcion=f"Item Completo {index:02d}",
+                cantidad=1,
+                cantidad_entregada=1,
+                qty_used=1,
+                qty_left_at_client=0,
+                qty_returned_to_warehouse=0,
+                liquidation_mode="CONSUMIBLE",
+                contexto_operacion="reposicion",
+                unidad="unidad",
+                es_demo=False,
+            )
+        )
+        db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    with patch("app.main.now_sv", return_value=fixed_now):
+        response = client.get("/api/dashboard/export/consolidado?periodo=7d")
+
+    assert response.status_code == 200
+
+    workbook = load_workbook(filename=BytesIO(response.content), read_only=True, data_only=True)
+    try:
+        solicitantes_sheet = workbook["Solicitantes"]
+        items_sheet = workbook["Items"]
+
+        solicitantes_rows = list(solicitantes_sheet.iter_rows(min_row=2, values_only=True))
+        items_rows = list(items_sheet.iter_rows(min_row=2, values_only=True))
+
+        assert len(solicitantes_rows) == 12
+        assert len(items_rows) == 12
+        assert solicitantes_rows[-1][0] == "Solicitante 11"
+        assert items_rows[-1][0] == "Item Completo 11"
+    finally:
+        workbook.close()
+
+
+def test_dashboard_export_drilldown_csv_respeta_periodo(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    tecnico_1 = db_session.query(Usuario).filter(Usuario.username == "tecnico.1").first()
+    tecnico_2 = db_session.query(Usuario).filter(Usuario.username == "tecnico.2").first()
+    fixed_now = datetime(2026, 3, 25, 8, 5, 0)
+
+    req_in = Requisicion(
+        folio="REQ-EXP-CSV-01",
+        solicitante_id=user.id,
+        receptor_designado_id=tecnico_1.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Demostración",
+        justificacion="Dentro del periodo",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 19, 10, 0, 0),
+        liquidated_at=datetime(2026, 3, 20, 10, 0, 0),
+        prokey_liquidada_at=datetime(2026, 3, 21, 10, 0, 0),
+    )
+    req_out = Requisicion(
+        folio="REQ-EXP-CSV-02",
+        solicitante_id=user.id,
+        receptor_designado_id=tecnico_2.id,
+        departamento="Operaciones",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Reposición",
+        justificacion="Fuera del periodo",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 3, 9, 10, 0, 0),
+        liquidated_at=datetime(2026, 3, 10, 10, 0, 0),
+        prokey_liquidada_at=datetime(2026, 3, 11, 10, 0, 0),
+    )
+    db_session.add_all([req_in, req_out])
+    db_session.commit()
+    db_session.refresh(req_in)
+    db_session.refresh(req_out)
+
+    db_session.add_all(
+        [
+            Item(
+                requisicion_id=req_in.id,
+                descripcion="Cable UTP Cat6",
+                cantidad=5,
+                cantidad_entregada=5,
+                qty_used=3,
+                qty_left_at_client=1,
+                qty_returned_to_warehouse=2,
+                liquidation_mode="RETORNABLE",
+                contexto_operacion="reposicion",
+                unidad="unidad",
+                es_demo=True,
+            ),
+            Item(
+                requisicion_id=req_out.id,
+                descripcion="Conector RJ45",
+                cantidad=4,
+                cantidad_entregada=4,
+                qty_used=2,
+                qty_left_at_client=1,
+                qty_returned_to_warehouse=1,
+                liquidation_mode="RETORNABLE",
+                contexto_operacion="reposicion",
+                unidad="unidad",
+                es_demo=True,
+            ),
+        ]
+    )
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    with patch("app.main.now_sv", return_value=fixed_now):
+        response = client.get("/api/dashboard/export/drilldown?kind=discrepancias&format=csv&periodo=7d")
+
+    assert response.status_code == 200
+    assert "text/csv" in response.headers["content-type"]
+    assert "monitor_discrepancias_7d_" in response.headers["content-disposition"]
+
+    body = response.content.decode("utf-8-sig")
+    assert "REQ-EXP-CSV-01" in body
+    assert "REQ-EXP-CSV-02" not in body
+
+
 def test_navbar_muestra_contingencias_solo_para_roles_autorizados(client: TestClient):
     login(client, "aprob.ops", "pass123")
     response_aprobador = client.get("/")
@@ -1056,10 +1287,11 @@ def test_monitor_renderiza_fase_2_de_auditoria(client: TestClient):
     html = response.text
     assert "Auditoría y Diferencias" in html
     assert 'id="monitor-period-select"' in html
+    assert 'data-monitor-export="consolidado"' in html
     assert "/api/dashboard/auditoria" in html
     assert "dashboard-bi-drilldown" in html
-    assert "Ranking de Diferencia por Producto" in html
-    assert "Diferencias por Tecnico" in html
+    assert "Productos con mas faltantes" in html
+    assert "Diferencias por responsable" in html
 
 
 def test_monitor_renderiza_periodo_activo_en_ui(client: TestClient):
