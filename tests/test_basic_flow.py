@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.auth import hash_password
 from app.database import get_db
-from app.main import app, resolve_monitor_period
+from app.main import app, format_datetime, resolve_monitor_period
 from app.models import Base, CatalogoItem, Item, Requisicion, Usuario
 from app.pdf_generator import generate_requisicion_pdf
 
@@ -645,6 +645,12 @@ def test_resolve_monitor_period_presets():
     assert fallback["label"] == "Historial completo"
     assert fallback["start_at"] is None
     assert fallback["end_at"] is None
+
+
+def test_format_datetime_usa_formato_dd_mm_yyyy():
+    assert format_datetime("2026-03-11 11:30:45") == "11-03-2026 11:30:45"
+    assert format_datetime("2026-03-11T00:00:00") == "11-03-2026"
+    assert format_datetime(datetime(2026, 3, 11, 11, 30, 45)) == "11-03-2026 11:30:45"
 
 
 def test_dashboard_basicos_agrega_metricas_base(client: TestClient, db_session: Session):

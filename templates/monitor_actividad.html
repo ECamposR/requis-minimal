@@ -534,7 +534,16 @@ function clearChartStatus(key) {
 
 function fmtAuditDateTime(value) {
     if (!value) return "—";
-    return String(value).replace("T", " ").replace(/\.\d+$/, "");
+    const raw = String(value).trim().replace("T", " ").replace(/\.\d+$/, "");
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s(\d{2}):(\d{2}):(\d{2}))?$/);
+    if (match) {
+        const [, yyyy, mm, dd, hh, mi, ss] = match;
+        if (hh && mi && ss) {
+            return `${dd}-${mm}-${yyyy} ${hh}:${mi}:${ss}`;
+        }
+        return `${dd}-${mm}-${yyyy}`;
+    }
+    return raw;
 }
 
 function fmtAuditNumber(value) {

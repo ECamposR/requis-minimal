@@ -800,10 +800,24 @@ def template_context(request: Request, current_user: Usuario | None = None, **kw
 def format_datetime(value: datetime | str | None) -> str:
     if not value:
         return "-"
+    dt_value: datetime | None = None
     if isinstance(value, str):
         cleaned = value.replace("T", " ").split(".")[0].strip()
-        return cleaned if cleaned else "-"
-    return value.strftime("%Y-%m-%d %H:%M:%S")
+        if not cleaned:
+            return "-"
+        for pattern in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+            try:
+                dt_value = datetime.strptime(cleaned, pattern)
+                break
+            except ValueError:
+                continue
+        if dt_value is None:
+            return cleaned
+    else:
+        dt_value = value
+    if dt_value.hour == 0 and dt_value.minute == 0 and dt_value.second == 0 and dt_value.microsecond == 0:
+        return dt_value.strftime("%d-%m-%Y")
+    return dt_value.strftime("%d-%m-%Y %H:%M:%S")
 
 
 templates.env.filters["fmt_dt"] = format_datetime

@@ -109,10 +109,13 @@ function fmtQty(value) {
 function fmtDateTime(value) {
     if (!value) return "-";
     const raw = String(value).trim();
-    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2}):(\d{2})/);
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}):(\d{2}))?/);
     if (match) {
         const [, yyyy, mm, dd, hh, mi, ss] = match;
-        return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+        if (hh && mi && ss) {
+            return `${dd}-${mm}-${yyyy} ${hh}:${mi}:${ss}`;
+        }
+        return `${dd}-${mm}-${yyyy}`;
     }
     const date = new Date(raw);
     if (Number.isNaN(date.getTime())) return escapeHtml(raw.split(".")[0]);
@@ -122,7 +125,10 @@ function fmtDateTime(value) {
     const hh = String(date.getHours()).padStart(2, "0");
     const mi = String(date.getMinutes()).padStart(2, "0");
     const ss = String(date.getSeconds()).padStart(2, "0");
-    return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+    if (hh === "00" && mi === "00" && ss === "00") {
+        return `${dd}-${mm}-${yyyy}`;
+    }
+    return `${dd}-${mm}-${yyyy} ${hh}:${mi}:${ss}`;
 }
 
 function alertLabel(type) {
