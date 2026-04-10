@@ -532,9 +532,9 @@ function verDetalle(id) {
                     const demoBadge = i.es_demo ? '<span class="detail-badge detail-badge--demo">Para Demo</span>' : "";
                     const despCls = isZero ? "qty-col qty-despachada qty-zero" : "qty-col qty-despachada";
                     return `<tr>
-                    <td data-label="Descripción del Item"><strong>${escapeHtml(i.descripcion || "-")}</strong>${demoBadge}${contexto ? `<div class="detail-type-context detail-muted">${escapeHtml(contexto)}</div>` : ""}</td>
-                    <td data-label="Cantidad" class="qty-col qty-solicitada">${fmtQty(i.cantidad)}</td>
-                    ${showDelivered ? `<td data-label="Cant. Despachada" class="${despCls}">${fmtQty(qe)}</td>` : ""}
+                    <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${demoBadge}${contexto ? `<div class="detail-type-context detail-muted">${escapeHtml(contexto)}</div>` : ""}</td>
+                    <td class="qty-col qty-solicitada">${fmtQty(i.cantidad)}</td>
+                    ${showDelivered ? `<td class="${despCls}">${fmtQty(qe)}</td>` : ""}
                 </tr>`;
                 })
                 .join("");
@@ -574,17 +574,17 @@ function verDetalle(id) {
                             ? `Extra ${fmtQty(Math.abs(difference))}`
                             : "OK";
                     return `<tr>
-                        <td data-label="Descripción del Item"><strong>${escapeHtml(i.descripcion || "-")}</strong>${demoBadge}${noteHtml}</td>
-                        <td data-label="Entregado" class="qty-col td-num">${fmtQty(i.cantidad_entregada)}</td>
-                        <td data-label="Tipo" class="qty-col td-center">${tipoContexto}</td>
-                        <td data-label="Usado" class="qty-col td-num">${fmtQty(i.used ?? i.qty_used)}</td>
-                        <td data-label="No usado" class="qty-col td-num">${fmtQty(i.not_used ?? i.qty_left_at_client)}</td>
-                        <td data-label="Regresa" class="qty-col td-num">${fmtQty(i.returned ?? i.qty_returned_to_warehouse)}</td>
-                        <td data-label="DIF" class="qty-col td-num"><span class="${differenceCls}" title="Diferencia de retorno: esperado ${fmtQty(i.expected_return ?? 0)}, regresó ${fmtQty(i.returned ?? i.qty_returned_to_warehouse ?? 0)}">${differenceText}</span></td>
-                        <td data-label="Ingreso PK (Bodega)" class="qty-col td-num">
+                        <td><strong>${escapeHtml(i.descripcion || "-")}</strong>${demoBadge}${noteHtml}</td>
+                        <td class="qty-col td-num">${fmtQty(i.cantidad_entregada)}</td>
+                        <td class="qty-col td-center">${tipoContexto}</td>
+                        <td class="qty-col td-num">${fmtQty(i.used ?? i.qty_used)}</td>
+                        <td class="qty-col td-num">${fmtQty(i.not_used ?? i.qty_left_at_client)}</td>
+                        <td class="qty-col td-num">${fmtQty(i.returned ?? i.qty_returned_to_warehouse)}</td>
+                        <td class="qty-col td-num"><span class="${differenceCls}" title="Diferencia de retorno: esperado ${fmtQty(i.expected_return ?? 0)}, regresó ${fmtQty(i.returned ?? i.qty_returned_to_warehouse ?? 0)}">${differenceText}</span></td>
+                        <td class="qty-col td-num">
                             <span class="pk-help" title="Cantidad aplicable para ingreso en Prokey por bodega. En instalación inicial no genera ingreso PK.">${ingresoPk}</span>
                         </td>
-                        <td data-label="Alertas">${alertBadges}</td>
+                        <td>${alertBadges}</td>
                     </tr>`;
                 })
                 .join("");

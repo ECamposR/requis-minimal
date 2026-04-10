@@ -249,12 +249,6 @@
 - `REQ-114B` completada: `README.md` ya incluye guia de contingencia para reconstruir `.env`, con `DATABASE_URL` exacta de Docker, generacion de `SECRET_KEY`, pasos de recreacion y comando de verificacion.
 - `REQ-115` completada: el modal de detalle ya muestra el `receptor_designado` (nombre + rol) dentro de `Informacion general`; el dato ya venia en la API y faltaba solo renderizarlo en `static/app.js`.
 - `REQ-115A` completada: el bloque `Resultado entrega` en la tarjeta `Estado liquidacion` ya no usa combinaciones lavadas sobre fondo gris; `resultado-chip` quedo reforzado con mejor fondo, borde y color de texto.
-- `REQ-198` completada: la UI movil de `Bodega` y `Todas las Requisiciones` quedo compactada para pantallas menores a 768px con filtros colapsables (`details.mobile-filters-details`), tarjetas responsivas para tablas, banner persistente de notificaciones mas compacto y acciones en formato pill para reducir aplastamiento visual.
-- `REQ-199` completada: el boton `Ver` se consolidó con las acciones de fila en las tablas de `Bodega` y `Todas las Requisiciones`, eliminando la columna separada de `Detalle` para evitar dos filas visuales en móvil; en `Todas las Requisiciones` las acciones quedan centradas para mantener densidad y legibilidad.
-- `REQ-200` completada: las tablas de items dentro del modal de detalle quedaron adaptadas al patrón de tarjetas con `Absolute Label` en mobile. `static/app.js` ahora emite `data-label` para cada celda y `static/style.css` contiene un bloque dedicado para `#modal-detalle` que desactiva el scroll horizontal, oculta el encabezado y convierte filas/celdas en cards legibles en pantallas pequeñas.
-- `REQ-201` completada: `bodega_preparar.html` adopta una lista de chequeo de picking en móvil con `prep-items-table`, reduciendo densidad tipografica y evitando que la fuente se vea inflada por PicoCSS.
-- `REQ-202` completada: `bodega_gestionar.html` usa la misma clase `prep-items-table` para la tabla de items aprobados y su formulario de gestión de entrega se compacta en móvil con labels discretos, controles a 40px y botones más finos.
-- `REQ-203` completada: `liquidar.html` adopta un patrón de tarjetas tipo iOS Settings en móvil. Cada fila de la tabla de liquidación ahora lleva `data-label` por celda y el CSS móvil reorganiza descripción, tipo, cantidades, diferencia y nota sin scroll horizontal.
 
 ## Archivo / Historico (NO usar para ejecucion)
 - El handoff largo anterior se considera historico.  
