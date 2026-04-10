@@ -657,10 +657,6 @@ table td {
     width: 9rem;
 }
 
-.table-compact .col-detalle {
-    width: 5rem;
-}
-
 .table-compact .col-acciones {
     width: 14.8rem;
 }
@@ -1404,53 +1400,37 @@ body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters {
     table.bodega-requests-table td,
     table.bodega-history-table td,
     table.all-requests-table td {
-        display: grid !important;
-        grid-template-columns: 100px minmax(0, 1fr) !important;
-        gap: 0.6rem !important;
-        align-items: start !important;
+        display: block !important;
+        position: relative !important;
+        padding: 0.4rem 0.5rem 0.4rem 105px !important;
         text-align: left !important;
-        padding: 0.5rem 0.6rem !important;
+        min-height: 2.2rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-        word-break: normal !important;
-        overflow-wrap: break-word !important;
         font-size: 0.8rem !important;
-        line-height: 1.4;
     }
 
     table.bodega-requests-table td::before,
     table.bodega-history-table td::before,
     table.all-requests-table td::before {
-        content: attr(data-label);
+        position: absolute !important;
+        top: 0.4rem !important;
+        left: 0.5rem !important;
+        width: 90px !important;
         font-size: 0.68rem !important;
-        font-weight: 700;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        white-space: normal;
-        line-height: 1.2;
-    }
-
-    table.bodega-requests-table td.col-acciones,
-    table.bodega-history-table td.table-actions,
-    table.bodega-requests-table td.bodega-status-cell,
-    table.all-requests-table td.col-estado,
-    table.all-requests-table td.table-actions,
-    table.all-requests-table td.col-acciones {
-        grid-template-columns: 1fr !important;
+        font-weight: 700 !important;
+        color: #64748b !important;
+        text-transform: uppercase !important;
         text-align: left !important;
-    }
-
-    table.bodega-requests-table td.col-acciones::before,
-    table.bodega-history-table td.table-actions::before,
-    table.all-requests-table td.col-acciones::before,
-    table.all-requests-table td.table-actions::before {
-        display: none !important;
+        white-space: normal !important;
+        line-height: 1.2 !important;
+        content: attr(data-label);
     }
 
     table.bodega-requests-table td.col-acciones,
     table.bodega-history-table td.table-actions,
     table.all-requests-table td.table-actions,
     table.all-requests-table td.col-acciones {
+        padding-left: 0.5rem !important;
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: wrap !important;
@@ -1459,6 +1439,13 @@ body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters {
         padding-top: 0.8rem !important;
         border-top: 1px dashed rgba(255, 255, 255, 0.1) !important;
         align-items: center !important;
+    }
+
+    table.bodega-requests-table td.col-acciones::before,
+    table.bodega-history-table td.table-actions::before,
+    table.all-requests-table td.col-acciones::before,
+    table.all-requests-table td.table-actions::before {
+        display: none !important;
     }
 
     table.bodega-requests-table td.col-acciones a,
@@ -1470,10 +1457,10 @@ body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters {
     table.bodega-history-table td.table-actions a,
     table.bodega-history-table td.table-actions button {
         width: auto !important;
-        min-height: 28px !important;
-        font-size: 0.72rem !important;
+        min-height: 24px !important;
+        font-size: 0.68rem !important;
         font-weight: 700 !important;
-        padding: 0.2rem 0.8rem !important;
+        padding: 0.15rem 0.6rem !important;
         margin: 0 !important;
         border-radius: 999px !important;
         display: inline-flex !important;
@@ -1496,10 +1483,6 @@ body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters {
         border-bottom: none !important;
     }
 
-    table.bodega-requests-table td.bodega-status-cell {
-        align-items: center !important;
-    }
-
     table.bodega-requests-table td.bodega-status-cell .badge,
     table.bodega-requests-table td.bodega-status-cell .badge-danger {
         justify-self: start;
@@ -1510,20 +1493,6 @@ body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters {
         font-size: 1.12rem;
         font-weight: 800;
         letter-spacing: 0.01em;
-    }
-
-    table.all-requests-table td.col-estado,
-    table.all-requests-table td.table-actions,
-    table.all-requests-table td.col-acciones {
-        grid-template-columns: 1fr !important;
-        align-items: stretch !important;
-        text-align: left !important;
-    }
-
-    table.all-requests-table td.col-estado::before,
-    table.all-requests-table td.table-actions::before,
-    table.all-requests-table td.col-acciones::before {
-        display: none !important;
     }
 
     table.all-requests-table td.col-estado .badge,
@@ -1547,10 +1516,43 @@ body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters {
         align-items: stretch !important;
     }
 
-    table.bodega-history-table td.table-actions::before,
-    table.all-requests-table td.table-actions::before,
-    table.all-requests-table td.col-acciones::before {
-        display: none !important;
+    /* Sobrescribir el padding original que rompe la tarjeta movil */
+    tr.row-alert-bg td:first-child,
+    tr.row-alert-border td:first-child {
+        padding-left: 105px !important;
+        border-left: 4px solid #b91c1c !important;
+    }
+
+    /* CSS Nuclear para aplastar las variables de PicoCSS en botones moviles */
+    table td.col-acciones button,
+    table td.col-acciones a[role="button"],
+    table td.table-actions button,
+    table td.table-actions a[role="button"],
+    table td.col-acciones form button,
+    table td.table-actions form button {
+        --pico-font-size: 10px !important;
+        --pico-form-element-spacing-vertical: 0 !important;
+        --pico-form-element-spacing-horizontal: 0.6rem !important;
+        --pico-line-height: 1 !important;
+        font-size: 10px !important;
+        min-height: 24px !important;
+        height: 24px !important;
+        padding: 0 0.6rem !important;
+        margin: 0 !important;
+        border-radius: 999px !important;
+        line-height: 24px !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.06em !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    table.all-requests-table td.col-acciones,
+    table.all-requests-table td.table-actions {
+        justify-content: center !important;
     }
 }
 

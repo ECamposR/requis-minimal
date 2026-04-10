@@ -51,8 +51,7 @@
         <th class="col-fecha">Fecha de Creación</th>
         <th class="col-fecha">Fecha Liquidación</th>
         <th>Gestionado por</th>
-        <th class="col-detalle">Detalle</th>
-        {% if current_user.rol == 'admin' %}<th class="col-acciones">Acciones</th>{% endif %}
+        <th class="col-acciones">Acciones</th>
     </tr>
     </thead>
     <tbody>
@@ -93,17 +92,17 @@
                 -
             {% endif %}
         </td>
-        <td data-label="Detalle"><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
-        {% if current_user.rol == 'admin' %}
         <td data-label="Acciones" class="table-actions col-acciones">
+            <button type="button" onclick="verDetalle({{ req.id }})">Ver</button>
+            {% if current_user.rol == 'admin' %}
             <form method="POST" action="/admin/requisiciones/{{ req.id }}/eliminar" style="display:inline">
                 <button type="submit" class="btn-danger-sm"
                     onclick="return confirm('¿Eliminar {{ req.folio }}? Esta acción no se puede deshacer.')">
                     Eliminar
                 </button>
             </form>
+            {% endif %}
         </td>
-        {% endif %}
     </tr>
     {% endfor %}
     </tbody>

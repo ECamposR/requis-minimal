@@ -49,6 +49,25 @@
 - Próximo paso:
   - Commit/push del frente de responsive móvil si el usuario aprueba el cierre documental y visual.
 
+## 2026-04-10 00:05 CST-0600 | tool: Codex CLI
+- Objetivo: consolidar la accion `Ver` con las acciones de fila en las tablas móviles para eliminar una columna separada de detalle.
+- Tareas: `REQ-199`
+- Cambios:
+  - `templates/bodega.html`
+  - `templates/todas_requisiciones.html`
+  - `static/style.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - La columna separada `Detalle` se eliminó de Bodega y Todas las Requisiciones.
+  - El botón `Ver` ahora vive dentro de la celda de acciones para que la tarjeta móvil quede en una sola fila visual.
+  - En Todas las Requisiciones el bloque de acciones queda centrado en móvil, manteniendo el layout compacto.
+- Validación:
+  - `git diff --check`
+- Próximo paso:
+  - Commit/push del ajuste de consolidación de acciones si el usuario lo aprueba.
+
 ## 2026-03-25 10:23 CST-0600 | tool: Codex CLI
 - Objetivo: implementar reportes descargables del `Monitor de Actividad` con respeto del `periodo` activo.
 - Tareas: `REQ-190`, `REQ-191`, `REQ-192`, `REQ-193`, `REQ-194`, `REQ-195`

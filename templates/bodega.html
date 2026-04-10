@@ -68,7 +68,6 @@
         <th>Aprobado por</th>
         <th>Justificacion</th>
         <th class="col-fecha">Fecha clave</th>
-        <th class="col-detalle">Detalle</th>
         <th class="col-acciones">Accion</th>
     </tr>
     </thead>
@@ -100,8 +99,8 @@
             <span class="badge-danger">⚠️ +48h Sin Avance</span>
             {% endif %}
         </td>
-        <td data-label="Detalle"><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td data-label="Accion" class="table-actions">
+            <button type="button" onclick="verDetalle({{ req.id }})">Ver</button>
             {% if req.estado == 'aprobada' %}
             <a href="/bodega/{{ req.id }}/preparar" role="button" class="secondary">Preparar</a>
             {% elif req.estado == 'preparado' %}
@@ -152,7 +151,6 @@
         <th>Entregado por</th>
         <th>Recibio</th>
         <th class="col-fecha">Entregada en</th>
-        <th class="col-detalle">Detalle</th>
         <th class="col-acciones">Estado de Liquidación</th>
     </tr>
     </thead>
@@ -166,8 +164,8 @@
         <td data-label="Entregado por">{{ req.entregador.nombre if req.entregador else '-' }}</td>
         <td data-label="Recibio">{{ req.delivered_to or '-' }}</td>
         <td data-label="Entregada en">{{ req.delivered_at | fmt_dt }}</td>
-        <td data-label="Detalle"><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         <td data-label="Estado de Liquidación" class="table-actions">
+            <button type="button" onclick="verDetalle({{ req.id }})">Ver</button>
             {% if req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
             <a href="/liquidar/{{ req.id }}" role="button" class="secondary">Liquidar</a>
             {% elif req.estado == 'finalizada_sin_prokey' %}
