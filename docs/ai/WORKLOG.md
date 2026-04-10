@@ -86,6 +86,24 @@
 - Próximo paso:
   - Commit/push del cambio de detalle mobile si el usuario aprueba el cierre documental.
 
+## 2026-04-10 00:15 CST-0600 | tool: Codex CLI
+- Objetivo: compactar las vistas moviles de `bodega_preparar` y `bodega_gestionar` para que operacion de almacén tenga listas y formularios más densos.
+- Tareas: `REQ-201`, `REQ-202`
+- Cambios:
+  - `templates/bodega_preparar.html`
+  - `templates/bodega_gestionar.html`
+  - `static/style.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - La preparación de bodega ahora se presenta como lista de chequeo compacta con `prep-items-table`.
+  - La gestión de entrega reutiliza la misma tabla optimizada y el formulario queda reducido en móvil, con labels e inputs más pequeños y botones táctiles proporcionales.
+- Validación:
+  - `git diff --check`
+- Próximo paso:
+  - Commit/push del frente de bodega responsive si el usuario da luz verde.
+
 ## 2026-03-25 10:23 CST-0600 | tool: Codex CLI
 - Objetivo: implementar reportes descargables del `Monitor de Actividad` con respeto del `periodo` activo.
 - Tareas: `REQ-190`, `REQ-191`, `REQ-192`, `REQ-193`, `REQ-194`, `REQ-195`
