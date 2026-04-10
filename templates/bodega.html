@@ -3,44 +3,54 @@
 {% block title %}Bodega{% endblock %}
 {% block content %}
 {{ ui.page_header("Bodega", "Procesa entregas y consulta trazabilidad de despacho por requisicion.") }}
-<form method="GET" class="filters-bar panel js-autosubmit-filters bodega-filters">
-    <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante, receptor o gestionado por..." class="bodega-filter-q">
-    <select name="vista" data-autosubmit-select class="bodega-filter-control bodega-filter-view">
-        <option value="pendientes" {% if filtro_vista == 'pendientes' %}selected{% endif %}>Solo pendientes</option>
-        <option value="historial" {% if filtro_vista == 'historial' %}selected{% endif %}>Solo historial</option>
-    </select>
-    <select name="etapa" data-autosubmit-select class="bodega-filter-control bodega-filter-stage">
-        <option value="todos" {% if filtro_etapa == 'todos' %}selected{% endif %}>Todas las etapas visibles</option>
+<details class="mobile-filters-details bodega-filters-shell">
+    <summary class="bodega-filters-summary">
+        <span class="bodega-filters-summary__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M10 3h4l1 4h4l-1 4h-1l-1 4h2l-1 4H6l-1-4h2l-1-4H5l-1-4h4z"></path>
+            </svg>
+        </span>
+        <span>Filtros de Búsqueda</span>
+    </summary>
+    <form method="GET" class="filters-bar panel js-autosubmit-filters bodega-filters">
+        <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante, receptor o gestionado por..." class="bodega-filter-q">
+        <select name="vista" data-autosubmit-select class="bodega-filter-control bodega-filter-view">
+            <option value="pendientes" {% if filtro_vista == 'pendientes' %}selected{% endif %}>Solo pendientes</option>
+            <option value="historial" {% if filtro_vista == 'historial' %}selected{% endif %}>Solo historial</option>
+        </select>
+        <select name="etapa" data-autosubmit-select class="bodega-filter-control bodega-filter-stage">
+            <option value="todos" {% if filtro_etapa == 'todos' %}selected{% endif %}>Todas las etapas visibles</option>
+            {% if filtro_vista == 'historial' %}
+            <option value="liquidada_en_prokey" {% if filtro_etapa == 'liquidada_en_prokey' %}selected{% endif %}>Finalizadas en Prokey</option>
+            <option value="finalizada_sin_prokey" {% if filtro_etapa == 'finalizada_sin_prokey' %}selected{% endif %}>Finalizadas sin Prokey</option>
+            <option value="no_entregada" {% if filtro_etapa == 'no_entregada' %}selected{% endif %}>No entregadas</option>
+            {% else %}
+            <option value="aprobada" {% if filtro_etapa == 'aprobada' %}selected{% endif %}>Aprobadas</option>
+            <option value="preparado" {% if filtro_etapa == 'preparado' %}selected{% endif %}>Preparadas</option>
+            <option value="entregada" {% if filtro_etapa == 'entregada' %}selected{% endif %}>Entregadas pendientes de liquidar</option>
+            <option value="pendiente_prokey" {% if filtro_etapa in ['pendiente_prokey', 'liquidada'] %}selected{% endif %}>Pendientes de Prokey</option>
+            {% endif %}
+        </select>
+        <select name="departamento" data-autosubmit-select class="bodega-filter-control bodega-filter-department">
+            <option value="todos" {% if filtro_departamento == 'todos' %}selected{% endif %}>Todos los departamentos</option>
+            {% for d in departamentos %}
+            <option value="{{ d }}" {% if filtro_departamento == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
         {% if filtro_vista == 'historial' %}
-        <option value="liquidada_en_prokey" {% if filtro_etapa == 'liquidada_en_prokey' %}selected{% endif %}>Finalizadas en Prokey</option>
-        <option value="finalizada_sin_prokey" {% if filtro_etapa == 'finalizada_sin_prokey' %}selected{% endif %}>Finalizadas sin Prokey</option>
-        <option value="no_entregada" {% if filtro_etapa == 'no_entregada' %}selected{% endif %}>No entregadas</option>
-        {% else %}
-        <option value="aprobada" {% if filtro_etapa == 'aprobada' %}selected{% endif %}>Aprobadas</option>
-        <option value="preparado" {% if filtro_etapa == 'preparado' %}selected{% endif %}>Preparadas</option>
-        <option value="entregada" {% if filtro_etapa == 'entregada' %}selected{% endif %}>Entregadas pendientes de liquidar</option>
-        <option value="pendiente_prokey" {% if filtro_etapa in ['pendiente_prokey', 'liquidada'] %}selected{% endif %}>Pendientes de Prokey</option>
+        <select name="resultado" data-autosubmit-select class="bodega-filter-control bodega-filter-result">
+            <option value="todos" {% if filtro_resultado == 'todos' %}selected{% endif %}>Todos los resultados</option>
+            <option value="completa" {% if filtro_resultado == 'completa' %}selected{% endif %}>Completas</option>
+            <option value="parcial" {% if filtro_resultado == 'parcial' %}selected{% endif %}>Parciales</option>
+            <option value="no_entregada" {% if filtro_resultado == 'no_entregada' %}selected{% endif %}>No entregadas</option>
+        </select>
         {% endif %}
-    </select>
-    <select name="departamento" data-autosubmit-select class="bodega-filter-control bodega-filter-department">
-        <option value="todos" {% if filtro_departamento == 'todos' %}selected{% endif %}>Todos los departamentos</option>
-        {% for d in departamentos %}
-        <option value="{{ d }}" {% if filtro_departamento == d %}selected{% endif %}>{{ d }}</option>
-        {% endfor %}
-    </select>
-    {% if filtro_vista == 'historial' %}
-    <select name="resultado" data-autosubmit-select class="bodega-filter-control bodega-filter-result">
-        <option value="todos" {% if filtro_resultado == 'todos' %}selected{% endif %}>Todos los resultados</option>
-        <option value="completa" {% if filtro_resultado == 'completa' %}selected{% endif %}>Completas</option>
-        <option value="parcial" {% if filtro_resultado == 'parcial' %}selected{% endif %}>Parciales</option>
-        <option value="no_entregada" {% if filtro_resultado == 'no_entregada' %}selected{% endif %}>No entregadas</option>
-    </select>
-    {% endif %}
-    <input type="date" name="fecha_desde" value="{{ filtro_fecha_desde }}" aria-label="Fecha desde" class="bodega-filter-date" data-date-picker>
-    <input type="date" name="fecha_hasta" value="{{ filtro_fecha_hasta }}" aria-label="Fecha hasta" class="bodega-filter-date" data-date-picker>
-    <button type="submit">Buscar</button>
-    <a href="/bodega" role="button" class="secondary">Limpiar</a>
-</form>
+        <input type="date" name="fecha_desde" value="{{ filtro_fecha_desde }}" aria-label="Fecha desde" class="bodega-filter-date" data-date-picker>
+        <input type="date" name="fecha_hasta" value="{{ filtro_fecha_hasta }}" aria-label="Fecha hasta" class="bodega-filter-date" data-date-picker>
+        <button type="submit">Buscar</button>
+        <a href="/bodega" role="button" class="secondary">Limpiar</a>
+    </form>
+</details>
 {% if filtro_vista == 'historial' and filtro_resultado != 'todos' %}
 <p class="page-subtitle">Filtro aplicado en historial por resultado de entrega.</p>
 {% endif %}
@@ -65,20 +75,20 @@
     <tbody>
     {% for req in pendientes_entrega %}
     <tr {% if req.is_delayed_sla %}class="row-alert-border"{% endif %}>
-        <td>
+        <td data-label="# Req" class="bodega-folio-cell">
             {% if req.is_delayed_sla %}
             <svg class="icon-warning" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
             {% endif %}
             <strong>{{ req.folio }}</strong>
         </td>
-        <td class="bodega-status-cell">
+        <td data-label="Estado" class="bodega-status-cell">
             {{ ui.status_badge(req.estado) }}
         </td>
-        <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
-        <td>{{ req.departamento }}</td>
-        <td>{{ req.aprobador.nombre if req.aprobador else '-' }}</td>
-        <td class="truncate" title="{{ req.justificacion }}">{{ req.justificacion }}</td>
-        <td>
+        <td data-label="Solicitante">{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
+        <td data-label="Departamento">{{ req.departamento }}</td>
+        <td data-label="Aprobado por">{{ req.aprobador.nombre if req.aprobador else '-' }}</td>
+        <td data-label="Justificacion" class="truncate" title="{{ req.justificacion }}">{{ req.justificacion }}</td>
+        <td data-label="Fecha clave">
             {% if req.estado == 'aprobada' %}
             {{ req.approved_at | fmt_dt }}
             {% elif req.estado == 'preparado' %}
@@ -90,8 +100,8 @@
             <span class="badge-danger">⚠️ +48h Sin Avance</span>
             {% endif %}
         </td>
-        <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
-        <td class="table-actions">
+        <td data-label="Detalle"><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
+        <td data-label="Accion" class="table-actions">
             {% if req.estado == 'aprobada' %}
             <a href="/bodega/{{ req.id }}/preparar" role="button" class="secondary">Preparar</a>
             {% elif req.estado == 'preparado' %}
@@ -149,15 +159,15 @@
     <tbody>
     {% for req in historial_entregadas %}
     <tr>
-        <td>{{ req.folio }}</td>
-        <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
-        <td>{{ req.departamento }}</td>
-        <td>{{ req.aprobador.nombre if req.aprobador else '-' }}</td>
-        <td>{{ req.entregador.nombre if req.entregador else '-' }}</td>
-        <td>{{ req.delivered_to or '-' }}</td>
-        <td>{{ req.delivered_at | fmt_dt }}</td>
-        <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
-        <td class="table-actions">
+        <td data-label="# Req" class="bodega-folio-cell"><strong>{{ req.folio }}</strong></td>
+        <td data-label="Solicitante">{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
+        <td data-label="Departamento">{{ req.departamento }}</td>
+        <td data-label="Aprobado por">{{ req.aprobador.nombre if req.aprobador else '-' }}</td>
+        <td data-label="Entregado por">{{ req.entregador.nombre if req.entregador else '-' }}</td>
+        <td data-label="Recibio">{{ req.delivered_to or '-' }}</td>
+        <td data-label="Entregada en">{{ req.delivered_at | fmt_dt }}</td>
+        <td data-label="Detalle"><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
+        <td data-label="Estado de Liquidación" class="table-actions">
             {% if req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
             <a href="/liquidar/{{ req.id }}" role="button" class="secondary">Liquidar</a>
             {% elif req.estado == 'finalizada_sin_prokey' %}

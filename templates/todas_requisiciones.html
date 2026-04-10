@@ -3,30 +3,40 @@
 {% block title %}Todas las Requisiciones{% endblock %}
 {% block content %}
 {{ ui.page_header("Todas las Requisiciones", "Consulta global con filtros por estado, fechas y datos base de la solicitud.") }}
-<form method="GET" class="filters-bar panel js-autosubmit-filters all-requests-filters">
-    <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante...">
-    <select name="estado" data-autosubmit-select>
-        <option value="todos" {% if filtro_estado == 'todos' %}selected{% endif %}>Todos los estados</option>
-        <option value="pendiente_aprobar" {% if filtro_estado == 'pendiente_aprobar' or filtro_estado == 'pendiente' %}selected{% endif %}>Pendiente de aprobar</option>
-        <option value="pendiente_entregar" {% if filtro_estado == 'pendiente_entregar' or filtro_estado == 'aprobada' %}selected{% endif %}>Pendiente de entregar</option>
-        <option value="preparado" {% if filtro_estado == 'preparado' %}selected{% endif %}>Preparado</option>
-        <option value="rechazada" {% if filtro_estado == 'rechazada' %}selected{% endif %}>Rechazada</option>
-        <option value="entregada" {% if filtro_estado == 'entregada' %}selected{% endif %}>Entregada</option>
-        <option value="pendiente_prokey" {% if filtro_estado in ['pendiente_prokey', 'liquidada'] %}selected{% endif %}>Pendiente Prokey</option>
-        <option value="finalizada_sin_prokey" {% if filtro_estado == 'finalizada_sin_prokey' %}selected{% endif %}>Finalizada sin Prokey</option>
-        <option value="liquidada_en_prokey" {% if filtro_estado == 'liquidada_en_prokey' %}selected{% endif %}>Finalizada en Prokey</option>
-    </select>
-    <select name="departamento" data-autosubmit-select>
-        <option value="todos" {% if filtro_departamento == 'todos' %}selected{% endif %}>Todos los departamentos</option>
-        {% for d in departamentos %}
-        <option value="{{ d }}" {% if filtro_departamento == d %}selected{% endif %}>{{ d }}</option>
-        {% endfor %}
-    </select>
-    <input type="date" name="fecha_desde" value="{{ filtro_fecha_desde }}" aria-label="Fecha desde" data-date-picker>
-    <input type="date" name="fecha_hasta" value="{{ filtro_fecha_hasta }}" aria-label="Fecha hasta" data-date-picker>
-    <button type="submit">Buscar</button>
-    <a href="/todas-requisiciones" role="button" class="secondary">Limpiar</a>
-</form>
+<details class="mobile-filters-details all-requests-filters-shell">
+    <summary class="all-requests-filters-summary">
+        <span class="bodega-filters-summary__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M10 3h4l1 4h4l-1 4h-1l-1 4h2l-1 4H6l-1-4h2l-1-4H5l-1-4h4z"></path>
+            </svg>
+        </span>
+        <span>Filtros de Búsqueda</span>
+    </summary>
+    <form method="GET" class="filters-bar panel js-autosubmit-filters all-requests-filters">
+        <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar por # Req, cliente, solicitante...">
+        <select name="estado" data-autosubmit-select>
+            <option value="todos" {% if filtro_estado == 'todos' %}selected{% endif %}>Todos los estados</option>
+            <option value="pendiente_aprobar" {% if filtro_estado == 'pendiente_aprobar' or filtro_estado == 'pendiente' %}selected{% endif %}>Pendiente de aprobar</option>
+            <option value="pendiente_entregar" {% if filtro_estado == 'pendiente_entregar' or filtro_estado == 'aprobada' %}selected{% endif %}>Pendiente de entregar</option>
+            <option value="preparado" {% if filtro_estado == 'preparado' %}selected{% endif %}>Preparado</option>
+            <option value="rechazada" {% if filtro_estado == 'rechazada' %}selected{% endif %}>Rechazada</option>
+            <option value="entregada" {% if filtro_estado == 'entregada' %}selected{% endif %}>Entregada</option>
+            <option value="pendiente_prokey" {% if filtro_estado in ['pendiente_prokey', 'liquidada'] %}selected{% endif %}>Pendiente Prokey</option>
+            <option value="finalizada_sin_prokey" {% if filtro_estado == 'finalizada_sin_prokey' %}selected{% endif %}>Finalizada sin Prokey</option>
+            <option value="liquidada_en_prokey" {% if filtro_estado == 'liquidada_en_prokey' %}selected{% endif %}>Finalizada en Prokey</option>
+        </select>
+        <select name="departamento" data-autosubmit-select>
+            <option value="todos" {% if filtro_departamento == 'todos' %}selected{% endif %}>Todos los departamentos</option>
+            {% for d in departamentos %}
+            <option value="{{ d }}" {% if filtro_departamento == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
+        <input type="date" name="fecha_desde" value="{{ filtro_fecha_desde }}" aria-label="Fecha desde" data-date-picker>
+        <input type="date" name="fecha_hasta" value="{{ filtro_fecha_hasta }}" aria-label="Fecha hasta" data-date-picker>
+        <button type="submit">Buscar</button>
+        <a href="/todas-requisiciones" role="button" class="secondary">Limpiar</a>
+    </form>
+</details>
 {% if requisiciones %}
 <section class="panel view-panel table-wrap">
 <table class="table-compact all-requests-table">
@@ -48,25 +58,25 @@
     <tbody>
     {% for req in requisiciones %}
     <tr {% if req.is_delayed_sla %}class="row-alert-border"{% endif %}>
-        <td>
+        <td data-label="# Req" class="col-folio">
             {% if req.is_delayed_sla %}
             <svg class="icon-warning" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
             {% endif %}
             <strong>{{ req.folio }}</strong>
         </td>
-        <td class="col-estado">
+        <td data-label="Estado" class="col-estado">
             {{ ui.status_badge(req.estado) }}
             {% if req.is_delayed_sla %}
             <span class="badge-danger">⚠️ +48h Sin Avance</span>
             {% endif %}
         </td>
-        <td>{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
-        <td>{{ req.receptor_designado.nombre if req.receptor_designado else '-' }}</td>
-        <td class="col-departamento">{{ req.departamento }}</td>
-        <td class="truncate" title="{{ req.motivo_requisicion or '-' }}">{{ req.motivo_requisicion or '-' }}</td>
-        <td>{{ req.created_at | fmt_dt }}</td>
-        <td>{{ (req.liquidated_at or req.prokey_liquidada_at) | fmt_dt if (req.liquidated_at or req.prokey_liquidada_at) else '-' }}</td>
-        <td>
+        <td data-label="Solicitante">{{ req.solicitante.nombre if req.solicitante else '-' }}</td>
+        <td data-label="Receptor">{{ req.receptor_designado.nombre if req.receptor_designado else '-' }}</td>
+        <td data-label="Departamento" class="col-departamento">{{ req.departamento }}</td>
+        <td data-label="Motivo" class="truncate" title="{{ req.motivo_requisicion or '-' }}">{{ req.motivo_requisicion or '-' }}</td>
+        <td data-label="Fecha de Creación">{{ req.created_at | fmt_dt }}</td>
+        <td data-label="Fecha Liquidación">{{ (req.liquidated_at or req.prokey_liquidada_at) | fmt_dt if (req.liquidated_at or req.prokey_liquidada_at) else '-' }}</td>
+        <td data-label="Gestionado por">
             {% if req.estado == 'aprobada' and req.aprobador %}
                 {{ req.aprobador.nombre }}
             {% elif req.estado == 'preparado' and req.preparador %}
@@ -83,9 +93,9 @@
                 -
             {% endif %}
         </td>
-        <td><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
+        <td data-label="Detalle"><button type="button" onclick="verDetalle({{ req.id }})">Ver</button></td>
         {% if current_user.rol == 'admin' %}
-        <td class="table-actions">
+        <td data-label="Acciones" class="table-actions col-acciones">
             <form method="POST" action="/admin/requisiciones/{{ req.id }}/eliminar" style="display:inline">
                 <button type="submit" class="btn-danger-sm"
                     onclick="return confirm('¿Eliminar {{ req.folio }}? Esta acción no se puede deshacer.')">

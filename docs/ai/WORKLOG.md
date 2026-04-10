@@ -28,7 +28,26 @@
   - Se agrego una prueba que verifica mas de 10 filas en `Solicitantes` e `Items` dentro del archivo exportado.
 - Validación:
   - `python -m py_compile app/main.py tests/test_basic_flow.py`
-  - Smoke directo en Python verificando que el `XLSX` consolidado incluya el contenido esperado.
+- Smoke directo en Python verificando que el `XLSX` consolidado incluya el contenido esperado.
+
+## 2026-04-10 00:00 CST-0600 | tool: Codex CLI
+- Objetivo: refactor final de UI movil para Bodega y Todas las Requisiciones, compactando notificaciones, filtros y acciones para pantallas menores a 768px.
+- Tareas: `REQ-198`
+- Cambios:
+  - `templates/bodega.html`
+  - `templates/todas_requisiciones.html`
+  - `static/style.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - Los filtros de Bodega y Todas las Requisiciones ahora usan `details.mobile-filters-details` con summary limpio para evitar conflictos visuales con PicoCSS.
+  - Las tablas de ambas vistas quedaron adaptadas a tarjetas responsivas en móvil, con etiquetas `data-label`, acciones compactas y tipografia reducida para evitar text squishing.
+  - El banner de notificaciones de bodega se compactó y los chips/badges SLA se hicieron mas pequeños para mantener densidad visual sin perder legibilidad.
+- Validación:
+  - `git diff --check`
+- Próximo paso:
+  - Commit/push del frente de responsive móvil si el usuario aprueba el cierre documental y visual.
 
 ## 2026-03-25 10:23 CST-0600 | tool: Codex CLI
 - Objetivo: implementar reportes descargables del `Monitor de Actividad` con respeto del `periodo` activo.

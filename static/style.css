@@ -1179,6 +1179,392 @@ tr.row-alert-border td:first-child {
     border-bottom: 0;
 }
 
+details.mobile-filters-details {
+    background: var(--ui-surface, var(--dark-surface)) !important;
+    border: 1px solid var(--ui-border, var(--dark-border)) !important;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+details.mobile-filters-details summary {
+    list-style: none !important;
+    padding: 0.7rem 1rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: var(--ui-primary, #8ec8ff) !important;
+    cursor: pointer;
+    background: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+details.mobile-filters-details summary::-webkit-details-marker {
+    display: none !important;
+}
+
+details.mobile-filters-details summary::after {
+    content: "▼";
+    font-size: 0.7rem;
+    color: var(--ui-muted, var(--dark-muted));
+}
+
+details.mobile-filters-details[open] summary::after {
+    content: "▲";
+}
+
+details.mobile-filters-details .filters-bar {
+    border: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border-top: 1px solid var(--ui-border, var(--dark-border)) !important;
+}
+
+body:has(details.bodega-filters-shell) .bodega-filters-shell {
+    margin-bottom: 0.8rem;
+}
+
+body:has(details.bodega-filters-shell) .bodega-filters-shell > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    list-style: none;
+    cursor: pointer;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--dark-border);
+    border-radius: 0.85rem;
+    background: linear-gradient(180deg, rgba(19, 40, 75, 0.72) 0%, rgba(14, 29, 53, 0.72) 100%);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
+    color: #e4efff;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+body:has(details.bodega-filters-shell) .bodega-filters-shell > summary::-webkit-details-marker {
+    display: none;
+}
+
+body:has(details.bodega-filters-shell) .bodega-filters-summary__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.1rem;
+    height: 1.1rem;
+    color: #8ec8ff;
+    flex: 0 0 auto;
+}
+
+body:has(details.bodega-filters-shell) .bodega-filters-summary__icon svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
+
+body:has(details.bodega-filters-shell) .bodega-filters-shell[open] > summary {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters {
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .bodega-live-banner {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 0.8rem !important;
+        gap: 0.6rem !important;
+        border-radius: 10px !important;
+    }
+
+    .bodega-live-banner__actions {
+        justify-content: flex-end !important;
+        width: 100% !important;
+    }
+
+    .bodega-live-banner__actions button,
+    .bodega-live-banner__actions a[role="button"] {
+        font-size: 0.75rem !important;
+        padding: 0.35rem 0.7rem !important;
+        min-height: auto !important;
+        flex: 1 !important;
+        text-align: center;
+        border-radius: 8px !important;
+    }
+
+    .badge-danger,
+    .badge-warning,
+    .badge-success,
+    .badge-info,
+    .resultado-chip {
+        display: inline-block !important;
+        font-size: 0.65rem !important;
+        padding: 0.15rem 0.4rem !important;
+        margin-top: 0.2rem !important;
+        line-height: 1.1 !important;
+    }
+
+    svg.icon-warning {
+        width: 14px !important;
+        height: 14px !important;
+        margin-right: 2px !important;
+        vertical-align: text-bottom !important;
+    }
+
+    body:has(details.bodega-filters-shell) .bodega-filters-shell {
+        margin-bottom: 0.9rem;
+    }
+
+    body:has(details.bodega-filters-shell) .bodega-filters-shell > summary {
+        padding: 0.9rem 1rem;
+    }
+
+    body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters.filters-bar {
+        grid-template-columns: 1fr;
+        gap: 0.55rem;
+        padding-top: 0.9rem;
+    }
+
+    body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters.filters-bar input,
+    body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters.filters-bar select,
+    body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters.filters-bar button,
+    body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters.filters-bar [role="button"] {
+        width: 100%;
+    }
+
+    body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters.filters-bar .bodega-filter-q {
+        grid-column: 1 / -1;
+    }
+
+    body:has(table.bodega-requests-table) .table-wrap,
+    body:has(table.bodega-history-table) .table-wrap,
+    body:has(table.all-requests-table) .table-wrap {
+        overflow: visible !important;
+    }
+
+    body:has(table.bodega-requests-table) .bodega-requests-table,
+    body:has(table.bodega-history-table) .bodega-history-table,
+    body:has(table.all-requests-table) .all-requests-table {
+        display: block !important;
+        width: 100%;
+    }
+
+    body:has(table.bodega-requests-table) .bodega-requests-table thead,
+    body:has(table.bodega-history-table) .bodega-history-table thead,
+    body:has(table.all-requests-table) .all-requests-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    body:has(table.bodega-requests-table) .bodega-requests-table tbody,
+    body:has(table.bodega-history-table) .bodega-history-table tbody,
+    body:has(table.all-requests-table) .all-requests-table tbody,
+    body:has(table.bodega-requests-table) .bodega-requests-table tr,
+    body:has(table.bodega-history-table) .bodega-history-table tr,
+    body:has(table.all-requests-table) .all-requests-table tr,
+    body:has(table.bodega-requests-table) .bodega-requests-table td,
+    body:has(table.bodega-history-table) .bodega-history-table td,
+    body:has(table.all-requests-table) .all-requests-table td {
+        display: block;
+        width: 100%;
+    }
+
+    body:has(table.bodega-requests-table) .bodega-requests-table tbody,
+    body:has(table.bodega-history-table) .bodega-history-table tbody,
+    body:has(table.all-requests-table) .all-requests-table tbody {
+        padding: 0;
+        margin: 0;
+        gap: 0;
+    }
+
+    body:has(table.bodega-requests-table) .bodega-requests-table tbody tr,
+    body:has(table.bodega-history-table) .bodega-history-table tbody tr,
+    body:has(table.all-requests-table) .all-requests-table tbody tr {
+        margin-bottom: 1.2rem;
+        background: var(--ui-surface, var(--dark-surface)) !important;
+        border: 1px solid var(--ui-border, var(--dark-border));
+        border-radius: 12px;
+        padding: 0.5rem;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+    }
+
+    table.bodega-requests-table td,
+    table.bodega-history-table td,
+    table.all-requests-table td {
+        display: grid !important;
+        grid-template-columns: 100px minmax(0, 1fr) !important;
+        gap: 0.6rem !important;
+        align-items: start !important;
+        text-align: left !important;
+        padding: 0.5rem 0.6rem !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        word-break: normal !important;
+        overflow-wrap: break-word !important;
+        font-size: 0.8rem !important;
+        line-height: 1.4;
+    }
+
+    table.bodega-requests-table td::before,
+    table.bodega-history-table td::before,
+    table.all-requests-table td::before {
+        content: attr(data-label);
+        font-size: 0.68rem !important;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: normal;
+        line-height: 1.2;
+    }
+
+    table.bodega-requests-table td.col-acciones,
+    table.bodega-history-table td.table-actions,
+    table.bodega-requests-table td.bodega-status-cell,
+    table.all-requests-table td.col-estado,
+    table.all-requests-table td.table-actions,
+    table.all-requests-table td.col-acciones {
+        grid-template-columns: 1fr !important;
+        text-align: left !important;
+    }
+
+    table.bodega-requests-table td.col-acciones::before,
+    table.bodega-history-table td.table-actions::before,
+    table.all-requests-table td.col-acciones::before,
+    table.all-requests-table td.table-actions::before {
+        display: none !important;
+    }
+
+    table.bodega-requests-table td.col-acciones,
+    table.bodega-history-table td.table-actions,
+    table.all-requests-table td.table-actions,
+    table.all-requests-table td.col-acciones {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-end !important;
+        gap: 0.4rem !important;
+        padding-top: 0.8rem !important;
+        border-top: 1px dashed rgba(255, 255, 255, 0.1) !important;
+        align-items: center !important;
+    }
+
+    table.bodega-requests-table td.col-acciones a,
+    table.bodega-requests-table td.col-acciones button,
+    table.all-requests-table td.col-acciones a,
+    table.all-requests-table td.col-acciones button,
+    table.all-requests-table td.table-actions a,
+    table.all-requests-table td.table-actions button,
+    table.bodega-history-table td.table-actions a,
+    table.bodega-history-table td.table-actions button {
+        width: auto !important;
+        min-height: 28px !important;
+        font-size: 0.72rem !important;
+        font-weight: 700 !important;
+        padding: 0.2rem 0.8rem !important;
+        margin: 0 !important;
+        border-radius: 999px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+    }
+
+    table.bodega-history-table td.table-actions form,
+    table.bodega-requests-table td.col-acciones form,
+    table.all-requests-table td.col-acciones form,
+    table.all-requests-table td.table-actions form {
+        width: 100%;
+        margin: 0 !important;
+    }
+
+    table.bodega-requests-table tbody tr td:last-child,
+    table.bodega-history-table tbody tr td:last-child,
+    table.all-requests-table tbody tr td:last-child {
+        border-bottom: none !important;
+    }
+
+    table.bodega-requests-table td.bodega-status-cell {
+        align-items: center !important;
+    }
+
+    table.bodega-requests-table td.bodega-status-cell .badge,
+    table.bodega-requests-table td.bodega-status-cell .badge-danger {
+        justify-self: start;
+    }
+
+    table.bodega-requests-table td.bodega-folio-cell strong,
+    table.bodega-history-table td.bodega-folio-cell strong {
+        font-size: 1.12rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+    }
+
+    table.all-requests-table td.col-estado,
+    table.all-requests-table td.table-actions,
+    table.all-requests-table td.col-acciones {
+        grid-template-columns: 1fr !important;
+        align-items: stretch !important;
+        text-align: left !important;
+    }
+
+    table.all-requests-table td.col-estado::before,
+    table.all-requests-table td.table-actions::before,
+    table.all-requests-table td.col-acciones::before {
+        display: none !important;
+    }
+
+    table.all-requests-table td.col-estado .badge,
+    table.all-requests-table td.col-estado .badge-danger {
+        justify-self: start;
+    }
+
+    table.all-requests-table td.col-folio strong {
+        font-size: 1.12rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+    }
+
+    table.all-requests-table tbody tr td:last-child {
+        border-bottom: none !important;
+    }
+
+    table.bodega-history-table td.table-actions,
+    table.all-requests-table td.table-actions,
+    table.all-requests-table td.col-acciones {
+        align-items: stretch !important;
+    }
+
+    table.bodega-history-table td.table-actions::before,
+    table.all-requests-table td.table-actions::before,
+    table.all-requests-table td.col-acciones::before {
+        display: none !important;
+    }
+}
+
+@media (min-width: 769px) {
+    body:has(details.bodega-filters-shell) .bodega-filters-shell > summary {
+        display: none;
+    }
+
+    body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters.filters-bar {
+        grid-template-columns: 2fr 1fr 1fr auto auto;
+        display: grid !important;
+    }
+}
+
 .comentario-item p {
     margin: 0.2rem 0 0;
     font-size: 0.88rem;
