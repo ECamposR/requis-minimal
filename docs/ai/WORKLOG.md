@@ -104,6 +104,23 @@
 - Próximo paso:
   - Commit/push del frente de bodega responsive si el usuario da luz verde.
 
+## 2026-04-10 00:20 CST-0600 | tool: Codex CLI
+- Objetivo: transformar `liquidar.html` en tarjetas tipo iOS Settings para mobile.
+- Tareas: `REQ-203`
+- Cambios:
+  - `templates/liquidar.html`
+  - `static/style.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - La tabla de liquidación ahora porta `data-label` por celda en el template, permitiendo un render mobile sin encabezados horizontales.
+  - El CSS móvil convierte cada fila en una tarjeta con labels absolutas, inputs táctiles y bloques compactos de diferencia/nota.
+- Validación:
+  - `git diff --check`
+- Próximo paso:
+  - Commit/push del ajuste móvil de liquidación si el usuario aprueba el cierre documental.
+
 ## 2026-03-25 10:23 CST-0600 | tool: Codex CLI
 - Objetivo: implementar reportes descargables del `Monitor de Actividad` con respeto del `periodo` activo.
 - Tareas: `REQ-190`, `REQ-191`, `REQ-192`, `REQ-193`, `REQ-194`, `REQ-195`

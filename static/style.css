@@ -1386,6 +1386,112 @@ body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters {
         justify-content: center !important;
     }
 
+    /* Liquidacion mobile: tarjetas iOS Settings */
+    table.liquidacion-table,
+    table.liquidacion-table tbody,
+    table.liquidacion-table tr {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    table.liquidacion-table thead {
+        display: none !important;
+    }
+
+    table.liquidacion-table tr {
+        background: var(--ui-surface) !important;
+        border: 1px solid var(--ui-border) !important;
+        border-radius: 12px !important;
+        margin-bottom: 1.2rem !important;
+        padding: 0.8rem 1rem !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    table.liquidacion-table td {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 0.6rem 0 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-top: none !important;
+    }
+
+    table.liquidacion-table td:last-child {
+        border-bottom: none !important;
+    }
+
+    table.liquidacion-table td::before {
+        content: attr(data-label);
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        color: var(--ui-muted) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        flex-shrink: 0 !important;
+    }
+
+    table.liquidacion-table td:first-child {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding-bottom: 0.8rem !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    table.liquidacion-table td:first-child::before {
+        display: none !important;
+    }
+
+    table.liquidacion-table td:first-child .liquidacion-item-name {
+        font-size: 16px !important;
+        font-weight: 800 !important;
+        color: var(--ui-text) !important;
+        margin-bottom: 0.4rem !important;
+        line-height: 1.2 !important;
+    }
+
+    table.liquidacion-table td input[type="number"],
+    table.liquidacion-table td select {
+        width: 110px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        text-align: center !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+        padding: 0.2rem !important;
+        border-radius: 8px !important;
+    }
+
+    table.liquidacion-table td[data-label="Diferencia"] {
+        flex-wrap: wrap !important;
+    }
+
+    table.liquidacion-table td[data-label="Diferencia"] [data-delta] {
+        font-size: 18px !important;
+        font-weight: 900 !important;
+    }
+
+    table.liquidacion-table td[data-label="Diferencia"] small {
+        width: 100% !important;
+        text-align: right !important;
+        margin-top: 0.5rem !important;
+        font-size: 11.5px !important;
+        line-height: 1.3 !important;
+    }
+
+    table.liquidacion-table td[data-label="Nota"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+
+    table.liquidacion-table td[data-label="Nota"] input {
+        width: 100% !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        border-radius: 8px !important;
+    }
+
     /* Quitar la caja de fondo de la tabla para aspecto de lista */
     .view-panel .table-wrap:has(.prep-items-table) {
         border: none !important;
