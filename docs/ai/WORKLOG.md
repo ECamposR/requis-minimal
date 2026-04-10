@@ -68,6 +68,24 @@
 - Próximo paso:
   - Commit/push del ajuste de consolidación de acciones si el usuario lo aprueba.
 
+## 2026-04-10 00:10 CST-0600 | tool: Codex CLI
+- Objetivo: adaptar las tablas de items del modal de detalle al patrón de tarjetas con `Absolute Label` en mobile.
+- Tareas: `REQ-200`
+- Cambios:
+  - `static/app.js`
+  - `static/style.css`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El modal de detalle ahora inyecta `data-label` en las celdas de sus tablas de items.
+  - En mobile, las tablas del modal ya no fuerzan scroll horizontal y muestran cada fila como tarjeta con etiquetas absolutas.
+  - El contenido de diferencias, alertas e ingreso PK fluye sin aplastar la descripcion ni romper la legibilidad.
+- Validación:
+  - `git diff --check`
+- Próximo paso:
+  - Commit/push del cambio de detalle mobile si el usuario aprueba el cierre documental.
+
 ## 2026-03-25 10:23 CST-0600 | tool: Codex CLI
 - Objetivo: implementar reportes descargables del `Monitor de Actividad` con respeto del `periodo` activo.
 - Tareas: `REQ-190`, `REQ-191`, `REQ-192`, `REQ-193`, `REQ-194`, `REQ-195`

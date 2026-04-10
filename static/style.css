@@ -1554,6 +1554,81 @@ body:has(details.bodega-filters-shell) .bodega-filters-shell > .bodega-filters {
     table.all-requests-table td.table-actions {
         justify-content: center !important;
     }
+
+    /* Modal de detalle: tarjetas con etiqueta absoluta en mobile */
+    #modal-detalle .table-wrap,
+    #modal-detalle .detail-table-shell,
+    #modal-detalle .liquidacion-paper-wrap {
+        overflow-x: visible !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+
+    #modal-detalle table.detalle-items-table thead,
+    #modal-detalle table.detail-items-table thead,
+    #modal-detalle table.liquidacion-paper-table thead {
+        display: none !important;
+    }
+
+    #modal-detalle table.detalle-items-table,
+    #modal-detalle table.detail-items-table,
+    #modal-detalle table.liquidacion-paper-table,
+    #modal-detalle table.detalle-items-table tbody,
+    #modal-detalle table.detail-items-table tbody,
+    #modal-detalle table.liquidacion-paper-table tbody {
+        display: block !important;
+        width: 100% !important;
+        border: none !important;
+    }
+
+    #modal-detalle table.detalle-items-table tr,
+    #modal-detalle table.detail-items-table tr,
+    #modal-detalle table.liquidacion-paper-table tr {
+        display: block !important;
+        margin-bottom: 0.8rem !important;
+        background: var(--ui-surface) !important;
+        border: 1px solid var(--ui-border) !important;
+        border-radius: 10px !important;
+        padding: 0.4rem !important;
+        box-shadow: 0 6px 16px rgba(29, 73, 129, 0.08) !important;
+    }
+
+    #modal-detalle table.detalle-items-table td,
+    #modal-detalle table.detail-items-table td,
+    #modal-detalle table.liquidacion-paper-table td {
+        display: block !important;
+        position: relative !important;
+        padding: 0.35rem 0.5rem 0.35rem 105px !important;
+        text-align: left !important;
+        min-height: 1.8rem;
+        border-bottom: 1px dashed rgba(83, 119, 166, 0.2) !important;
+        font-size: 0.85rem !important;
+        color: var(--ui-text) !important;
+        word-break: normal !important;
+        overflow-wrap: break-word !important;
+    }
+
+    #modal-detalle table td:last-child {
+        border-bottom: none !important;
+    }
+
+    #modal-detalle table.detalle-items-table td::before,
+    #modal-detalle table.detail-items-table td::before,
+    #modal-detalle table.liquidacion-paper-table td::before {
+        content: attr(data-label);
+        position: absolute !important;
+        top: 0.35rem !important;
+        left: 0.5rem !important;
+        width: 90px !important;
+        font-size: 0.68rem !important;
+        font-weight: 700 !important;
+        color: var(--ui-muted) !important;
+        text-transform: uppercase !important;
+        line-height: 1.2 !important;
+        white-space: normal !important;
+    }
 }
 
 @media (min-width: 769px) {
