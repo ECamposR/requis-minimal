@@ -17,6 +17,7 @@ Aplicación interna LAN para gestionar requisiciones desde solicitud hasta liqui
   - cambio de contraseña autoservicio para usuarios con login habilitado
   - liquidación por ítem con alertas y trazabilidad
   - detalle tipo dashboard con timeline
+  - exportación CSV/XLSX en `Todas las Requisiciones` respetando filtros activos
   - generación de PDF desde requisiciones aprobadas en adelante
 
 ## Criterio de evolucion

@@ -1,3 +1,4 @@
+import csv
 import re
 from io import BytesIO
 from datetime import datetime, timedelta
@@ -3241,6 +3242,197 @@ def test_todas_requisiciones_permita_buscar_por_motivo_receptor_actor_y_prokey(c
     response_prokey = client.get("/todas-requisiciones?q=PK-7788")
     assert response_prokey.status_code == 200
     assert "REQ-0203" in response_prokey.text
+
+
+def test_todas_requisiciones_renderiza_botones_de_exportacion(client: TestClient):
+    login(client, "aprob.ops", "pass123")
+    response = client.get("/todas-requisiciones?estado=pendiente_entregar&departamento=Ventas")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Exportar CSV" in html
+    assert "Exportar XLSX" in html
+    assert "/todas-requisiciones/exportar.csv?estado=pendiente_entregar&departamento=Ventas" in html
+    assert "/todas-requisiciones/exportar.xlsx?estado=pendiente_entregar&departamento=Ventas" in html
+
+
+def test_todas_requisiciones_exporta_csv_y_xlsx_sin_filtros(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req_pendiente = Requisicion(
+        folio="REQ-EXP-001",
+        solicitante_id=user.id,
+        departamento="Ventas",
+        estado="pendiente",
+        justificacion="Pendiente para exportacion",
+        created_at=datetime(2026, 4, 20, 9, 30),
+    )
+    req_liquidada = Requisicion(
+        folio="REQ-EXP-002",
+        solicitante_id=user.id,
+        receptor_designado_id=bodega.id,
+        departamento="Logistica",
+        estado="liquidada_en_prokey",
+        motivo_requisicion="Reposicion",
+        justificacion="Cierre para exportacion",
+        cliente_codigo="CL-001",
+        cliente_nombre="Cliente Exportacion",
+        approved_by=aprobador.id,
+        approved_at=datetime(2026, 4, 21, 10, 0),
+        delivered_by=bodega.id,
+        delivered_at=datetime(2026, 4, 22, 11, 0),
+        liquidated_by=bodega.id,
+        liquidated_at=datetime(2026, 4, 23, 12, 0),
+        prokey_liquidada_por=aprobador.id,
+        prokey_liquidada_at=datetime(2026, 4, 24, 13, 0),
+        prokey_ref="PK-2026-01",
+        liquidation_comment="Cierre completo",
+    )
+    db_session.add_all([req_pendiente, req_liquidada])
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+
+    response_csv = client.get("/todas-requisiciones/exportar.csv")
+    assert response_csv.status_code == 200
+    assert "text/csv" in response_csv.headers["content-type"]
+    assert "attachment; filename=\"requisiciones_todas_" in response_csv.headers["content-disposition"]
+    assert response_csv.content.startswith(b"\xef\xbb\xbf")
+    csv_rows = list(csv.reader(response_csv.content.decode("utf-8-sig").splitlines()))
+    assert csv_rows[0] == [
+        "Número de requisición",
+        "Estado",
+        "Solicitante",
+        "Receptor",
+        "Departamento",
+        "Motivo",
+        "Cliente",
+        "Fecha de creación",
+        "Fecha de liquidación",
+        "Gestionado por",
+        "Fecha marcada liquidada en ProKey",
+        "Referencia ProKey",
+        "Comentario de liquidación",
+    ]
+    assert any(row[0] == "REQ-EXP-001" for row in csv_rows[1:])
+    assert any(row[0] == "REQ-EXP-002" for row in csv_rows[1:])
+
+    response_xlsx = client.get("/todas-requisiciones/exportar.xlsx")
+    assert response_xlsx.status_code == 200
+    assert response_xlsx.headers["content-type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    assert "attachment; filename=\"requisiciones_todas_" in response_xlsx.headers["content-disposition"]
+    from openpyxl import load_workbook
+
+    workbook = load_workbook(BytesIO(response_xlsx.content))
+    sheet = workbook["Requisiciones"]
+    rows = list(sheet.iter_rows(values_only=True))
+    assert rows[0] == (
+        "Número de requisición",
+        "Estado",
+        "Solicitante",
+        "Receptor",
+        "Departamento",
+        "Motivo",
+        "Cliente",
+        "Fecha de creación",
+        "Fecha de liquidación",
+        "Gestionado por",
+        "Fecha marcada liquidada en ProKey",
+        "Referencia ProKey",
+        "Comentario de liquidación",
+    )
+    folios_exportados = {row[0] for row in rows[1:] if row and row[0]}
+    assert {"REQ-EXP-001", "REQ-EXP-002"}.issubset(folios_exportados)
+
+
+def test_todas_requisiciones_exporta_csv_con_filtro_de_estado(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+
+    req_pendiente = Requisicion(
+        folio="REQ-EXP-STATE-1",
+        solicitante_id=user.id,
+        departamento="Ventas",
+        estado="pendiente",
+        justificacion="No debe exportarse",
+        created_at=datetime(2026, 4, 20, 9, 30),
+    )
+    req_rechazada = Requisicion(
+        folio="REQ-EXP-STATE-2",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="rechazada",
+        justificacion="Debe exportarse",
+        rejected_by=aprobador.id,
+        rejected_at=datetime(2026, 4, 21, 10, 0),
+        rejection_reason="No procede",
+        created_at=datetime(2026, 4, 21, 10, 0),
+    )
+    db_session.add_all([req_pendiente, req_rechazada])
+    db_session.commit()
+
+    login(client, "aprob.ops", "pass123")
+    response_csv = client.get("/todas-requisiciones/exportar.csv?estado=rechazada")
+
+    assert response_csv.status_code == 200
+    csv_rows = list(csv.reader(response_csv.content.decode("utf-8-sig").splitlines()))
+    assert len(csv_rows) == 2
+    assert csv_rows[1][0] == "REQ-EXP-STATE-2"
+    assert all(row[0] != "REQ-EXP-STATE-1" for row in csv_rows[1:])
+
+
+def test_todas_requisiciones_exporta_xlsx_con_filtros_de_departamento_y_fechas(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    ahora = datetime(2026, 4, 29, 12, 0)
+
+    req_in = Requisicion(
+        folio="REQ-EXP-DATE-1",
+        solicitante_id=user.id,
+        departamento="Logistica",
+        estado="aprobada",
+        justificacion="Dentro del rango",
+        approved_by=aprobador.id,
+        approved_at=ahora,
+        created_at=ahora,
+    )
+    req_out = Requisicion(
+        folio="REQ-EXP-DATE-2",
+        solicitante_id=user.id,
+        departamento="Ventas",
+        estado="aprobada",
+        justificacion="Fuera del rango",
+        approved_by=aprobador.id,
+        approved_at=ahora - timedelta(days=12),
+        created_at=ahora - timedelta(days=12),
+    )
+    db_session.add_all([req_in, req_out])
+    db_session.commit()
+
+    login(client, "admin.1", "pass123")
+    fecha_desde = (ahora - timedelta(days=2)).strftime("%Y-%m-%d")
+    fecha_hasta = (ahora + timedelta(days=1)).strftime("%Y-%m-%d")
+    response_xlsx = client.get(
+        f"/todas-requisiciones/exportar.xlsx?departamento=Logistica&fecha_desde={fecha_desde}&fecha_hasta={fecha_hasta}"
+    )
+
+    assert response_xlsx.status_code == 200
+    from openpyxl import load_workbook
+
+    workbook = load_workbook(BytesIO(response_xlsx.content))
+    rows = list(workbook["Requisiciones"].iter_rows(values_only=True))
+    assert len(rows) == 2
+    assert rows[1][0] == "REQ-EXP-DATE-1"
+    assert rows[1][4] == "Logistica"
+
+
+def test_todas_requisiciones_exportacion_bloquea_roles_no_autorizados(client: TestClient):
+    login(client, "user.ops", "pass123")
+
+    response = client.get("/todas-requisiciones/exportar.csv")
+    assert response.status_code == 403
 
 
 def test_bodega_puede_ver_todas_las_requisiciones(client: TestClient, db_session: Session):

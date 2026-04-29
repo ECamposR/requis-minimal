@@ -578,6 +578,20 @@ button:hover {
     opacity: 1;
 }
 
+.table-export-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 0 0.9rem;
+}
+
+.table-export-actions [role="button"] {
+    min-height: 2.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .gestion-layout {
     display: grid;
     grid-template-columns: 1.1fr 1fr;

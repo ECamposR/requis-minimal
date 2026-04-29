@@ -27,6 +27,11 @@
     <button type="submit">Buscar</button>
     <a href="/todas-requisiciones" role="button" class="secondary">Limpiar</a>
 </form>
+{% set export_query = request.url.query %}
+<div class="table-export-actions" aria-label="Exportes de requisiciones">
+    <a href="/todas-requisiciones/exportar.csv{% if export_query %}?{{ export_query }}{% endif %}" role="button" class="secondary">Exportar CSV</a>
+    <a href="/todas-requisiciones/exportar.xlsx{% if export_query %}?{{ export_query }}{% endif %}" role="button" class="secondary">Exportar XLSX</a>
+</div>
 {% if requisiciones %}
 <section class="panel view-panel table-wrap">
 <table class="table-compact all-requests-table">

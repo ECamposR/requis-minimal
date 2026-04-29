@@ -402,7 +402,7 @@ def _build_csv_download_response(filename: str, headers: list[str], rows: list[l
     writer.writerows(rows)
     return Response(
         content=buffer.getvalue().encode("utf-8-sig"),
-        media_type="text/csv; charset=utf-8",
+        media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
@@ -1001,6 +1001,161 @@ def puede_ver_todas_las_requisiciones(current_user: Usuario) -> bool:
 def ensure_all_requests_access(current_user: Usuario) -> None:
     if current_user.rol not in ["admin", "aprobador", "jefe_bodega", "logistica", "bodega"]:
         raise HTTPException(status_code=403, detail="No autorizado")
+
+
+def normalize_todas_requisiciones_estado(estado: str) -> str:
+    alias_estado = {
+        "pendiente_aprobar": "pendiente",
+        "pendiente_entregar": "aprobada",
+        "liquidada": "pendiente_prokey",
+    }
+    estado_limpio = str(estado or "").strip().lower()
+    return alias_estado.get(estado_limpio, estado_limpio)
+
+
+def build_todas_requisiciones_query(
+    db: Session,
+    q: str = "",
+    estado: str = "todos",
+    departamento: str = "todos",
+    fecha_desde_raw: str = "",
+    fecha_hasta_raw: str = "",
+):
+    estado_limpio = normalize_todas_requisiciones_estado(estado)
+    estados_validos = {
+        "pendiente",
+        "aprobada",
+        "preparado",
+        "rechazada",
+        "entregada",
+        "no_entregada",
+        "liquidada",
+        "pendiente_prokey",
+        "finalizada_sin_prokey",
+        "liquidada_en_prokey",
+    }
+    query = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.solicitante),
+            joinedload(Requisicion.receptor_designado),
+            joinedload(Requisicion.aprobador),
+            joinedload(Requisicion.rechazador),
+            joinedload(Requisicion.preparador),
+            joinedload(Requisicion.entregador),
+            joinedload(Requisicion.liquidator),
+            joinedload(Requisicion.prokey_liquidator),
+        )
+        .filter(
+            Requisicion.estado.in_(
+                [
+                    "pendiente",
+                    "aprobada",
+                    "preparado",
+                    "rechazada",
+                    "entregada",
+                    "no_entregada",
+                    "liquidada",
+                    "pendiente_prokey",
+                    "finalizada_sin_prokey",
+                    "liquidada_en_prokey",
+                ]
+            )
+        )
+    )
+    if estado_limpio == "pendiente_entregar":
+        query = query.filter(Requisicion.estado.in_(["aprobada", "preparado"]))
+    elif estado_limpio in estados_validos:
+        query = query.filter(Requisicion.estado == estado_limpio)
+
+    departamento_limpio = str(departamento or "").strip()
+    if departamento_limpio and departamento_limpio != "todos":
+        query = query.filter(Requisicion.departamento == departamento_limpio)
+
+    fecha_desde_limpia = str(fecha_desde_raw or "").strip()
+    if fecha_desde_limpia:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde_limpia, "%Y-%m-%d")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha desde invalida") from exc
+        query = query.filter(Requisicion.created_at >= fecha_desde)
+
+    fecha_hasta_limpia = str(fecha_hasta_raw or "").strip()
+    if fecha_hasta_limpia:
+        try:
+            fecha_hasta = datetime.strptime(fecha_hasta_limpia, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Fecha hasta invalida") from exc
+        query = query.filter(Requisicion.created_at < fecha_hasta)
+
+    q_limpio = str(q or "").strip()
+    if q_limpio:
+        patron = f"%{q_limpio}%"
+        query = query.filter(
+            or_(
+                Requisicion.folio.ilike(patron),
+                Requisicion.departamento.ilike(patron),
+                Requisicion.motivo_requisicion.ilike(patron),
+                Requisicion.justificacion.ilike(patron),
+                Requisicion.cliente_codigo.ilike(patron),
+                Requisicion.cliente_nombre.ilike(patron),
+                Requisicion.prokey_ref.ilike(patron),
+                Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
+                Requisicion.receptor_designado.has(Usuario.nombre.ilike(patron)),
+                Requisicion.aprobador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.rechazador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.preparador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.entregador.has(Usuario.nombre.ilike(patron)),
+                Requisicion.liquidator.has(Usuario.nombre.ilike(patron)),
+                Requisicion.prokey_liquidator.has(Usuario.nombre.ilike(patron)),
+            )
+        )
+    return query
+
+
+def _todas_requisiciones_gestionado_por(req: Requisicion) -> str:
+    if req.estado == "aprobada" and req.aprobador:
+        return req.aprobador.nombre
+    if req.estado == "preparado" and req.preparador:
+        return req.preparador.nombre
+    if req.estado == "rechazada" and req.rechazador:
+        return req.rechazador.nombre
+    if req.estado == "entregada" and req.entregador:
+        return req.entregador.nombre
+    if req.estado in ["liquidada", "pendiente_prokey", "finalizada_sin_prokey"] and req.liquidator:
+        return req.liquidator.nombre
+    if req.estado == "liquidada_en_prokey" and req.prokey_liquidator:
+        return req.prokey_liquidator.nombre
+    return ""
+
+
+def _export_datetime_value(value: datetime | str | None) -> str:
+    text = format_datetime(value)
+    return "" if text == "-" else text
+
+
+def build_todas_requisiciones_export_rows(requisiciones: list[Requisicion]) -> list[list[object]]:
+    rows: list[list[object]] = []
+    for req in requisiciones:
+        fecha_liquidacion = req.liquidated_at or req.prokey_liquidada_at
+        rows.append(
+            [
+                req.folio or f"REQ-{req.id:04d}",
+                req.estado,
+                req.solicitante.nombre if req.solicitante else "",
+                req.receptor_designado.nombre if req.receptor_designado else "",
+                req.departamento,
+                req.motivo_requisicion or "",
+                req.cliente_nombre or "",
+                _export_datetime_value(req.created_at),
+                _export_datetime_value(fecha_liquidacion),
+                _todas_requisiciones_gestionado_por(req),
+                _export_datetime_value(req.prokey_liquidada_at),
+                req.prokey_ref or "",
+                normalize_optional_text(req.liquidation_comment) or "",
+            ]
+        )
+    return rows
 
 
 def redirect_if_bodega_plain_accesses_own_requests(current_user: Usuario) -> RedirectResponse | None:
@@ -2943,72 +3098,14 @@ def todas_requisiciones_view(
     departamento = request.query_params.get("departamento", "todos").strip()
     fecha_desde_raw = request.query_params.get("fecha_desde", "").strip()
     fecha_hasta_raw = request.query_params.get("fecha_hasta", "").strip()
-
-    alias_estado = {
-        "pendiente_aprobar": "pendiente",
-        "pendiente_entregar": "aprobada",
-        "liquidada": "pendiente_prokey",
-    }
-    estado_real = alias_estado.get(estado, estado)
-    estados_validos = {"pendiente", "aprobada", "preparado", "rechazada", "entregada", "no_entregada", "liquidada", "pendiente_prokey", "finalizada_sin_prokey", "liquidada_en_prokey"}
-    query = (
-        db.query(Requisicion)
-        .options(
-            joinedload(Requisicion.solicitante),
-            joinedload(Requisicion.receptor_designado),
-            joinedload(Requisicion.aprobador),
-            joinedload(Requisicion.rechazador),
-            joinedload(Requisicion.preparador),
-            joinedload(Requisicion.entregador),
-            joinedload(Requisicion.liquidator),
-            joinedload(Requisicion.prokey_liquidator),
-        )
-        .filter(
-            Requisicion.estado.in_(
-                ["pendiente", "aprobada", "preparado", "rechazada", "entregada", "no_entregada", "liquidada", "pendiente_prokey", "finalizada_sin_prokey", "liquidada_en_prokey"]
-            )
-        )
+    query = build_todas_requisiciones_query(
+        db,
+        q=q,
+        estado=estado,
+        departamento=departamento,
+        fecha_desde_raw=fecha_desde_raw,
+        fecha_hasta_raw=fecha_hasta_raw,
     )
-    if estado == "pendiente_entregar":
-        query = query.filter(Requisicion.estado.in_(["aprobada", "preparado"]))
-    elif estado_real in estados_validos:
-        query = query.filter(Requisicion.estado == estado_real)
-    if departamento and departamento != "todos":
-        query = query.filter(Requisicion.departamento == departamento)
-    if fecha_desde_raw:
-        try:
-            fecha_desde = datetime.strptime(fecha_desde_raw, "%Y-%m-%d")
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail="Fecha desde invalida") from exc
-        query = query.filter(Requisicion.created_at >= fecha_desde)
-    if fecha_hasta_raw:
-        try:
-            fecha_hasta = datetime.strptime(fecha_hasta_raw, "%Y-%m-%d") + timedelta(days=1)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail="Fecha hasta invalida") from exc
-        query = query.filter(Requisicion.created_at < fecha_hasta)
-    if q:
-        patron = f"%{q}%"
-        query = query.filter(
-            or_(
-                Requisicion.folio.ilike(patron),
-                Requisicion.departamento.ilike(patron),
-                Requisicion.motivo_requisicion.ilike(patron),
-                Requisicion.justificacion.ilike(patron),
-                Requisicion.cliente_codigo.ilike(patron),
-                Requisicion.cliente_nombre.ilike(patron),
-                Requisicion.prokey_ref.ilike(patron),
-                Requisicion.solicitante.has(Usuario.nombre.ilike(patron)),
-                Requisicion.receptor_designado.has(Usuario.nombre.ilike(patron)),
-                Requisicion.aprobador.has(Usuario.nombre.ilike(patron)),
-                Requisicion.rechazador.has(Usuario.nombre.ilike(patron)),
-                Requisicion.preparador.has(Usuario.nombre.ilike(patron)),
-                Requisicion.entregador.has(Usuario.nombre.ilike(patron)),
-                Requisicion.liquidator.has(Usuario.nombre.ilike(patron)),
-                Requisicion.prokey_liquidator.has(Usuario.nombre.ilike(patron)),
-            )
-        )
-
     requisiciones = query.order_by(Requisicion.created_at.desc()).all()
     departamentos = [
         row[0]
@@ -3029,6 +3126,88 @@ def todas_requisiciones_view(
             departamentos=departamentos,
         ),
     )
+
+
+@app.get("/todas-requisiciones/exportar.csv")
+def todas_requisiciones_export_csv(
+    request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    ensure_all_requests_access(current_user)
+
+    q = request.query_params.get("q", "").strip()
+    estado = request.query_params.get("estado", "todos").strip().lower()
+    departamento = request.query_params.get("departamento", "todos").strip()
+    fecha_desde_raw = request.query_params.get("fecha_desde", "").strip()
+    fecha_hasta_raw = request.query_params.get("fecha_hasta", "").strip()
+
+    query = build_todas_requisiciones_query(
+        db,
+        q=q,
+        estado=estado,
+        departamento=departamento,
+        fecha_desde_raw=fecha_desde_raw,
+        fecha_hasta_raw=fecha_hasta_raw,
+    )
+    requisiciones = query.order_by(Requisicion.created_at.desc()).all()
+    headers = [
+        "Número de requisición",
+        "Estado",
+        "Solicitante",
+        "Receptor",
+        "Departamento",
+        "Motivo",
+        "Cliente",
+        "Fecha de creación",
+        "Fecha de liquidación",
+        "Gestionado por",
+        "Fecha marcada liquidada en ProKey",
+        "Referencia ProKey",
+        "Comentario de liquidación",
+    ]
+    rows = build_todas_requisiciones_export_rows(requisiciones)
+    filename = f"requisiciones_todas_{now_sv().strftime('%Y%m%d_%H%M%S')}.csv"
+    return _build_csv_download_response(filename, headers, rows)
+
+
+@app.get("/todas-requisiciones/exportar.xlsx")
+def todas_requisiciones_export_xlsx(
+    request: Request, current_user: Usuario = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    ensure_all_requests_access(current_user)
+
+    q = request.query_params.get("q", "").strip()
+    estado = request.query_params.get("estado", "todos").strip().lower()
+    departamento = request.query_params.get("departamento", "todos").strip()
+    fecha_desde_raw = request.query_params.get("fecha_desde", "").strip()
+    fecha_hasta_raw = request.query_params.get("fecha_hasta", "").strip()
+
+    query = build_todas_requisiciones_query(
+        db,
+        q=q,
+        estado=estado,
+        departamento=departamento,
+        fecha_desde_raw=fecha_desde_raw,
+        fecha_hasta_raw=fecha_hasta_raw,
+    )
+    requisiciones = query.order_by(Requisicion.created_at.desc()).all()
+    headers = [
+        "Número de requisición",
+        "Estado",
+        "Solicitante",
+        "Receptor",
+        "Departamento",
+        "Motivo",
+        "Cliente",
+        "Fecha de creación",
+        "Fecha de liquidación",
+        "Gestionado por",
+        "Fecha marcada liquidada en ProKey",
+        "Referencia ProKey",
+        "Comentario de liquidación",
+    ]
+    rows = build_todas_requisiciones_export_rows(requisiciones)
+    filename = f"requisiciones_todas_{now_sv().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return _build_xlsx_download_response(filename, [("Requisiciones", headers, rows)])
 
 
 @app.get("/aprobar/{req_id}/gestionar")

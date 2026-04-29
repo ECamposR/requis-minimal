@@ -1,5 +1,28 @@
 # Worklog (append-only)
 
+## 2026-04-29 12:00 CST-0600 | tool: Codex CLI
+- Objetivo: agregar exportacion CSV/XLSX en la vista `Todas las Requisiciones` respetando filtros activos y permisos de acceso.
+- Tareas: `REQ-198`
+- Cambios:
+  - `app/main.py`
+  - `templates/todas_requisiciones.html`
+  - `static/style.css`
+  - `tests/test_basic_flow.py`
+  - `README.md`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - La vista global ya ofrece botones `Exportar CSV` y `Exportar XLSX`.
+  - Los endpoints nuevos reutilizan la misma logica de filtros, orden y permisos de la vista.
+  - El CSV sale en UTF-8 con BOM y el XLSX se genera en una hoja `Requisiciones`.
+  - Se agrego cobertura para exportacion sin filtros, con filtro de estado, con rango/departamento y con bloqueo por rol no autorizado.
+- Validación:
+  - `python -m py_compile app/main.py tests/test_basic_flow.py`
+  - `git diff --check`
+- Próximo paso:
+  - Si el usuario lo pide, dejar listo `commit/push` y revisar si la exportacion merece un ajuste visual menor.
+
 ## 2026-03-25 10:34 CST-0600 | tool: Codex CLI
 - Objetivo: corregir el alcance del `XLSX` consolidado del monitor para que exporte datasets completos y no solo los top-N del dashboard.
 - Tareas: `REQ-196`
