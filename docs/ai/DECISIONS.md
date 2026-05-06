@@ -1,5 +1,23 @@
 # Decisions Log
 
+## ADR-009 | 2026-05-06 | Reconfirmacion por contrasena para liquidacion
+- Contexto:
+  - La liquidacion cierra cantidades operativas, diferencias y estado de la requisicion.
+  - Se necesita una accion explicita atribuible al usuario de bodega antes de ejecutar el cierre.
+- Decision:
+  - Exigir la contrasena del usuario autenticado en `POST /liquidar/{id}` antes de llamar a `ejecutar_liquidacion()`.
+  - Validar contra el hash existente del usuario con el helper de autenticacion actual.
+  - No persistir, registrar ni repoblar el valor de contrasena cuando la vista se re-renderiza por error.
+- Motivo:
+  - Reutiliza el mecanismo de credenciales ya gobernado por login sin introducir PINs paralelos ni nuevos campos de modelo.
+  - Mantiene el control en backend, por lo que llamadas directas al endpoint quedan igualmente protegidas.
+- Alternativas descartadas:
+  - Confirmacion solo en frontend: no protege llamadas directas ni automatizadas.
+  - PIN operativo de receptor: pertenece al flujo de firma de recibido, no a la autenticacion del bodeguero.
+- Impacto:
+  - Todo submit real de liquidacion debe incluir `bodega_password`.
+  - Los tests de liquidacion deben enviar una contrasena valida en los flujos exitosos.
+
 ## ADR-001 | 2026-02-10 | Auth por sesion en lugar de HTTP Basic
 - Contexto:
   - El MVP usa server-side rendering con menu, login y logout.

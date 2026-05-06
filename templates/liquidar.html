@@ -111,6 +111,11 @@
             <textarea name="liquidation_comment" rows="3" placeholder="Observaciones de cierre">{{ liquidacion_meta.get('liquidation_comment', '') if liquidacion_meta else '' }}</textarea>
         </label>
 
+        <label>
+            Confirmar con tu contrasena
+            <input type="password" name="bodega_password" required autocomplete="current-password" placeholder="Contrasena del usuario en sesion">
+        </label>
+
         <input type="hidden" name="confirmar_diferencias" value="{{ confirmar_diferencias or '0' }}">
         <div class="form-actions">
             <button type="submit" data-liquidacion-submit>

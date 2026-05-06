@@ -1,5 +1,29 @@
 # Worklog (append-only)
 
+## 2026-05-06 14:50 CST-0600 | tool: Codex CLI
+- Objetivo: exigir confirmacion por contrasena del usuario de bodega antes de liquidar una requisicion.
+- Tareas: `REQ-199`
+- Cambios:
+  - `app/main.py`
+  - `templates/liquidar.html`
+  - `tests/test_liquidacion.py`
+  - `README.md`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+  - `docs/ai/DECISIONS.md`
+- Resultado:
+  - `POST /liquidar/{id}` valida `bodega_password` contra la contrasena del usuario autenticado antes de ejecutar `ejecutar_liquidacion()`.
+  - Si la contrasena falta o es incorrecta, la vista se re-renderiza con error y conserva cantidades/comentarios capturados sin guardar cambios de estado.
+  - La plantilla de liquidacion ahora incluye un campo password obligatorio con `autocomplete=current-password`.
+  - Las pruebas de liquidacion cubren contraseña faltante, contraseña incorrecta y flujos exitosos con contraseña valida.
+- Validacion:
+  - `.venv/bin/python -m py_compile app/main.py tests/test_liquidacion.py`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py -k "liquidar_requiere_contrasena_bodega or liquidar_rechaza_contrasena_bodega_incorrecta or liquidar_sin_diferencias_no_requiere_confirmacion or liquidar_confirma_diferencias_y_procesa_cierre or liquidar_requiere_confirmacion_cuando_hay_diferencias"`
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py`
+- Proximo paso:
+  - Preparar commit/push si el usuario lo solicita.
+
 ## 2026-04-29 12:00 CST-0600 | tool: Codex CLI
 - Objetivo: agregar exportacion CSV/XLSX en la vista `Todas las Requisiciones` respetando filtros activos y permisos de acceso.
 - Tareas: `REQ-198`

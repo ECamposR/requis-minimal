@@ -3865,6 +3865,7 @@ async def liquidar_guardar(
     form_data = await request.form()
     prokey_ref = str(form_data.get("prokey_ref", "")).strip() or None
     liquidation_comment = str(form_data.get("liquidation_comment", "")).strip() or None
+    bodega_password = str(form_data.get("bodega_password", "")).strip()
     confirmar_diferencias = str(form_data.get("confirmar_diferencias", "")).strip().lower() in {"1", "true", "on", "yes"}
     liquidacion_meta = {
         "prokey_ref": str(form_data.get("prokey_ref", "")).strip(),
@@ -3990,7 +3991,12 @@ async def liquidar_guardar(
 
     diferencias_liquidacion = calcular_diferencias_liquidacion(req, items_data)
     has_diferencias = bool(diferencias_liquidacion)
+    difference_warning_message = None
     if has_diferencias:
+        difference_warning_message = (
+            f"La liquidacion presenta {len(diferencias_liquidacion)} diferencias respecto a lo esperado. "
+            "Revisa los datos y confirma si deseas continuar."
+        )
         logger.debug(
             "Liquidacion detecta diferencias de retorno",
             extra={"req_id": req.id, "difference_count": len(diferencias_liquidacion)},
@@ -4008,15 +4014,36 @@ async def liquidar_guardar(
                     liquidacion_values=liquidacion_values,
                     liquidacion_meta=liquidacion_meta,
                     difference_confirmation_required=True,
-                    difference_warning_message=(
-                        f"La liquidacion presenta {len(diferencias_liquidacion)} diferencias respecto a lo esperado. "
-                        "Revisa los datos y confirma si deseas continuar."
-                    ),
+                    difference_warning_message=difference_warning_message,
                     difference_alerts=diferencias_liquidacion,
                     confirmar_diferencias="1",
                 ),
                 status_code=200,
             )
+
+    if not bodega_password or not verify_password(bodega_password, current_user.password):
+        attach_catalog_item_defaults(req.items, db)
+        return templates.TemplateResponse(
+            "liquidar.html",
+            template_context(
+                request,
+                current_user,
+                req=req,
+                error_message=(
+                    "Debes confirmar la liquidacion con tu contrasena"
+                    if not bodega_password
+                    else "La contrasena no es correcta"
+                ),
+                item_incompletos=[],
+                liquidacion_values=liquidacion_values,
+                liquidacion_meta=liquidacion_meta,
+                difference_confirmation_required=has_diferencias,
+                difference_warning_message=difference_warning_message,
+                difference_alerts=diferencias_liquidacion,
+                confirmar_diferencias="1" if confirmar_diferencias else "0",
+            ),
+            status_code=200,
+        )
 
     try:
         ejecutar_liquidacion(
