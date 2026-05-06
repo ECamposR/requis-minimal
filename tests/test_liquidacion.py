@@ -281,6 +281,8 @@ async def test_liquidar_flujo_feliz_sin_alertas(db_session: Session):
                 f"mode_{item.id}": "CONSUMIBLE",
                 f"note_{item.id}": "",
                 "prokey_ref": "PK-001",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
                 "liquidation_comment": "",
             }
         ),
@@ -310,6 +312,8 @@ async def test_liquidar_con_faltante(db_session: Session):
                 f"mode_{item.id}": "RETORNABLE",
                 f"note_{item.id}": "",
                 "prokey_ref": "PK-002",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
                 "liquidation_comment": "",
             }
         ),
@@ -336,6 +340,8 @@ async def test_liquidar_con_retorno_extra(db_session: Session):
                 f"mode_{item.id}": "RETORNABLE",
                 f"note_{item.id}": "",
                 "prokey_ref": "PK-003",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
                 "liquidation_comment": "",
             }
         ),
@@ -365,6 +371,8 @@ async def test_liquidar_salida_sin_soporte(db_session: Session):
                 f"mode_{item.id}": "RETORNABLE",
                 f"note_{item.id}": "",
                 "prokey_ref": "PK-004",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
                 "liquidation_comment": "",
             }
         ),
@@ -540,6 +548,8 @@ async def test_detalle_liquidada_instalacion_inicial_retornable_no_marca_diferen
                 f"qty_not_used_{item.id}": "0",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -568,6 +578,8 @@ async def test_liquidar_no_bloquea_por_delta(db_session: Session):
                 f"qty_left_{item.id}": "0",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "PK-005",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -592,6 +604,8 @@ async def test_liquidar_permite_prokey_ref_vacio(db_session: Session):
                 f"qty_left_{item.id}": "9",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -618,6 +632,8 @@ async def test_no_permite_liquidar_item_incompleto_entregado_gt_0(db_session: Se
                 f"qty_not_used_{item.id}": "0",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -645,6 +661,8 @@ async def test_si_permite_cuando_delivered_es_0(db_session: Session):
                 f"qty_not_used_{item.id}": "0",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -653,7 +671,7 @@ async def test_si_permite_cuando_delivered_es_0(db_session: Session):
 
     assert response.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "pendiente_prokey"
+    assert req.estado == "finalizada_sin_prokey"
 
 
 @pytest.mark.anyio
@@ -671,6 +689,8 @@ async def test_bloquea_si_no_cubre_entregado_retornable(db_session: Session):
                 f"qty_not_used_{item.id}": "0",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -697,6 +717,8 @@ async def test_bloquea_si_no_cubre_entregado_consumible(db_session: Session):
                 f"qty_not_used_{item.id}": "0",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -723,6 +745,7 @@ async def test_permite_consumible_con_diferencia_si_cobertura_ok(db_session: Ses
                 f"qty_not_used_{item.id}": "3",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
                 "confirmar_diferencias": "1",
             }
         ),
@@ -770,6 +793,7 @@ async def test_liquidar_requiere_confirmacion_cuando_hay_diferencias(db_session:
                 f"qty_not_used_{item.id}": "2",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
                 "liquidation_comment": "Con diferencias",
             }
         ),
@@ -801,6 +825,8 @@ async def test_liquidar_sin_diferencias_no_requiere_confirmacion(db_session: Ses
                 f"qty_not_used_{item.id}": "4",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -810,6 +836,63 @@ async def test_liquidar_sin_diferencias_no_requiere_confirmacion(db_session: Ses
     assert response.status_code == 303
     db_session.refresh(req)
     assert req.estado == "pendiente_prokey"
+
+
+@pytest.mark.anyio
+async def test_liquidar_requiere_contrasena_bodega(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "4",
+                f"qty_used_{item.id}": "6",
+                f"qty_not_used_{item.id}": "4",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 200
+    assert response.context["error_message"] == "Debes confirmar la liquidacion con tu contrasena"
+    assert response.context["liquidacion_values"][item.id]["qty_used"] == "6"
+    assert "bodega_password" not in response.context["liquidacion_meta"]
+    db_session.refresh(req)
+    assert req.estado == "entregada"
+
+
+@pytest.mark.anyio
+async def test_liquidar_rechaza_contrasena_bodega_incorrecta(db_session: Session):
+    req = create_req_entregada(db_session, cantidad=10)
+    item = get_item(db_session, req)
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    response = await liquidar_guardar(
+        req.id,
+        DummyRequest(
+            {
+                f"qty_returned_{item.id}": "4",
+                f"qty_used_{item.id}": "6",
+                f"qty_not_used_{item.id}": "4",
+                f"mode_{item.id}": "CONSUMIBLE",
+                "prokey_ref": "",
+                "bodega_password": "incorrecta",
+            }
+        ),
+        current_user=bodega,
+        db=db_session,
+    )
+
+    assert response.status_code == 200
+    assert response.context["error_message"] == "La contrasena no es correcta"
+    db_session.refresh(req)
+    assert req.estado == "entregada"
 
 
 @pytest.mark.anyio
@@ -827,8 +910,9 @@ async def test_liquidar_confirma_diferencias_y_procesa_cierre(db_session: Sessio
                 f"qty_not_used_{item.id}": "2",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "",
-                "liquidation_comment": "Con diferencias",
+                "bodega_password": "pass123",
                 "confirmar_diferencias": "1",
+                "liquidation_comment": "Con diferencias",
             }
         ),
         current_user=bodega,
@@ -855,6 +939,7 @@ async def test_permite_consumible_faltante_totalmente_no_usado(db_session: Sessi
                 f"qty_not_used_{item.id}": "15",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
                 "confirmar_diferencias": "1",
             }
         ),
@@ -882,6 +967,8 @@ async def test_permite_retornable_con_retorno_incompleto_pero_cobertura_ok(db_se
                 f"qty_not_used_{item.id}": "2",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -910,6 +997,8 @@ async def test_permite_retornable_con_retorno_extra_no_bloquea_y_alerta(db_sessi
                 f"qty_not_used_{item.id}": "0",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -939,6 +1028,8 @@ async def test_liquidacion_rechaza_decimales_para_item_no_habilitado(db_session:
                 f"qty_not_used_{item.id}": "2",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -969,6 +1060,8 @@ async def test_liquidacion_permite_decimales_para_concentrado_habilitado(db_sess
                 f"qty_not_used_{item.id}": "0.5",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -996,6 +1089,8 @@ async def test_liquidar_inmutable_no_reliquidar(db_session: Session):
                 f"qty_left_{item.id}": "9",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "PK-006",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1013,6 +1108,8 @@ async def test_liquidar_inmutable_no_reliquidar(db_session: Session):
                 f"qty_used_{item.id}": "10",
                 f"qty_left_{item.id}": "0",
                 "prokey_ref": "PK-CHANGED",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1020,7 +1117,7 @@ async def test_liquidar_inmutable_no_reliquidar(db_session: Session):
     )
     assert second.status_code == 303
     db_session.refresh(req)
-    assert req.estado == "finalizada_sin_prokey"
+    assert req.estado == "pendiente_prokey"
     assert req.prokey_ref == first_ref
 
 
@@ -1038,6 +1135,8 @@ async def test_liquidar_rechaza_rol_no_permitido(db_session: Session):
                     f"qty_used_{item.id}": "1",
                     f"qty_left_{item.id}": "1",
                     "prokey_ref": "PK-007",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
                 }
             ),
             current_user=user,
@@ -1063,6 +1162,8 @@ async def test_detalle_liquidada_incluye_campos(db_session: Session):
                 f"mode_{item.id}": "RETORNABLE",
                 f"note_{item.id}": "Retiro de equipo",
                 "prokey_ref": "PK-DET-01",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
                 "liquidation_comment": "Cierre liquidacion",
             }
         ),
@@ -1099,6 +1200,8 @@ async def test_api_detalle_alertas_null_se_convierte_a_lista_vacia(db_session: S
                 f"qty_not_used_{item.id}": "2",
                 f"mode_{item.id}": "CONSUMIBLE",
                 "prokey_ref": "PK-DET-NULL-01",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1127,6 +1230,8 @@ async def test_api_detalle_incluye_retorno_incompleto(db_session: Session):
                 f"qty_not_used_{item.id}": "1",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "PK-DET-INC-01",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1155,6 +1260,8 @@ async def test_detalle_liquidada_campos_derivados(db_session: Session):
                 f"qty_left_{item.id}": "6",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "PK-DET-02",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1181,6 +1288,8 @@ async def test_detalle_liquidada_ingreso_pk_excluye_no_usado_normal(db_session: 
                 f"qty_left_{item.id}": "2",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "PK-DET-02B",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1210,6 +1319,8 @@ async def test_detalle_liquidada_instalacion_inicial_no_genera_ingreso_pk(db_ses
                 f"qty_left_{item.id}": "2",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "PK-DET-02C",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1236,6 +1347,8 @@ async def test_liquidacion_todo_no_usado_marca_prokey_no_aplica(db_session: Sess
                 f"qty_left_{item.id}": "3",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1265,6 +1378,8 @@ async def test_liquidada_es_solo_lectura(db_session: Session):
                 f"qty_left_{item.id}": "5",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "PK-DET-03",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1281,6 +1396,8 @@ async def test_liquidada_es_solo_lectura(db_session: Session):
                 f"qty_used_{item.id}": "8",
                 f"qty_left_{item.id}": "0",
                 "prokey_ref": "PK-NEW",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1320,6 +1437,8 @@ async def test_update_prokey_ref_permite_admin(db_session: Session):
                 f"qty_left_{item.id}": "3",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1360,6 +1479,8 @@ async def test_update_prokey_ref_permite_propietario(db_session: Session):
                 f"qty_left_{item.id}": "2",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1391,6 +1512,8 @@ async def test_update_prokey_ref_permite_logistica_y_registra_actor(db_session: 
                 f"qty_left_{item.id}": "2",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1424,6 +1547,8 @@ async def test_update_prokey_ref_bloquea_no_propietario(db_session: Session):
                 f"qty_left_{item.id}": "2",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1470,6 +1595,8 @@ async def test_update_prokey_ref_no_permite_vacio(db_session: Session):
                 f"qty_left_{item.id}": "2",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
@@ -1502,6 +1629,8 @@ async def test_api_detalle_refleja_prokey_ref_actualizado(db_session: Session):
                 f"qty_left_{item.id}": "2",
                 f"mode_{item.id}": "RETORNABLE",
                 "prokey_ref": "",
+                "bodega_password": "pass123",
+                "confirmar_diferencias": "1",
             }
         ),
         current_user=bodega,
