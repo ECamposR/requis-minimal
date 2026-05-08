@@ -1,5 +1,65 @@
 # Worklog (append-only)
 
+## 2026-05-08 00:40 CST-0600 | tool: Codex CLI
+- Objetivo: corregir la visibilidad intermitente del boton `Liquidar` en el modal de detalle de bodega.
+- Tareas: `REQ-200`
+- Cambios:
+  - `static/app.js`
+  - `templates/bodega.html`
+  - `templates/todas_requisiciones.html`
+  - `templates/aprobar.html`
+  - `templates/crear_requisicion.html`
+  - `templates/mis_requisiciones.html`
+  - `templates/editar_requisicion.html`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El CTA `Liquidar` ahora se calcula en frontend con un fallback directo por `estado` + `delivery_result` y sigue usando la URL entregada por backend cuando esta disponible.
+  - Se elevo la version del bundle a `app.js?v=8.0` en todas las plantillas que lo cargan para romper la caché del navegador.
+- Validacion:
+  - `node --check static/app.js`
+  - `git diff --check`
+- Proximo paso:
+  - Commit/push de la correccion una vez validada la visibilidad en navegador.
+
+## 2026-05-08 00:00 CST-0600 | tool: Codex CLI
+- Objetivo: mostrar un boton `Liquidar` en el modal de detalle cuando la requisicion sea elegible para cierre.
+- Tareas: `REQ-200`
+- Cambios:
+  - `app/main.py`
+  - `static/app.js`
+  - `static/style.css`
+  - `tests/test_basic_flow.py`
+  - `docs/ai/TASKS.md`
+  - `docs/ai/HANDOFF.md`
+  - `docs/ai/WORKLOG.md`
+- Resultado:
+  - El endpoint de detalle ahora expone `puede_liquidar` y `liquidar_url` calculados con el helper de elegibilidad existente.
+  - El modal de detalle muestra el CTA `Liquidar` junto a `Ver PDF` solo para roles y estados habilitados.
+  - Se agrego estilo propio para el nuevo boton dentro del header del modal.
+  - Las pruebas de detalle validan la bandera positiva para bodega y la ausencia de liquidacion para un rol sin permiso.
+- Validacion:
+  - `.venv/bin/python -m pytest -q tests/test_liquidacion.py`
+  - `node --check static/app.js`
+  - `git diff --check`
+  - La prueba puntual de `tests/test_basic_flow.py::test_usuario_sin_permiso_no_ve_liquidar_en_detalle` quedo intentada pero no se completo en la ventana de ejecucion; la cobertura agregada sigue en el repo para correrse aparte si se desea.
+- Proximo paso:
+  - Si hace falta, correr la prueba puntual de `basic_flow` por separado para verificar la nueva bandera del modal.
+
+## 2026-05-08 00:20 CST-0600 | tool: Codex CLI
+- Objetivo: romper la caché de `app.js` para que el modal de detalle cargue el boton `Liquidar` actualizado.
+- Tareas: `REQ-200`
+- Cambios:
+  - `templates/bodega.html`
+  - `templates/todas_requisiciones.html`
+  - `templates/aprobar.html`
+  - `templates/crear_requisicion.html`
+  - `templates/mis_requisiciones.html`
+  - `templates/editar_requisicion.html`
+- Resultado:
+  - Se actualizo la version del bundle a `app.js?v=6.0` en todas las vistas que lo cargan para evitar que el navegador sirva una copia vieja sin el CTA.
+- Validacion:
+  - Pendiente de recarga dura del navegador por parte del usuario.
+
 ## 2026-05-06 14:50 CST-0600 | tool: Codex CLI
 - Objetivo: exigir confirmacion por contrasena del usuario de bodega antes de liquidar una requisicion.
 - Tareas: `REQ-199`

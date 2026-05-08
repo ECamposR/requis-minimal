@@ -519,7 +519,9 @@ function verDetalle(id) {
             if (headerTitle) headerTitle.textContent = "Detalle";
 
             const items = Array.isArray(data.items) ? data.items : [];
-            const isLiquidada = ["liquidada", "pendiente_prokey", "finalizada_sin_prokey", "liquidada_en_prokey"].includes(data.estado);
+            const estado = String(data.estado || "").trim().toLowerCase();
+            const deliveryResult = String(data.delivery_result || "").trim().toLowerCase();
+            const isLiquidada = ["liquidada", "pendiente_prokey", "finalizada_sin_prokey", "liquidada_en_prokey"].includes(estado);
             const showDelivered = items.some((i) => i.cantidad_entregada !== null && i.cantidad_entregada !== undefined);
             const itemEmptyColspan = showDelivered ? 3 : 2;
 
@@ -687,10 +689,15 @@ function verDetalle(id) {
                         </table>
                     </div>
                 </section>`;
-            const isPdfEnabled = ["aprobada", "preparado", "entregada", "no_entregada", "liquidada", "pendiente_prokey", "finalizada_sin_prokey", "liquidada_en_prokey"].includes(data.estado) && !!data.pdf_url;
+            const isPdfEnabled = ["aprobada", "preparado", "entregada", "no_entregada", "liquidada", "pendiente_prokey", "finalizada_sin_prokey", "liquidada_en_prokey"].includes(estado) && !!data.pdf_url;
             const pdfAction = isPdfEnabled
                 ? `<a class="detail-action-btn detail-action-btn--pdf" role="button" href="${escapeHtml(data.pdf_url)}" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>Ver PDF</a>`
-                : `<button type="button" class="detail-action-btn detail-action-btn--disabled" disabled title="${data.estado === "pendiente" ? "Disponible al aprobar" : "No disponible para este estado"}"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>Ver PDF</button>`;
+                : `<button type="button" class="detail-action-btn detail-action-btn--disabled" disabled title="${estado === "pendiente" ? "Disponible al aprobar" : "No disponible para este estado"}"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>Ver PDF</button>`;
+            const canLiquidar = Boolean(data.puede_liquidar) || (estado === "entregada" && ["completa", "parcial"].includes(deliveryResult));
+            const liquidarHref = data.liquidar_url || (canLiquidar && data.id ? `/liquidar/${data.id}` : "");
+            const liquidarAction = canLiquidar && liquidarHref
+                ? `<a class="detail-action-btn detail-action-btn--liquidar" role="button" href="${escapeHtml(liquidarHref)}"><span class="material-symbols-outlined" aria-hidden="true">inventory</span>Liquidar</a>`
+                : "";
             const otherCommentItems = [
                 ["Aprobación", data.approval_comment || "-"],
                 ["Razón rechazo", data.rejection_reason || "-"],
@@ -733,6 +740,7 @@ function verDetalle(id) {
                             </div>
                         </div>
                         <div class="detail-dashboard-actions">
+                            ${liquidarAction}
                             ${pdfAction}
                         </div>
                     </section>
