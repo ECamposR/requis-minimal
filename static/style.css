@@ -1881,6 +1881,16 @@ body:has(form.req-create-form) .form-actions {
     box-shadow: 0 12px 26px rgba(11, 79, 154, 0.18);
 }
 
+#modal-detalle.modal--detail-dashboard .detail-action-btn--liquidar {
+    background: linear-gradient(180deg, #d96d08 0%, #b85400 100%);
+    color: #ffffff;
+}
+
+#modal-detalle.modal--detail-dashboard .detail-action-btn--liquidar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px rgba(185, 84, 0, 0.18);
+}
+
 #modal-detalle.modal--detail-dashboard .detail-action-btn--disabled {
     background: #eef3f8;
     color: #70829c;

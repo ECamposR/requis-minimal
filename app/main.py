@@ -5148,6 +5148,8 @@ def descargar_pdf(req_id: int, db: Session = Depends(get_db), current_user: Usua
         "recibido_por_nombre": req.recibido_por.nombre if req.recibido_por else None,
         "prokey_ref": req.prokey_ref,
         "prokey_not_applicable": req.estado in ("no_entregada", "finalizada_sin_prokey") or bool(getattr(req, "prokey_no_aplica", False)),
+        "puede_liquidar": puede_liquidar(req, current_user),
+        "liquidar_url": f"/liquidar/{req.id}" if puede_liquidar(req, current_user) else None,
         "justificacion": req.justificacion,
         "comentario_liquidacion": req.liquidation_comment,
         "items": items_data,

@@ -2709,6 +2709,8 @@ def test_detalle_conserva_receptor_designado_y_receptor_real(client: TestClient,
     assert payload["recibido_por"] == user.nombre
     assert payload["recibido_por_detalle"]["nombre"] == user.nombre
     assert payload["recibido_por_detalle"]["rol"] == user.rol
+    assert payload["puede_liquidar"] is True
+    assert payload["liquidar_url"] == f"/liquidar/{req.id}"
 
 
 def test_bodega_puede_marcar_entrega_parcial(client: TestClient, db_session: Session):
@@ -3116,6 +3118,36 @@ def test_aprobador_ve_historial_completo_en_aprobar(client: TestClient, db_sessi
     assert "REQ-0103" not in html
     assert "REQ-0104" not in html
     assert "pendiente de aprobar" in html
+
+
+def test_usuario_sin_permiso_no_ve_liquidar_en_detalle(client: TestClient, db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    bodega = db_session.query(Usuario).filter(Usuario.username == "bodega.1").first()
+
+    req = Requisicion(
+        folio="REQ-0106",
+        solicitante_id=user.id,
+        departamento="Operaciones",
+        estado="entregada",
+        justificacion="Detalle sin permiso de liquidar",
+        approved_by=aprobador.id,
+        approved_at=datetime.now(),
+        delivered_by=bodega.id,
+        delivered_at=datetime.now(),
+        delivered_to="Usuario Ops",
+        delivery_result="completa",
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    login(client, "user.ops", "pass123")
+    response = client.get(f"/api/requisiciones/{req.id}")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["puede_liquidar"] is False
+    assert payload["liquidar_url"] is None
 
 
 def test_logistica_ve_todas_las_requisiciones_pero_no_aprueba(client: TestClient, db_session: Session):
