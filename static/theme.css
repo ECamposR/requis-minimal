@@ -2690,6 +2690,10 @@ body:has(form.req-create-form) .page-header p {
     display: none;
 }
 
+.bodega-partial-table-panel .bodega-partial-table {
+    width: 100%;
+}
+
 @media (max-width: 760px) {
     .bodega-table-panel {
         display: none;
@@ -3039,6 +3043,130 @@ body:has(form.req-create-form) .page-header p {
 
     .bodega-manage-actions {
         margin-bottom: 0;
+    }
+
+    .bodega-partial-panel {
+        padding: 0.95rem;
+    }
+
+    .bodega-partial-meta {
+        margin-bottom: 0.45rem;
+    }
+
+    .bodega-partial-error {
+        margin: 0.65rem 0 0.9rem;
+    }
+
+    .bodega-partial-form {
+        display: grid;
+        gap: 0.85rem;
+    }
+
+    .bodega-partial-table-panel {
+        overflow: visible;
+    }
+
+    .bodega-partial-table-panel .bodega-partial-table,
+    .bodega-partial-table-panel .bodega-partial-table tbody,
+    .bodega-partial-table-panel .bodega-partial-table tr,
+    .bodega-partial-table-panel .bodega-partial-table td,
+    .bodega-partial-table-panel .bodega-partial-table th {
+        display: block;
+        width: 100%;
+    }
+
+    .bodega-partial-table-panel .bodega-partial-table thead {
+        display: none;
+    }
+
+    .bodega-partial-table-panel .bodega-partial-table {
+        border-collapse: separate;
+        border-spacing: 0 0.8rem;
+    }
+
+    .bodega-partial-table-panel .bodega-partial-row {
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.96));
+        border: 1px solid rgba(80, 126, 183, 0.26);
+        border-radius: 1rem;
+        box-shadow: 0 12px 28px rgba(15, 35, 65, 0.1);
+        padding: 0.85rem;
+    }
+
+    .bodega-partial-table-panel .bodega-partial-cell {
+        border: 0;
+        padding: 0;
+    }
+
+    .bodega-partial-table-panel .bodega-partial-cell + .bodega-partial-cell {
+        margin-top: 0.7rem;
+    }
+
+    .bodega-partial-table-panel .bodega-partial-cell::before {
+        color: #4f6789;
+        content: attr(data-label);
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.045em;
+        margin-bottom: 0.18rem;
+        text-transform: uppercase;
+    }
+
+    .bodega-partial-table-panel .bodega-partial-cell--item .bodega-partial-item-name {
+        color: #16233f;
+        display: block;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .bodega-partial-table-panel .bodega-partial-cell--delivered input {
+        width: 100%;
+    }
+
+    .bodega-partial-field {
+        background: rgba(255, 255, 255, 0.68);
+        border: 1px solid rgba(91, 132, 184, 0.18);
+        border-radius: 0.82rem;
+        padding: 0.68rem;
+    }
+
+    .bodega-partial-field input,
+    .bodega-partial-field select {
+        margin-top: 0.35rem;
+    }
+
+    .bodega-partial-inline-action {
+        margin: 0;
+    }
+
+    .bodega-partial-change-actions {
+        display: grid;
+        gap: 0.55rem;
+        grid-template-columns: 1fr;
+    }
+
+    .bodega-partial-change-actions[hidden] {
+        display: none;
+    }
+
+    .bodega-partial-warning {
+        margin: 0;
+    }
+
+    .bodega-partial-actions {
+        display: grid;
+        gap: 0.6rem;
+        grid-template-columns: 1fr;
+    }
+
+    .bodega-partial-actions button,
+    .bodega-partial-actions a[role="button"] {
+        align-items: center;
+        display: inline-flex;
+        justify-content: center;
+        margin: 0;
+        min-height: 2.9rem;
+        width: 100%;
     }
 }
 

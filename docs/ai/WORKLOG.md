@@ -1,5 +1,22 @@
 # Worklog (append-only)
 
+## 2026-05-22 02:45 CST-0600 | tool: Codex CLI
+- Objetivo: implementar la primera iteración móvil de `bodega_entrega_parcial.html` usando una sola fuente de inputs.
+- Tareas: `REQ-208`, `REQ-213`
+- Cambios:
+  - `templates/bodega_entrega_parcial.html`: se agregaron clases y `data-label` para que la única tabla funcional se presente como cards en móvil.
+  - `static/theme.css`: se añadieron estilos scoped dentro de `EPIC-MOBILE-BODEGA` para la vista móvil de entrega parcial.
+  - `docs/ai/TASKS.md` y `docs/ai/HANDOFF.md`: se actualizó el estado de la vista de entrega parcial móvil.
+- Restricciones:
+  - No se cambió lógica de negocio.
+  - No se cambiaron endpoints, permisos ni nombres de campos.
+  - No se modificó el JS embebido.
+  - No se duplicaron inputs `entregado_{{ item.id }}` ni se agregó una segunda fuente de inputs.
+  - No se tocaron `app/`, `static/app.js`, `static/style.css`, pruebas ni otras vistas de bodega.
+- Validación:
+  - `git diff --check` OK.
+  - `.venv/bin/python -m pytest -q tests/test_basic_flow.py` no produjo salida antes del timeout de 180s; resultado no concluyente por ejecución local.
+
 ## 2026-05-22 02:15 CST-0600 | tool: Codex CLI
 - Objetivo: implementar la primera iteración móvil de `bodega_gestionar.html` sin alterar el formulario ni su JS embebido.
 - Tareas: `REQ-207`, `REQ-212`
