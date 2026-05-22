@@ -5,6 +5,9 @@
 - La app se trata como `producción interna controlada v1.x`.
 - Durante la fase documental no se tocará lógica de negocio.
 - El siguiente frente funcional previsto es `/bodega` móvil.
+- Alcance del frente: `/bodega`, `bodega_preparar.html`, `bodega_gestionar.html`, `bodega_entrega_parcial.html`; `liquidar.html` queda fuera de la primera ronda salvo decisión posterior.
+- Restricciones del frente: no cambiar lógica de negocio, endpoints, permisos, nombres de campos, infraestructura ni ramas históricas; Codex ejecuta, no decide producto.
+- Estrategia: cambios pequeños, documentación en `docs/ai` por tarea y escritorio sin regresiones.
 - La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
 - Rama activa: `fixes`, destinada a fixes funcionales y de permisos sobre `main`.

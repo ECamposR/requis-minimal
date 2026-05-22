@@ -1,5 +1,31 @@
 # Worklog (append-only)
 
+## 2026-05-22 00:45 CST-0600 | tool: Codex CLI
+- Objetivo: higiene del working tree antes de iniciar Fase 1 de UX móvil para bodega.
+- Acción:
+  - Se movieron fuera del repo los artefactos locales no versionables que sí pudieron trasladarse.
+  - `pdf_generator.py` quedó fuera del repo por parecer una copia local divergente de `app/pdf_generator.py`.
+- Restricción:
+  - No se tocó código funcional.
+  - No se tocaron templates, CSS, JS ni pruebas.
+  - No se modificó `.gitignore`.
+- Pendiente:
+  - `.codex` no pudo moverse porque está en uso por el sistema; queda para revisión humana si se quiere limpiar totalmente el tree.
+
+## 2026-05-22 00:30 CST-0600 | tool: Codex CLI
+- Objetivo: registrar el inicio formal del frente funcional de UX móvil para bodega en la gobernanza IA.
+- Tareas: `REQ-210`, `REQ-211`, `REQ-212`, `REQ-213`, `REQ-214`
+- Alcance:
+  - Priorizar `/bodega` y sus vistas operativas relacionadas.
+  - Mantener fuera de la primera ronda `liquidar.html` salvo bloqueo real.
+  - Conservar lógica de negocio, endpoints, permisos y nombres de campos.
+- Estrategia:
+  - Cambios pequeños.
+  - Documentación de continuidad por tarea.
+  - Escritorio sin regresiones.
+- Proximo paso:
+  - Iniciar la adaptación móvil por `/bodega` o la base CSS móvil según se decida después de la auditoría visual.
+
 ## 2026-05-22 00:00 CST-0600 | tool: Codex CLI
 - Objetivo: abrir el frente documental y de UX móvil de bodega sobre la base de la documentación de estado actual, roadmap y blueprint ya creada.
 - Tareas: `REQ-201`, `REQ-202`, `REQ-203`, `REQ-204`, `REQ-205`, `REQ-206`, `REQ-207`, `REQ-208`, `REQ-209`

@@ -3,6 +3,11 @@
 Estados: `todo` | `in_progress` | `done` | `blocked`
 
 ## Gobernanza / Continuidad
+- `REQ-210` | `todo` | Iniciar la base de UX móvil para bodega sin tocar lógica de negocio, empezando por `/bodega`.
+- `REQ-211` | `todo` | Adaptar `bodega_preparar.html` a un flujo móvil simple y vertical.
+- `REQ-212` | `todo` | Adaptar `bodega_gestionar.html` a un flujo móvil simple y vertical.
+- `REQ-213` | `todo` | Adaptar `bodega_entrega_parcial.html` a un flujo móvil simple y vertical.
+- `REQ-214` | `todo` | Revisar `liquidar.html` solo si bloquea el uso móvil de bodega en una segunda ronda.
 - `REQ-201` | `todo` | Revisar y alinear `README.md` con el estado actual de producción interna controlada v1.x y la nueva prioridad documental.
 - `REQ-202` | `todo` | Crear y validar `docs/ESTADO_ACTUAL.md` como referencia breve del estado real del sistema.
 - `REQ-203` | `todo` | Crear y validar `docs/ROADMAP.md` como roadmap operativo corto centrado en documentación y UX móvil de bodega.
