@@ -3,7 +3,7 @@
 Estados: `todo` | `in_progress` | `done` | `blocked`
 
 ## Gobernanza / Continuidad
-- `REQ-210` | `todo` | Iniciar la base de UX móvil para bodega sin tocar lógica de negocio, empezando por `/bodega`.
+- `REQ-210` | `done` | Iniciar la base de UX móvil para bodega sin tocar lógica de negocio, empezando por `/bodega`.
 - `REQ-211` | `todo` | Adaptar `bodega_preparar.html` a un flujo móvil simple y vertical.
 - `REQ-212` | `todo` | Adaptar `bodega_gestionar.html` a un flujo móvil simple y vertical.
 - `REQ-213` | `todo` | Adaptar `bodega_entrega_parcial.html` a un flujo móvil simple y vertical.
@@ -12,7 +12,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-202` | `todo` | Crear y validar `docs/ESTADO_ACTUAL.md` como referencia breve del estado real del sistema.
 - `REQ-203` | `todo` | Crear y validar `docs/ROADMAP.md` como roadmap operativo corto centrado en documentación y UX móvil de bodega.
 - `REQ-204` | `todo` | Crear y validar `docs/MOBILE_BODEGA_BLUEPRINT.md` como blueprint funcional para la adaptación móvil de bodega.
-- `REQ-205` | `todo` | Implementar cards móviles en `/bodega` sin cambiar la lógica de negocio ni los endpoints.
+- `REQ-205` | `done` | Implementar cards móviles en `/bodega` sin cambiar la lógica de negocio ni los endpoints.
 - `REQ-206` | `todo` | Adaptar la vista de preparar requisición para uso móvil de bodega.
 - `REQ-207` | `todo` | Adaptar la vista de gestionar entrega para uso móvil de bodega.
 - `REQ-208` | `todo` | Adaptar la vista de entrega parcial para uso móvil de bodega.

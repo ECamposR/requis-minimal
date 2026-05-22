@@ -1,5 +1,20 @@
 # Worklog (append-only)
 
+## 2026-05-22 01:20 CST-0600 | tool: Codex CLI
+- Objetivo: implementar la primera iteración móvil de `/bodega` con cards, manteniendo la tabla actual para escritorio.
+- Tareas: `REQ-205`, `REQ-210`
+- Cambios:
+  - `templates/bodega.html`: se agregaron cards móviles para pendientes e historial, reutilizando los mismos datos, URLs, formularios POST y `verDetalle(req.id)`.
+  - `static/theme.css`: se agregó CSS scoped bajo `EPIC-MOBILE-BODEGA` para mostrar cards en pantallas pequeñas y conservar tabla en escritorio.
+  - `docs/ai/TASKS.md` y `docs/ai/HANDOFF.md`: se actualizó el estado del frente `/bodega` móvil.
+- Restricciones:
+  - No se cambió lógica de negocio.
+  - No se cambiaron endpoints, permisos ni nombres de campos.
+  - No se tocaron `app/`, `static/app.js`, `static/style.css`, pruebas ni otras vistas de bodega.
+- Validación:
+  - `pytest -q tests/test_basic_flow.py` no completó colección con Python del sistema por dependencia local faltante (`sqlalchemy`).
+  - `.venv/bin/python -m pytest -q tests/test_basic_flow.py` quedó sin salida dentro de la ventana de ejecución local y se detuvo sin resultado concluyente.
+
 ## 2026-05-22 00:45 CST-0600 | tool: Codex CLI
 - Objetivo: higiene del working tree antes de iniciar Fase 1 de UX móvil para bodega.
 - Acción:

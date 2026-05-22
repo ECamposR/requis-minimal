@@ -47,7 +47,7 @@
 {% if filtro_vista == 'pendientes' %}
 <h3>Pendientes de Procesar</h3>
 {% if pendientes_entrega %}
-<section class="panel view-panel table-wrap">
+<section class="panel view-panel table-wrap bodega-table-panel">
 <table class="table-compact bodega-requests-table">
     <thead>
     <tr>
@@ -123,6 +123,90 @@
     </tbody>
 </table>
 </section>
+<section class="bodega-mobile-cards" aria-label="Requisiciones pendientes de procesar">
+    {% for req in pendientes_entrega %}
+    <article class="bodega-mobile-card {% if req.is_delayed_sla %}bodega-mobile-card--alert{% endif %}">
+        <header class="bodega-mobile-card__header">
+            <div>
+                <span class="bodega-mobile-card__label">Folio</span>
+                <strong class="bodega-mobile-card__folio">
+                    {% if req.is_delayed_sla %}
+                    <svg class="icon-warning" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+                    {% endif %}
+                    {{ req.folio }}
+                </strong>
+            </div>
+            <div class="bodega-mobile-card__status">
+                {{ ui.status_badge(req.estado) }}
+            </div>
+        </header>
+
+        <dl class="bodega-mobile-card__grid">
+            <div>
+                <dt>Cliente</dt>
+                <dd>{{ req.cliente_nombre or req.cliente_codigo or '-' }}</dd>
+            </div>
+            <div>
+                <dt>Solicitante</dt>
+                <dd>{{ req.solicitante.nombre if req.solicitante else '-' }}</dd>
+            </div>
+            <div>
+                <dt>Departamento</dt>
+                <dd>{{ req.departamento }}</dd>
+            </div>
+            <div>
+                <dt>Fecha clave</dt>
+                <dd>
+                    {% if req.estado == 'aprobada' %}
+                    {{ req.approved_at | fmt_dt }}
+                    {% elif req.estado == 'preparado' %}
+                    {{ req.prepared_at | fmt_dt }}
+                    {% else %}
+                    {{ req.delivered_at | fmt_dt }}
+                    {% endif %}
+                    {% if req.is_delayed_sla %}
+                    <span class="badge-danger">⚠️ +48h Sin Avance</span>
+                    {% endif %}
+                </dd>
+            </div>
+        </dl>
+
+        <div class="bodega-mobile-card__justification">
+            <span class="bodega-mobile-card__label">Justificacion</span>
+            <p>{{ req.justificacion }}</p>
+        </div>
+
+        <div class="bodega-mobile-card__actions">
+            {% if req.estado == 'aprobada' %}
+            <a href="/bodega/{{ req.id }}/preparar" role="button" class="secondary bodega-mobile-card__primary">Preparar</a>
+            {% elif req.estado == 'preparado' %}
+            <a href="/bodega/{{ req.id }}/gestionar" role="button" class="secondary bodega-mobile-card__primary">Entregar</a>
+            {% elif req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
+            <a href="/liquidar/{{ req.id }}" role="button" class="secondary bodega-mobile-card__primary">Liquidar</a>
+            {% elif req.estado in ['liquidada', 'pendiente_prokey'] %}
+                {% if req.prokey_no_aplica %}
+                <span class="muted bodega-mobile-card__status-note">No Aplica Confirmar en Prokey</span>
+                {% elif current_user.rol in ['jefe_bodega', 'admin'] %}
+                <form method="POST" action="/requisiciones/{{ req.id }}/liquidar-prokey">
+                    <button
+                        type="submit"
+                        class="secondary bodega-prokey-confirm-btn bodega-mobile-card__primary"
+                        onclick="return confirm('¿Confirmar que esta requisición ya fue liquidada en Prokey?')"
+                    >
+                        Confirmar en Prokey
+                    </button>
+                </form>
+                {% else %}
+                <span class="bodega-mobile-card__status-note">{{ ui.status_badge('pendiente_prokey') }}</span>
+                {% endif %}
+            {% else %}
+            <span class="muted bodega-mobile-card__status-note">Sin accion disponible</span>
+            {% endif %}
+            <button type="button" class="secondary outline bodega-mobile-card__detail" onclick="verDetalle({{ req.id }})">Ver detalle</button>
+        </div>
+    </article>
+    {% endfor %}
+</section>
 {% else %}
 <p>No hay requisiciones pendientes de procesar.</p>
 {% endif %}
@@ -131,7 +215,7 @@
 {% if filtro_vista == 'historial' %}
 <h3>Historial</h3>
 {% if historial_entregadas %}
-<section class="panel view-panel table-wrap">
+<section class="panel view-panel table-wrap bodega-table-panel">
 <table class="table-compact bodega-history-table">
     <thead>
     <tr>
@@ -174,6 +258,63 @@
     {% endfor %}
     </tbody>
 </table>
+</section>
+<section class="bodega-mobile-cards" aria-label="Historial de bodega">
+    {% for req in historial_entregadas %}
+    <article class="bodega-mobile-card">
+        <header class="bodega-mobile-card__header">
+            <div>
+                <span class="bodega-mobile-card__label">Folio</span>
+                <strong class="bodega-mobile-card__folio">{{ req.folio }}</strong>
+            </div>
+            <div class="bodega-mobile-card__status">
+                {{ ui.status_badge(req.estado) }}
+            </div>
+        </header>
+
+        <dl class="bodega-mobile-card__grid">
+            <div>
+                <dt>Cliente</dt>
+                <dd>{{ req.cliente_nombre or req.cliente_codigo or '-' }}</dd>
+            </div>
+            <div>
+                <dt>Solicitante</dt>
+                <dd>{{ req.solicitante.nombre if req.solicitante else '-' }}</dd>
+            </div>
+            <div>
+                <dt>Departamento</dt>
+                <dd>{{ req.departamento }}</dd>
+            </div>
+            <div>
+                <dt>Entregada en</dt>
+                <dd>{{ req.delivered_at | fmt_dt }}</dd>
+            </div>
+            <div>
+                <dt>Entregado por</dt>
+                <dd>{{ req.entregador.nombre if req.entregador else '-' }}</dd>
+            </div>
+            <div>
+                <dt>Recibio</dt>
+                <dd>{{ req.delivered_to or '-' }}</dd>
+            </div>
+        </dl>
+
+        <div class="bodega-mobile-card__actions">
+            {% if req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
+            <a href="/liquidar/{{ req.id }}" role="button" class="secondary bodega-mobile-card__primary">Liquidar</a>
+            {% elif req.estado == 'finalizada_sin_prokey' %}
+            <span class="bodega-mobile-card__status-note">{{ ui.status_badge('finalizada_sin_prokey') }}</span>
+            {% elif req.estado == 'liquidada_en_prokey' %}
+            <span class="bodega-mobile-card__status-note">{{ ui.status_badge('liquidada_en_prokey') }}</span>
+            {% elif req.estado == 'no_entregada' %}
+            <span class="bodega-mobile-card__status-note">{{ ui.status_badge('no_entregada') }}</span>
+            {% else %}
+            <span class="muted bodega-mobile-card__status-note">Sin accion disponible</span>
+            {% endif %}
+            <button type="button" class="secondary outline bodega-mobile-card__detail" onclick="verDetalle({{ req.id }})">Ver detalle</button>
+        </div>
+    </article>
+    {% endfor %}
 </section>
 {% else %}
 <p>No hay movimientos registrados en historial.</p>
