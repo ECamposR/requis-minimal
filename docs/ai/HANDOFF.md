@@ -9,6 +9,7 @@
 - Restricciones del frente: no cambiar lógica de negocio, endpoints, permisos, nombres de campos, infraestructura ni ramas históricas; Codex ejecuta, no decide producto.
 - Estrategia: cambios pequeños, documentación en `docs/ai` por tarea y escritorio sin regresiones.
 - `/bodega` móvil ya inició con una primera iteración de cards móviles; `bodega_preparar.html`, `bodega_gestionar.html` y `bodega_entrega_parcial.html` ya tienen primera iteración móvil. El frente funcional quedó cerrado y queda pendiente validación manual final con el checklist QA y el pulido visual CSS-only ya aplicado.
+- `Todas las Requisiciones` queda tratada como vista de escritorio en esta ronda: en móvil se oculta la tabla global y se muestra un aviso para operar desde `Bodega`.
 - La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
 - Rama activa: `fixes`, destinada a fixes funcionales y de permisos sobre `main`.

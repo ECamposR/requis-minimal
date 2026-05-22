@@ -28,12 +28,17 @@
     <a href="/todas-requisiciones" role="button" class="secondary">Limpiar</a>
 </form>
 {% set export_query = request.url.query %}
-<div class="table-export-actions" aria-label="Exportes de requisiciones">
+<div class="table-export-actions all-requests-export-actions" aria-label="Exportes de requisiciones">
     <a href="/todas-requisiciones/exportar.csv{% if export_query %}?{{ export_query }}{% endif %}" role="button" class="secondary">Exportar CSV</a>
     <a href="/todas-requisiciones/exportar.xlsx{% if export_query %}?{{ export_query }}{% endif %}" role="button" class="secondary">Exportar XLSX</a>
 </div>
+<section class="panel view-panel all-requests-mobile-note" aria-live="polite">
+    <p>
+        Esta vista está optimizada para escritorio. Para operación móvil usa la pestaña Bodega.
+    </p>
+</section>
 {% if requisiciones %}
-<section class="panel view-panel table-wrap">
+<section class="panel view-panel table-wrap all-requests-table-wrap">
 <table class="table-compact all-requests-table">
     <thead>
     <tr>

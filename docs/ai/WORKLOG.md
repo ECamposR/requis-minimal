@@ -1,5 +1,19 @@
 # Worklog (append-only)
 
+## 2026-05-22 04:45 CST-0600 | tool: Codex CLI
+- Objetivo: resolver el hallazgo visual de `Todas las Requisiciones` en móvil sin convertirla en responsive completa.
+- Cambios:
+  - `templates/todas_requisiciones.html`: se agregó un aviso visible solo en móvil indicando que la vista está optimizada para escritorio y que la operación móvil debe usar `Bodega`.
+  - `static/theme.css`: en móvil se ocultan la tabla global y las exportaciones de `Todas las Requisiciones`, dejando el aviso informativo como alternativa.
+  - `docs/QA_MOBILE_BODEGA.md`: se registró el hallazgo de la vista global y su resolución/estado.
+- Restricciones:
+  - No se cambió lógica de negocio.
+  - No se tocaron endpoints, permisos ni nombres de campos.
+  - No se tocó backend ni JS.
+- Validación:
+  - `git diff --check` pendiente de ejecución en este cierre.
+  - No se ejecutó pytest en esta intervención.
+
 ## 2026-05-22 04:20 CST-0600 | tool: Codex CLI
 - Objetivo: crear el checklist QA final para la primera ronda móvil de bodega y dejar documentado el cierre funcional.
 - Cambios:

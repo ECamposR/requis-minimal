@@ -89,6 +89,7 @@ Validar la primera ronda móvil de bodega sin cambiar la lógica funcional ni el
 | Pendiente | Gestionar entrega | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente |
 | Pendiente | Entrega parcial | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente |
 | Pendiente | Modal de detalle | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente |
+| 2026-05-22 | Todas las Requisiciones | Chrome DevTools móvil | Tabla global rota en móvil; se oculta y se muestra aviso para usar Bodega | Menor | Mantenerla como vista de escritorio en esta ronda | Resuelto |
 
 ## Criterios de aceptación final
 - Bodega puede operar desde móvil sin scroll horizontal global crítico.
