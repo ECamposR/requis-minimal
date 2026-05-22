@@ -16,7 +16,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-206` | `done` | Adaptar la vista de preparar requisición para uso móvil de bodega.
 - `REQ-207` | `done` | Adaptar la vista de gestionar entrega para uso móvil de bodega.
 - `REQ-208` | `done` | Adaptar la vista de entrega parcial para uso móvil de bodega.
-- `REQ-209` | `in_progress` | Ejecutar pruebas manuales en escritorio y móvil para validar bodega móvil sin regresiones; tras el pulido visual y el checklist QA queda pendiente la validación final en dispositivo real o Chrome DevTools.
+- `REQ-209` | `done` | Ejecutar pruebas manuales en escritorio y móvil para validar bodega móvil sin regresiones; la validación funcional manual quedó aprobada en Chrome DevTools.
 - `REQ-215` | `todo` | Verificar visualmente que la card móvil de `/bodega` ya muestre `# Req` con mejor legibilidad en la cabecera, sin tocar la tabla desktop.
 - `REQ-216` | `done` | Crear el checklist QA manual final de la primera ronda móvil de bodega y dejar documentado que el frente funcional quedó cerrado.
 - `REQ-217` | `done` | Resolver el hallazgo menor de `Todas las Requisiciones` en móvil ocultando la tabla global y mostrando un aviso de vista optimizada para escritorio.

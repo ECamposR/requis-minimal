@@ -1,5 +1,33 @@
 # Worklog (append-only)
 
+## 2026-05-22 05:25 CST-0600 | tool: Codex CLI
+- Objetivo: registrar el cierre exitoso de la validación manual funcional del frente móvil de bodega.
+- Cambios:
+  - `docs/QA_MOBILE_BODEGA.md`: se marcaron como aprobados `Gestionar entrega`, `Entrega parcial`, `/bodega` y `Preparar requisición`; `Modal de detalle` quedó aceptado.
+  - `docs/ai/TASKS.md`: `REQ-209` se cerró como `done` al completarse la validación funcional manual.
+  - `docs/ai/HANDOFF.md`: se dejó la rama como lista para merge desde la perspectiva de QA.
+- Restricciones:
+  - No se tocó código funcional.
+  - No se tocaron templates, backend ni JS.
+  - No se tocaron endpoints, permisos ni nombres de campos.
+- Validación:
+  - La validación manual funcional quedó aprobada.
+  - `git diff --check` se mantiene OK en la rama.
+
+## 2026-05-22 05:05 CST-0600 | tool: Codex CLI
+- Objetivo: cerrar la validación manual del frente móvil con estado honesto y dejar constancia de qué quedó solo verificado visualmente.
+- Cambios:
+  - `docs/QA_MOBILE_BODEGA.md`: se registró `/bodega` y `Preparar requisición` como aprobadas visualmente; `Gestionar entrega` y `Entrega parcial` quedaron pendientes de prueba funcional manual.
+  - `docs/ai/TASKS.md`: `REQ-209` permanece en progreso porque falta la corrida funcional manual de `Gestionar entrega` y `Entrega parcial`.
+  - `docs/ai/HANDOFF.md`: se dejó claro que la rama no se declara lista para merge todavía; falta la validación funcional final.
+- Restricciones:
+  - No se tocó código funcional.
+  - No se tocaron templates, backend ni JS.
+  - No se tocaron endpoints, permisos ni nombres de campos.
+- Validación:
+  - Se mantiene `git diff --check` OK en la rama.
+  - No se ejecutó pytest en esta intervención.
+
 ## 2026-05-22 04:45 CST-0600 | tool: Codex CLI
 - Objetivo: resolver el hallazgo visual de `Todas las Requisiciones` en móvil sin convertirla en responsive completa.
 - Cambios:

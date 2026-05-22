@@ -84,11 +84,11 @@ Validar la primera ronda móvil de bodega sin cambiar la lógica funcional ni el
 
 | Fecha | Vista | Dispositivo/ancho | Hallazgo | Severidad | Acción recomendada | Estado |
 | --- | --- | --- | --- | --- | --- | --- |
-| Pendiente | `/bodega` | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente |
-| Pendiente | Preparar requisición | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente |
-| Pendiente | Gestionar entrega | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente |
-| Pendiente | Entrega parcial | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente |
-| Pendiente | Modal de detalle | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente |
+| 2026-05-22 | `/bodega` | Chrome DevTools móvil | Cards móviles legibles; navegación y acciones visibles | Baja | Mantener como aprobado | Aprobado |
+| 2026-05-22 | Preparar requisición | Chrome DevTools móvil | Layout móvil legible; cards de ítems y CTA coherentes | Baja | Mantener como aprobado | Aprobado |
+| 2026-05-22 | Gestionar entrega | Chrome DevTools móvil | Flujo completo validado con receptor, PIN, comentario y retorno | Baja | Mantener como aprobado | Aprobado |
+| 2026-05-22 | Entrega parcial | Chrome DevTools móvil | Flujo completo validado con una sola fuente de inputs y submit correcto | Baja | Mantener como aprobado | Aprobado |
+| 2026-05-22 | Modal de detalle | Chrome DevTools móvil | Modal usable; la tabla interna conserva scroll contenido | Baja | Mantener como aceptado para esta ronda | Aceptado |
 | 2026-05-22 | Todas las Requisiciones | Chrome DevTools móvil | Tabla global rota en móvil; se oculta y se muestra aviso para usar Bodega | Menor | Mantenerla como vista de escritorio en esta ronda | Resuelto |
 
 ## Criterios de aceptación final
@@ -97,3 +97,4 @@ Validar la primera ronda móvil de bodega sin cambiar la lógica funcional ni el
 - No se detectan bloqueos en preparar/entregar/parcial.
 - Modal de detalle no bloquea operación básica.
 - Hallazgos menores quedan documentados.
+- La primera ronda móvil de bodega queda lista para merge desde la perspectiva de QA manual.
