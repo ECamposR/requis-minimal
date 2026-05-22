@@ -2695,6 +2695,61 @@ body:has(form.req-create-form) .page-header p {
 }
 
 @media (max-width: 760px) {
+    .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 25;
+        backdrop-filter: blur(8px);
+    }
+
+    .app-header nav {
+        padding-block: 0.55rem;
+    }
+
+    .app-header nav ul {
+        gap: 0.5rem;
+    }
+
+    .app-header nav a,
+    .app-header nav button {
+        min-height: 2.3rem;
+        padding: 0.45rem 0.7rem;
+    }
+
+    .bodega-live-banner {
+        gap: 0.55rem;
+        padding: 0.7rem 0.82rem;
+    }
+
+    .bodega-live-banner__headline {
+        gap: 0.45rem;
+    }
+
+    .bodega-live-banner__icon.material-symbols-outlined {
+        font-size: 1.05rem;
+    }
+
+    .bodega-live-banner__copy strong {
+        font-size: 0.95rem;
+        line-height: 1.2;
+    }
+
+    .bodega-live-banner__copy span {
+        font-size: 0.84rem;
+    }
+
+    .bodega-live-banner__actions {
+        gap: 0.42rem;
+        grid-template-columns: 1fr;
+    }
+
+    .bodega-live-banner__actions [role="button"],
+    .bodega-live-banner__actions button {
+        min-height: 2.55rem;
+        padding: 0.5rem 0.72rem;
+        width: 100%;
+    }
+
     .bodega-table-panel {
         display: none;
     }
@@ -2723,22 +2778,33 @@ body:has(form.req-create-form) .page-header p {
         display: flex;
         gap: 0.75rem;
         justify-content: space-between;
-        margin-bottom: 0.85rem;
+        margin-bottom: 0.75rem;
+        background: linear-gradient(180deg, rgba(13, 47, 87, 0.08), rgba(13, 47, 87, 0.03));
+        border: 1px solid rgba(80, 126, 183, 0.16);
+        border-radius: 0.88rem;
+        padding: 0.7rem 0.75rem;
     }
 
     .bodega-mobile-card__folio {
         align-items: center;
-        color: #0d2f57;
+        color: #0b2f57;
         display: inline-flex;
-        font-size: 1.12rem;
+        font-size: 1.08rem;
+        font-weight: 800;
         gap: 0.35rem;
         line-height: 1.2;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
     }
 
     .bodega-mobile-card__status {
         display: flex;
         justify-content: flex-end;
         min-width: fit-content;
+    }
+
+    .bodega-mobile-card__status .badge,
+    .bodega-mobile-card__status .status-badge {
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
     }
 
     .bodega-mobile-card__label,
@@ -3167,6 +3233,39 @@ body:has(form.req-create-form) .page-header p {
         margin: 0;
         min-height: 2.9rem;
         width: 100%;
+    }
+
+    #modal-detalle.modal--detail-dashboard {
+        width: 100vw;
+        height: 100vh;
+        padding: 0.25rem;
+    }
+
+    #modal-detalle.modal--detail-dashboard article {
+        max-height: calc(100vh - 0.5rem);
+    }
+
+    #modal-detalle.modal--detail-dashboard #modal-content {
+        overflow-x: hidden;
+        padding: 0.58rem 0.5rem 0.68rem;
+    }
+
+    #modal-detalle .detail-dashboard-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    #modal-detalle .detalle-bottom-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #modal-detalle .liquidacion-paper-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #modal-detalle .liquidacion-paper-table {
+        min-width: 820px;
     }
 }
 

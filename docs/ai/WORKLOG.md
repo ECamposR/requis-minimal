@@ -1,5 +1,32 @@
 # Worklog (append-only)
 
+## 2026-05-22 03:55 CST-0600 | tool: Codex CLI
+- Objetivo: ajustar la card móvil de `/bodega` para mostrar `# Req` y mejorar la legibilidad de la cabecera.
+- Cambios:
+  - `templates/bodega.html`: la etiqueta visible de la card móvil pasó de `Folio` a `# Req`.
+  - `static/theme.css`: se reforzó la cabecera móvil de la card con contraste más claro y texto de folio más legible.
+- Restricciones:
+  - No se cambió lógica de negocio.
+  - No se tocaron endpoints, permisos ni nombres de campos.
+  - No se tocó la tabla desktop.
+  - No se tocó backend ni JS.
+- Validación:
+  - `git diff --check` pendiente de ejecución en este cierre.
+  - `pytest` no se ejecutó todavía en esta intervención.
+
+## 2026-05-22 03:25 CST-0600 | tool: Codex CLI
+- Objetivo: pulido visual móvil posterior a prueba manual para bodega.
+- Cambios:
+  - `static/theme.css`: ajustes CSS-only para compactar el header/navbar en móvil, reducir la alerta de pendientes, mejorar el contraste del folio en cards de `/bodega` y hacer que `#modal-detalle` no corte horizontalmente la sección de items liquidados.
+  - `docs/ai/TASKS.md` y `docs/ai/HANDOFF.md`: se dejó explícito que el frente móvil sigue pendiente de validación manual final.
+- Restricciones:
+  - No se tocó lógica de negocio.
+  - No se tocaron templates, backend ni JS.
+  - No se tocaron endpoints, permisos ni nombres de campos.
+- Validación:
+  - `git diff --check` OK.
+  - `pytest` se intentó, pero quedó inconcluso por ejecución local sin resultado útil antes del timeout.
+
 ## 2026-05-22 02:45 CST-0600 | tool: Codex CLI
 - Objetivo: implementar la primera iteración móvil de `bodega_entrega_parcial.html` usando una sola fuente de inputs.
 - Tareas: `REQ-208`, `REQ-213`

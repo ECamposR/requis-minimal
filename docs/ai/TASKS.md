@@ -16,7 +16,8 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 - `REQ-206` | `done` | Adaptar la vista de preparar requisición para uso móvil de bodega.
 - `REQ-207` | `done` | Adaptar la vista de gestionar entrega para uso móvil de bodega.
 - `REQ-208` | `done` | Adaptar la vista de entrega parcial para uso móvil de bodega.
-- `REQ-209` | `todo` | Ejecutar pruebas manuales en escritorio y móvil para validar bodega móvil sin regresiones.
+- `REQ-209` | `in_progress` | Ejecutar pruebas manuales en escritorio y móvil para validar bodega móvil sin regresiones; tras el pulido visual queda pendiente la validación final en dispositivo real o Chrome DevTools.
+- `REQ-215` | `todo` | Verificar visualmente que la card móvil de `/bodega` ya muestre `# Req` con mejor legibilidad en la cabecera, sin tocar la tabla desktop.
 - `REQ-116` | `done` | Actualizar la documentacion de gobernanza y estado del producto para reflejar la fase real de `beta operativa en produccion`, manteniendo simplicidad, continuidad multi-IA agnostica al LLM y trazabilidad documental obligatoria.
 - `REQ-117` | `done` | Corregir `Gestionar Entrega` para que `No entregada` no exija firma/PIN aunque exista receptor designado; en ese caso solo debe exigir comentario y cerrar el ciclo sin receptor recibido.
 - `REQ-118` | `done` | Abrir frente de trabajo aislado para dashboard de inteligencia de negocio (`feat/bi-dashboard`), definiendo primero objetivos, usuarios, metricas y alcance antes de implementar.
