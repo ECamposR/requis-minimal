@@ -3,7 +3,7 @@
 {% block title %}Gestionar Entrega{% endblock %}
 {% block content %}
 {{ ui.page_header("Gestionar Entrega", "Registra resultado de despacho y trazabilidad de entrega.") }}
-<section class="page-hero panel">
+<section class="page-hero panel bodega-manage-hero">
     <h3>{{ req.folio }}</h3>
     <p>
         Solicitante: {{ req.solicitante.nombre if req.solicitante else '-' }} |
@@ -17,9 +17,10 @@
     <p>Justificacion: {{ req.justificacion }}</p>
 </section>
 
-<section class="gestion-layout">
-    <article class="gestion-card panel">
+<section class="gestion-layout bodega-manage-layout">
+    <article class="gestion-card panel bodega-manage-items-panel">
         <h3>Items aprobados para entrega</h3>
+        <div class="table-wrap bodega-manage-table-panel">
         <table class="table-compact">
             <thead>
             <tr>
@@ -41,11 +42,31 @@
             {% endfor %}
             </tbody>
         </table>
+        </div>
+        <section class="bodega-manage-mobile-items" aria-label="Ítems aprobados para entrega">
+            {% for item in req.items %}
+            <article class="bodega-manage-item-card">
+                <div class="bodega-manage-item-card__body">
+                    <span class="bodega-mobile-card__label">Item</span>
+                    <strong>{{ item.descripcion }}</strong>
+                    {% if item.es_demo %}
+                    <div class="bodega-manage-item-card__meta">
+                        <span class="badge warning item-demo-badge">Para Demo</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="bodega-manage-item-card__qty">
+                    <span class="bodega-mobile-card__label">Cantidad</span>
+                    <strong>{{ item.cantidad }}</strong>
+                </div>
+            </article>
+            {% endfor %}
+        </section>
     </article>
 
-    <article class="gestion-card panel">
+    <article class="gestion-card panel bodega-manage-form-panel">
         <h3>Registrar resultado de entrega</h3>
-        <p>
+        <p class="bodega-manage-designated">
             <strong>Receptor designado:</strong>
             {% if req.receptor_designado %}
                 {{ req.receptor_designado.nombre }} ({{ req.receptor_designado.rol }})
@@ -60,8 +81,8 @@
         </div>
         {% endif %}
         {% set receptor_actual = form_data.get('recibido_por_id', req.receptor_designado_id|string if req.receptor_designado_id else '') %}
-        <form method="POST" action="/entregar/{{ req.id }}" class="gestion-form">
-            <label>
+        <form method="POST" action="/entregar/{{ req.id }}" class="gestion-form bodega-manage-form">
+            <label class="bodega-manage-field">
                 Resultado
                 <select name="resultado" aria-label="Resultado entrega" data-delivery-result>
                     <option value="completa" {% if form_data.get('resultado') == 'completa' %}selected{% endif %}>Completa</option>
@@ -69,7 +90,7 @@
                     <option value="no_entregada" {% if form_data.get('resultado') == 'no_entregada' %}selected{% endif %}>No entregada</option>
                 </select>
             </label>
-            <label data-firma-field>
+            <label class="bodega-manage-field" data-firma-field>
                 Receptor
                 <input
                     type="text"
@@ -96,10 +117,10 @@
                     {% endfor %}
                 </select>
             </label>
-            <p data-firma-field>
+            <p class="bodega-manage-inline-action" data-firma-field>
                 <button type="button" class="secondary outline" data-unlock-receptor>Cambiar receptor</button>
             </p>
-            <div class="form-actions" data-receptor-change-actions hidden data-firma-field>
+            <div class="form-actions bodega-manage-change-actions" data-receptor-change-actions hidden data-firma-field>
                 <button type="button" data-save-receptor-change>Guardar cambio</button>
                 <button type="button" class="secondary" data-cancel-receptor-change>Cancelar</button>
             </div>
@@ -114,7 +135,7 @@
                 </strong>.
                 Asegúrate de que el cambio es intencional.
             </div>
-            <label data-firma-field>
+            <label class="bodega-manage-field" data-firma-field>
                 PIN del receptor
                 <input
                     type="password"
@@ -127,14 +148,14 @@
             {% if error_message %}
             <small id="pin-receptor-error" class="form-error">Debes ingresar un PIN valido del receptor para continuar.</small>
             {% endif %}
-            <label>
+            <label class="bodega-manage-field">
                 Comentario
                 <input type="text" name="comentario" value="{{ form_data.get('comentario', '') }}" placeholder="Ej: faltante por inventario">
             </label>
-            <button type="submit">Guardar resultado</button>
+            <button type="submit" class="bodega-manage-submit">Guardar resultado</button>
         </form>
-        <p class="page-subtitle" data-delivery-help>Completa y parcial requieren firma por receptor. Si seleccionas parcial, se abrira la pantalla para ajustar cantidades entregadas por item.</p>
-        <p class="gestion-actions">
+        <p class="page-subtitle bodega-manage-help" data-delivery-help>Completa y parcial requieren firma por receptor. Si seleccionas parcial, se abrira la pantalla para ajustar cantidades entregadas por item.</p>
+        <p class="gestion-actions bodega-manage-actions">
             <a href="/bodega" role="button" class="secondary outline">Volver a bodega</a>
         </p>
     </article>
