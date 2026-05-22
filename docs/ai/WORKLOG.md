@@ -1,5 +1,19 @@
 # Worklog (append-only)
 
+## 2026-05-22 00:00 CST-0600 | tool: Codex CLI
+- Objetivo: abrir el frente documental y de UX móvil de bodega sobre la base de la documentación de estado actual, roadmap y blueprint ya creada.
+- Tareas: `REQ-201`, `REQ-202`, `REQ-203`, `REQ-204`, `REQ-205`, `REQ-206`, `REQ-207`, `REQ-208`, `REQ-209`
+- Alcance:
+  - Alinear la documentación de continuidad con la prioridad actual del producto.
+  - Preparar el frente funcional para adaptar `\/bodega` a móviles.
+  - Mantener intacta la lógica de negocio y el flujo operativo actual.
+- Restricciones:
+  - Sin cambios de código, HTML, CSS o JS.
+  - Sin refactors.
+  - Sin cambios de infraestructura o migraciones.
+- Proximo paso:
+  - Validar consistencia documental y comenzar la adaptación móvil de bodega por `\/bodega`.
+
 ## 2026-05-08 00:40 CST-0600 | tool: Codex CLI
 - Objetivo: corregir la visibilidad intermitente del boton `Liquidar` en el modal de detalle de bodega.
 - Tareas: `REQ-200`

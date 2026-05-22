@@ -1,5 +1,20 @@
 # Decisions Log
 
+## ADR-010 | 2026-05-22 | Priorizar documentación y UX móvil de bodega antes de cambios mayores
+- Contexto:
+  - La app ya opera como producción interna controlada v1.x.
+  - La prioridad actual es ordenar documentación y hacer usable bodega en móviles sin tocar reglas de negocio.
+- Decision:
+  - Priorizar documentación de estado, roadmap y blueprint móvil antes de ampliar o reestructurar funcionalidades.
+  - Encauzar el siguiente frente funcional hacia la adaptación móvil de las vistas de bodega.
+- Motivo:
+  - Reduce deriva documental.
+  - Alinea el trabajo con la necesidad operativa inmediata.
+  - Evita introducir cambios grandes antes de validar el uso móvil real.
+- Impacto:
+  - La documentación de continuidad debe reflejar este frente como prioridad activa.
+  - El trabajo funcional siguiente debe concentrarse en `/bodega` y sus vistas operativas relacionadas.
+
 ## ADR-009 | 2026-05-06 | Reconfirmacion por contrasena para liquidacion
 - Contexto:
   - La liquidacion cierra cantidades operativas, diferencias y estado de la requisicion.

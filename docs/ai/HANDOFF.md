@@ -1,6 +1,10 @@
 # Handoff Activo
 
 ## Estado actual
+- Frente actual: documentación + UX móvil de bodega.
+- La app se trata como `producción interna controlada v1.x`.
+- Durante la fase documental no se tocará lógica de negocio.
+- El siguiente frente funcional previsto es `/bodega` móvil.
 - La app ya no debe tratarse como MVP: desde el `2026-03-10` esta en `beta operativa en produccion controlada` dentro de la LAN, con usuarios y uso real.
 - La gobernanza vigente mantiene el espiritu original de simplicidad, pero endurece la exigencia documental: cualquier bug, cambio, hallazgo o decision relevante debe quedar registrado en `WORKLOG/TASKS/HANDOFF/DECISIONS` segun aplique.
 - Rama activa: `fixes`, destinada a fixes funcionales y de permisos sobre `main`.

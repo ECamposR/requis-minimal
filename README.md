@@ -1,14 +1,14 @@
-# Sistema de Requisiciones ProHygiene (beta operativa v1.x)
+# Sistema de Requisiciones ProHygiene (producción interna controlada v1.x)
 
-Aplicación interna LAN para gestionar requisiciones desde solicitud hasta liquidación y soporte de registro en ProKey.
+Aplicación interna para gestionar requisiciones desde solicitud hasta liquidación y soporte de registro en ProKey, operando de forma estable en un entorno interno controlado.
 
 ## Manual de usuario final
 - Ver `MANUAL_USUARIO.md`
 
 ## Estado actual
-- Fase actual: `beta operativa en produccion controlada`.
+- Fase actual: `producción interna controlada v1.x`.
 - Inicio de beta productiva: `2026-03-10`.
-- Version operativa: `v1.x` (ya no MVP base).
+- Version operativa: `v1.x`.
 - Flujo implementado:
   - `pendiente` -> `aprobada` / `rechazada` -> `preparado` -> `entregada` -> `liquidada` -> `liquidada_en_prokey`
 - Funciones clave activas:
@@ -20,6 +20,16 @@ Aplicación interna LAN para gestionar requisiciones desde solicitud hasta liqui
   - exportación CSV/XLSX en `Todas las Requisiciones` respetando filtros activos
   - generación de PDF desde requisiciones aprobadas en adelante
 
+## Prioridad actual
+- Orden documental y consistencia entre `README.md`, `MANUAL_USUARIO.md` y `docs/ai/*`.
+- Adaptación móvil de las vistas de bodega.
+- Estabilidad del flujo existente sin ampliar alcance funcional.
+
+## Documentación de referencia
+- [Estado actual del sistema](docs/ESTADO_ACTUAL.md)
+- [Roadmap operativo](docs/ROADMAP.md)
+- [Blueprint móvil para bodega](docs/MOBILE_BODEGA_BLUEPRINT.md)
+
 ## Criterio de evolucion
 - El sistema se desarrolla y mantiene bajo un enfoque de simplicidad operativa: resolver el problema real con la menor complejidad posible.
 - El proyecto sigue creciendo mediante `vibe coding`, pero con disciplina documental estricta.
@@ -29,6 +39,12 @@ Aplicación interna LAN para gestionar requisiciones desde solicitud hasta liqui
   - `docs/ai/TASKS.md`
   - `docs/ai/HANDOFF.md`
   - `docs/ai/DECISIONS.md` cuando aplique
+
+## Fuera de alcance actual
+- Refactor arquitectónico grande.
+- Cambio de base de datos.
+- Cambio de framework frontend.
+- Cambios de infraestructura.
 
 ## Stack
 - Backend: `FastAPI`
@@ -153,6 +169,7 @@ sqlite:////app/data/requisiciones.db
 ```
 
 ## Usuarios semilla (init_db.py)
+Uso exclusivo para entorno local/desarrollo. No usar como credenciales operativas.
 - `admin / admin123`
 - `juan.perez / password`
 - `carlos.lopez / password`

@@ -3,6 +3,15 @@
 Estados: `todo` | `in_progress` | `done` | `blocked`
 
 ## Gobernanza / Continuidad
+- `REQ-201` | `todo` | Revisar y alinear `README.md` con el estado actual de producción interna controlada v1.x y la nueva prioridad documental.
+- `REQ-202` | `todo` | Crear y validar `docs/ESTADO_ACTUAL.md` como referencia breve del estado real del sistema.
+- `REQ-203` | `todo` | Crear y validar `docs/ROADMAP.md` como roadmap operativo corto centrado en documentación y UX móvil de bodega.
+- `REQ-204` | `todo` | Crear y validar `docs/MOBILE_BODEGA_BLUEPRINT.md` como blueprint funcional para la adaptación móvil de bodega.
+- `REQ-205` | `todo` | Implementar cards móviles en `/bodega` sin cambiar la lógica de negocio ni los endpoints.
+- `REQ-206` | `todo` | Adaptar la vista de preparar requisición para uso móvil de bodega.
+- `REQ-207` | `todo` | Adaptar la vista de gestionar entrega para uso móvil de bodega.
+- `REQ-208` | `todo` | Adaptar la vista de entrega parcial para uso móvil de bodega.
+- `REQ-209` | `todo` | Ejecutar pruebas manuales en escritorio y móvil para validar bodega móvil sin regresiones.
 - `REQ-116` | `done` | Actualizar la documentacion de gobernanza y estado del producto para reflejar la fase real de `beta operativa en produccion`, manteniendo simplicidad, continuidad multi-IA agnostica al LLM y trazabilidad documental obligatoria.
 - `REQ-117` | `done` | Corregir `Gestionar Entrega` para que `No entregada` no exija firma/PIN aunque exista receptor designado; en ese caso solo debe exigir comentario y cerrar el ciclo sin receptor recibido.
 - `REQ-118` | `done` | Abrir frente de trabajo aislado para dashboard de inteligencia de negocio (`feat/bi-dashboard`), definiendo primero objetivos, usuarios, metricas y alcance antes de implementar.
