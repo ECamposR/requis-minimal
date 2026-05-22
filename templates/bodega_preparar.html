@@ -10,7 +10,7 @@
     <p><strong>Aprobado por:</strong> {{ req.aprobador.nombre if req.aprobador else '-' }}</p>
     <p><strong>Justificación:</strong> {{ req.justificacion }}</p>
 
-    <div class="table-wrap">
+    <div class="table-wrap bodega-prepare-table-panel">
         <table class="table-compact">
             <thead>
                 <tr>
@@ -34,7 +34,30 @@
         </table>
     </div>
 
-    <div class="form-actions" style="margin-top: 1rem;">
+    <section class="bodega-prepare-mobile-items" aria-label="Ítems a preparar">
+        {% for item in req.items %}
+        <article class="bodega-prepare-item-card">
+            <div class="bodega-prepare-item-card__body">
+                <span class="bodega-mobile-card__label">Ítem</span>
+                <strong>{{ item.descripcion }}</strong>
+                <div class="bodega-prepare-item-card__meta">
+                    {% if item.es_demo %}
+                    <span class="badge warning item-demo-badge">Para Demo</span>
+                    {% endif %}
+                    {% if item.contexto_operacion %}
+                    <span class="bodega-prepare-context">{{ 'Instalacion inicial' if item.contexto_operacion == 'instalacion_inicial' else 'Reposicion' }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="bodega-prepare-item-card__qty">
+                <span class="bodega-mobile-card__label">Cantidad</span>
+                <strong>{{ item.cantidad }}</strong>
+            </div>
+        </article>
+        {% endfor %}
+    </section>
+
+    <div class="form-actions bodega-prepare-actions" style="margin-top: 1rem;">
         <form method="POST" action="/bodega/{{ req.id }}/preparar" class="inline">
             <button type="submit">Preparado</button>
         </form>

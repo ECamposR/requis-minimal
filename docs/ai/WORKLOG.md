@@ -1,5 +1,21 @@
 # Worklog (append-only)
 
+## 2026-05-22 01:45 CST-0600 | tool: Codex CLI
+- Objetivo: implementar la primera iteración móvil de `bodega_preparar.html` sin alterar el flujo actual.
+- Tareas: `REQ-206`, `REQ-211`
+- Cambios:
+  - `templates/bodega_preparar.html`: se agregaron cards móviles para los ítems a preparar, manteniendo la tabla de escritorio y el formulario `POST /bodega/{{ req.id }}/preparar`.
+  - `static/theme.css`: se añadieron estilos scoped dentro de `EPIC-MOBILE-BODEGA` para la vista móvil de preparación.
+  - `docs/ai/TASKS.md` y `docs/ai/HANDOFF.md`: se actualizó el estado de la vista de preparación móvil.
+- Restricciones:
+  - No se cambió lógica de negocio.
+  - No se cambiaron endpoints, permisos ni nombres de campos.
+  - No se agregó checklist persistente por ítem.
+  - No se tocaron `app/`, `static/app.js`, `static/style.css`, pruebas ni otras vistas de bodega.
+- Validación:
+  - `git diff --check` OK.
+  - `.venv/bin/python -m pytest -q tests/test_basic_flow.py` no produjo salida antes del timeout de 180s; resultado no concluyente por ejecución local.
+
 ## 2026-05-22 01:20 CST-0600 | tool: Codex CLI
 - Objetivo: implementar la primera iteración móvil de `/bodega` con cards, manteniendo la tabla actual para escritorio.
 - Tareas: `REQ-205`, `REQ-210`
