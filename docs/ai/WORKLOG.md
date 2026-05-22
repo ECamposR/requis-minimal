@@ -1,5 +1,18 @@
 # Worklog (append-only)
 
+## 2026-05-22 04:20 CST-0600 | tool: Codex CLI
+- Objetivo: crear el checklist QA final para la primera ronda móvil de bodega y dejar documentado el cierre funcional.
+- Cambios:
+  - `docs/QA_MOBILE_BODEGA.md`: se creó el checklist manual de escritorio/móvil para `/bodega`, preparar, gestionar, entrega parcial y modal de detalle.
+  - `docs/ai/TASKS.md` y `docs/ai/HANDOFF.md`: se marcó la primera ronda móvil como cerrada y quedó explicitada la validación manual real pendiente.
+- Restricciones:
+  - No se tocó código funcional.
+  - No se tocaron templates, backend ni JS.
+  - No se tocaron endpoints, permisos ni nombres de campos.
+- Validación:
+  - `git diff --check` pendiente de ejecutar en este cierre.
+  - No se ejecutó pytest en esta intervención.
+
 ## 2026-05-22 03:55 CST-0600 | tool: Codex CLI
 - Objetivo: ajustar la card móvil de `/bodega` para mostrar `# Req` y mejorar la legibilidad de la cabecera.
 - Cambios:
