@@ -12,6 +12,7 @@ Validar la primera ronda móvil de bodega sin cambiar la lógica funcional ni el
 - Cambio de receptor
 - PIN del receptor
 - Modal de detalle solo como evaluación
+- Liquidación solo en escritorio; en móvil no debe ofrecerse como acción operativa.
 
 ## Fuera de alcance
 - `liquidar.html`
@@ -41,6 +42,7 @@ Validar la primera ronda móvil de bodega sin cambiar la lógica funcional ni el
 - Validar contraste y legibilidad.
 - Validar `Ver detalle`.
 - Validar acciones según estado.
+- Confirmar que la requisición liquidable muestra aviso y no botón de liquidar en móvil.
 
 ## Checklist móvil - Preparar requisición
 - Abrir una requisición aprobada.

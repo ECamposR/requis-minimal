@@ -182,7 +182,7 @@
             {% elif req.estado == 'preparado' %}
             <a href="/bodega/{{ req.id }}/gestionar" role="button" class="secondary bodega-mobile-card__primary">Entregar</a>
             {% elif req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
-            <a href="/liquidar/{{ req.id }}" role="button" class="secondary bodega-mobile-card__primary">Liquidar</a>
+            <span class="bodega-mobile-card__status-note bodega-mobile-card__status-note--desktop-only">Liquidación disponible desde escritorio.</span>
             {% elif req.estado in ['liquidada', 'pendiente_prokey'] %}
                 {% if req.prokey_no_aplica %}
                 <span class="muted bodega-mobile-card__status-note">No Aplica Confirmar en Prokey</span>
@@ -301,7 +301,7 @@
 
         <div class="bodega-mobile-card__actions">
             {% if req.estado == 'entregada' and req.delivery_result in ['completa', 'parcial'] %}
-            <a href="/liquidar/{{ req.id }}" role="button" class="secondary bodega-mobile-card__primary">Liquidar</a>
+            <span class="bodega-mobile-card__status-note bodega-mobile-card__status-note--desktop-only">Liquidación disponible desde escritorio.</span>
             {% elif req.estado == 'finalizada_sin_prokey' %}
             <span class="bodega-mobile-card__status-note">{{ ui.status_badge('finalizada_sin_prokey') }}</span>
             {% elif req.estado == 'liquidada_en_prokey' %}
