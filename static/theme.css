@@ -3299,6 +3299,25 @@ body:has(form.req-create-form) .page-header p {
     .all-requests-mobile-note p {
         margin: 0;
     }
+
+    #modal-detalle.modal--detail-dashboard .detail-action-btn--liquidar {
+        display: none;
+    }
+
+    #modal-detalle.modal--detail-dashboard .detail-mobile-liquidation-note {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.5rem;
+        padding: 0.55rem 0.8rem;
+        border-radius: 0.8rem;
+        border: 1px solid rgba(30, 76, 132, 0.18);
+        background: rgba(13, 47, 87, 0.06);
+        color: #3a567e;
+        font-size: 0.92rem;
+        line-height: 1.25;
+        text-align: center;
+    }
 }
 
 @media (max-width: 430px) {

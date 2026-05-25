@@ -81,6 +81,7 @@ Validar la primera ronda móvil de bodega sin cambiar la lógica funcional ni el
 - Validar items solicitados/liquidados.
 - Confirmar que si hay scroll horizontal, queda contenido dentro del bloque de tabla.
 - Validar botón `Ver PDF`.
+- Confirmar que `Liquidar` no aparece como acción en móvil y se muestra el aviso de escritorio.
 
 ## Registro de hallazgos manuales
 
@@ -92,6 +93,7 @@ Validar la primera ronda móvil de bodega sin cambiar la lógica funcional ni el
 | 2026-05-22 | Entrega parcial | Chrome DevTools móvil | Flujo completo validado con una sola fuente de inputs y submit correcto | Baja | Mantener como aprobado | Aprobado |
 | 2026-05-22 | Modal de detalle | Chrome DevTools móvil | Modal usable; la tabla interna conserva scroll contenido | Baja | Mantener como aceptado para esta ronda | Aceptado |
 | 2026-05-22 | Todas las Requisiciones | Chrome DevTools móvil | Tabla global rota en móvil; se oculta y se muestra aviso para usar Bodega | Menor | Mantenerla como vista de escritorio en esta ronda | Resuelto |
+| 2026-05-25 | Modal de detalle | Chrome DevTools móvil | Liquidar quedó reemplazado por aviso de escritorio; Ver PDF sigue visible | Baja | Mantener acción solo en escritorio | Aprobado |
 
 ## Criterios de aceptación final
 - Bodega puede operar desde móvil sin scroll horizontal global crítico.

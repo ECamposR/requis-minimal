@@ -685,7 +685,10 @@ function verDetalle(id) {
             const canLiquidar = Boolean(data.puede_liquidar) || (estado === "entregada" && ["completa", "parcial"].includes(deliveryResult));
             const liquidarHref = data.liquidar_url || (canLiquidar && data.id ? `/liquidar/${data.id}` : "");
             const liquidarAction = canLiquidar && liquidarHref
-                ? `<a class="detail-action-btn detail-action-btn--liquidar" role="button" href="${escapeHtml(liquidarHref)}"><span class="material-symbols-outlined" aria-hidden="true">inventory</span>Liquidar</a>`
+                ? `<a class="detail-action-btn detail-action-btn--liquidar detail-liquidation-action" role="button" href="${escapeHtml(liquidarHref)}"><span class="material-symbols-outlined" aria-hidden="true">inventory</span>Liquidar</a>`
+                : "";
+            const liquidarMobileNotice = canLiquidar
+                ? `<span class="detail-mobile-liquidation-note">Liquidación disponible desde escritorio.</span>`
                 : "";
             const otherCommentItems = [
                 ["Aprobación", data.approval_comment || "-"],
@@ -730,6 +733,7 @@ function verDetalle(id) {
                         </div>
                         <div class="detail-dashboard-actions">
                             ${liquidarAction}
+                            ${liquidarMobileNotice}
                             ${pdfAction}
                         </div>
                     </section>
