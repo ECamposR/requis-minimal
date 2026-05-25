@@ -1,5 +1,19 @@
 # Worklog (append-only)
 
+## 2026-05-25 02:05 CST-0600 | tool: Codex CLI
+- Objetivo: dejar documentado el cierre final del frente móvil y los ultimos hotfixes de liquidacion para que la rama quede alineada con el estado real de `main`.
+- Cambios documentados:
+  - `static/app.js`: el modal de detalle ahora diferencia la accion `Liquidar` con clase propia y muestra en movil el aviso `Liquidación disponible desde escritorio.` en lugar del boton.
+  - `static/theme.css`: se oculto la accion `Liquidar` dentro del modal de detalle en pantallas pequenas y se estilizo el aviso alternativo para que no interfiera con `Ver PDF`.
+  - `docs/QA_MOBILE_BODEGA.md`: se actualizo el checklist para reflejar que `Liquidar` ya no se ofrece en mobile ni en cards ni en modal.
+- Resultado:
+  - El flujo movil queda acotado a revisar, preparar y apoyar entrega fisica; la liquidacion sigue disponible solo en escritorio.
+  - La documentacion de QA y la gobernanza IA quedan sincronizadas con el estado final publicado en `main`.
+- Restricciones:
+  - No se toco backend, permisos ni endpoints.
+  - No se toco `templates/liquidar.html`.
+  - No se reintrodujo ninguna dependencia externa.
+
 ## 2026-05-25 01:35 CST-0600 | tool: Codex CLI
 - Objetivo: corregir el `ReferenceError` de `ensureMaterialSymbolsFont` al abrir `Ver detalle`.
 - Cambios:

@@ -1,5 +1,11 @@
 # Handoff Activo
 
+## Cierre
+- El frente móvil de bodega ya quedó implementado, documentado y validado en `main`.
+- `Liquidar` sigue disponible solo en escritorio; en móvil queda fuera del flujo en cards y modal, reemplazado por aviso.
+- La UI consume assets locales desde `static/vendor` y ya no depende de Google Fonts ni jsDelivr para renderizar.
+- `Todas las Requisiciones` permanece como vista de escritorio en esta ronda, con aviso móvil para usar `Bodega`.
+
 ## Estado actual
 - Los assets externos de frontend ya fueron descargados a `static/vendor/` y `templates/base.html` ya quedó cableado a esos recursos locales.
 - La UI ya quedó desacoplada de Internet del lado del cliente para estilos, fuentes e íconos; Chart.js también se sirve localmente desde `static/vendor/chartjs/`.

@@ -3,6 +3,11 @@
 ## Objetivo
 Validar la primera ronda móvil de bodega sin cambiar la lógica funcional ni el flujo backend ya implementado.
 
+## Estado final
+- La primera ronda móvil de bodega quedó cerrada y publicada en `main`.
+- `Liquidar` permanece disponible solo en escritorio; en móvil se reemplaza por aviso tanto en cards como en el modal de detalle.
+- La UI ya no depende de Google Fonts ni jsDelivr para los assets base.
+
 ## Alcance
 - `/bodega`
 - Preparar requisición
