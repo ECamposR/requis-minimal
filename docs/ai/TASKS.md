@@ -3,6 +3,8 @@
 Estados: `todo` | `in_progress` | `done` | `blocked`
 
 ## Gobernanza / Continuidad
+- `REQ-219` | `done` | Eliminar las referencias externas remanentes en `templates/monitor_actividad.html`, `templates/crear_requisicion.html` y `static/app.js` para que la UI completa deje de depender de Internet.
+- `REQ-218` | `done` | Localizar y cablear los assets de frontend en `static/vendor` para eliminar la dependencia de Internet del cliente.
 - `REQ-210` | `done` | Iniciar la base de UX móvil para bodega sin tocar lógica de negocio, empezando por `/bodega`.
 - `REQ-211` | `done` | Adaptar `bodega_preparar.html` a un flujo móvil simple y vertical.
 - `REQ-212` | `done` | Adaptar `bodega_gestionar.html` a un flujo móvil simple y vertical.

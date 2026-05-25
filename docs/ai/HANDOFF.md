@@ -1,6 +1,8 @@
 # Handoff Activo
 
 ## Estado actual
+- Los assets externos de frontend ya fueron descargados a `static/vendor/` y `templates/base.html` ya quedó cableado a esos recursos locales.
+- La UI ya quedó desacoplada de Internet del lado del cliente para estilos, fuentes e íconos; Chart.js también se sirve localmente desde `static/vendor/chartjs/`.
 - Frente actual: documentación + UX móvil de bodega.
 - La app se trata como `producción interna controlada v1.x`.
 - Durante la fase documental no se tocará lógica de negocio.

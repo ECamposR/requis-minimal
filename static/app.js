@@ -35,16 +35,6 @@ function initSearchableSelects(root = document) {
     }
 }
 
-function ensureMaterialSymbolsFont() {
-    const linkId = "material-symbols-outlined-font";
-    if (document.getElementById(linkId)) return;
-    const link = document.createElement("link");
-    link.id = linkId;
-    link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap";
-    document.head.appendChild(link);
-}
-
 function findDatalistOptionByValue(list, rawValue) {
     if (!list) return null;
     const term = normalizeSearchText(rawValue);

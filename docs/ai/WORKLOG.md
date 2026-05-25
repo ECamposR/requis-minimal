@@ -1,5 +1,59 @@
 # Worklog (append-only)
 
+## 2026-05-25 01:20 CST-0600 | tool: Codex CLI
+- Objetivo: completar la localización de assets frontend restantes para que la UI no dependa de Internet del lado del cliente.
+- Cambios:
+  - `templates/monitor_actividad.html`: se reemplazó Chart.js externo por `\/static/vendor/chartjs/chart.umd.min.js`.
+  - `templates/crear_requisicion.html`: se eliminó la referencia externa duplicada a Material Symbols.
+  - `static/app.js`: se eliminó la inyección dinámica de Google Fonts para Material Symbols.
+  - `static/vendor/chartjs/chart.umd.min.js`: se descargó Chart.js localmente.
+- Resultado:
+  - Los assets de UI requeridos por la app se sirven localmente desde `\/static/vendor`.
+  - Las referencias a Google Fonts y jsDelivr fueron eliminadas o reemplazadas en los archivos funcionales revisados.
+- Restricciones:
+  - No se tocó backend, Docker ni tests.
+  - No se alteró la lógica funcional.
+- Validación:
+  - Se verificó la ausencia de referencias externas de assets UI en `templates/`, `static/` y `static/vendor/` tras el cambio.
+
+## 2026-05-25 00:55 CST-0600 | tool: Codex CLI
+- Objetivo: verificar que la UI ya no dependa de recursos externos de Internet para estilos, fuentes o iconos.
+- Resultado de verificación:
+  - `templates/base.html` ya no referencia Google Fonts ni jsDelivr.
+  - Aún quedaron referencias externas fuera del alcance inmediato en `templates/monitor_actividad.html`, `templates/crear_requisicion.html` y `static/app.js`.
+  - Por lo tanto, la UI completa todavía no está totalmente desacoplada de Internet del lado del cliente.
+- Restricciones:
+  - No se tocó backend, JS ni lógica de negocio.
+  - No se modificaron templates ni CSS en esta verificación.
+- Estado:
+  - Se documenta el hallazgo para seguimiento; falta una pasada posterior para localizar esos recursos remanentes.
+
+## 2026-05-25 00:35 CST-0600 | tool: Codex CLI
+- Objetivo: cambiar `templates/base.html` para que la UI consuma assets locales desde `static/vendor`.
+- Cambios:
+  - `templates/base.html`: se reemplazaron los enlaces a Google Fonts y jsDelivr por `\/static/vendor/fonts/montserrat.css`, `\/static/vendor/fonts/material-symbols.css` y `\/static/vendor/pico/pico.min.css`.
+- Resultado:
+  - La app ya no depende de Google Fonts ni jsDelivr para renderizar la UI en el cliente.
+- Restricciones:
+  - No se tocó backend, JS ni lógica de negocio.
+  - No se tocaron `static/style.css` ni `static/theme.css`.
+- Validación:
+  - El orden de carga quedó: fuentes locales, PicoCSS local, `style.css`, `theme.css`.
+
+## 2026-05-25 00:20 CST-0600 | tool: Codex CLI
+- Objetivo: localizar assets externos de frontend para que la app no dependa de Internet del lado del cliente.
+- Cambios:
+  - `static/vendor/pico/pico.min.css`: se descargó PicoCSS localmente.
+  - `static/vendor/fonts/montserrat.css` y `static/vendor/fonts/material-symbols.css`: se crearon CSS locales para las fuentes.
+  - `static/vendor/fonts/montserrat/` y `static/vendor/fonts/material-symbols/`: se descargaron los `.ttf` referenciados por los CSS de Google Fonts.
+- Restricciones:
+  - No se modificó `templates/base.html` todavía.
+  - No se tocó backend, JS ni lógica de negocio.
+  - No se tocaron templates ni tests.
+- Validación:
+  - `static/vendor` no contiene referencias a `fonts.googleapis.com`, `fonts.gstatic.com` ni `cdn.jsdelivr.net`.
+  - `git diff --check` pendiente de ejecutar en este cierre.
+
 ## 2026-05-22 05:25 CST-0600 | tool: Codex CLI
 - Objetivo: registrar el cierre exitoso de la validación manual funcional del frente móvil de bodega.
 - Cambios:
