@@ -498,7 +498,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function verDetalle(id) {
-    ensureMaterialSymbolsFont();
     fetch(`/api/requisiciones/${id}`)
         .then((r) => r.json())
         .then((data) => {

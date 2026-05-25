@@ -1,5 +1,18 @@
 # Worklog (append-only)
 
+## 2026-05-25 01:35 CST-0600 | tool: Codex CLI
+- Objetivo: corregir el `ReferenceError` de `ensureMaterialSymbolsFont` al abrir `Ver detalle`.
+- Cambios:
+  - `static/app.js`: se eliminó la llamada residual a `ensureMaterialSymbolsFont()` dentro de `verDetalle(id)`.
+- Resultado:
+  - `Ver detalle` ya no depende de una función eliminada; Material Symbols sigue cargando localmente desde `templates/base.html` vía `/static/vendor/fonts/material-symbols.css`.
+- Restricciones:
+  - No se tocó backend ni endpoints.
+  - No se tocaron templates ni CSS.
+  - No se reintrodujeron Google Fonts ni jsDelivr.
+- Validación:
+  - Se verificó que no quede ninguna referencia a `ensureMaterialSymbolsFont` en el árbol de templates/static.
+
 ## 2026-05-25 01:20 CST-0600 | tool: Codex CLI
 - Objetivo: completar la localización de assets frontend restantes para que la UI no dependa de Internet del lado del cliente.
 - Cambios:
