@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -14,6 +15,7 @@ from app.database import get_db
 from app.main import (
     app,
     build_productos_no_utilizados_snapshot,
+    dashboard_productos_no_utilizados_api,
     format_datetime,
     resolve_extended_monitor_period,
     resolve_monitor_period,
@@ -1700,6 +1702,100 @@ def test_monitor_renderiza_periodo_activo_en_ui(client: TestClient):
     assert 'value="30d" selected' in html
     assert "Periodo activo" in html
     assert "Ultimos 30 dias" in html
+
+
+def test_endpoint_productos_no_utilizados_autorizado_y_sin_datos_devuelve_estructura(db_session: Session):
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    with patch("app.main.now_sv", return_value=datetime(2026, 6, 12, 15, 30, 0)):
+        payload = dashboard_productos_no_utilizados_api(
+            current_user=aprobador,
+            db=db_session,
+        )
+
+    assert "periodo" in payload
+    assert "kpis" in payload
+    assert "ranking" in payload
+    assert "detalle" in payload
+    assert payload["periodo"]["key"] == "30d"
+    assert payload["ranking"] == []
+    assert payload["detalle"] == []
+    assert payload["kpis"]["productos_con_retorno"] == 0
+    assert payload["kpis"]["total_entregado"] == 0.0
+    assert payload["kpis"]["total_retornado_sin_usar"] == 0.0
+    assert payload["kpis"]["porcentaje_global_no_usado"] == 0.0
+    assert payload["kpis"]["requisiciones_analizadas"] == 0
+    assert payload["kpis"]["requisiciones_con_retorno"] == 0
+
+
+def test_endpoint_productos_no_utilizados_rechaza_usuario_no_autorizado(db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    with pytest.raises(HTTPException) as exc_info:
+        dashboard_productos_no_utilizados_api(
+            current_user=user,
+            db=db_session,
+        )
+
+    assert exc_info.value.status_code == 403
+
+
+def test_endpoint_productos_no_utilizados_custom_y_period_soportan_filtros(db_session: Session):
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-API-IN",
+        liquidated_at=datetime(2026, 6, 15, 11, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto API",
+                "cantidad": 10,
+                "cantidad_entregada": 10,
+                "qty_returned_to_warehouse": 4,
+                "qty_used": 6,
+                "qty_left_at_client": 0,
+            }
+        ],
+    )
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-API-OUT",
+        liquidated_at=datetime(2026, 7, 2, 11, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto Fuera API",
+                "cantidad": 10,
+                "cantidad_entregada": 10,
+                "qty_returned_to_warehouse": 4,
+                "qty_used": 6,
+                "qty_left_at_client": 0,
+            }
+        ],
+    )
+
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    with patch("app.main.now_sv", return_value=datetime(2026, 6, 30, 12, 0, 0)):
+        payload_periodo = dashboard_productos_no_utilizados_api(
+            periodo="custom",
+            fecha_desde="2026-06-01",
+            fecha_hasta="2026-06-30",
+            current_user=aprobador,
+            db=db_session,
+        )
+        payload_period = dashboard_productos_no_utilizados_api(
+            period="custom",
+            fecha_desde="2026-06-01",
+            fecha_hasta="2026-06-30",
+            current_user=aprobador,
+            db=db_session,
+        )
+
+    assert payload_periodo["periodo"]["key"] == "custom"
+    assert payload_periodo["periodo"]["fecha_desde"] == "2026-06-01"
+    assert payload_periodo["periodo"]["fecha_hasta"] == "2026-06-30"
+    assert [row["producto"] for row in payload_periodo["ranking"]] == ["Producto API"]
+    assert [row["folio"] for row in payload_periodo["detalle"]] == ["REQ-PNU-API-IN"]
+    assert "Producto Fuera API" not in {row["producto"] for row in payload_periodo["ranking"]}
+    assert "REQ-PNU-API-OUT" not in {row["folio"] for row in payload_periodo["detalle"]}
+
+    assert payload_period == payload_periodo
 
 
 def test_productos_no_utilizados_incluye_retorno_excluye_sin_retorno_y_calcula_porcentaje(db_session: Session):

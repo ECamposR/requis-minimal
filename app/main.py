@@ -2459,6 +2459,20 @@ def dashboard_auditoria_api(
     }
 
 
+@app.get("/api/dashboard/productos-no-utilizados")
+def dashboard_productos_no_utilizados_api(
+    periodo: str | None = None,
+    period: str | None = None,
+    fecha_desde: str | None = None,
+    fecha_hasta: str | None = None,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_dashboard_access(current_user)
+    monitor_period = resolve_extended_monitor_period(periodo or period, fecha_desde, fecha_hasta)
+    return build_productos_no_utilizados_snapshot(db, monitor_period)
+
+
 def build_dashboard_auditoria_snapshot(
     db: Session,
     monitor_period: dict[str, object] | None = None,
