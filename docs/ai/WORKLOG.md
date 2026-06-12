@@ -1,5 +1,25 @@
 # Worklog (append-only)
 
+## 2026-06-12 | tool: Codex CLI
+- Objetivo: completar el reporte `Productos no utilizados` dentro del `Monitor de Actividad`.
+- Tareas: `EPIC-BI-05`, `REQ-220`
+- Cambios:
+  - `app/main.py`: se agregaron el helper de periodos extendidos, el snapshot agrupado por producto, el endpoint JSON y la exportacion XLSX.
+  - `templates/monitor_actividad.html`: se agrego la seccion visual con filtros, ranking, estados de carga/error, exportacion y detalle expandible por producto.
+  - `tests/test_basic_flow.py`: se cubrieron periodos, calculos del snapshot, permisos, filtros custom, contrato JSON y contenido de las dos hojas XLSX.
+- Resultado:
+  - El monitor permite consultar productos entregados que regresaron a bodega, aplicar periodos predefinidos o personalizados, revisar requisiciones relacionadas y descargar el reporte.
+  - El XLSX incluye las hojas `Ranking no utilizados` y `Detalle requisiciones`.
+- Validacion:
+  - Los tests focales de `productos_no_utilizados` y periodos extendidos quedaron aprobados durante la implementacion.
+  - El JavaScript inline del monitor paso `node --check` y los diffs de UI pasaron `git diff --check`.
+- Commits:
+  - `0c823cc` `Add productos no utilizados snapshot`
+  - `57276a5` `Add productos no utilizados API endpoint`
+  - `d7cd323` `Add productos no utilizados XLSX export`
+  - `20760fb` `Add productos no utilizados monitor UI`
+  - `f2fa31c` `Add productos no utilizados expandable detail`
+
 ## 2026-05-25 02:05 CST-0600 | tool: Codex CLI
 - Objetivo: dejar documentado el cierre final del frente móvil y los ultimos hotfixes de liquidacion para que la rama quede alineada con el estado real de `main`.
 - Cambios documentados:

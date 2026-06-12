@@ -1,5 +1,25 @@
 # Decisions Log
 
+## ADR-011 | 2026-06-12 | Semantica del reporte Productos no utilizados
+- Contexto:
+  - El monitor necesita identificar productos entregados que regresaron a bodega sin uso total o parcial.
+  - La liquidacion ya persiste cantidades entregadas, usadas, dejadas en cliente y retornadas a bodega por item.
+- Decision:
+  - Definir `No usado` como `Item.qty_returned_to_warehouse`.
+  - No exigir `qty_used == 0`; un retorno parcial tambien cuenta como cantidad no utilizada.
+  - Filtrar el periodo por `coalesce(Requisicion.liquidated_at, Requisicion.prokey_liquidada_at)`.
+  - Agrupar el ranking por la descripcion normalizada del producto y mostrar solo productos con retorno mayor que cero.
+  - Considerar como correlativos involucrados unicamente las requisiciones donde ese producto tuvo retorno.
+  - Generar el XLSX con dos hojas: `Ranking no utilizados` y `Detalle requisiciones`.
+- Motivo:
+  - La cantidad retornada expresa directamente el volumen que salio de bodega y no termino utilizado.
+  - Excluir retornos parciales ocultaria merma operativa relevante.
+  - La fecha de liquidacion representa el momento real en que las cantidades quedan conciliadas.
+- Impacto:
+  - El ranking suma `cantidad_entregada` y `qty_returned_to_warehouse`, calcula porcentaje no usado y permite abrir el detalle por requisicion.
+  - El reporte no incluye productos sin retorno, aunque hayan sido entregados dentro del periodo.
+  - JSON, UI y XLSX reutilizan el mismo snapshot backend.
+
 ## ADR-010 | 2026-05-22 | Priorizar documentación y UX móvil de bodega antes de cambios mayores
 - Contexto:
   - La app ya opera como producción interna controlada v1.x.
