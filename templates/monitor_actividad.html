@@ -223,6 +223,66 @@
     margin: 0;
     color: var(--ui-muted, var(--muted, #475569));
 }
+.productos-no-utilizados-card {
+    display: grid;
+    gap: 1rem;
+}
+.productos-no-utilizados-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.productos-no-utilizados-toolbar__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.9rem;
+}
+.productos-no-utilizados-toolbar__field {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 12rem;
+}
+.productos-no-utilizados-toolbar__field span {
+    color: var(--ui-muted, var(--muted, #475569));
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.productos-no-utilizados-toolbar__field select,
+.productos-no-utilizados-toolbar__field input {
+    margin-bottom: 0;
+}
+.productos-no-utilizados-toolbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+.productos-no-utilizados-toolbar__actions button {
+    margin: 0;
+    white-space: nowrap;
+}
+.productos-no-utilizados-status {
+    margin: 0;
+    color: var(--ui-muted, var(--muted, #475569));
+}
+.productos-no-utilizados-status.is-error {
+    color: var(--ui-danger, var(--danger, #dc2626));
+}
+.productos-no-utilizados-table-wrap {
+    overflow-x: auto;
+}
+.productos-no-utilizados-table {
+    width: 100%;
+    margin-bottom: 0;
+}
+.productos-no-utilizados-table th,
+.productos-no-utilizados-table td {
+    vertical-align: top;
+}
 @media (max-width: 960px) {
     .monitor-period-toolbar {
         align-items: stretch;
@@ -245,6 +305,20 @@
     }
     .dashboard-bi-drilldown-header {
         flex-direction: column;
+    }
+    .productos-no-utilizados-toolbar {
+        align-items: stretch;
+    }
+    .productos-no-utilizados-toolbar__controls {
+        align-items: stretch;
+        width: 100%;
+    }
+    .productos-no-utilizados-toolbar__field {
+        min-width: 0;
+        width: 100%;
+    }
+    .productos-no-utilizados-toolbar__actions {
+        width: 100%;
     }
 }
 </style>
@@ -386,6 +460,79 @@
             </div>
             <p class="dashboard-bi-status" data-chart-status="diferencia-tecnico">Cargando datos...</p>
         </article>
+    </section>
+</section>
+
+<section class="monitor-section" aria-labelledby="monitor-productos-no-utilizados">
+    <header class="monitor-section-header">
+        <h2 id="monitor-productos-no-utilizados">Productos no utilizados</h2>
+        <p>Productos entregados en requisiciones liquidadas que regresaron a bodega sin uso.</p>
+    </header>
+
+    <section class="panel view-panel productos-no-utilizados-card" id="productos-no-utilizados-section">
+        <div class="productos-no-utilizados-toolbar" aria-label="Controles de productos no utilizados">
+            <div class="productos-no-utilizados-toolbar__controls">
+                <label class="productos-no-utilizados-toolbar__field" for="productos-no-utilizados-periodo">
+                    <span>Ventana temporal</span>
+                    <select id="productos-no-utilizados-periodo" name="productos-no-utilizados-periodo" aria-label="Ventana temporal de productos no utilizados">
+                        <option value="today">Hoy</option>
+                        <option value="7d">Últimos 7 días</option>
+                        <option value="15d">Últimos 15 días</option>
+                        <option value="30d" selected>Últimos 30 días</option>
+                        <option value="90d">Últimos 90 días</option>
+                        <option value="current_month">Mes actual</option>
+                        <option value="previous_month">Mes anterior</option>
+                        <option value="ytd">Año actual</option>
+                        <option value="all">Todo</option>
+                        <option value="custom">Rango personalizado</option>
+                    </select>
+                </label>
+                <label class="productos-no-utilizados-toolbar__field" for="productos-no-utilizados-fecha-desde">
+                    <span>Fecha desde</span>
+                    <input
+                        id="productos-no-utilizados-fecha-desde"
+                        name="productos-no-utilizados-fecha-desde"
+                        type="date"
+                        aria-label="Fecha desde para productos no utilizados"
+                    >
+                </label>
+                <label class="productos-no-utilizados-toolbar__field" for="productos-no-utilizados-fecha-hasta">
+                    <span>Fecha hasta</span>
+                    <input
+                        id="productos-no-utilizados-fecha-hasta"
+                        name="productos-no-utilizados-fecha-hasta"
+                        type="date"
+                        aria-label="Fecha hasta para productos no utilizados"
+                    >
+                </label>
+            </div>
+            <div class="productos-no-utilizados-toolbar__actions">
+                <button type="button" class="secondary" id="productos-no-utilizados-aplicar">Aplicar</button>
+                <button type="button" class="secondary" id="productos-no-utilizados-exportar">Exportar Excel</button>
+            </div>
+        </div>
+
+        <p class="productos-no-utilizados-status" id="productos-no-utilizados-loading" hidden>Cargando datos...</p>
+        <p class="productos-no-utilizados-status" id="productos-no-utilizados-empty" hidden>Sin datos para mostrar en este periodo.</p>
+        <p class="productos-no-utilizados-status is-error" id="productos-no-utilizados-error" hidden>No se pudo cargar el reporte.</p>
+
+        <div class="productos-no-utilizados-table-wrap">
+            <table class="dashboard-bi-drilldown-table productos-no-utilizados-table" aria-label="Ranking de productos no utilizados">
+                <thead>
+                    <tr>
+                        <th>Ranking</th>
+                        <th>Producto</th>
+                        <th>Req. donde salió</th>
+                        <th>Entregado</th>
+                        <th>Retornado sin usar</th>
+                        <th>% no usado</th>
+                        <th>Req. con retorno</th>
+                        <th>Correlativos</th>
+                    </tr>
+                </thead>
+                <tbody id="productos-no-utilizados-body"></tbody>
+            </table>
+        </div>
     </section>
 </section>
 
@@ -978,6 +1125,178 @@ function renderDiferenciaTecnicoChart(data) {
     clearChartStatus("diferencia-tecnico");
 }
 
+function getProductosNoUtilizadosNodes() {
+    return {
+        section: document.getElementById("productos-no-utilizados-section"),
+        period: document.getElementById("productos-no-utilizados-periodo"),
+        fechaDesde: document.getElementById("productos-no-utilizados-fecha-desde"),
+        fechaHasta: document.getElementById("productos-no-utilizados-fecha-hasta"),
+        aplicar: document.getElementById("productos-no-utilizados-aplicar"),
+        exportar: document.getElementById("productos-no-utilizados-exportar"),
+        loading: document.getElementById("productos-no-utilizados-loading"),
+        empty: document.getElementById("productos-no-utilizados-empty"),
+        error: document.getElementById("productos-no-utilizados-error"),
+        body: document.getElementById("productos-no-utilizados-body"),
+    };
+}
+
+function formatProductosNoUtilizadosNumber(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+        return "0";
+    }
+    return number.toLocaleString("es-SV", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    });
+}
+
+function formatProductosNoUtilizadosPercent(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+        return "0%";
+    }
+    return `${formatProductosNoUtilizadosNumber(number)}%`;
+}
+
+function setProductosNoUtilizadosState(state = {}) {
+    const nodes = getProductosNoUtilizadosNodes();
+    if (!nodes.section) return;
+    if (nodes.loading) nodes.loading.hidden = !Boolean(state.loading);
+    if (nodes.empty) nodes.empty.hidden = !Boolean(state.empty);
+    if (nodes.error) nodes.error.hidden = !Boolean(state.error);
+}
+
+function clearProductosNoUtilizadosTable() {
+    const { body } = getProductosNoUtilizadosNodes();
+    if (body) {
+        body.replaceChildren();
+    }
+}
+
+function setProductosNoUtilizadosDateInputsState() {
+    const { period, fechaDesde, fechaHasta } = getProductosNoUtilizadosNodes();
+    const isCustom = String(period?.value || "").trim().toLowerCase() === "custom";
+    if (fechaDesde) {
+        fechaDesde.disabled = !isCustom;
+    }
+    if (fechaHasta) {
+        fechaHasta.disabled = !isCustom;
+    }
+}
+
+function buildProductosNoUtilizadosQueryParams() {
+    const { period, fechaDesde, fechaHasta } = getProductosNoUtilizadosNodes();
+    const params = new URLSearchParams();
+    const periodValue = String(period?.value || "30d").trim().toLowerCase() || "30d";
+    params.set("periodo", periodValue);
+    if (periodValue === "custom") {
+        params.set("fecha_desde", String(fechaDesde?.value || "").trim());
+        params.set("fecha_hasta", String(fechaHasta?.value || "").trim());
+    }
+    return params;
+}
+
+function buildProductosNoUtilizadosApiUrl() {
+    const url = new URL("/api/dashboard/productos-no-utilizados", window.location.origin);
+    const params = buildProductosNoUtilizadosQueryParams();
+    params.forEach((value, key) => {
+        url.searchParams.set(key, value);
+    });
+    return `${url.pathname}${url.search}`;
+}
+
+function buildProductosNoUtilizadosExportUrl() {
+    const url = new URL("/api/dashboard/productos-no-utilizados/export.xlsx", window.location.origin);
+    const params = buildProductosNoUtilizadosQueryParams();
+    params.forEach((value, key) => {
+        url.searchParams.set(key, value);
+    });
+    return `${url.pathname}${url.search}`;
+}
+
+function createProductosNoUtilizadosCell(value, className = "") {
+    const cell = document.createElement("td");
+    if (className) {
+        cell.className = className;
+    }
+    cell.textContent = value === null || value === undefined ? "" : String(value);
+    return cell;
+}
+
+function renderProductosNoUtilizadosRanking(ranking) {
+    const { body } = getProductosNoUtilizadosNodes();
+    if (!body) return;
+    body.replaceChildren();
+
+    ranking.forEach((item) => {
+        const row = document.createElement("tr");
+        row.appendChild(createProductosNoUtilizadosCell(item?.ranking ?? ""));
+        row.appendChild(createProductosNoUtilizadosCell(item?.producto ?? ""));
+        row.appendChild(createProductosNoUtilizadosCell(item?.requisiciones_donde_salio ?? 0));
+        row.appendChild(createProductosNoUtilizadosCell(formatProductosNoUtilizadosNumber(item?.entregado ?? 0)));
+        row.appendChild(createProductosNoUtilizadosCell(formatProductosNoUtilizadosNumber(item?.retornado_sin_usar ?? 0)));
+        row.appendChild(createProductosNoUtilizadosCell(formatProductosNoUtilizadosPercent(item?.porcentaje_no_usado ?? 0)));
+        row.appendChild(createProductosNoUtilizadosCell(item?.requisiciones_con_retorno ?? 0));
+        row.appendChild(createProductosNoUtilizadosCell(item?.correlativos_preview ?? ""));
+        body.appendChild(row);
+    });
+}
+
+async function cargarProductosNoUtilizados() {
+    const { section } = getProductosNoUtilizadosNodes();
+    if (!section) return;
+
+    setProductosNoUtilizadosState({ loading: true, empty: false, error: false });
+    clearProductosNoUtilizadosTable();
+
+    try {
+        const response = await fetch(buildProductosNoUtilizadosApiUrl(), {
+            headers: { "Accept": "application/json" },
+            credentials: "same-origin",
+        });
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar Productos no utilizados (${response.status})`);
+        }
+        const payload = await response.json();
+        const ranking = Array.isArray(payload?.ranking) ? payload.ranking : [];
+        if (ranking.length === 0) {
+            clearProductosNoUtilizadosTable();
+            setProductosNoUtilizadosState({ loading: false, empty: true, error: false });
+            return;
+        }
+        renderProductosNoUtilizadosRanking(ranking);
+        setProductosNoUtilizadosState({ loading: false, empty: false, error: false });
+    } catch (error) {
+        console.error("monitor_actividad_productos_no_utilizados_error", error);
+        clearProductosNoUtilizadosTable();
+        setProductosNoUtilizadosState({ loading: false, empty: false, error: true });
+    }
+}
+
+function initProductosNoUtilizadosSection() {
+    const { section, period, aplicar, exportar } = getProductosNoUtilizadosNodes();
+    if (!section) return;
+
+    setProductosNoUtilizadosDateInputsState();
+    if (period) {
+        period.addEventListener("change", () => {
+            setProductosNoUtilizadosDateInputsState();
+        });
+    }
+    if (aplicar) {
+        aplicar.addEventListener("click", () => {
+            cargarProductosNoUtilizados();
+        });
+    }
+    if (exportar) {
+        exportar.addEventListener("click", () => {
+            window.location.href = buildProductosNoUtilizadosExportUrl();
+        });
+    }
+    cargarProductosNoUtilizados();
+}
+
 async function cargarDatosBasicos() {
     ["motivos", "solicitantes", "items", "horario"].forEach((key) => setChartStatus(key, "Cargando datos..."));
     setAuditKpi("kpi-tiempo-promedio-prokey", "--", "kpi-tiempo-promedio-prokey-note", "Cargando métricas de uso...");
@@ -1046,6 +1365,7 @@ document.addEventListener("DOMContentLoaded", () => {
         period_key: getMonitorPeriodValue(),
         label: getMonitorPeriodLabel(),
     });
+    initProductosNoUtilizadosSection();
     cargarDatosBasicos();
     cargarDatosAuditoria();
     document.querySelectorAll("[data-drilldown-kind]").forEach((button) => {
