@@ -283,6 +283,30 @@
 .productos-no-utilizados-table td {
     vertical-align: top;
 }
+.productos-no-utilizados-detail-button {
+    margin: 0;
+    padding: 0.35rem 0.65rem;
+    white-space: nowrap;
+}
+.productos-no-utilizados-detail-row > td {
+    padding: 0;
+    background: var(--ui-surface-subtle, #f8fafc);
+}
+.productos-no-utilizados-detail-panel {
+    padding: 1rem;
+}
+.productos-no-utilizados-detail-table-wrap {
+    overflow-x: auto;
+}
+.productos-no-utilizados-detail-table {
+    width: 100%;
+    margin: 0;
+    font-size: 0.88rem;
+}
+.productos-no-utilizados-detail-empty {
+    margin: 0;
+    color: var(--ui-muted, var(--muted, #475569));
+}
 @media (max-width: 960px) {
     .monitor-period-toolbar {
         align-items: stretch;
@@ -528,6 +552,7 @@
                         <th>% no usado</th>
                         <th>Req. con retorno</th>
                         <th>Correlativos</th>
+                        <th>Acción</th>
                     </tr>
                 </thead>
                 <tbody id="productos-no-utilizados-body"></tbody>
@@ -1224,22 +1249,102 @@ function createProductosNoUtilizadosCell(value, className = "") {
     return cell;
 }
 
-function renderProductosNoUtilizadosRanking(ranking) {
+function createProductosNoUtilizadosDetailTable(items) {
+    const panel = document.createElement("div");
+    panel.className = "productos-no-utilizados-detail-panel";
+
+    if (items.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "productos-no-utilizados-detail-empty";
+        empty.textContent = "Sin requisiciones de detalle para este producto.";
+        panel.appendChild(empty);
+        return panel;
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "productos-no-utilizados-detail-table-wrap";
+    const table = document.createElement("table");
+    table.className = "dashboard-bi-drilldown-table productos-no-utilizados-detail-table";
+    const head = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    [
+        "Correlativo",
+        "Fecha liquidación",
+        "Cliente",
+        "Solicitante",
+        "Entregado",
+        "Retornado",
+        "% no usado",
+    ].forEach((label) => {
+        const cell = document.createElement("th");
+        cell.textContent = label;
+        headRow.appendChild(cell);
+    });
+    head.appendChild(headRow);
+
+    const body = document.createElement("tbody");
+    items.forEach((item) => {
+        const row = document.createElement("tr");
+        row.appendChild(createProductosNoUtilizadosCell(item?.folio ?? ""));
+        row.appendChild(createProductosNoUtilizadosCell(fmtAuditDateTime(item?.fecha_liquidacion)));
+        row.appendChild(createProductosNoUtilizadosCell(item?.cliente ?? ""));
+        row.appendChild(createProductosNoUtilizadosCell(item?.solicitante ?? ""));
+        row.appendChild(createProductosNoUtilizadosCell(formatProductosNoUtilizadosNumber(item?.entregado ?? 0)));
+        row.appendChild(createProductosNoUtilizadosCell(formatProductosNoUtilizadosNumber(item?.retornado_sin_usar ?? 0)));
+        row.appendChild(createProductosNoUtilizadosCell(formatProductosNoUtilizadosPercent(item?.porcentaje_no_usado ?? 0)));
+        body.appendChild(row);
+    });
+
+    table.appendChild(head);
+    table.appendChild(body);
+    wrapper.appendChild(table);
+    panel.appendChild(wrapper);
+    return panel;
+}
+
+function renderProductosNoUtilizadosRanking(ranking, detalle) {
     const { body } = getProductosNoUtilizadosNodes();
     if (!body) return;
     body.replaceChildren();
 
     ranking.forEach((item) => {
+        const producto = String(item?.producto ?? "");
+        const productoDetalle = detalle.filter((detailItem) => String(detailItem?.producto ?? "") === producto);
         const row = document.createElement("tr");
         row.appendChild(createProductosNoUtilizadosCell(item?.ranking ?? ""));
-        row.appendChild(createProductosNoUtilizadosCell(item?.producto ?? ""));
+        row.appendChild(createProductosNoUtilizadosCell(producto));
         row.appendChild(createProductosNoUtilizadosCell(item?.requisiciones_donde_salio ?? 0));
         row.appendChild(createProductosNoUtilizadosCell(formatProductosNoUtilizadosNumber(item?.entregado ?? 0)));
         row.appendChild(createProductosNoUtilizadosCell(formatProductosNoUtilizadosNumber(item?.retornado_sin_usar ?? 0)));
         row.appendChild(createProductosNoUtilizadosCell(formatProductosNoUtilizadosPercent(item?.porcentaje_no_usado ?? 0)));
         row.appendChild(createProductosNoUtilizadosCell(item?.requisiciones_con_retorno ?? 0));
         row.appendChild(createProductosNoUtilizadosCell(item?.correlativos_preview ?? ""));
+
+        const detailCell = document.createElement("td");
+        const detailButton = document.createElement("button");
+        detailButton.type = "button";
+        detailButton.className = "secondary productos-no-utilizados-detail-button";
+        detailButton.textContent = "Ver detalle";
+        detailButton.setAttribute("aria-expanded", "false");
+        detailCell.appendChild(detailButton);
+        row.appendChild(detailCell);
         body.appendChild(row);
+
+        const detailRow = document.createElement("tr");
+        detailRow.className = "productos-no-utilizados-detail-row";
+        detailRow.hidden = true;
+        const detailContentCell = document.createElement("td");
+        detailContentCell.colSpan = 9;
+        detailContentCell.appendChild(createProductosNoUtilizadosDetailTable(productoDetalle));
+        detailRow.appendChild(detailContentCell);
+        body.appendChild(detailRow);
+
+        detailButton.addEventListener("click", () => {
+            const willOpen = detailRow.hidden;
+            detailRow.hidden = !willOpen;
+            detailButton.textContent = willOpen ? "Ocultar detalle" : "Ver detalle";
+            detailButton.setAttribute("aria-expanded", String(willOpen));
+        });
     });
 }
 
@@ -1260,12 +1365,13 @@ async function cargarProductosNoUtilizados() {
         }
         const payload = await response.json();
         const ranking = Array.isArray(payload?.ranking) ? payload.ranking : [];
+        const detalle = Array.isArray(payload?.detalle) ? payload.detalle : [];
         if (ranking.length === 0) {
             clearProductosNoUtilizadosTable();
             setProductosNoUtilizadosState({ loading: false, empty: true, error: false });
             return;
         }
-        renderProductosNoUtilizadosRanking(ranking);
+        renderProductosNoUtilizadosRanking(ranking, detalle);
         setProductosNoUtilizadosState({ loading: false, empty: false, error: false });
     } catch (error) {
         console.error("monitor_actividad_productos_no_utilizados_error", error);
