@@ -3,6 +3,13 @@
 Estados: `todo` | `in_progress` | `done` | `blocked`
 
 ## Gobernanza / Continuidad
+- `EPIC-BI-05` | `done` | Implementar el reporte `Productos no utilizados` en el Monitor de Actividad con ranking por producto, periodos extendidos, detalle por requisicion y exportacion XLSX.
+- `REQ-220` | `done` | Entregar el reporte completo: snapshot backend, endpoint JSON protegido, XLSX de dos hojas, UI con filtros, ranking y detalle expandible, mas pruebas focales.
+- `REQ-221` | `todo` | Evaluar filtro adicional por cliente para `Productos no utilizados`, preservando el criterio actual de periodo y cierre.
+- `REQ-222` | `todo` | Evaluar filtro adicional por solicitante para `Productos no utilizados`.
+- `REQ-223` | `todo` | Evaluar filtro adicional por motivo de requisicion para `Productos no utilizados`.
+- `REQ-224` | `todo` | Evaluar una grafica de top productos retornados sin uso basada en el mismo snapshot del reporte.
+- `REQ-225` | `todo` | Evaluar comparacion entre periodos para identificar variaciones en retornos sin uso.
 - `REQ-219` | `done` | Eliminar las referencias externas remanentes en `templates/monitor_actividad.html`, `templates/crear_requisicion.html` y `static/app.js` para que la UI completa deje de depender de Internet.
 - `REQ-218` | `done` | Localizar y cablear los assets de frontend en `static/vendor` para eliminar la dependencia de Internet del cliente.
 - `REQ-210` | `done` | Iniciar la base de UX móvil para bodega sin tocar lógica de negocio, empezando por `/bodega`.

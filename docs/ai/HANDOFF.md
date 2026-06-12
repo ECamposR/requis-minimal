@@ -7,6 +7,23 @@
 - `Todas las Requisiciones` permanece como vista de escritorio en esta ronda, con aviso móvil para usar `Bodega`.
 
 ## Estado actual
+- `EPIC-BI-05` completada en `feature/productos-no-utilizados`: el `Monitor de Actividad` incluye el reporte `Productos no utilizados`.
+- Backend:
+  - `build_productos_no_utilizados_snapshot()` en `app/main.py` construye KPIs, ranking agrupado por producto y detalle por requisicion.
+  - `GET /api/dashboard/productos-no-utilizados` devuelve el snapshot JSON.
+  - `GET /api/dashboard/productos-no-utilizados/export.xlsx` descarga el XLSX con `Ranking no utilizados` y `Detalle requisiciones`.
+- UI:
+  - La seccion vive en `templates/monitor_actividad.html`.
+  - Incluye periodos extendidos, rango custom, ranking, estados de carga/error, exportacion y detalle expandible sin llamadas adicionales.
+- Pruebas:
+  - `tests/test_basic_flow.py` contiene los casos identificados con `productos_no_utilizados`, incluyendo snapshot, API, permisos, filtros y XLSX.
+- Smoke manual:
+  1. Abrir `/monitor` con un rol autorizado.
+  2. Ubicar `Productos no utilizados`.
+  3. Cambiar el periodo o seleccionar `Rango personalizado` y completar fechas.
+  4. Pulsar `Aplicar` y revisar el ranking.
+  5. Pulsar `Ver detalle` en un producto.
+  6. Pulsar `Exportar Excel` y verificar las dos hojas.
 - Los assets externos de frontend ya fueron descargados a `static/vendor/` y `templates/base.html` ya quedó cableado a esos recursos locales.
 - La UI ya quedó desacoplada de Internet del lado del cliente para estilos, fuentes e íconos; Chart.js también se sirve localmente desde `static/vendor/chartjs/`.
 - Frente actual: documentación + UX móvil de bodega.

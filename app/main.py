@@ -180,6 +180,113 @@ def resolve_monitor_period(period_key: str | None, reference_now: datetime | Non
     }
 
 
+def resolve_extended_monitor_period(
+    period_key: str | None,
+    fecha_desde: str | None = None,
+    fecha_hasta: str | None = None,
+    reference_now: datetime | None = None,
+) -> dict[str, object]:
+    """
+    Resolve a reusable monitor/report date range with extended presets.
+
+    Invalid presets or malformed custom dates fall back to the default 30d window.
+    """
+    now_value = reference_now or now_sv()
+    normalized_key = str(period_key or "30d").strip().lower()
+
+    def _day_start(value: datetime) -> datetime:
+        return value.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    def _day_end(value: datetime) -> datetime:
+        return value.replace(hour=23, minute=59, second=59, microsecond=0)
+
+    def _start_for_last_n_days(days: int) -> datetime:
+        return _day_start(now_value - timedelta(days=max(days - 1, 0)))
+
+    def _serialize(
+        key: str,
+        label: str,
+        start: datetime | None,
+        end: datetime | None,
+    ) -> dict[str, object]:
+        return {
+            "key": key,
+            "label": label,
+            "start": start,
+            "end": end,
+            "fecha_desde": start.strftime("%Y-%m-%d") if start else None,
+            "fecha_hasta": end.strftime("%Y-%m-%d") if end else None,
+        }
+
+    def _fallback_30d() -> dict[str, object]:
+        return _serialize(
+            "30d",
+            "Ultimos 30 dias",
+            _start_for_last_n_days(30),
+            _day_end(now_value),
+        )
+
+    if normalized_key in ("", "30d"):
+        return _fallback_30d()
+    if normalized_key == "today":
+        start = _day_start(now_value)
+        end = _day_end(now_value)
+        return _serialize("today", "Hoy", start, end)
+    if normalized_key == "7d":
+        return _serialize(
+            "7d",
+            "Ultimos 7 dias",
+            _start_for_last_n_days(7),
+            _day_end(now_value),
+        )
+    if normalized_key == "15d":
+        return _serialize(
+            "15d",
+            "Ultimos 15 dias",
+            _start_for_last_n_days(15),
+            _day_end(now_value),
+        )
+    if normalized_key == "90d":
+        return _serialize(
+            "90d",
+            "Ultimos 90 dias",
+            _start_for_last_n_days(90),
+            _day_end(now_value),
+        )
+    if normalized_key == "current_month":
+        start = now_value.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end = _day_end(now_value)
+        return _serialize("current_month", "Mes actual", start, end)
+    if normalized_key == "previous_month":
+        first_day_current_month = now_value.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_day_previous_month = first_day_current_month - timedelta(days=1)
+        start = last_day_previous_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end = _day_end(last_day_previous_month)
+        return _serialize("previous_month", "Mes anterior", start, end)
+    if normalized_key == "ytd":
+        start = now_value.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        end = _day_end(now_value)
+        return _serialize("ytd", "Ano en curso", start, end)
+    if normalized_key == "all":
+        return _serialize("all", "Historial completo", None, None)
+    if normalized_key == "custom":
+        fecha_desde_limpia = str(fecha_desde or "").strip()
+        fecha_hasta_limpia = str(fecha_hasta or "").strip()
+        try:
+            fecha_desde_dt = datetime.strptime(fecha_desde_limpia, "%Y-%m-%d") if fecha_desde_limpia else None
+            fecha_hasta_dt = datetime.strptime(fecha_hasta_limpia, "%Y-%m-%d") if fecha_hasta_limpia else None
+        except ValueError:
+            return _fallback_30d()
+        if fecha_desde_dt is None or fecha_hasta_dt is None:
+            return _fallback_30d()
+        start = _day_start(fecha_desde_dt)
+        end = _day_end(fecha_hasta_dt)
+        if start > end:
+            return _fallback_30d()
+        return _serialize("custom", "Rango personalizado", start, end)
+    return _fallback_30d()
+
+
 def build_monitor_period_filter(column, monitor_period: dict[str, object]):
     start_at = monitor_period.get("start_at")
     end_at = monitor_period.get("end_at")
@@ -2352,6 +2459,20 @@ def dashboard_auditoria_api(
     }
 
 
+@app.get("/api/dashboard/productos-no-utilizados")
+def dashboard_productos_no_utilizados_api(
+    periodo: str | None = None,
+    period: str | None = None,
+    fecha_desde: str | None = None,
+    fecha_hasta: str | None = None,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_dashboard_access(current_user)
+    monitor_period = resolve_extended_monitor_period(periodo or period, fecha_desde, fecha_hasta)
+    return build_productos_no_utilizados_snapshot(db, monitor_period)
+
+
 def build_dashboard_auditoria_snapshot(
     db: Session,
     monitor_period: dict[str, object] | None = None,
@@ -2514,6 +2635,204 @@ def build_dashboard_auditoria_snapshot(
     }
 
 
+def build_productos_no_utilizados_snapshot(
+    db: Session,
+    monitor_period: dict[str, object] | None = None,
+) -> dict[str, object]:
+    monitor_period = monitor_period or resolve_extended_monitor_period("30d")
+    period_start = monitor_period.get("start") or monitor_period.get("start_at")
+    period_end = monitor_period.get("end") or monitor_period.get("end_at")
+    cierre_at = func.coalesce(Requisicion.liquidated_at, Requisicion.prokey_liquidada_at)
+    cierre_filter = build_monitor_period_filter(
+        cierre_at,
+        {
+            "start_at": period_start,
+            "end_at": period_end,
+        },
+    )
+    requisiciones_cerradas_query = (
+        db.query(Requisicion)
+        .options(
+            joinedload(Requisicion.items),
+            joinedload(Requisicion.solicitante),
+        )
+        .filter(or_(filtro_pendiente_prokey(), filtro_finalizada_sin_prokey(), Requisicion.estado == "liquidada_en_prokey"))
+    )
+    if cierre_filter is not None:
+        requisiciones_cerradas_query = requisiciones_cerradas_query.filter(cierre_filter)
+    requisiciones_cerradas = requisiciones_cerradas_query.all()
+
+    def _clean_text(value: str | None, fallback: str = "") -> str:
+        return (str(value or "").strip() or fallback)
+
+    def _normalize_producto(value: str | None) -> str:
+        return _clean_text(value, "(Sin descripción)")
+
+    def _safe_float(value) -> float:
+        try:
+            return float(value or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    def _day_str(value: datetime | None) -> str:
+        return value.replace(microsecond=0).isoformat(sep=" ") if value else ""
+
+    def _pct(numerator: float, denominator: float) -> float:
+        if denominator <= 0:
+            return 0.0
+        return round((numerator * 100.0) / denominator, 2)
+
+    product_stats: dict[str, dict[str, object]] = {}
+    detalle_stats: dict[tuple[str, int], dict[str, object]] = {}
+    requisiciones_con_retorno_ids: set[int] = set()
+
+    for req in requisiciones_cerradas:
+        fecha_liquidacion = req.liquidated_at or req.prokey_liquidada_at
+        fecha_liquidacion_texto = _day_str(fecha_liquidacion)
+        cliente_texto = _clean_text(req.cliente_nombre) or _clean_text(req.cliente_codigo)
+        solicitante_texto = ""
+        if req.solicitante and req.solicitante.nombre:
+            solicitante_texto = _clean_text(req.solicitante.nombre)
+        motivo_texto = _clean_text(req.motivo_requisicion)
+        prokey_ref_texto = _clean_text(req.prokey_ref)
+
+        for item in req.items:
+            entregado = _safe_float(item.cantidad_entregada)
+            if entregado <= 0:
+                continue
+
+            producto = _normalize_producto(item.descripcion)
+            retornado = _safe_float(item.qty_returned_to_warehouse)
+            producto_stats = product_stats.setdefault(
+                producto,
+                {
+                    "entregado": 0.0,
+                    "retornado_sin_usar": 0.0,
+                    "requisiciones_donde_salio": set(),
+                    "requisiciones_con_retorno": set(),
+                    "correlativos": set(),
+                },
+            )
+            producto_stats["entregado"] = float(producto_stats["entregado"]) + entregado
+            producto_stats["requisiciones_donde_salio"].add(req.id)
+
+            detalle_key = (producto, req.id)
+            detalle_item = detalle_stats.setdefault(
+                detalle_key,
+                {
+                    "producto": producto,
+                    "folio": _clean_text(req.folio),
+                    "fecha_liquidacion": fecha_liquidacion_texto,
+                    "fecha_liquidacion_sort": fecha_liquidacion or datetime.min,
+                    "cliente": cliente_texto,
+                    "solicitante": solicitante_texto,
+                    "departamento": _clean_text(req.departamento),
+                    "motivo": motivo_texto,
+                    "entregado": 0.0,
+                    "retornado_sin_usar": 0.0,
+                    "prokey_ref": prokey_ref_texto,
+                    "tiene_retorno": False,
+                },
+            )
+            detalle_item["entregado"] = float(detalle_item["entregado"]) + entregado
+
+            if retornado <= 0:
+                continue
+
+            requisiciones_con_retorno_ids.add(req.id)
+            producto_stats["retornado_sin_usar"] = float(producto_stats["retornado_sin_usar"]) + retornado
+            producto_stats["requisiciones_con_retorno"].add(req.id)
+            if req.folio:
+                producto_stats["correlativos"].add(_clean_text(req.folio))
+
+            detalle_item["retornado_sin_usar"] = float(detalle_item["retornado_sin_usar"]) + retornado
+            detalle_item["tiene_retorno"] = True
+
+    detalle_rows: list[dict[str, object]] = []
+    for detalle in detalle_stats.values():
+        if not detalle["tiene_retorno"]:
+            continue
+        entregado = float(detalle["entregado"])
+        retornado = float(detalle["retornado_sin_usar"])
+        detalle_rows.append(
+            {
+                "producto": detalle["producto"],
+                "folio": detalle["folio"],
+                "fecha_liquidacion": detalle["fecha_liquidacion"],
+                "cliente": detalle["cliente"],
+                "solicitante": detalle["solicitante"],
+                "departamento": detalle["departamento"],
+                "motivo": detalle["motivo"],
+                "entregado": round(entregado, 2),
+                "retornado_sin_usar": round(retornado, 2),
+                "porcentaje_no_usado": _pct(retornado, entregado),
+                "prokey_ref": detalle["prokey_ref"],
+                "_fecha_liquidacion_sort": detalle["fecha_liquidacion_sort"],
+            }
+        )
+
+    detalle_rows.sort(key=lambda row: str(row["folio"]))
+    detalle_rows.sort(key=lambda row: row["_fecha_liquidacion_sort"], reverse=True)
+    detalle_rows.sort(key=lambda row: str(row["producto"]).lower())
+    for row in detalle_rows:
+        row.pop("_fecha_liquidacion_sort", None)
+
+    ranking_rows: list[dict[str, object]] = []
+    for producto, stats in product_stats.items():
+        retornado = round(float(stats["retornado_sin_usar"]), 2)
+        if retornado <= 0:
+            continue
+        entregado = round(float(stats["entregado"]), 2)
+        correlativos = sorted(_clean_text(folio) for folio in stats["correlativos"] if _clean_text(folio))
+        ranking_rows.append(
+            {
+                "producto": producto,
+                "requisiciones_donde_salio": len(stats["requisiciones_donde_salio"]),
+                "entregado": entregado,
+                "retornado_sin_usar": retornado,
+                "porcentaje_no_usado": _pct(retornado, entregado),
+                "requisiciones_con_retorno": len(stats["requisiciones_con_retorno"]),
+                "correlativos": correlativos,
+                "correlativos_preview": (
+                    ", ".join(correlativos[:3]) + (f" +{len(correlativos) - 3} más" if len(correlativos) > 3 else "")
+                ),
+            }
+        )
+
+    ranking_rows.sort(
+        key=lambda row: (
+            -float(row["retornado_sin_usar"]),
+            -float(row["porcentaje_no_usado"]),
+            str(row["producto"]).lower(),
+        )
+    )
+    for index, row in enumerate(ranking_rows, start=1):
+        row["ranking"] = index
+
+    total_entregado = round(sum(float(row["entregado"]) for row in ranking_rows), 2)
+    total_retornado = round(sum(float(row["retornado_sin_usar"]) for row in ranking_rows), 2)
+    porcentaje_global = _pct(total_retornado, total_entregado)
+
+    return {
+        "periodo": {
+            "key": monitor_period.get("key", "30d"),
+            "label": monitor_period.get("label", "Ultimos 30 dias"),
+            "fecha_desde": monitor_period.get("fecha_desde"),
+            "fecha_hasta": monitor_period.get("fecha_hasta"),
+        },
+        "kpis": {
+            "productos_con_retorno": len(ranking_rows),
+            "total_entregado": total_entregado,
+            "total_retornado_sin_usar": total_retornado,
+            "porcentaje_global_no_usado": porcentaje_global,
+            "requisiciones_analizadas": len(requisiciones_cerradas),
+            "requisiciones_con_retorno": len(requisiciones_con_retorno_ids),
+        },
+        "ranking": ranking_rows,
+        "detalle": detalle_rows,
+    }
+
+
 @app.get("/api/dashboard/auditoria/discrepancias")
 def dashboard_auditoria_discrepancias_api(
     periodo: str | None = None,
@@ -2583,6 +2902,46 @@ def _monitor_drilldown_rows(items: list[dict[str, object]], kind: str) -> list[l
             rows.append(base + [item.get("items_con_diferencia") or 0, item.get("total_diferencia") or 0.0])
         else:
             rows.append(base + [item.get("items_demo") or 0, item.get("total_demo_entregado") or 0.0])
+    return rows
+
+
+def _productos_no_utilizados_ranking_rows(snapshot: dict[str, object]) -> list[list[object]]:
+    rows: list[list[object]] = []
+    for item in snapshot.get("ranking", []):
+        correlativos = item.get("correlativos") or []
+        rows.append(
+            [
+                item.get("ranking") or 0,
+                item.get("producto") or "",
+                item.get("requisiciones_donde_salio") or 0,
+                item.get("entregado") or 0,
+                item.get("retornado_sin_usar") or 0,
+                item.get("porcentaje_no_usado") or 0,
+                item.get("requisiciones_con_retorno") or 0,
+                ", ".join(str(value) for value in correlativos if str(value).strip()),
+            ]
+        )
+    return rows
+
+
+def _productos_no_utilizados_detalle_rows(snapshot: dict[str, object]) -> list[list[object]]:
+    rows: list[list[object]] = []
+    for item in snapshot.get("detalle", []):
+        rows.append(
+            [
+                item.get("producto") or "",
+                item.get("folio") or "",
+                item.get("fecha_liquidacion") or "",
+                item.get("cliente") or "",
+                item.get("solicitante") or "",
+                item.get("departamento") or "",
+                item.get("motivo") or "",
+                item.get("entregado") or 0,
+                item.get("retornado_sin_usar") or 0,
+                item.get("porcentaje_no_usado") or 0,
+                item.get("prokey_ref") or "",
+            ]
+        )
     return rows
 
 
@@ -2685,6 +3044,55 @@ def dashboard_export_drilldown_api(
         filename = _monitor_export_filename(f"monitor_{normalized_kind}", monitor_period, "xlsx")
         return _build_xlsx_download_response(filename, [(payload["title"], headers, rows)])
     raise HTTPException(status_code=400, detail="Formato no soportado. Usa csv o xlsx")
+
+
+@app.get("/api/dashboard/productos-no-utilizados/export.xlsx")
+def dashboard_productos_no_utilizados_export_api(
+    periodo: str | None = None,
+    period: str | None = None,
+    fecha_desde: str | None = None,
+    fecha_hasta: str | None = None,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_dashboard_access(current_user)
+    monitor_period = resolve_extended_monitor_period(periodo or period, fecha_desde, fecha_hasta)
+    snapshot = build_productos_no_utilizados_snapshot(db, monitor_period)
+    sheets = [
+        (
+            "Ranking no utilizados",
+            [
+                "Ranking",
+                "Producto",
+                "Requisiciones donde salió",
+                "Entregado",
+                "Retornado sin usar",
+                "% no usado",
+                "Requisiciones con retorno",
+                "Correlativos involucrados",
+            ],
+            _productos_no_utilizados_ranking_rows(snapshot),
+        ),
+        (
+            "Detalle requisiciones",
+            [
+                "Producto",
+                "Correlativo",
+                "Fecha liquidación",
+                "Cliente",
+                "Solicitante",
+                "Departamento",
+                "Motivo",
+                "Entregado",
+                "Retornado sin usar",
+                "% no usado",
+                "Referencia ProKey",
+            ],
+            _productos_no_utilizados_detalle_rows(snapshot),
+        ),
+    ]
+    filename = _monitor_export_filename("productos_no_utilizados", monitor_period, "xlsx")
+    return _build_xlsx_download_response(filename, sheets)
 
 
 @app.get("/crear")
