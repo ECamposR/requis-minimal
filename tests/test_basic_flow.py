@@ -15,6 +15,7 @@ from app.database import get_db
 from app.main import (
     app,
     build_productos_no_utilizados_snapshot,
+    dashboard_productos_no_utilizados_export_api,
     dashboard_productos_no_utilizados_api,
     format_datetime,
     resolve_extended_monitor_period,
@@ -736,6 +737,15 @@ def _ranking_row(snapshot: dict[str, object], producto: str) -> dict[str, object
 
 def _detalle_row(snapshot: dict[str, object], folio: str) -> dict[str, object]:
     return next(row for row in snapshot["detalle"] if row["folio"] == folio)
+
+
+def _workbook_from_response(response):
+    from openpyxl import load_workbook
+
+    body = getattr(response, "body", None)
+    if body is None:
+        body = response.content
+    return load_workbook(BytesIO(body), read_only=True, data_only=True)
 
 
 @pytest.mark.parametrize(
@@ -1796,6 +1806,211 @@ def test_endpoint_productos_no_utilizados_custom_y_period_soportan_filtros(db_se
     assert "REQ-PNU-API-OUT" not in {row["folio"] for row in payload_periodo["detalle"]}
 
     assert payload_period == payload_periodo
+
+
+def test_export_productos_no_utilizados_xlsx_genera_archivo_valido_y_datos_correctos(db_session: Session):
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-XLSX-001",
+        liquidated_at=datetime(2026, 6, 15, 11, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto XLSX",
+                "cantidad": 10,
+                "cantidad_entregada": 10,
+                "qty_returned_to_warehouse": 4,
+                "qty_used": 6,
+                "qty_left_at_client": 0,
+            }
+        ],
+    )
+
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    with patch("app.main.now_sv", return_value=datetime(2026, 6, 30, 12, 0, 0)):
+        response = dashboard_productos_no_utilizados_export_api(
+            periodo="custom",
+            fecha_desde="2026-06-01",
+            fecha_hasta="2026-06-30",
+            current_user=aprobador,
+            db=db_session,
+        )
+
+    assert response.status_code == 200
+    assert "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" in response.headers["content-type"]
+
+    workbook = _workbook_from_response(response)
+    try:
+        assert workbook.sheetnames == ["Ranking no utilizados", "Detalle requisiciones"]
+
+        ranking_sheet = workbook["Ranking no utilizados"]
+        detalle_sheet = workbook["Detalle requisiciones"]
+
+        assert tuple(next(ranking_sheet.iter_rows(min_row=1, max_row=1, values_only=True))) == (
+            "Ranking",
+            "Producto",
+            "Requisiciones donde salió",
+            "Entregado",
+            "Retornado sin usar",
+            "% no usado",
+            "Requisiciones con retorno",
+            "Correlativos involucrados",
+        )
+        assert tuple(next(detalle_sheet.iter_rows(min_row=1, max_row=1, values_only=True))) == (
+            "Producto",
+            "Correlativo",
+            "Fecha liquidación",
+            "Cliente",
+            "Solicitante",
+            "Departamento",
+            "Motivo",
+            "Entregado",
+            "Retornado sin usar",
+            "% no usado",
+            "Referencia ProKey",
+        )
+
+        ranking_rows = list(ranking_sheet.iter_rows(min_row=2, values_only=True))
+        detalle_rows = list(detalle_sheet.iter_rows(min_row=2, values_only=True))
+
+        assert len(ranking_rows) == 1
+        assert len(detalle_rows) == 1
+
+        ranking_row = ranking_rows[0]
+        detalle_row = detalle_rows[0]
+
+        assert ranking_row[0] == 1
+        assert ranking_row[1] == "Producto XLSX"
+        assert ranking_row[2] == 1
+        assert ranking_row[3] == 10
+        assert ranking_row[4] == 4
+        assert ranking_row[5] == 40.0
+        assert ranking_row[6] == 1
+        assert ranking_row[7] == "REQ-PNU-XLSX-001"
+
+        assert detalle_row[0] == "Producto XLSX"
+        assert detalle_row[1] == "REQ-PNU-XLSX-001"
+        assert detalle_row[2] == "2026-06-15 11:00:00"
+        assert detalle_row[3] == "Cliente Test"
+        assert detalle_row[4] == "Usuario Ops"
+        assert detalle_row[5] == "Operaciones"
+        assert detalle_row[6] == "Servicio pendiente"
+        assert detalle_row[7] == 10
+        assert detalle_row[8] == 4
+        assert detalle_row[9] == 40.0
+        assert detalle_row[10] == "PK-TEST-001"
+    finally:
+        workbook.close()
+
+
+def test_export_productos_no_utilizados_xlsx_respeta_periodo_custom(db_session: Session):
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-XLSX-IN",
+        liquidated_at=datetime(2026, 6, 15, 11, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto XLSX Dentro",
+                "cantidad": 10,
+                "cantidad_entregada": 10,
+                "qty_returned_to_warehouse": 4,
+                "qty_used": 6,
+                "qty_left_at_client": 0,
+            }
+        ],
+    )
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-XLSX-OUT",
+        liquidated_at=datetime(2026, 7, 2, 11, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto XLSX Fuera",
+                "cantidad": 10,
+                "cantidad_entregada": 10,
+                "qty_returned_to_warehouse": 4,
+                "qty_used": 6,
+                "qty_left_at_client": 0,
+            }
+        ],
+    )
+
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    with patch("app.main.now_sv", return_value=datetime(2026, 6, 30, 12, 0, 0)):
+        response = dashboard_productos_no_utilizados_export_api(
+            periodo="custom",
+            fecha_desde="2026-06-01",
+            fecha_hasta="2026-06-30",
+            current_user=aprobador,
+            db=db_session,
+        )
+
+    workbook = _workbook_from_response(response)
+    try:
+        ranking_sheet = workbook["Ranking no utilizados"]
+        detalle_sheet = workbook["Detalle requisiciones"]
+        ranking_rows = list(ranking_sheet.iter_rows(min_row=2, values_only=True))
+        detalle_rows = list(detalle_sheet.iter_rows(min_row=2, values_only=True))
+
+        assert [row[1] for row in ranking_rows] == ["Producto XLSX Dentro"]
+        assert [row[1] for row in detalle_rows] == ["REQ-PNU-XLSX-IN"]
+        assert "REQ-PNU-XLSX-OUT" not in {row[1] for row in detalle_rows}
+        assert "Producto XLSX Fuera" not in {row[1] for row in ranking_rows}
+    finally:
+        workbook.close()
+
+
+def test_export_productos_no_utilizados_xlsx_sin_datos_crea_hojas_vacias(db_session: Session):
+    aprobador = db_session.query(Usuario).filter(Usuario.username == "aprob.ops").first()
+    with patch("app.main.now_sv", return_value=datetime(2026, 6, 30, 12, 0, 0)):
+        response = dashboard_productos_no_utilizados_export_api(
+            current_user=aprobador,
+            db=db_session,
+        )
+
+    workbook = _workbook_from_response(response)
+    try:
+        assert workbook.sheetnames == ["Ranking no utilizados", "Detalle requisiciones"]
+        ranking_sheet = workbook["Ranking no utilizados"]
+        detalle_sheet = workbook["Detalle requisiciones"]
+
+        assert list(ranking_sheet.iter_rows(min_row=2, values_only=True)) == []
+        assert list(detalle_sheet.iter_rows(min_row=2, values_only=True)) == []
+        assert tuple(next(ranking_sheet.iter_rows(min_row=1, max_row=1, values_only=True))) == (
+            "Ranking",
+            "Producto",
+            "Requisiciones donde salió",
+            "Entregado",
+            "Retornado sin usar",
+            "% no usado",
+            "Requisiciones con retorno",
+            "Correlativos involucrados",
+        )
+        assert tuple(next(detalle_sheet.iter_rows(min_row=1, max_row=1, values_only=True))) == (
+            "Producto",
+            "Correlativo",
+            "Fecha liquidación",
+            "Cliente",
+            "Solicitante",
+            "Departamento",
+            "Motivo",
+            "Entregado",
+            "Retornado sin usar",
+            "% no usado",
+            "Referencia ProKey",
+        )
+    finally:
+        workbook.close()
+
+
+def test_export_productos_no_utilizados_xlsx_rechaza_usuario_no_autorizado(db_session: Session):
+    user = db_session.query(Usuario).filter(Usuario.username == "user.ops").first()
+    with pytest.raises(HTTPException) as exc_info:
+        dashboard_productos_no_utilizados_export_api(
+            current_user=user,
+            db=db_session,
+        )
+
+    assert exc_info.value.status_code == 403
 
 
 def test_productos_no_utilizados_incluye_retorno_excluye_sin_retorno_y_calcula_porcentaje(db_session: Session):

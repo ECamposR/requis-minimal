@@ -2905,6 +2905,46 @@ def _monitor_drilldown_rows(items: list[dict[str, object]], kind: str) -> list[l
     return rows
 
 
+def _productos_no_utilizados_ranking_rows(snapshot: dict[str, object]) -> list[list[object]]:
+    rows: list[list[object]] = []
+    for item in snapshot.get("ranking", []):
+        correlativos = item.get("correlativos") or []
+        rows.append(
+            [
+                item.get("ranking") or 0,
+                item.get("producto") or "",
+                item.get("requisiciones_donde_salio") or 0,
+                item.get("entregado") or 0,
+                item.get("retornado_sin_usar") or 0,
+                item.get("porcentaje_no_usado") or 0,
+                item.get("requisiciones_con_retorno") or 0,
+                ", ".join(str(value) for value in correlativos if str(value).strip()),
+            ]
+        )
+    return rows
+
+
+def _productos_no_utilizados_detalle_rows(snapshot: dict[str, object]) -> list[list[object]]:
+    rows: list[list[object]] = []
+    for item in snapshot.get("detalle", []):
+        rows.append(
+            [
+                item.get("producto") or "",
+                item.get("folio") or "",
+                item.get("fecha_liquidacion") or "",
+                item.get("cliente") or "",
+                item.get("solicitante") or "",
+                item.get("departamento") or "",
+                item.get("motivo") or "",
+                item.get("entregado") or 0,
+                item.get("retornado_sin_usar") or 0,
+                item.get("porcentaje_no_usado") or 0,
+                item.get("prokey_ref") or "",
+            ]
+        )
+    return rows
+
+
 @app.get("/api/dashboard/export/consolidado")
 def dashboard_export_consolidado_api(
     periodo: str | None = None,
@@ -3004,6 +3044,55 @@ def dashboard_export_drilldown_api(
         filename = _monitor_export_filename(f"monitor_{normalized_kind}", monitor_period, "xlsx")
         return _build_xlsx_download_response(filename, [(payload["title"], headers, rows)])
     raise HTTPException(status_code=400, detail="Formato no soportado. Usa csv o xlsx")
+
+
+@app.get("/api/dashboard/productos-no-utilizados/export.xlsx")
+def dashboard_productos_no_utilizados_export_api(
+    periodo: str | None = None,
+    period: str | None = None,
+    fecha_desde: str | None = None,
+    fecha_hasta: str | None = None,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_dashboard_access(current_user)
+    monitor_period = resolve_extended_monitor_period(periodo or period, fecha_desde, fecha_hasta)
+    snapshot = build_productos_no_utilizados_snapshot(db, monitor_period)
+    sheets = [
+        (
+            "Ranking no utilizados",
+            [
+                "Ranking",
+                "Producto",
+                "Requisiciones donde salió",
+                "Entregado",
+                "Retornado sin usar",
+                "% no usado",
+                "Requisiciones con retorno",
+                "Correlativos involucrados",
+            ],
+            _productos_no_utilizados_ranking_rows(snapshot),
+        ),
+        (
+            "Detalle requisiciones",
+            [
+                "Producto",
+                "Correlativo",
+                "Fecha liquidación",
+                "Cliente",
+                "Solicitante",
+                "Departamento",
+                "Motivo",
+                "Entregado",
+                "Retornado sin usar",
+                "% no usado",
+                "Referencia ProKey",
+            ],
+            _productos_no_utilizados_detalle_rows(snapshot),
+        ),
+    ]
+    filename = _monitor_export_filename("productos_no_utilizados", monitor_period, "xlsx")
+    return _build_xlsx_download_response(filename, sheets)
 
 
 @app.get("/crear")
