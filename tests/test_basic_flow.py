@@ -11,7 +11,13 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.auth import hash_password
 from app.database import get_db
-from app.main import app, format_datetime, resolve_monitor_period
+from app.main import (
+    app,
+    build_productos_no_utilizados_snapshot,
+    format_datetime,
+    resolve_extended_monitor_period,
+    resolve_monitor_period,
+)
 from app.models import Base, CatalogoItem, Item, Requisicion, Usuario
 from app.pdf_generator import generate_requisicion_pdf
 
@@ -646,6 +652,311 @@ def test_resolve_monitor_period_presets():
     assert fallback["label"] == "Historial completo"
     assert fallback["start_at"] is None
     assert fallback["end_at"] is None
+
+
+def _assert_end_of_day(value: datetime, expected_date: datetime) -> None:
+    assert value.date() == expected_date.date()
+    assert value.hour == 23
+    assert value.minute == 59
+    assert value.second == 59
+
+
+def _monitor_period_productos_no_utilizados() -> dict[str, object]:
+    return resolve_extended_monitor_period(
+        "custom",
+        "2026-06-01",
+        "2026-06-30",
+        datetime(2026, 6, 30, 12, 0, 0),
+    )
+
+
+def _crear_requisicion_snapshot(
+    db_session: Session,
+    *,
+    folio: str,
+    items: list[dict[str, object]],
+    estado: str = "liquidada_en_prokey",
+    liquidated_at: datetime | None = None,
+    prokey_liquidada_at: datetime | None = None,
+    created_at: datetime | None = None,
+    cliente_nombre: str | None = "Cliente Test",
+    cliente_codigo: str | None = "C123",
+    solicitante_username: str = "user.ops",
+    departamento: str = "Operaciones",
+    motivo_requisicion: str = "Servicio pendiente",
+    prokey_ref: str | None = "PK-TEST-001",
+) -> Requisicion:
+    solicitante = db_session.query(Usuario).filter(Usuario.username == solicitante_username).first()
+    req = Requisicion(
+        folio=folio,
+        solicitante_id=solicitante.id,
+        departamento=departamento,
+        estado=estado,
+        motivo_requisicion=motivo_requisicion,
+        justificacion=f"Justificacion {folio}",
+        cliente_nombre=cliente_nombre,
+        cliente_codigo=cliente_codigo,
+        prokey_ref=prokey_ref,
+        created_at=created_at or datetime(2026, 6, 10, 9, 0, 0),
+        liquidated_at=liquidated_at,
+        prokey_liquidada_at=prokey_liquidada_at,
+    )
+    db_session.add(req)
+    db_session.commit()
+    db_session.refresh(req)
+
+    for item in items:
+        entregado = float(item.get("cantidad_entregada", item.get("cantidad", 0)) or 0)
+        cantidad = float(item.get("cantidad", entregado or 1) or 1)
+        db_session.add(
+            Item(
+                requisicion_id=req.id,
+                descripcion=str(item.get("descripcion", "")),
+                cantidad=cantidad,
+                cantidad_entregada=entregado,
+                qty_returned_to_warehouse=float(item.get("qty_returned_to_warehouse", 0) or 0),
+                qty_used=float(item.get("qty_used", 0) or 0),
+                qty_left_at_client=float(item.get("qty_left_at_client", 0) or 0),
+                liquidation_mode=str(item.get("liquidation_mode", "CONSUMIBLE")),
+                contexto_operacion=str(item.get("contexto_operacion", "reposicion")),
+                es_demo=bool(item.get("es_demo", False)),
+                unidad=str(item.get("unidad", "unidad")),
+            )
+        )
+    db_session.commit()
+    db_session.refresh(req)
+    return req
+
+
+def _ranking_row(snapshot: dict[str, object], producto: str) -> dict[str, object]:
+    return next(row for row in snapshot["ranking"] if row["producto"] == producto)
+
+
+def _detalle_row(snapshot: dict[str, object], folio: str) -> dict[str, object]:
+    return next(row for row in snapshot["detalle"] if row["folio"] == folio)
+
+
+@pytest.mark.parametrize(
+    "period_key, fecha_desde, fecha_hasta, reference_now, expected",
+    [
+        pytest.param(
+            "today",
+            None,
+            None,
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "today",
+                "label": "Hoy",
+                "start": datetime(2026, 6, 12, 0, 0, 0),
+                "end": datetime(2026, 6, 12, 23, 59, 59),
+                "fecha_desde": "2026-06-12",
+                "fecha_hasta": "2026-06-12",
+            },
+            id="today",
+        ),
+        pytest.param(
+            "15d",
+            None,
+            None,
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "15d",
+                "label": "Ultimos 15 dias",
+                "start": datetime(2026, 5, 29, 0, 0, 0),
+                "end": datetime(2026, 6, 12, 23, 59, 59),
+                "fecha_desde": "2026-05-29",
+                "fecha_hasta": "2026-06-12",
+            },
+            id="15d",
+        ),
+        pytest.param(
+            "current_month",
+            None,
+            None,
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "current_month",
+                "label": "Mes actual",
+                "start": datetime(2026, 6, 1, 0, 0, 0),
+                "end": datetime(2026, 6, 12, 23, 59, 59),
+                "fecha_desde": "2026-06-01",
+                "fecha_hasta": "2026-06-12",
+            },
+            id="current_month",
+        ),
+        pytest.param(
+            "previous_month",
+            None,
+            None,
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "previous_month",
+                "label": "Mes anterior",
+                "start": datetime(2026, 5, 1, 0, 0, 0),
+                "end": datetime(2026, 5, 31, 23, 59, 59),
+                "fecha_desde": "2026-05-01",
+                "fecha_hasta": "2026-05-31",
+            },
+            id="previous_month",
+        ),
+        pytest.param(
+            "previous_month",
+            None,
+            None,
+            datetime(2026, 1, 10, 10, 0, 0),
+            {
+                "key": "previous_month",
+                "label": "Mes anterior",
+                "start": datetime(2025, 12, 1, 0, 0, 0),
+                "end": datetime(2025, 12, 31, 23, 59, 59),
+                "fecha_desde": "2025-12-01",
+                "fecha_hasta": "2025-12-31",
+            },
+            id="previous_month-january",
+        ),
+        pytest.param(
+            "ytd",
+            None,
+            None,
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "ytd",
+                "label": "Ano en curso",
+                "start": datetime(2026, 1, 1, 0, 0, 0),
+                "end": datetime(2026, 6, 12, 23, 59, 59),
+                "fecha_desde": "2026-01-01",
+                "fecha_hasta": "2026-06-12",
+            },
+            id="ytd",
+        ),
+        pytest.param(
+            "all",
+            None,
+            None,
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "all",
+                "label": "Historial completo",
+                "start": None,
+                "end": None,
+                "fecha_desde": None,
+                "fecha_hasta": None,
+            },
+            id="all",
+        ),
+        pytest.param(
+            "custom",
+            "2026-06-12",
+            "2026-06-12",
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "custom",
+                "label": "Rango personalizado",
+                "start": datetime(2026, 6, 12, 0, 0, 0),
+                "end": datetime(2026, 6, 12, 23, 59, 59),
+                "fecha_desde": "2026-06-12",
+                "fecha_hasta": "2026-06-12",
+            },
+            id="custom-single-day",
+        ),
+        pytest.param(
+            "custom",
+            "2026-04-01",
+            "2026-06-12",
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "custom",
+                "label": "Rango personalizado",
+                "start": datetime(2026, 4, 1, 0, 0, 0),
+                "end": datetime(2026, 6, 12, 23, 59, 59),
+                "fecha_desde": "2026-04-01",
+                "fecha_hasta": "2026-06-12",
+            },
+            id="custom-multi-month",
+        ),
+        pytest.param(
+            "custom",
+            "2026-06-xx",
+            "2026-06-12",
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "30d",
+                "label": "Ultimos 30 dias",
+                "start": datetime(2026, 5, 14, 0, 0, 0),
+                "end": datetime(2026, 6, 12, 23, 59, 59),
+                "fecha_desde": "2026-05-14",
+                "fecha_hasta": "2026-06-12",
+            },
+            id="custom-invalid-start",
+        ),
+        pytest.param(
+            "custom",
+            "2026-06-12",
+            "2026-06-xx",
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "30d",
+                "label": "Ultimos 30 dias",
+                "start": datetime(2026, 5, 14, 0, 0, 0),
+                "end": datetime(2026, 6, 12, 23, 59, 59),
+                "fecha_desde": "2026-05-14",
+                "fecha_hasta": "2026-06-12",
+            },
+            id="custom-invalid-end",
+        ),
+        pytest.param(
+            "custom",
+            "2026-06-13",
+            "2026-06-12",
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "30d",
+                "label": "Ultimos 30 dias",
+                "start": datetime(2026, 5, 14, 0, 0, 0),
+                "end": datetime(2026, 6, 12, 23, 59, 59),
+                "fecha_desde": "2026-05-14",
+                "fecha_hasta": "2026-06-12",
+            },
+            id="custom-reversed-range",
+        ),
+        pytest.param(
+            "periodo-desconocido",
+            None,
+            None,
+            datetime(2026, 6, 12, 15, 30, 0),
+            {
+                "key": "30d",
+                "label": "Ultimos 30 dias",
+                "start": datetime(2026, 5, 14, 0, 0, 0),
+                "end": datetime(2026, 6, 12, 23, 59, 59),
+                "fecha_desde": "2026-05-14",
+                "fecha_hasta": "2026-06-12",
+            },
+            id="unknown-period",
+        ),
+    ],
+)
+def test_resolve_extended_monitor_period(period_key, fecha_desde, fecha_hasta, reference_now, expected):
+    result = resolve_extended_monitor_period(period_key, fecha_desde, fecha_hasta, reference_now)
+
+    assert result["key"] == expected["key"]
+    assert result["label"] == expected["label"]
+    assert result["fecha_desde"] == expected["fecha_desde"]
+    assert result["fecha_hasta"] == expected["fecha_hasta"]
+
+    expected_start = expected["start"]
+    expected_end = expected["end"]
+
+    if expected_start is None:
+        assert result["start"] is None
+    else:
+        assert result["start"] == expected_start
+
+    if expected_end is None:
+        assert result["end"] is None
+    else:
+        assert result["end"] is not None
+        _assert_end_of_day(result["end"], expected_end)
 
 
 def test_format_datetime_usa_formato_dd_mm_yyyy():
@@ -1389,6 +1700,325 @@ def test_monitor_renderiza_periodo_activo_en_ui(client: TestClient):
     assert 'value="30d" selected' in html
     assert "Periodo activo" in html
     assert "Ultimos 30 dias" in html
+
+
+def test_productos_no_utilizados_incluye_retorno_excluye_sin_retorno_y_calcula_porcentaje(db_session: Session):
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-001",
+        liquidated_at=datetime(2026, 6, 15, 11, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto Retornado",
+                "cantidad": 10,
+                "cantidad_entregada": 10,
+                "qty_returned_to_warehouse": 4,
+                "qty_used": 6,
+                "qty_left_at_client": 0,
+            }
+        ],
+    )
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-002",
+        liquidated_at=datetime(2026, 6, 16, 11, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto Sin Retorno",
+                "cantidad": 8,
+                "cantidad_entregada": 8,
+                "qty_returned_to_warehouse": 0,
+                "qty_used": 8,
+                "qty_left_at_client": 0,
+            }
+        ],
+    )
+
+    snapshot = build_productos_no_utilizados_snapshot(db_session, _monitor_period_productos_no_utilizados())
+
+    assert snapshot["kpis"]["productos_con_retorno"] == 1
+    assert snapshot["kpis"]["total_entregado"] == 10.0
+    assert snapshot["kpis"]["total_retornado_sin_usar"] == 4.0
+    assert snapshot["kpis"]["porcentaje_global_no_usado"] == 40.0
+    assert [row["producto"] for row in snapshot["ranking"]] == ["Producto Retornado"]
+    assert "Producto Sin Retorno" not in {row["producto"] for row in snapshot["ranking"]}
+
+    row = _ranking_row(snapshot, "Producto Retornado")
+    assert row["entregado"] == 10.0
+    assert row["retornado_sin_usar"] == 4.0
+    assert row["porcentaje_no_usado"] == 40.0
+
+
+def test_productos_no_utilizados_ordena_por_retorno_descendente(db_session: Session):
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-010",
+        liquidated_at=datetime(2026, 6, 15, 11, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto A",
+                "cantidad": 10,
+                "cantidad_entregada": 10,
+                "qty_returned_to_warehouse": 2,
+                "qty_used": 8,
+            }
+        ],
+    )
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-011",
+        liquidated_at=datetime(2026, 6, 16, 11, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto B",
+                "cantidad": 10,
+                "cantidad_entregada": 10,
+                "qty_returned_to_warehouse": 7,
+                "qty_used": 3,
+            }
+        ],
+    )
+
+    snapshot = build_productos_no_utilizados_snapshot(db_session, _monitor_period_productos_no_utilizados())
+
+    assert [row["producto"] for row in snapshot["ranking"]] == ["Producto B", "Producto A"]
+    assert snapshot["ranking"][0]["retornado_sin_usar"] == 7.0
+    assert snapshot["ranking"][1]["retornado_sin_usar"] == 2.0
+
+
+def test_productos_no_utilizados_contabiliza_requisiciones_y_correlativos_y_detalle(db_session: Session):
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-001",
+        liquidated_at=datetime(2026, 6, 10, 10, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto Correlativo",
+                "cantidad": 5,
+                "cantidad_entregada": 5,
+                "qty_returned_to_warehouse": 2,
+                "qty_used": 3,
+            }
+        ],
+    )
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-002",
+        liquidated_at=datetime(2026, 6, 11, 10, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto Correlativo",
+                "cantidad": 5,
+                "cantidad_entregada": 5,
+                "qty_returned_to_warehouse": 0,
+                "qty_used": 5,
+            }
+        ],
+    )
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-003",
+        liquidated_at=datetime(2026, 6, 12, 10, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto Correlativo",
+                "cantidad": 5,
+                "cantidad_entregada": 5,
+                "qty_returned_to_warehouse": 1,
+                "qty_used": 4,
+            }
+        ],
+    )
+
+    snapshot = build_productos_no_utilizados_snapshot(db_session, _monitor_period_productos_no_utilizados())
+    row = _ranking_row(snapshot, "Producto Correlativo")
+
+    assert row["requisiciones_donde_salio"] == 3
+    assert row["requisiciones_con_retorno"] == 2
+    assert row["correlativos"] == ["REQ-001", "REQ-003"]
+    assert row["correlativos_preview"] == "REQ-001, REQ-003"
+
+    assert len(snapshot["detalle"]) == 2
+    detalle_1 = _detalle_row(snapshot, "REQ-001")
+    assert detalle_1["producto"] == "Producto Correlativo"
+    assert detalle_1["fecha_liquidacion"] == "2026-06-10 10:00:00"
+    assert detalle_1["cliente"] == "Cliente Test"
+    assert detalle_1["solicitante"] == "Usuario Ops"
+    assert detalle_1["departamento"] == "Operaciones"
+    assert detalle_1["motivo"] == "Servicio pendiente"
+    assert detalle_1["entregado"] == 5.0
+    assert detalle_1["retornado_sin_usar"] == 2.0
+    assert detalle_1["porcentaje_no_usado"] == 40.0
+    assert detalle_1["prokey_ref"] == "PK-TEST-001"
+
+
+@pytest.mark.parametrize(
+    "preview_total, expected_preview",
+    [
+        (
+            4,
+            "REQ-PREVIEW-1, REQ-PREVIEW-2, REQ-PREVIEW-3 +1 más",
+        ),
+        (
+            3,
+            "REQ-PREVIEW-1, REQ-PREVIEW-2, REQ-PREVIEW-3",
+        ),
+    ],
+)
+def test_productos_no_utilizados_correlativos_preview_resume_correctamente(
+    db_session: Session,
+    preview_total: int,
+    expected_preview: str,
+):
+    producto = f"Producto Preview {preview_total}"
+    for index in range(1, preview_total + 1):
+        _crear_requisicion_snapshot(
+            db_session,
+            folio=f"REQ-PREVIEW-{index}",
+            liquidated_at=datetime(2026, 6, 10 + index, 10, 0, 0),
+            items=[
+                {
+                    "descripcion": producto,
+                    "cantidad": 3,
+                    "cantidad_entregada": 3,
+                    "qty_returned_to_warehouse": 1,
+                    "qty_used": 2,
+                }
+            ],
+        )
+
+    snapshot = build_productos_no_utilizados_snapshot(db_session, _monitor_period_productos_no_utilizados())
+    row = _ranking_row(snapshot, producto)
+
+    assert row["correlativos_preview"] == expected_preview
+    assert row["correlativos"] == [f"REQ-PREVIEW-{index}" for index in range(1, preview_total + 1)]
+
+
+def test_productos_no_utilizados_filtra_por_fecha_y_estado(db_session: Session):
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-FECHA-FUERA",
+        estado="liquidada_en_prokey",
+        created_at=datetime(2026, 6, 10, 9, 0, 0),
+        liquidated_at=datetime(2026, 7, 1, 10, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto Fuera",
+                "cantidad": 6,
+                "cantidad_entregada": 6,
+                "qty_returned_to_warehouse": 2,
+                "qty_used": 4,
+            }
+        ],
+    )
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-FECHA-DENTRO",
+        estado="finalizada_sin_prokey",
+        created_at=datetime(2026, 6, 12, 9, 0, 0),
+        liquidated_at=datetime(2026, 6, 20, 10, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto Dentro",
+                "cantidad": 6,
+                "cantidad_entregada": 6,
+                "qty_returned_to_warehouse": 3,
+                "qty_used": 3,
+            }
+        ],
+    )
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-ABIERTA",
+        estado="entregada",
+        created_at=datetime(2026, 6, 15, 9, 0, 0),
+        items=[
+            {
+                "descripcion": "Producto Abierto",
+                "cantidad": 6,
+                "cantidad_entregada": 6,
+                "qty_returned_to_warehouse": 2,
+                "qty_used": 4,
+            }
+        ],
+    )
+
+    snapshot = build_productos_no_utilizados_snapshot(db_session, _monitor_period_productos_no_utilizados())
+
+    assert [row["producto"] for row in snapshot["ranking"]] == ["Producto Dentro"]
+    assert _ranking_row(snapshot, "Producto Dentro")["retornado_sin_usar"] == 3.0
+    assert snapshot["kpis"]["requisiciones_analizadas"] == 1
+    assert snapshot["kpis"]["requisiciones_con_retorno"] == 1
+
+
+def test_productos_no_utilizados_aplica_fallback_de_cliente(db_session: Session):
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-CLI-1",
+        liquidated_at=datetime(2026, 6, 18, 10, 0, 0),
+        cliente_nombre="Cliente Nombre",
+        cliente_codigo="CLI-001",
+        items=[
+            {
+                "descripcion": "Producto Cliente 1",
+                "cantidad": 4,
+                "cantidad_entregada": 4,
+                "qty_returned_to_warehouse": 1,
+                "qty_used": 3,
+            }
+        ],
+    )
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-CLI-2",
+        liquidated_at=datetime(2026, 6, 19, 10, 0, 0),
+        cliente_nombre="",
+        cliente_codigo="CLI-002",
+        items=[
+            {
+                "descripcion": "Producto Cliente 2",
+                "cantidad": 4,
+                "cantidad_entregada": 4,
+                "qty_returned_to_warehouse": 1,
+                "qty_used": 3,
+            }
+        ],
+    )
+    _crear_requisicion_snapshot(
+        db_session,
+        folio="REQ-PNU-CLI-3",
+        liquidated_at=datetime(2026, 6, 20, 10, 0, 0),
+        cliente_nombre="",
+        cliente_codigo="",
+        items=[
+            {
+                "descripcion": "Producto Cliente 3",
+                "cantidad": 4,
+                "cantidad_entregada": 4,
+                "qty_returned_to_warehouse": 1,
+                "qty_used": 3,
+            }
+        ],
+    )
+
+    snapshot = build_productos_no_utilizados_snapshot(db_session, _monitor_period_productos_no_utilizados())
+
+    assert _detalle_row(snapshot, "REQ-PNU-CLI-1")["cliente"] == "Cliente Nombre"
+    assert _detalle_row(snapshot, "REQ-PNU-CLI-2")["cliente"] == "CLI-002"
+    assert _detalle_row(snapshot, "REQ-PNU-CLI-3")["cliente"] == ""
+
+
+def test_productos_no_utilizados_sin_datos_devuelve_kpis_en_cero(db_session: Session):
+    snapshot = build_productos_no_utilizados_snapshot(db_session, _monitor_period_productos_no_utilizados())
+
+    assert snapshot["kpis"]["productos_con_retorno"] == 0
+    assert snapshot["kpis"]["total_entregado"] == 0.0
+    assert snapshot["kpis"]["total_retornado_sin_usar"] == 0.0
+    assert snapshot["kpis"]["porcentaje_global_no_usado"] == 0.0
+    assert snapshot["kpis"]["requisiciones_analizadas"] == 0
+    assert snapshot["kpis"]["requisiciones_con_retorno"] == 0
+    assert snapshot["ranking"] == []
+    assert snapshot["detalle"] == []
 
 
 def test_home_aprobador_muestra_cards_operativas_globales(client: TestClient, db_session: Session):
