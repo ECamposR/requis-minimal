@@ -5,6 +5,7 @@ Estados: `todo` | `in_progress` | `done` | `blocked`
 ## Gobernanza / Continuidad
 - `EPIC-BI-05` | `done` | Implementar el reporte `Productos no utilizados` en el Monitor de Actividad con ranking por producto, periodos extendidos, detalle por requisicion y exportacion XLSX.
 - `REQ-220` | `done` | Entregar el reporte completo: snapshot backend, endpoint JSON protegido, XLSX de dos hojas, UI con filtros, ranking y detalle expandible, mas pruebas focales.
+- `REQ-220A` | `done` | Enlazar los correlativos del detalle expandible con el modal existente mediante `requisicion_id` y `verDetalle(id)`, sin agregar endpoint ni columna XLSX.
 - `REQ-221` | `todo` | Evaluar filtro adicional por cliente para `Productos no utilizados`, preservando el criterio actual de periodo y cierre.
 - `REQ-222` | `todo` | Evaluar filtro adicional por solicitante para `Productos no utilizados`.
 - `REQ-223` | `todo` | Evaluar filtro adicional por motivo de requisicion para `Productos no utilizados`.

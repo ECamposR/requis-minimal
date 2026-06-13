@@ -1,5 +1,23 @@
 # Worklog (append-only)
 
+## 2026-06-13 | tool: Codex CLI
+- Objetivo: enlazar los correlativos del detalle expandible de `Productos no utilizados` con el modal existente de detalle de requisicion.
+- Tareas: `REQ-220A`
+- Cambios:
+  - `snapshot["detalle"]` ahora incluye `requisicion_id` para identificar la requisicion sin depender del folio.
+  - `templates/monitor_actividad.html` reutiliza `verDetalle(id)` desde `static/app.js`, incorpora `modal-detalle`/`modal-content` y renderiza el correlativo como boton cuando el ID y la funcion estan disponibles.
+  - El XLSX conserva sus columnas anteriores y no expone `requisicion_id`.
+- Resultado:
+  - Desde el detalle expandible del reporte se puede abrir el modal estandar de la requisicion sin crear endpoint ni modal alternativo.
+  - Si falta `requisicion_id` o `window.verDetalle`, el folio se mantiene como texto plano.
+- Validacion:
+  - `.venv/bin/python -m py_compile app/main.py` OK.
+  - `.venv/bin/python -m pytest -q tests/test_basic_flow.py -k "productos_no_utilizados"`: `16 passed`.
+  - `node --check /tmp/monitor_actividad.js` OK.
+  - `git diff --check` OK.
+- Commit:
+  - `83e0025` `Link productos no utilizados details to requisition modal`
+
 ## 2026-06-12 | tool: Codex CLI
 - Objetivo: completar el reporte `Productos no utilizados` dentro del `Monitor de Actividad`.
 - Tareas: `EPIC-BI-05`, `REQ-220`
