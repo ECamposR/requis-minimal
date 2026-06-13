@@ -2,6 +2,7 @@ import csv
 import re
 from io import BytesIO
 from datetime import datetime, timedelta
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -1749,7 +1750,7 @@ def test_endpoint_productos_no_utilizados_rechaza_usuario_no_autorizado(db_sessi
 
 
 def test_endpoint_productos_no_utilizados_custom_y_period_soportan_filtros(db_session: Session):
-    _crear_requisicion_snapshot(
+    req_dentro = _crear_requisicion_snapshot(
         db_session,
         folio="REQ-PNU-API-IN",
         liquidated_at=datetime(2026, 6, 15, 11, 0, 0),
@@ -1802,6 +1803,7 @@ def test_endpoint_productos_no_utilizados_custom_y_period_soportan_filtros(db_se
     assert payload_periodo["periodo"]["fecha_hasta"] == "2026-06-30"
     assert [row["producto"] for row in payload_periodo["ranking"]] == ["Producto API"]
     assert [row["folio"] for row in payload_periodo["detalle"]] == ["REQ-PNU-API-IN"]
+    assert payload_periodo["detalle"][0]["requisicion_id"] == req_dentro.id
     assert "Producto Fuera API" not in {row["producto"] for row in payload_periodo["ranking"]}
     assert "REQ-PNU-API-OUT" not in {row["folio"] for row in payload_periodo["detalle"]}
 
@@ -2098,7 +2100,7 @@ def test_productos_no_utilizados_ordena_por_retorno_descendente(db_session: Sess
 
 
 def test_productos_no_utilizados_contabiliza_requisiciones_y_correlativos_y_detalle(db_session: Session):
-    _crear_requisicion_snapshot(
+    req_1 = _crear_requisicion_snapshot(
         db_session,
         folio="REQ-001",
         liquidated_at=datetime(2026, 6, 10, 10, 0, 0),
@@ -2151,6 +2153,7 @@ def test_productos_no_utilizados_contabiliza_requisiciones_y_correlativos_y_deta
 
     assert len(snapshot["detalle"]) == 2
     detalle_1 = _detalle_row(snapshot, "REQ-001")
+    assert detalle_1["requisicion_id"] == req_1.id
     assert detalle_1["producto"] == "Producto Correlativo"
     assert detalle_1["fecha_liquidacion"] == "2026-06-10 10:00:00"
     assert detalle_1["cliente"] == "Cliente Test"
@@ -2330,6 +2333,16 @@ def test_productos_no_utilizados_sin_datos_devuelve_kpis_en_cero(db_session: Ses
     assert snapshot["kpis"]["requisiciones_con_retorno"] == 0
     assert snapshot["ranking"] == []
     assert snapshot["detalle"] == []
+
+
+def test_productos_no_utilizados_template_reutiliza_modal_de_requisicion():
+    template = Path("templates/monitor_actividad.html").read_text(encoding="utf-8")
+
+    assert 'id="modal-detalle"' in template
+    assert 'id="modal-content"' in template
+    assert '<script src="/static/app.js?v=8.0"></script>' in template
+    assert 'typeof window.verDetalle !== "function"' in template
+    assert "window.verDetalle(requisicionId)" in template
 
 
 def test_home_aprobador_muestra_cards_operativas_globales(client: TestClient, db_session: Session):

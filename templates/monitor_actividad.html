@@ -288,6 +288,11 @@
     padding: 0.35rem 0.65rem;
     white-space: nowrap;
 }
+.productos-no-utilizados-correlativo-button {
+    margin: 0;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+}
 .productos-no-utilizados-detail-row > td {
     padding: 0;
     background: var(--ui-surface-subtle, #f8fafc);
@@ -561,6 +566,17 @@
     </section>
 </section>
 
+<dialog id="modal-detalle">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" onclick="cerrarModal()"></button>
+            <h3>Detalle</h3>
+        </header>
+        <div id="modal-content"></div>
+    </article>
+</dialog>
+
+<script src="/static/app.js?v=8.0"></script>
 <script src="/static/vendor/chartjs/chart.umd.min.js"></script>
 <script>
 const dashboardCharts = {};
@@ -1249,6 +1265,27 @@ function createProductosNoUtilizadosCell(value, className = "") {
     return cell;
 }
 
+function createProductosNoUtilizadosCorrelativoCell(item) {
+    const cell = document.createElement("td");
+    const folio = String(item?.folio ?? "");
+    const requisicionId = Number(item?.requisicion_id);
+    if (!Number.isInteger(requisicionId) || requisicionId <= 0 || typeof window.verDetalle !== "function") {
+        cell.textContent = folio;
+        return cell;
+    }
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "secondary outline productos-no-utilizados-correlativo-button";
+    button.textContent = folio;
+    button.setAttribute("aria-label", `Abrir detalle de la requisición ${folio || requisicionId}`);
+    button.addEventListener("click", () => {
+        window.verDetalle(requisicionId);
+    });
+    cell.appendChild(button);
+    return cell;
+}
+
 function createProductosNoUtilizadosDetailTable(items) {
     const panel = document.createElement("div");
     panel.className = "productos-no-utilizados-detail-panel";
@@ -1285,7 +1322,7 @@ function createProductosNoUtilizadosDetailTable(items) {
     const body = document.createElement("tbody");
     items.forEach((item) => {
         const row = document.createElement("tr");
-        row.appendChild(createProductosNoUtilizadosCell(item?.folio ?? ""));
+        row.appendChild(createProductosNoUtilizadosCorrelativoCell(item));
         row.appendChild(createProductosNoUtilizadosCell(fmtAuditDateTime(item?.fecha_liquidacion)));
         row.appendChild(createProductosNoUtilizadosCell(item?.cliente ?? ""));
         row.appendChild(createProductosNoUtilizadosCell(item?.solicitante ?? ""));
