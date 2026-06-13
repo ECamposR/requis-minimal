@@ -10,11 +10,15 @@
 - `EPIC-BI-05` completada en `feature/productos-no-utilizados`: el `Monitor de Actividad` incluye el reporte `Productos no utilizados`.
 - Backend:
   - `build_productos_no_utilizados_snapshot()` en `app/main.py` construye KPIs, ranking agrupado por producto y detalle por requisicion.
+  - Cada fila de `snapshot["detalle"]` incluye `requisicion_id` para enlazar con el detalle general de la requisicion.
   - `GET /api/dashboard/productos-no-utilizados` devuelve el snapshot JSON.
   - `GET /api/dashboard/productos-no-utilizados/export.xlsx` descarga el XLSX con `Ranking no utilizados` y `Detalle requisiciones`.
 - UI:
   - La seccion vive en `templates/monitor_actividad.html`.
   - Incluye periodos extendidos, rango custom, ranking, estados de carga/error, exportacion y detalle expandible sin llamadas adicionales.
+  - El correlativo del detalle expandible se renderiza como boton cuando existe `requisicion_id` y llama `window.verDetalle(requisicionId)`.
+  - `/monitor` carga `/static/app.js?v=8.0` e incluye `modal-detalle` y `modal-content` para reutilizar el modal existente.
+  - Si falta el ID o `window.verDetalle` no esta disponible, el folio se muestra como texto plano.
 - Pruebas:
   - `tests/test_basic_flow.py` contiene los casos identificados con `productos_no_utilizados`, incluyendo snapshot, API, permisos, filtros y XLSX.
 - Smoke manual:
@@ -23,7 +27,8 @@
   3. Cambiar el periodo o seleccionar `Rango personalizado` y completar fechas.
   4. Pulsar `Aplicar` y revisar el ranking.
   5. Pulsar `Ver detalle` en un producto.
-  6. Pulsar `Exportar Excel` y verificar las dos hojas.
+  6. Pulsar un correlativo y verificar que abra el modal de detalle de requisicion.
+  7. Pulsar `Exportar Excel` y verificar las dos hojas.
 - Los assets externos de frontend ya fueron descargados a `static/vendor/` y `templates/base.html` ya quedó cableado a esos recursos locales.
 - La UI ya quedó desacoplada de Internet del lado del cliente para estilos, fuentes e íconos; Chart.js también se sirve localmente desde `static/vendor/chartjs/`.
 - Frente actual: documentación + UX móvil de bodega.

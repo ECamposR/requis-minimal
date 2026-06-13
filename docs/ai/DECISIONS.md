@@ -11,6 +11,8 @@
   - Agrupar el ranking por la descripcion normalizada del producto y mostrar solo productos con retorno mayor que cero.
   - Considerar como correlativos involucrados unicamente las requisiciones donde ese producto tuvo retorno.
   - Generar el XLSX con dos hojas: `Ranking no utilizados` y `Detalle requisiciones`.
+  - Reutilizar el modal existente y `verDetalle(id)` para abrir una requisicion desde su correlativo, en lugar de crear otro modal o endpoint.
+  - Exponer `requisicion_id` solo en el detalle JSON usado por la UI; no agregarlo como columna del XLSX.
 - Motivo:
   - La cantidad retornada expresa directamente el volumen que salio de bodega y no termino utilizado.
   - Excluir retornos parciales ocultaria merma operativa relevante.
@@ -19,6 +21,7 @@
   - El ranking suma `cantidad_entregada` y `qty_returned_to_warehouse`, calcula porcentaje no usado y permite abrir el detalle por requisicion.
   - El reporte no incluye productos sin retorno, aunque hayan sido entregados dentro del periodo.
   - JSON, UI y XLSX reutilizan el mismo snapshot backend.
+  - `/monitor` debe cargar `static/app.js` y montar la estructura `modal-detalle`/`modal-content` requerida por el modal compartido.
 
 ## ADR-010 | 2026-05-22 | Priorizar documentación y UX móvil de bodega antes de cambios mayores
 - Contexto:

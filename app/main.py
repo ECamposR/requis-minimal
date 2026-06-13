@@ -2720,6 +2720,7 @@ def build_productos_no_utilizados_snapshot(
             detalle_item = detalle_stats.setdefault(
                 detalle_key,
                 {
+                    "requisicion_id": req.id,
                     "producto": producto,
                     "folio": _clean_text(req.folio),
                     "fecha_liquidacion": fecha_liquidacion_texto,
@@ -2756,6 +2757,7 @@ def build_productos_no_utilizados_snapshot(
         retornado = float(detalle["retornado_sin_usar"])
         detalle_rows.append(
             {
+                "requisicion_id": detalle["requisicion_id"],
                 "producto": detalle["producto"],
                 "folio": detalle["folio"],
                 "fecha_liquidacion": detalle["fecha_liquidacion"],
